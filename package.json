@@ -1,0 +1,38 @@
+{
+  "name": "rsk-style",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/app.js --exec babel-node",
+    "build": "npm run clean && babel src -d dist",
+    "clean": "rm -rf dist",
+    "md": "mkdir dist",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/jsjsfun/rsk-explorer-api.git"
+  },
+  "keywords": [
+    "rsk",
+    "explorer",
+    "erc20"
+  ],
+  "author": "Emilio Rizzo",
+  "license": "MIT",
+  "homepage": "https://bitbucket.org/jsjsfun/rsk-explorer-api#readme",
+  "dependencies": {
+    "express": "^4.16.2",
+    "mongodb": "^3.0.0-rc0",
+    "socket.io": "^2.0.4"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^4.12.1",
+    "nodemon": "^1.12.1"
+  }
+}
