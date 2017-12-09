@@ -1,3 +1,13 @@
 {
-  "port":"3003"
+  "server": {
+    "port": "3003"
+  },
+  "db": {
+    "server": "localhost",
+    "port": "27017",
+    "database": "blockDB"
+  },
+  "blocks": {
+    "last": 10
+  }
 }
