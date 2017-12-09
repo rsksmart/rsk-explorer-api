@@ -1,8 +1,9 @@
+import 'babel-polyfill'
 import IO from 'socket.io'
 import config from '../config.json'
 import dataSource from './lib/db.js'
 import Blocks from './lib/classBlocks.js'
-import * as  errors from './lib/errors.js'
+import * as errors from './lib/errors.js'
 
 const port = config.server.port || '3000'
 
