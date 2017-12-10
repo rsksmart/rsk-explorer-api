@@ -11,6 +11,9 @@ export default {
     port: 27017,
     database: 'blockDB'
   },
+  blocks: {
+    last: 10
+  },
   erc20: {
     dbPrefix: 'erc20_',
     tokenCollection: 'erc20Tokens',
