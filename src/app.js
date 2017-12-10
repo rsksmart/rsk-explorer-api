@@ -1,9 +1,9 @@
 import 'babel-polyfill'
 import IO from 'socket.io'
-import config from '../config.json'
-import dataSource from './lib/db.js'
-import Blocks from './lib/classBlocks.js'
-import * as errors from './lib/errors.js'
+import config from './lib/config'
+import dataSource from './lib/db'
+import Blocks from './lib/classBlocks'
+import * as errors from './lib/errors'
 
 const port = config.server.port || '3000'
 
@@ -18,8 +18,12 @@ dataSource.then(db => {
   const blocks = new Blocks(db)
 
   blocks.events.on('newBlocks', data => {
-    console.log('new', blocks.latest)
     io.emit('data', formatData('newBlocks', data))
+  })
+
+  blocks.events.on('block', data => {
+    console.log('newBlock', data)
+    io.emit('data', formatData('block', data))
   })
 
   io.on('connection', socket => {

@@ -1,6 +1,6 @@
-import config from '../../config.json'
+import config from './config'
 import { EventEmitter } from 'events'
-import { setTimeout, setInterval } from 'timers'
+import { setInterval } from 'timers'
 
 class Emitter extends EventEmitter {}
 const emitter = new Emitter()
