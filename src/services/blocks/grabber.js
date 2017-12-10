@@ -1,8 +1,4 @@
 require( '../db.js' );
-
-var express = require('express');
-var app = express();
-
 var fs = require('fs');
 
 var Web3 = require('web3');
