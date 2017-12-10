@@ -1,4 +1,3 @@
-// import async from 'async'
 import Web3 from 'web3'
 
 class Exporter {
@@ -10,7 +9,8 @@ class Exporter {
     this.web3.setProvider(config.provider)
 
     let fromBlock = config.exportStartBlock || 0
-    let toBlock = config.endBlock || 'latest'
+    let toBlock = config.exportEndBlock || 'latest'
+
 
     this.contract = this.web3.eth
       .contract(config.erc20ABI)
@@ -69,10 +69,6 @@ class Exporter {
           console.log('All historical balances updated')
         })
       })
-      /*       async.eachSeries(logs, this.processLog, err => {
-        console.log('All historical logs processed')
-        this.exportBatchAccounts(accounts)
-      }) */
     })
 
     this.batchLogs = async logs => {
@@ -86,16 +82,6 @@ class Exporter {
     }
 
     this.exportBatchAccounts = async accounts => {
-      /*       async.eachSeries(
-        accounts,
-        (item, callback) => {
-          this.exportBalance(item, callback)
-        },
-        err => {
-          console.log('All historical balances updated')
-        }
-      ) */
-
       for (let a in accounts) {
         try {
           await this.exportBalance(accounts[a])
@@ -108,7 +94,6 @@ class Exporter {
     this.processLog = (log, callback) => {
       log._id =
         log.blockNumber + '_' + log.transactionIndex + '_' + log.logIndex
-
       console.log('Exporting log:', log._id)
 
       this.web3.eth.getBlock(log.blockNumber, false, (err, block) => {
