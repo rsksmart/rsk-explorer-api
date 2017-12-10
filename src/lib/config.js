@@ -9,6 +9,11 @@ for (let key of keys) {
     if (!config[key][p]) config[key][p] = defaultConf[key][p]
   }
 }
-config.erc20.server = config.erc20.server || config.source.server
+// defaults  servers/ports
+config.erc20.node = config.erc20.node || config.source.node
 config.erc20.port = config.erc20.port || config.source.port
+
+config.blocks.node = config.blocks.node || config.source.node
+config.blocks.port = config.blocks.port || config.source.port
+
 export default config

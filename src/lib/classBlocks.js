@@ -9,7 +9,7 @@ class Blocks {
   constructor(db) {
     this.collection = db.collection('blocks')
     this.events = emitter
-    this.lastLimit = config.blocks.last
+    this.lastLimit = config.api.lastBlocks
     this.latest = 0
     this.last = []
     this.getLastBlocks = () => {

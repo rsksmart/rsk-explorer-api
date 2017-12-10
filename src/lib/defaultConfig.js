@@ -1,18 +1,36 @@
+/**
+ *  This file provides default values,
+ *  to change the configuration, use /config.json
+ */
+
 export default {
   server: {
-    port: '3003'
+    port: 3003
   },
   source: {
     node: 'localhost',
-    port: '4444'
+    port: 4444
   },
   db: {
     server: 'localhost',
     port: 27017,
     database: 'blockDB'
   },
+  api: {
+    lastBlocks: 10
+  },
   blocks: {
-    last: 10
+    blocks: [
+      {
+        start: 0,
+        end: 'latest'
+      }
+    ],
+    output: '.',
+    quiet: false,
+    terminateAtExistingDB: false,
+    listenOnly: true,
+    blockCollection: 'block'
   },
   erc20: {
     dbPrefix: 'erc20_',
