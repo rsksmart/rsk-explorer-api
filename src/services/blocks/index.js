@@ -11,7 +11,8 @@ dataSource.then(db => {
   collection
     .createIndexes([
       {
-        key: { number: 1 }
+        key: { number: 1 },
+        unique: true
       }
     ])
     .then(doc => {

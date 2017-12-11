@@ -30,7 +30,7 @@ export default {
     quiet: false,
     terminateAtExistingDB: false,
     listenOnly: true,
-    blockCollection: 'block'
+    blockCollection: 'blocks'
   },
   erc20: {
     dbPrefix: 'erc20_',
