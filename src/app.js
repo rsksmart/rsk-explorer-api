@@ -1,4 +1,3 @@
-import 'babel-polyfill'
 import IO from 'socket.io'
 import config from './lib/config'
 import dataSource from './lib/db'
