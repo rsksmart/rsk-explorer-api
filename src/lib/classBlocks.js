@@ -1,15 +1,18 @@
 import config from './config'
 import { EventEmitter } from 'events'
 import { setInterval } from 'timers'
+const perPage = config.api.perPage
+import { filterParams } from './utils'
 
 class Emitter extends EventEmitter {}
 const emitter = new Emitter()
 
 class Blocks {
   constructor(db) {
-    this.collection = db.collection('blocks')
+    this.collection = db.collection(config.blocks.blockCollection)
     this.events = emitter
     this.lastLimit = config.api.lastBlocks
+    this.filterParams = filterParams
     this.latest = 0
     this.last = []
     this.getLastBlocks = () => {
@@ -22,6 +25,7 @@ class Blocks {
           else this.updateLastBlocks(docs)
         })
     }
+
     this.updateLastBlocks = blocks => {
       this.last = blocks
       let latest = blocks[0].number
@@ -29,7 +33,7 @@ class Blocks {
         this.latest = latest
         this.events.emit('newBlocks', blocks)
       }
-      this.events.emit('newBlocks', blocks)
+      //this.events.emit('newBlocks', blocks)
     }
     setInterval(() => {
       this.getLastBlocks()
