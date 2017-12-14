@@ -20,18 +20,18 @@ dataSource.then(db => {
   const blocks = new Blocks(db)
 
   blocks.events.on('newBlocks', data => {
-    io.emit('data', formatData('newBlocks', data))
+    io.emit('data', formatRes('newBlocks', data))
   })
 
   blocks.events.on('block', data => {
     console.log('newBlock', data)
-    io.emit('data', formatData('block', data))
+    io.emit('data', formatRes('block', data))
   })
 
   io.on('connection', socket => {
     io.emit('open', { time: Date.now() })
-    io.emit('data', formatData('newBlocks', blocks.last))
-    io.emit('data', formatData('tokens', erc20.getTokens()))
+    io.emit('data', formatRes('newBlocks', blocks.last))
+    io.emit('data', formatRes('tokens', erc20.getTokens()))
     socket.on('message', () => {})
     socket.on('disconnect', () => {})
     socket.on('error', err => {
@@ -45,13 +45,13 @@ dataSource.then(db => {
         let params = payload.options
         switch (type) {
           case 'blocks':
-            io.emit('data', formatData('blocks', blocks.last))
+            io.emit('data', formatRes('blocks', blocks.last, payload))
             break
           case 'erc20':
             erc20
               .getTokenAction(action, params)
-              .then(data => {
-                io.emit('data', formatData(type + action, data, payload))
+              .then(result => {
+                io.emit('data', formatRes(type + action, result, payload))
               })
               .catch(err => {
                 console.log(err)
@@ -73,8 +73,10 @@ dataSource.then(db => {
   })
 })
 
-const formatData = (action, data, req) => {
-  return { action, data, req }
+const formatRes = (action, result, req) => {
+  let data = result.DATA || result
+  let pages = result.PAGES || null
+  return { action, data, req, pages }
 }
 
 const formatError = error => {

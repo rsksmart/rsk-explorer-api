@@ -8,29 +8,29 @@ class Exporter {
     this.web3 = new Web3()
     this.web3.setProvider(config.provider)
 
-    let fromBlock = config.exportStartBlock || 0
-    let toBlock = config.exportEndBlock || 'latest'
-
+    this.fromBlock = this.config.exportStartBlock || 0
+    this.toBlock = this.config.exportEndBlock || 'latest'
+    this.logTag = this.config.tokenShortName || this.config.tokenAddress
 
     this.contract = this.web3.eth
-      .contract(config.erc20ABI)
-      .at(config.tokenAddress)
+      .contract(this.config.erc20ABI)
+      .at(this.config.tokenAddress)
     this.allEvents = this.contract.allEvents({
-      fromBlock: toBlock,
-      toBlock: toBlock
+      fromBlock: this.toBlock,
+      toBlock: this.toBlock
     })
     this.newEvents = this.contract.allEvents()
 
     // Processes new events
     this.newEvents.watch((err, log) => {
       if (err) {
-        console.log('Error receiving new log:', err)
+        console.log(this.logTag, 'Error receiving new log:', err)
         return
       }
-      console.log('New log received:', log)
+      console.log(this.logTag, 'New log received:', log)
 
       this.processLog(log, err => {
-        console.log('New log processed')
+        console.log(this.logTag, 'New log processed')
       })
 
       if (log.event === 'Transfer') {
@@ -45,9 +45,9 @@ class Exporter {
 
     // Retrieves historical events and processed them
     this.allEvents.get((err, logs) => {
-      console.log('Historical events received')
+      console.log(this.logTag, 'Historical events received')
       if (err) {
-        console.log('Error receiving historical events:', err)
+        console.log(this.logTag, 'Error receiving historical events:', err)
         return
       }
       let accounts = {}
@@ -64,9 +64,9 @@ class Exporter {
         }
       })
       this.batchLogs(logs).then(() => {
-        console.log('All historical logs processed')
+        console.log(this.logTag, 'All historical logs processed')
         this.exportBatchAccounts(accounts).then(() => {
-          console.log('All historical balances updated')
+          console.log(this.logTag, 'All historical balances updated')
         })
       })
     })
@@ -76,7 +76,7 @@ class Exporter {
         try {
           await this.processLog(log)
         } catch (err) {
-          console.log('Error, processing logs', err)
+          console.log(this.logTag, 'Error, processing logs', err)
         }
       }
     }
@@ -86,7 +86,7 @@ class Exporter {
         try {
           await this.exportBalance(accounts[a])
         } catch (err) {
-          console.log('Errror exporting balance', err)
+          console.log(this.logTag, 'Errror exporting balance', err)
         }
       }
     }
@@ -94,11 +94,15 @@ class Exporter {
     this.processLog = (log, callback) => {
       log._id =
         log.blockNumber + '_' + log.transactionIndex + '_' + log.logIndex
-      console.log('Exporting log:', log._id)
+      console.log(this.logTag, 'Exporting log:', log._id)
 
       this.web3.eth.getBlock(log.blockNumber, false, (err, block) => {
         if (err) {
-          console.log('Error retrieving block information for log:', err)
+          console.log(
+            this.logTag,
+            'Error retrieving block information for log:',
+            err
+          )
           if (callback) callback()
           return
         }
@@ -112,9 +116,14 @@ class Exporter {
         this.db.insert(log, (err, newLogs) => {
           if (err) {
             if (err.code === 11000) {
-              console.log(log._id, 'already exported!', err.message)
+              console.log(
+                this.logTag,
+                log._id,
+                'already exported!',
+                err.message
+              )
             } else {
-              console.log('Error inserting log:', err)
+              console.log(this.logTag, 'Error inserting log:', err)
             }
           }
           if (callback) callback()
@@ -123,7 +132,7 @@ class Exporter {
     }
 
     this.exportBalance = (address, callback) => {
-      console.log('Exporting balance of', address)
+      console.log(this.logTag, 'Exporting balance of', address)
       this.contract.balanceOf(address, (err, balance) => {
         balance = parseFloat(balance)
         let doc = { _id: address, balance: balance }
@@ -133,9 +142,9 @@ class Exporter {
           { upsert: true },
           (err, numReplaced) => {
             if (err) {
-              console.log('Error updating balance:', err)
+              console.log(this.logTag, 'Error updating balance:', err)
             } else {
-              console.log('Balance export completed')
+              console.log(this.logTag, 'Balance export completed')
             }
 
             if (callback) callback()
@@ -144,7 +153,10 @@ class Exporter {
       })
     }
 
-    console.log('Exporter initialized, waiting for historical events...')
+    console.log(
+      this.logTag,
+      'Exporter initialized, waiting for historical events...'
+    )
   }
 }
 

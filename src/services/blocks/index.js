@@ -1,6 +1,6 @@
 import dataSource from '../../lib/db.js'
 import conf from '../../../config'
-import SaveBlocks from './saveBlocksClass'
+import SaveBlocks from './Blocks'
 
 const config = Object.assign({}, conf.blocks)
 

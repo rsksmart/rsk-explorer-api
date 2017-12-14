@@ -1,7 +1,7 @@
 import Web3 from 'web3'
 import config from '../../lib/config.js'
 import dataSource from '../../lib/db.js'
-import Exporter from './erc20Class.js'
+import Exporter from './Erc20'
 
 const provider = new Web3.providers.HttpProvider(
   'http://' + config.erc20.node + ':' + config.erc20.port
