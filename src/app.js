@@ -1,8 +1,8 @@
 import IO from 'socket.io'
 import config from './lib/config'
 import dataSource from './lib/db'
-import Blocks from './lib/classBlocks'
-import Erc20 from './lib/classErc20'
+import Blocks from './lib/dataBlocks'
+import Erc20 from './lib/dataErc20'
 import * as errors from './lib/errors'
 
 const port = config.server.port || '3000'
@@ -15,9 +15,10 @@ dataSource.then(db => {
     console.log('Server listen on port ' + port)
   })
 
+  // data collectors
   const erc20 = new Erc20(db)
-
   const blocks = new Blocks(db)
+  blocks.start()
 
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data))
@@ -43,32 +44,33 @@ dataSource.then(db => {
         let type = payload.type
         let action = payload.action
         let params = payload.options
+        let collector = null
+        
         switch (type) {
           case 'blocks':
-            io.emit('data', formatRes('blocks', blocks.last, payload))
+            collector = blocks
             break
           case 'erc20':
-            erc20
-              .getTokenAction(action, params)
-              .then(result => {
-                io.emit('data', formatRes(type + action, result, payload))
-              })
-              .catch(err => {
-                console.log(err)
-                io.emit('error', formatError(errors.INVALID_REQUEST))
-              })
+            collector = erc20
             break
           default:
             io.emit('error', formatError(errors.INVALID_TYPE))
             break
         }
+        if (collector) {
+          collector
+            .run(action, params)
+            .then(result => {
+              io.emit('data', formatRes(type + action, result, payload))
+            })
+            .catch(err => {
+              console.log(err)
+              io.emit('error', formatError(errors.INVALID_REQUEST))
+            })
+        }
       } else {
         io.emit('error', formatError(errors.INVALID_REQUEST))
       }
-
-      /*       blocks.findOne({ number: 1 }, {}, (err, doc) => {
-        console.log(err, doc)
-      }) */
     })
   })
 })
@@ -86,5 +88,5 @@ const formatError = error => {
 
 process.on('unhandledRejection', err => {
   console.error(err)
-  process.exit(1)
+  // process.exit(1)
 })
