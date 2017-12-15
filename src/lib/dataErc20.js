@@ -12,7 +12,7 @@ class Erc20 extends DataCollector {
     this.updateTokens()
   }
   getTokens() {
-    return this.tokenList
+    return { DATA: this.tokenList }
   }
   run(action, params) {
     return this.itemPublicAction(action, params)
@@ -40,8 +40,8 @@ class Token extends DataCollectorItem {
     super(collection, address)
     this.publicActions = {
       getEvent: params => {
-        if (!params._id) return
-        return this.db.findOne({ _id: params._id })
+        let _id = params._id
+        return this.getOne({ _id })
       },
       getEvents: params => {
         let query = { balance: { $exists: false } }

@@ -38,7 +38,7 @@ export class DataCollector {
   run() {}
   itemPublicAction(action, params, item) {
     return new Promise((resolve, reject) => {
-      if (!action) reject('Unknown action')
+      if (!action) reject('Missing action')
       if (!params) reject('No params provided')
       item = item || this.getItem(params)
       if (action && item) {
@@ -96,6 +96,11 @@ export class DataCollectorItem {
       page = page * perPage < total ? page : pages
       let skip = (page - 1) * perPage
       return { page, total, pages, perPage, skip }
+    })
+  }
+  getOne(query) {
+    return this.db.findOne(query).then(DATA => {
+      return { DATA }
     })
   }
   getPageData(query, params, sort) {

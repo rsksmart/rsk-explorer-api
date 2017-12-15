@@ -25,13 +25,12 @@ dataSource.then(db => {
   })
 
   blocks.events.on('block', data => {
-    console.log('newBlock', data)
     io.emit('data', formatRes('block', data))
   })
 
   io.on('connection', socket => {
     io.emit('open', { time: Date.now() })
-    io.emit('data', formatRes('newBlocks', blocks.last))
+    io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
     io.emit('data', formatRes('tokens', erc20.getTokens()))
     socket.on('message', () => {})
     socket.on('disconnect', () => {})
@@ -45,7 +44,7 @@ dataSource.then(db => {
         let action = payload.action
         let params = payload.options
         let collector = null
-        
+
         switch (type) {
           case 'blocks':
             collector = blocks
@@ -58,14 +57,18 @@ dataSource.then(db => {
             break
         }
         if (collector) {
+          let resAction = type + action
           collector
             .run(action, params)
             .then(result => {
-              io.emit('data', formatRes(type + action, result, payload))
+              io.emit('data', formatRes(resAction, result, payload))
             })
             .catch(err => {
               console.log(err)
-              io.emit('error', formatError(errors.INVALID_REQUEST))
+              io.emit(
+                'error',
+                formatRes(resAction, null, payload, errors.INVALID_REQUEST)
+              )
             })
         }
       } else {
@@ -75,9 +78,15 @@ dataSource.then(db => {
   })
 })
 
-const formatRes = (action, result, req) => {
-  let data = result.DATA || result
-  let pages = result.PAGES || null
+const formatRes = (action, result, req, error) => {
+  let data
+  let pages
+  if (error) {
+    error = formatError(error)
+  } else {
+    data = result.DATA || null
+    pages = result.PAGES || null
+  }
   return { action, data, req, pages }
 }
 

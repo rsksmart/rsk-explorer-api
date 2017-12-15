@@ -13,14 +13,13 @@ class Blocks extends DataCollector {
     this.Block = new Block(this.collection)
   }
   tick() {
-    this.getLastBlocks()
+    this.setLastBlocks()
   }
 
   run(action, params) {
-    console.log(action, params)
     return this.itemPublicAction(action, params, this.Block)
   }
-  getLastBlocks() {
+  setLastBlocks() {
     this.collection
       .find()
       .sort({ number: -1 })
@@ -31,12 +30,16 @@ class Blocks extends DataCollector {
       })
   }
 
+  getLastBlocks() {
+    return { DATA: this.last }
+  }
+
   updateLastBlocks(blocks) {
     this.last = blocks
     let latest = blocks[0].number
     if (latest !== this.latest) {
       this.latest = latest
-      this.events.emit('newBlocks', blocks)
+      this.events.emit('newBlocks', { DATA: blocks })
     }
     //this.events.emit('newBlocks', blocks)
   }
@@ -45,7 +48,33 @@ class Blocks extends DataCollector {
 class Block extends DataCollectorItem {
   constructor(collection) {
     super(collection)
-    this.publicActions = {}
+    this.publicActions = {
+      getBlock: params => {
+        let number = parseInt(params.block)
+        return this.getOne({ number })
+      },
+      getTransaction: params => {
+        let txHash = params.tx.toString()
+        return this.getOne({ 'transactions.hash': txHash }).then(data => {
+          let block = data.DATA
+          if (block) {
+            let transactions = block.transactions
+            if (transactions) {
+              let DATA = transactions.find(tx => {
+                return tx.hash === txHash
+              })
+              return { DATA }
+            }
+          }
+        })
+      },
+      getBlocks: params => {
+        return this.getPageData({}, params, { number: -1 })
+      },
+      getTransactions: params => {
+        return this.getPageData({}, params, { number: -1 })
+      }
+    }
   }
 }
 
