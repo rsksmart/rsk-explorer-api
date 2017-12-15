@@ -12,13 +12,13 @@ var _db = require('./lib/db');
 
 var _db2 = _interopRequireDefault(_db);
 
-var _classBlocks = require('./lib/classBlocks');
+var _dataBlocks = require('./lib/dataBlocks');
 
-var _classBlocks2 = _interopRequireDefault(_classBlocks);
+var _dataBlocks2 = _interopRequireDefault(_dataBlocks);
 
-var _classErc = require('./lib/classErc20');
+var _dataErc = require('./lib/dataErc20');
 
-var _classErc2 = _interopRequireDefault(_classErc);
+var _dataErc2 = _interopRequireDefault(_dataErc);
 
 var _errors = require('./lib/errors');
 
@@ -38,23 +38,23 @@ _db2.default.then(db => {
     console.log('Server listen on port ' + port);
   });
 
-  const erc20 = new _classErc2.default(db);
-
-  const blocks = new _classBlocks2.default(db);
+  // data collectors
+  const erc20 = new _dataErc2.default(db);
+  const blocks = new _dataBlocks2.default(db);
+  blocks.start();
 
   blocks.events.on('newBlocks', data => {
-    io.emit('data', formatData('newBlocks', data));
+    io.emit('data', formatRes('newBlocks', data));
   });
 
   blocks.events.on('block', data => {
-    console.log('newBlock', data);
-    io.emit('data', formatData('block', data));
+    io.emit('data', formatRes('block', data));
   });
 
   io.on('connection', socket => {
     io.emit('open', { time: Date.now() });
-    io.emit('data', formatData('newBlocks', blocks.last));
-    io.emit('data', formatData('tokens', erc20.getTokens()));
+    io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()));
+    io.emit('data', formatRes('tokens', erc20.getTokens()));
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
@@ -66,35 +66,45 @@ _db2.default.then(db => {
         let type = payload.type;
         let action = payload.action;
         let params = payload.options;
+        let collector = null;
+
         switch (type) {
           case 'blocks':
-            io.emit('data', formatData('blocks', blocks.last));
+            collector = blocks;
             break;
           case 'erc20':
-            erc20.getTokenAction(action, params).then(data => {
-              io.emit('data', formatData(type + action, data, payload));
-            }).catch(err => {
-              console.log(err);
-              io.emit('error', formatError(errors.INVALID_REQUEST));
-            });
+            collector = erc20;
             break;
           default:
             io.emit('error', formatError(errors.INVALID_TYPE));
             break;
         }
+        if (collector) {
+          let resAction = type + action;
+          collector.run(action, params).then(result => {
+            io.emit('data', formatRes(resAction, result, payload));
+          }).catch(err => {
+            console.log(err);
+            io.emit('error', formatRes(resAction, null, payload, errors.INVALID_REQUEST));
+          });
+        }
       } else {
         io.emit('error', formatError(errors.INVALID_REQUEST));
       }
-
-      /*       blocks.findOne({ number: 1 }, {}, (err, doc) => {
-        console.log(err, doc)
-      }) */
     });
   });
 });
 
-const formatData = (action, data, req) => {
-  return { action, data, req };
+const formatRes = (action, result, req, error) => {
+  let data;
+  let pages;
+  if (error) {
+    error = formatError(error);
+  } else {
+    data = result.DATA || null;
+    pages = result.PAGES || null;
+  }
+  return { action, data, req, pages };
 };
 
 const formatError = error => {
@@ -104,5 +114,5 @@ const formatError = error => {
 
 process.on('unhandledRejection', err => {
   console.error(err);
-  process.exit(1);
+  // process.exit(1)
 });

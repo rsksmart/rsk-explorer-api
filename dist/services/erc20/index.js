@@ -12,9 +12,9 @@ var _db = require('../../lib/db.js');
 
 var _db2 = _interopRequireDefault(_db);
 
-var _erc20Class = require('./erc20Class.js');
+var _Erc = require('./Erc20');
 
-var _erc20Class2 = _interopRequireDefault(_erc20Class);
+var _Erc2 = _interopRequireDefault(_Erc);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -46,7 +46,7 @@ _db2.default.then(db => {
       }, { upsert: true }).then(() => {
         tokenConfig = Object.assign(tokenConfig, erc20Config);
         createTokenCollection(db, token).then(collection => {
-          exporters[token.address] = new _erc20Class2.default(tokenConfig, collection);
+          exporters[token.address] = new _Erc2.default(tokenConfig, collection);
         });
       });
     }

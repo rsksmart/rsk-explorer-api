@@ -8,9 +8,9 @@ var _config = require('../../../config');
 
 var _config2 = _interopRequireDefault(_config);
 
-var _saveBlocksClass = require('./saveBlocksClass');
+var _Blocks = require('./Blocks');
 
-var _saveBlocksClass2 = _interopRequireDefault(_saveBlocksClass);
+var _Blocks2 = _interopRequireDefault(_Blocks);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -25,7 +25,7 @@ _db2.default.then(db => {
     unique: true
   }]).then(doc => {
     if (doc.ok) {
-      const exporter = new _saveBlocksClass2.default(config, collection);
+      const exporter = new _Blocks2.default(config, collection);
       exporter.grabBlocks();
     } else {
       console.log('Error creating collection indexes');
