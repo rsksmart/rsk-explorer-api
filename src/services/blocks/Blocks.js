@@ -112,7 +112,7 @@ class SaveBlocks {
   }
   writeBlockToDB(blockData) {
     console.log('Writing block to db')
-    this.db.insertOne(blockData).then((err, res) => {
+    this.db.insertOne(blockData, (err, res) => {
       if (!err) {
         if (!('quiet' in this.config && this.config.quiet === true)) {
           console.log(
@@ -122,9 +122,7 @@ class SaveBlocks {
         }
       } else {
         if (err.code === 11000) {
-          console.log(
-            'Skip: Duplicate key ' + blockData.number.toString() + ': ' + err
-          )
+          console.log('Skip: Duplicate key ' + blockData.number.toString())
         } else {
           console.log(
             'Error: Aborted due to error on ' +
@@ -133,7 +131,7 @@ class SaveBlocks {
               ': ' +
               err
           )
-          //process.exit(9)
+          process.exit(9)
         }
       }
     })
