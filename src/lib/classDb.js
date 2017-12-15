@@ -25,25 +25,3 @@ class Db {
 }
 
 export default Db
-
-/* //let connection = new Connect('mongodb://localhost:27017/blockDB')
-//console.log(connection.connect())
-
-async function test() {
-  const client = await mongodb.MongoClient.connect(
-    'mongodb://localhost:27017/blockDB'
-  )
-  const db = client.db('blockDB')
-  const collection = db.collection('blocks')
-  let x = await collection
-    .find()
-    .sort({ number: -1 })
-    .limit(1)
-    .stream()
-
-  x.on('data', doc => {
-    console.log(doc.number)
-  })
-}
-
-test() */

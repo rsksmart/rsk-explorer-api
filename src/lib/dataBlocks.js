@@ -53,6 +53,9 @@ class Block extends DataCollectorItem {
         let number = parseInt(params.block)
         return this.getOne({ number })
       },
+      getBlocks: params => {
+        return this.getPageData({}, params, { number: -1 })
+      },
       getTransaction: params => {
         let txHash = params.tx.toString()
         return this.getOne({ 'transactions.hash': txHash }).then(data => {
@@ -68,11 +71,13 @@ class Block extends DataCollectorItem {
           }
         })
       },
-      getBlocks: params => {
-        return this.getPageData({}, params, { number: -1 })
-      },
       getTransactions: params => {
-        return this.getPageData({}, params, { number: -1 })
+        let aggregate = [
+          { $project: { transactions: 1 } },
+          { $unwind: '$transactions' }
+        ]
+        let sort = { _id: 1 }
+        return this.getAggPageData(aggregate, params,sort)
       }
     }
   }
