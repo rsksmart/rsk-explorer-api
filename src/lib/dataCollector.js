@@ -88,33 +88,68 @@ export class DataCollectorItem {
     })
   }
   getPages(query, params) {
+    return this.db.count(query).then(total => {
+      return this._pages(params, total)
+    })
+  }
+  getAggPages(aggregate, params) {
+    return new Promise((resolve, reject) => {
+      aggregate.push({
+        $group: { _id: 'result', TOTAL: { $sum: 1 } }
+      })
+      this.db.aggregate(aggregate, (err, cursor) => {
+        if (err) reject(err)
+        cursor.toArray().then(res => {
+          let total = res[0].TOTAL
+          resolve(this._pages(params, total))
+        })
+      })
+    })
+  }
+
+  _pages(params, total) {
     let perPage = params.limit
     let page = params.page || 1
-
-    return this.db.count(query).then(total => {
-      let pages = Math.ceil(total / perPage)
-      page = page * perPage < total ? page : pages
-      let skip = (page - 1) * perPage
-      return { page, total, pages, perPage, skip }
-    })
+    let pages = Math.ceil(total / perPage)
+    page = page * perPage < total ? page : pages
+    let skip = (page - 1) * perPage
+    return { page, total, pages, perPage, skip }
   }
   getOne(query) {
     return this.db.findOne(query).then(DATA => {
       return { DATA }
     })
   }
+  _find(query, PAGES, sort) {
+    return this.db
+      .find(query)
+      .sort(sort)
+      .skip(PAGES.skip)
+      .limit(PAGES.perPage)
+      .toArray()
+  }
+  _aggregate(aggregate, PAGES) {
+    return this.db
+      .aggregate(aggregate)
+      .skip(PAGES.skip)
+      .limit(PAGES.perPage)
+      .toArray()
+  }
+
+  getAggPageData(aggregate, params, sort) {
+    if (sort) aggregate.push({ $sort: sort })
+    return this.getAggPages(aggregate.concat(), params).then(PAGES => {
+      return this._aggregate(aggregate, PAGES).then(DATA => {
+        return { PAGES, DATA }
+      })
+    })
+  }
   getPageData(query, params, sort) {
     sort = sort || { _id: -1 }
     return this.getPages(query, params).then(PAGES => {
-      return this.db
-        .find(query)
-        .sort(sort)
-        .skip(PAGES.skip)
-        .limit(PAGES.perPage)
-        .toArray()
-        .then(DATA => {
-          return { PAGES, DATA }
-        })
+      return this._find(query, PAGES, sort).then(DATA => {
+        return { PAGES, DATA }
+      })
     })
   }
 }
