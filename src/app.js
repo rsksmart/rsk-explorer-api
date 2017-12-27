@@ -19,6 +19,7 @@ dataSource.then(db => {
   const erc20 = new Erc20(db)
   const blocks = new Blocks(db)
   blocks.start()
+  erc20.start()
 
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data))
@@ -26,6 +27,10 @@ dataSource.then(db => {
 
   blocks.events.on('block', data => {
     io.emit('data', formatRes('block', data))
+  })
+
+  erc20.events.on('newTokens', data => {
+    io.emit('data', formatRes('tokens', data))
   })
 
   io.on('connection', socket => {
