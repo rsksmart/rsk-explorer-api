@@ -109,7 +109,7 @@ export class DataCollectorItem {
 
   _pages(params, total) {
     let perPage = params.limit
-    let page = params.page || 1
+    let page = params.page > 0 ? params.page : 1
     let pages = Math.ceil(total / perPage)
     page = page * perPage < total ? page : pages
     let skip = (page - 1) * perPage
