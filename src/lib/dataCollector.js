@@ -97,7 +97,7 @@ export class DataCollectorItem {
       aggregate.push({
         $group: { _id: 'result', TOTAL: { $sum: 1 } }
       })
-      this.db.aggregate(aggregate, (err, cursor) => {
+      this.db.aggregate(aggregate, { allowDiskUse: true }, (err, cursor) => {
         if (err) reject(err)
         cursor.toArray().then(res => {
           let total = res[0].TOTAL
