@@ -97,7 +97,9 @@ export class DataCollectorItem {
       aggregate.push({
         $group: { _id: 'result', TOTAL: { $sum: 1 } }
       })
-      this.db.aggregate(aggregate, { allowDiskUse: true }, (err, cursor) => {
+      // review this
+      let options = { allowDiskUse: true }
+      this.db.aggregate(aggregate, options, (err, cursor) => {
         if (err) reject(err)
         cursor.toArray().then(res => {
           let total = res[0].TOTAL
@@ -129,16 +131,18 @@ export class DataCollectorItem {
       .toArray()
   }
   _aggregate(aggregate, PAGES) {
+    // review this
+    let options = { allowDiskUse: true }
     return this.db
-      .aggregate(aggregate)
+      .aggregate(aggregate, options)
       .skip(PAGES.skip)
       .limit(PAGES.perPage)
       .toArray()
   }
 
   getAggPageData(aggregate, params, sort) {
-    if (sort) aggregate.push({ $sort: sort })
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
+      if (sort) aggregate.push({ $sort: sort })
       return this._aggregate(aggregate, PAGES).then(DATA => {
         return { PAGES, DATA }
       })

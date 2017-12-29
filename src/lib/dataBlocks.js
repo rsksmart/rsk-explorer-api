@@ -73,11 +73,10 @@ class Block extends DataCollectorItem {
       },
       getTransactions: params => {
         let aggregate = [
-          { $project: { transactions: 1 } },
+          { $project: { transactions: 1, timestamp: 1 } },
           { $unwind: '$transactions' }
         ]
-        let sort = { _id: 1 }
-        return this.getAggPageData(aggregate, params,sort)
+        return this.getAggPageData(aggregate, params, { _id: -1 })
       }
     }
   }
