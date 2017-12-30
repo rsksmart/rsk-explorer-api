@@ -31,7 +31,7 @@ class Blocks extends DataCollector {
   }
 
   getLastBlocks() {
-    return { DATA: this.last }
+    return this.formatData(this.last)
   }
 
   updateLastBlocks(blocks) {
@@ -39,7 +39,7 @@ class Blocks extends DataCollector {
     let latest = blocks[0].number
     if (latest !== this.latest) {
       this.latest = latest
-      this.events.emit('newBlocks', { DATA: blocks })
+      this.events.emit('newBlocks', this.formatData(blocks))
     }
     //this.events.emit('newBlocks', blocks)
   }

@@ -73,6 +73,10 @@ export class DataCollector {
     params.limit = limit
     return params
   }
+
+  formatData(data) {
+    return { DATA: data }
+}
 }
 
 export class DataCollectorItem {

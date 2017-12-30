@@ -15,7 +15,7 @@ class Erc20 extends DataCollector {
     this.eventsCount()
   }
   getTokens() {
-    return { DATA: Object.values(this.tokenList) }
+    return this.formatData(Object.values(this.tokenList))
   }
   eventsCount() {
     for (let key in this.items) {
