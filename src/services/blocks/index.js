@@ -13,6 +13,9 @@ dataSource.then(db => {
       {
         key: { number: 1 },
         unique: true
+      },
+      {
+        key: { transactions: 1 }
       }
     ])
     .then(doc => {
