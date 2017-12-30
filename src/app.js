@@ -86,13 +86,14 @@ dataSource.then(db => {
 const formatRes = (action, result, req, error) => {
   let data
   let pages
+  if (!result && !error) error = errors.EMPTY_RESULT
   if (error) {
     error = formatError(error)
   } else {
     data = result.DATA || null
     pages = result.PAGES || null
   }
-  return { action, data, req, pages }
+  return { action, data, req, pages, error }
 }
 
 const formatError = error => {
