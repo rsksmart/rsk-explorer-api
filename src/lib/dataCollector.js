@@ -76,7 +76,7 @@ export class DataCollector {
 
   formatData(data) {
     return { DATA: data }
-}
+  }
 }
 
 export class DataCollectorItem {
@@ -126,10 +126,17 @@ export class DataCollectorItem {
       return { DATA }
     })
   }
+  find(query) {
+    return this.db
+      .find(query)
+      .toArray()
+      .then(DATA => {
+        return { DATA }
+      })
+  }
   getOnePrevNext(query, queryPrev, queryNext) {
     return this.getOne(query).then(res => {
       if (res) {
-        console.log(res)
         return this.getOne(queryPrev).then(prev => {
           res.PREV = prev && prev.DATA ? prev.DATA : null
           return this.getOne(queryNext).then(next => {
@@ -140,7 +147,7 @@ export class DataCollectorItem {
       }
     })
   }
-  _find(query, PAGES, sort) {
+  _findPages(query, PAGES, sort) {
     return this.db
       .find(query)
       .sort(sort)
@@ -151,11 +158,9 @@ export class DataCollectorItem {
   _aggregate(aggregate, PAGES) {
     // review this
     let options = { allowDiskUse: true }
-    return this.db
-      .aggregate(aggregate, options)
-      .skip(PAGES.skip)
-      .limit(PAGES.perPage)
-      .toArray()
+    aggregate.push({ $skip: PAGES.skip })
+    aggregate.push({ $limit: PAGES.perPage })
+    return this.db.aggregate(aggregate, options).toArray()
   }
 
   getAggPageData(aggregate, params, sort) {
@@ -169,7 +174,7 @@ export class DataCollectorItem {
   getPageData(query, params, sort) {
     sort = sort || { _id: -1 }
     return this.getPages(query, params).then(PAGES => {
-      return this._find(query, PAGES, sort).then(DATA => {
+      return this._findPages(query, PAGES, sort).then(DATA => {
         return { PAGES, DATA }
       })
     })

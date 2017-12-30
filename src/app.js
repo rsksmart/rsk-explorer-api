@@ -97,6 +97,7 @@ const formatRes = (action, result, req, error) => {
     next = result.NEXT || null
     prev = result.PREV || null
   }
+  if (!data && !error) error = formatError(errors.EMPTY_RESULT)
   return { action, data, req, pages, error, prev, next }
 }
 
