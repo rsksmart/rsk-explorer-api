@@ -126,6 +126,20 @@ export class DataCollectorItem {
       return { DATA }
     })
   }
+  getOnePrevNext(query, queryPrev, queryNext) {
+    return this.getOne(query).then(res => {
+      if (res) {
+        console.log(res)
+        return this.getOne(queryPrev).then(prev => {
+          res.PREV = prev && prev.DATA ? prev.DATA : null
+          return this.getOne(queryNext).then(next => {
+            res.NEXT = next && next.DATA ? next.DATA : null
+            return res
+          })
+        })
+      }
+    })
+  }
   _find(query, PAGES, sort) {
     return this.db
       .find(query)
