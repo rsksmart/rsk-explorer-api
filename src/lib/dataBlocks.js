@@ -50,7 +50,7 @@ class Block extends DataCollectorItem {
     super(collection)
     this.publicActions = {
       getBlock: params => {
-        let number = parseInt(params.block)
+        let number = parseInt(params.number)
         if (number) {
           //let queryPrev = number > 1 ? { number: number-- } : null
           return this.getOnePrevNext(
@@ -66,7 +66,7 @@ class Block extends DataCollectorItem {
         return this.getPageData({}, params, { number: -1 })
       },
       getTx: params => {
-        let txHash = params.tx.toString()
+        let txHash = params.hash.toString()
         return this.getOne({
           transactions: { $elemMatch: { hash: txHash } }
         }).then(res => {
