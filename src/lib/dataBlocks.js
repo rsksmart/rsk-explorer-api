@@ -92,9 +92,9 @@ class Block extends DataCollectorItem {
             else {
               let block = DATA.blockNumber
               return this.txBlock(block - 1).then(trans => {
-                PREV = trans[trans.length - 1]
+                PREV = trans ? trans[trans.length - 1] : null
                 return this.txBlock(block + 1).then(trans => {
-                  NEXT = trans[0]
+                  NEXT = trans ? trans[0] : null
                   return { DATA, PREV, NEXT }
                 })
               })
