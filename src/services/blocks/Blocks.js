@@ -11,6 +11,7 @@ class SaveBlocks {
     )
   }
   listenBlocks() {
+    console.log('Listen to blocks...')
     let newBlocks = this.web3.eth.filter('latest')
     newBlocks.watch((error, log) => {
       if (error) {
@@ -162,6 +163,50 @@ class SaveBlocks {
       setTimeout(() => {
         this.grabBlock(this.config.blocks.pop())
       }, 2000)
+  }
+
+  patchBlocks() {
+    /*     const web3 = new Web3(
+      new Web3.providers.HttpProvider(
+        'http://' + this.config.node + ':' + this.config.port
+      )
+    ) */
+    let web3 = this.web3
+    // number of blocks should equal difference in block numbers
+    let firstBlock = 0
+    let lastBlock = web3.eth.blockNumber
+    this.blockIter(firstBlock, lastBlock)
+  }
+
+  blockIter(firstBlock, lastBlock) {
+    // if consecutive, deal with it
+    if (lastBlock < firstBlock) return
+    if (lastBlock - firstBlock === 1) {
+      ;[lastBlock, firstBlock].forEach(blockNumber => {
+        this.db.find({ number: blockNumber }, (err, b) => {
+          if (!b.length) this.grabBlock(firstBlock)
+        })
+      })
+    } else if (lastBlock === firstBlock) {
+      this.db.find({ number: firstBlock }, (err, b) => {
+        if (!b.length) this.grabBlock(firstBlock)
+      })
+    } else {
+      this.db.count(
+        { number: { $gte: firstBlock, $lte: lastBlock } },
+        (err, c) => {
+          let expectedBlocks = lastBlock - firstBlock + 1
+          if (c === 0) {
+            this.grabBlock({ start: firstBlock, end: lastBlock })
+          } else if (expectedBlocks > c) {
+            console.log('Missing: ' + JSON.stringify(expectedBlocks - c))
+            let midBlock = firstBlock + parseInt((lastBlock - firstBlock) / 2)
+            this.blockIter(firstBlock, midBlock)
+            this.blockIter(midBlock + 1, lastBlock)
+          } else return
+        }
+      )
+    }
   }
 }
 

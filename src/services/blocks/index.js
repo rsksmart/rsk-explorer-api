@@ -19,6 +19,8 @@ dataSource.then(db => {
       if (doc.ok) {
         const exporter = new SaveBlocks(config, collection)
         exporter.grabBlocks()
+        exporter.patchBlocks()
+
       } else {
         console.log('Error creating collection indexes')
       }
