@@ -69,11 +69,16 @@ class Block extends _dataCollector.DataCollectorItem {
           transactions: { $elemMatch: { hash } }
         }).then(res => {
           let transactions;
-          if (res && res.DATA) transactions = res.DATA.transactions;
+          let timestamp;
+          if (res && res.DATA) {
+            transactions = res.DATA.transactions;
+            timestamp = res.DATA.timestamp;
+          }
           if (transactions) {
             let DATA = transactions.find(tx => {
               return tx.hash === hash;
             });
+            DATA.timestamp = timestamp;
             return { DATA, transactions };
           }
         });
@@ -96,24 +101,30 @@ class Block extends _dataCollector.DataCollectorItem {
       }, */
       getTransaction: params => {
         return this.publicActions.getTx(params).then(res => {
-          let DATA = res.DATA;
-          let transactions = res.transactions;
-          if (DATA && transactions) {
-            let index = DATA.transactionIndex;
-            let PREV = transactions[index - 1];
-            let NEXT = transactions[index + 1];
-            if (PREV && NEXT) return { DATA, PREV, NEXT };else {
-              let block = DATA.blockNumber;
-              return this.txBlock(block - 1).then(trans => {
-                PREV = trans ? trans[trans.length - 1] : null;
-                return this.txBlock(block + 1).then(trans => {
-                  NEXT = trans ? trans[0] : null;
-                  return { DATA, PREV, NEXT };
+          if (res && res.DATA) {
+            let DATA = res.DATA;
+            let transactions = res.transactions;
+            if (DATA && transactions) {
+              let index = DATA.transactionIndex;
+              let PREV = transactions[index - 1];
+              let NEXT = transactions[index + 1];
+              if (PREV && NEXT) return { DATA, PREV, NEXT };else {
+                let block = DATA.blockNumber;
+                return this.txBlock(block - 1).then(trans => {
+                  PREV = trans ? trans[trans.length - 1] : null;
+                  return this.txBlock(block + 1).then(trans => {
+                    NEXT = trans ? trans[0] : null;
+                    return { DATA, PREV, NEXT };
+                  });
                 });
-              });
+              }
             }
           }
         });
+      },
+      getAccount: params => {},
+      getAccounts: params => {
+        return this.find();
       },
       getTransactions: params => {
         let aggregate = [{ $project: { transactions: 1, timestamp: 1 } }, { $unwind: '$transactions' }];

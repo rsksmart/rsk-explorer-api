@@ -97,9 +97,6 @@ _db2.default.then(db => {
         io.emit('error', formatError(errors.INVALID_REQUEST));
       }
     });
-    socket.on('search', payload => {
-      console.log(payload);
-    });
   });
 });
 
