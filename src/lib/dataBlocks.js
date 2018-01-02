@@ -67,11 +67,16 @@ class Block extends DataCollectorItem {
           transactions: { $elemMatch: { hash } }
         }).then(res => {
           let transactions
-          if (res && res.DATA) transactions = res.DATA.transactions
+          let timestamp
+          if (res && res.DATA) {
+            transactions = res.DATA.transactions
+            timestamp = res.DATA.timestamp
+          }
           if (transactions) {
             let DATA = transactions.find(tx => {
               return tx.hash === hash
             })
+            DATA.timestamp = timestamp
             return { DATA, transactions }
           }
         })

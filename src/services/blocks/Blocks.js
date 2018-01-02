@@ -15,7 +15,7 @@ class SaveBlocks {
     newBlocks.watch((error, log) => {
       if (error) {
         console.log('Error: ' + error)
-      } else if (log == null) {
+      } else if (log === null) {
         console.log('Warning: null block hash')
       } else {
         this.grabBlock(log)
@@ -26,7 +26,7 @@ class SaveBlocks {
     let desiredBlockHashOrNumber
 
     // check if done
-    if (blockHashOrNumber == undefined) {
+    if (blockHashOrNumber === undefined) {
       return
     }
 
@@ -56,7 +56,7 @@ class SaveBlocks {
                 ': ' +
                 error
             )
-          } else if (blockData == null) {
+          } else if (blockData === null) {
             console.log(
               'Warning: null block data received from the block with hash/number: ' +
                 desiredBlockHashOrNumber
