@@ -121,6 +121,9 @@ export class DataCollectorItem {
     let skip = (page - 1) * perPage
     return { page, total, pages, perPage, skip }
   }
+  _formatPrevNext(PREV, DATA, NEXT) {
+    return { PREV, DATA, NEXT }
+  }
   getOne(query) {
     return this.db.findOne(query).then(DATA => {
       return { DATA }
@@ -134,17 +137,14 @@ export class DataCollectorItem {
         return { DATA }
       })
   }
-  getOnePrevNext(query, queryPrev, queryNext) {
-    return this.getOne(query).then(res => {
-      if (res) {
-        return this.getOne(queryPrev).then(prev => {
-          res.PREV = prev && prev.DATA ? prev.DATA : null
-          return this.getOne(queryNext).then(next => {
-            res.NEXT = next && next.DATA ? next.DATA : null
-            return res
-          })
-        })
-      }
+  getPrevNext(params, query, queryCount, sort) {
+    params.skip = 0
+    params.perPage = 3
+    return this.paginator(queryCount, params).then(pages => {
+      params.TOTAL = pages.total
+      return this._findPages(query, params, sort).then(res => {
+        if (res) return this._formatPrevNext(...res)
+      })
     })
   }
   _findPages(query, PAGES, sort) {
@@ -155,7 +155,7 @@ export class DataCollectorItem {
       .limit(PAGES.perPage)
       .toArray()
   }
-  _aggregate(aggregate, PAGES) {
+  _aggregatePages(aggregate, PAGES) {
     // review this
     let options = { allowDiskUse: true }
     aggregate.push({ $skip: PAGES.skip })
@@ -166,7 +166,7 @@ export class DataCollectorItem {
   getAggPageData(aggregate, params, sort) {
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
       if (sort) aggregate.push({ $sort: sort })
-      return this._aggregate(aggregate, PAGES).then(DATA => {
+      return this._aggregatePages(aggregate, PAGES).then(DATA => {
         return { PAGES, DATA }
       })
     })

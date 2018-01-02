@@ -51,35 +51,47 @@ class Block extends DataCollectorItem {
     this.publicActions = {
       getBlock: params => {
         let number = parseInt(params.number)
-        if (number) {
-          //let queryPrev = number > 1 ? { number: number-- } : null
-          return this.getOnePrevNext(
-            { number },
-            { number: number - 1 },
-            {
-              number: number + 1
-            }
-          )
-        }
+        return this.getPrevNext(
+          params,
+          { number: { $gt: number - 2 } },
+          {},
+          { number: 1 }
+        )
       },
       getBlocks: params => {
         return this.getPageData({}, params, { number: -1 })
       },
       getTx: params => {
-        let txHash = params.hash.toString()
+        let hash = params.hash.toString()
         return this.getOne({
-          transactions: { $elemMatch: { hash: txHash } }
+          transactions: { $elemMatch: { hash } }
         }).then(res => {
           let transactions
           if (res && res.DATA) transactions = res.DATA.transactions
           if (transactions) {
             let DATA = transactions.find(tx => {
-              return tx.hash === txHash
+              return tx.hash === hash
             })
             return { DATA, transactions }
           }
         })
       },
+      /*       getTransaction: params => {
+        let hash = params.hash.toString()
+        params.skip = 0
+        params.perPage = 3
+        params.page = 1
+        let aggregate = [
+          { $project: { transactions: 1, timestamp: 1 } },
+          { $unwind: '$transactions' }
+        ]
+        return this.getAggPages(aggregate.concat(), params).then(pages => {
+          params.TOTAL = pages.total
+          return this._aggregatePages(aggregate, params).then(res => {
+            console.log('RES', res.length)
+          })
+        })
+      }, */
       getTransaction: params => {
         return this.publicActions.getTx(params).then(res => {
           let DATA = res.DATA
