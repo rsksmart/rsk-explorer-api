@@ -99,6 +99,7 @@ class Block extends DataCollectorItem {
       }, */
       getTransaction: params => {
         return this.publicActions.getTx(params).then(res => {
+          if (res && res.DATA) {
           let DATA = res.DATA
           let transactions = res.transactions
           if (DATA && transactions) {
@@ -116,6 +117,7 @@ class Block extends DataCollectorItem {
                 })
               })
             }
+          }
           }
         })
       },
