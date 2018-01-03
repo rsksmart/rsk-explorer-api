@@ -28,10 +28,12 @@ export class DataCollector {
       }, 1000)
     }
   }
-  setCollection(collectionName) {
-    if (collectionName) this.collection = this.db.collection(collectionName)
+  setCollection(collectionName, name = 'collection') {
+    if (collectionName && !this[name])
+      this[name] = this.db.collection(collectionName)
   }
   getItem(params) {
+    console.log(this.items)
     let key = params.key || params[this._keyName]
     if (key) return this.items[key]
   }
@@ -40,7 +42,13 @@ export class DataCollector {
     return new Promise((resolve, reject) => {
       if (!action) reject('Missing action')
       if (!params) reject('No params provided')
-      item = item || this.getItem(params)
+      if (item === '*') {
+        //find item
+        item = null
+        item = this.searchItemByAction(action)
+      } else {
+        item = item || this.getItem(params)
+      }
       if (action && item) {
         let method = item.publicActions[action]
         if (method) {
@@ -49,6 +57,12 @@ export class DataCollector {
       }
       reject('Unknown action or bad params requested')
     })
+  }
+  searchItemByAction(action) {
+    for (let i in this.items) {
+      let item = this.items[i]
+      if (item.publicActions[action]) return item
+    }
   }
   addItem(collectionName, key, itemClass) {
     if (collectionName && key) {
@@ -142,8 +156,11 @@ export class DataCollectorItem {
     params.perPage = 3
     return this.paginator(queryCount, params).then(pages => {
       params.TOTAL = pages.total
+      params.page = 1
       return this._findPages(query, params, sort).then(res => {
-        if (res) return this._formatPrevNext(...res)
+        if (res)
+          if (res.length === 1) return this._formatPrevNext(false, res[0])
+          else return this._formatPrevNext(...res)
       })
     })
   }

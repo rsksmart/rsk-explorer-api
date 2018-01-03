@@ -31,7 +31,8 @@ export default {
     quiet: false,
     terminateAtExistingDB: false,
     listenOnly: true,
-    blockCollection: 'blocks'
+    blockCollection: 'blocks',
+    txCollection: 'transactions'
   },
   erc20: {
     dbPrefix: 'erc20_',

@@ -1,6 +1,5 @@
 import config from '../../config.json'
 import defaultConf from './defaultConfig'
-
 const keys = Object.keys(defaultConf)
 
 for (let key of keys) {

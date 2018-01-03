@@ -1,9 +1,10 @@
 import Web3 from 'web3'
 
 class SaveBlocks {
-  constructor(config, db) {
+  constructor(config, blocksCollection, txCollection) {
     this.config = config
-    this.db = db
+    this.Blocks = blocksCollection
+    this.Txs = txCollection
     this.web3 = new Web3(
       new Web3.providers.HttpProvider(
         'http://' + config.node + ':' + config.port
@@ -113,14 +114,35 @@ class SaveBlocks {
   }
   writeBlockToDB(blockData) {
     console.log('Writing block to db')
-    this.db.insertOne(blockData, (err, res) => {
+    let transactions = blockData.transactions
+    delete blockData.transactions
+    blockData.txs = transactions.length
+    transactions.map(item => {
+      item.timestamp = blockData.timestamp
+    })
+    this.Blocks.insertOne(blockData, (err, res) => {
       if (!err) {
-        if (!('quiet' in this.config && this.config.quiet === true)) {
-          console.log(
-            'DB successfully written for block number ' +
-              blockData.number.toString()
-          )
-        }
+        this.Txs.insertMany(transactions, (err, res) => {
+          if (!err) {
+            if (!('quiet' in this.config && this.config.quiet === true)) {
+              console.log(
+                'DB successfully written for block number ' +
+                  blockData.number.toString()
+              )
+            }
+          } else {
+            if (err.code === 11000) {
+              console.log('DUP transactions ' + err)
+            } else {
+              console.log(
+                'Error: Aborted saving transactions of block ' +
+                  blockData.number.toString() +
+                  ':' +
+                  err
+              )
+            }
+          }
+        })
       } else {
         if (err.code === 11000) {
           console.log('Skip: Duplicate key ' + blockData.number.toString())
@@ -183,16 +205,16 @@ class SaveBlocks {
     if (lastBlock < firstBlock) return
     if (lastBlock - firstBlock === 1) {
       ;[lastBlock, firstBlock].forEach(blockNumber => {
-        this.db.find({ number: blockNumber }, (err, b) => {
+        this.Blocks.find({ number: blockNumber }, (err, b) => {
           if (!b.length) this.grabBlock(firstBlock)
         })
       })
     } else if (lastBlock === firstBlock) {
-      this.db.find({ number: firstBlock }, (err, b) => {
+      this.Blocks.find({ number: firstBlock }, (err, b) => {
         if (!b.length) this.grabBlock(firstBlock)
       })
     } else {
-      this.db.count(
+      this.Blocks.count(
         { number: { $gte: firstBlock, $lte: lastBlock } },
         (err, c) => {
           let expectedBlocks = lastBlock - firstBlock + 1
