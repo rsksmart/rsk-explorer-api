@@ -1,13 +1,17 @@
 import Web3 from 'web3'
 
 class SaveBlocks {
-  constructor(config, blocksCollection, txCollection) {
+  constructor(config, blocksCollection, txCollection, accountsCollection) {
     this.config = config
     this.Blocks = blocksCollection
     this.Txs = txCollection
-    this.web3 = new Web3(
+    this.Accounts = accountsCollection
+    this.web3 = this.connect()
+  }
+  connect() {
+    return new Web3(
       new Web3.providers.HttpProvider(
-        'http://' + config.node + ':' + config.port
+        'http://' + this.config.node + ':' + this.config.port
       )
     )
   }
@@ -47,6 +51,7 @@ class SaveBlocks {
     }
 
     if (this.web3.isConnected()) {
+      console.log('Getting Block: ' + desiredBlockHashOrNumber)
       this.web3.eth.getBlock(
         desiredBlockHashOrNumber,
         true,
@@ -64,6 +69,7 @@ class SaveBlocks {
                 desiredBlockHashOrNumber
             )
           } else {
+            console.log('newBlockData', blockData.number)
             if (
               'terminateAtExistingDB' in this.config &&
               this.config.terminateAtExistingDB === true
@@ -109,27 +115,52 @@ class SaveBlocks {
           'get block ' +
           desiredBlockHashOrNumber
       )
-      process.exit(9)
+      process.exit(9) // reviews
     }
+  }
+  fillAccounts(transactions) {
+    let accounts = []
+    for (let tx of transactions) {
+      accounts.push(this.accountDoc(tx.from))
+      accounts.push(this.accountDoc(tx.to))
+    }
+    return accounts
+  }
+  accountDoc(address) {
+    return { address, balance: 0 }
   }
   writeBlockToDB(blockData) {
     console.log('Writing block to db')
+
     let transactions = blockData.transactions
     delete blockData.transactions
     blockData.txs = transactions.length
-    transactions.map(item => {
+    transactions = transactions.map(item => {
       item.timestamp = blockData.timestamp
+      return item
     })
+    let accounts = this.fillAccounts(transactions)
+
     this.Blocks.insertOne(blockData, (err, res) => {
       if (!err) {
         this.Txs.insertMany(transactions, (err, res) => {
           if (!err) {
-            if (!('quiet' in this.config && this.config.quiet === true)) {
-              console.log(
-                'DB successfully written for block number ' +
-                  blockData.number.toString()
-              )
-            }
+            this.Accounts.insertMany(accounts, (err, res) => {
+              if (!err) {
+                if (!('quiet' in this.config && this.config.quiet === true)) {
+                  console.log(
+                    'DB successfully written for block number ' +
+                      blockData.number.toString()
+                  )
+                }
+              } else {
+                if (err.code === 11000) {
+                  console.log('DUP accounts ' + err)
+                } else {
+                  console.log('Error: Aborted saving accounts ' + err)
+                }
+              }
+            })
           } else {
             if (err.code === 11000) {
               console.log('DUP transactions ' + err)
@@ -188,15 +219,9 @@ class SaveBlocks {
   }
 
   patchBlocks() {
-    /*     const web3 = new Web3(
-      new Web3.providers.HttpProvider(
-        'http://' + this.config.node + ':' + this.config.port
-      )
-    ) */
-    let web3 = this.web3
     // number of blocks should equal difference in block numbers
     let firstBlock = 0
-    let lastBlock = web3.eth.blockNumber
+    let lastBlock = this.web3.eth.blockNumber
     this.blockIter(firstBlock, lastBlock)
   }
 

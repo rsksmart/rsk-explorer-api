@@ -33,7 +33,6 @@ export class DataCollector {
       this[name] = this.db.collection(collectionName)
   }
   getItem(params) {
-    console.log(this.items)
     let key = params.key || params[this._keyName]
     if (key) return this.items[key]
   }
@@ -94,10 +93,11 @@ export class DataCollector {
 }
 
 export class DataCollectorItem {
-  constructor(collection, key) {
+  constructor(collection, key, parent) {
     this.db = collection
     this.key = key
     this.publicActions = {}
+    this.parent = parent
   }
   paginator(query, params) {
     return this.db.count(query).then(total => {
@@ -151,18 +151,29 @@ export class DataCollectorItem {
         return { DATA }
       })
   }
-  getPrevNext(params, query, queryCount, sort) {
-    params.skip = 0
-    params.perPage = 3
-    return this.paginator(queryCount, params).then(pages => {
-      params.TOTAL = pages.total
-      params.page = 1
-      return this._findPages(query, params, sort).then(res => {
-        if (res)
-          if (res.length === 1) return this._formatPrevNext(false, res[0])
-          else return this._formatPrevNext(...res)
-      })
+  getPrevNext(params, query, queryP, queryN, sort) {
+    return this._findPN(query, sort).then(DATA => {
+      if (DATA) {
+        let jsonData = JSON.stringify(DATA)
+        return this._findPN(queryP, sort).then(PREV => {
+          if (jsonData == JSON.stringify(PREV)) PREV = null
+          return this._findPN(queryN, sort).then(NEXT => {
+            if (jsonData == JSON.stringify(NEXT)) NEXT = null
+            return { DATA, NEXT, PREV }
+          })
+        })
+      }
     })
+  }
+  _findPN(query, sort) {
+    return this.db
+      .find(query)
+      .sort(sort)
+      .limit(1)
+      .toArray()
+      .then(res => {
+        return res[0]
+      })
   }
   _findPages(query, PAGES, sort) {
     return this.db
