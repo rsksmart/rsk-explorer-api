@@ -113,7 +113,7 @@ class Tx extends DataCollectorItem {
       getTransactions: params => {
         return this.getPageData({}, params, { _id: -1 })
       },
-      getTransaction: params => {
+      getTransaction2: params => {
         let hash = params.hash
         return this.getPrevNext(
           params,
@@ -122,6 +122,35 @@ class Tx extends DataCollectorItem {
           {},
           { blockNumber: 1, transactionIndex: 1 }
         )
+      },
+      getTransaction: params => {
+        let hash = params.hash
+        return this.db.findOne({ hash: { $eq: hash } }).then(tx => {
+          if (!tx) return
+
+          return this.getPrevNext(
+            params,
+            { hash: hash },
+            {
+              $or: [
+                { transactionIndex: { $gt: tx.transactionIndex } },
+                { blockNumber: { $gte: tx.blockNumber } }
+              ]
+            },
+            {
+              $and: [
+                { transactionIndex: { $lt: tx.transactionIndex } },
+                { blockNumber: { $lte: tx.blockNumber } }
+              ]
+            },
+            { blockNumber: -1, transactionIndex: -1 }
+          ).then(res => {
+          //FIX IT
+          res.NEXT = null
+          res.PREV = null
+          return res
+          })
+        })
       },
       getBlockTransactions: params => {
         let blockNumber = params.blockNumber
