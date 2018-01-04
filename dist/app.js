@@ -105,6 +105,7 @@ const formatRes = (action, result, req, error) => {
   let pages;
   let next;
   let prev;
+  let parentData;
   if (!result && !error) error = errors.EMPTY_RESULT;
   if (error) {
     error = formatError(error);
@@ -113,9 +114,10 @@ const formatRes = (action, result, req, error) => {
     pages = result.PAGES || null;
     next = result.NEXT || null;
     prev = result.PREV || null;
+    parentData = result.PARENT_DATA || null;
   }
   if (!data && !error) error = formatError(errors.EMPTY_RESULT);
-  return { action, data, req, pages, error, prev, next };
+  return { action, data, req, pages, error, prev, next, parentData };
 };
 
 const formatError = error => {

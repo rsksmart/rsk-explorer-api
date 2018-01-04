@@ -37,8 +37,8 @@ class DataCollector {
       }, 1000);
     }
   }
-  setCollection(collectionName) {
-    if (collectionName) this.collection = this.db.collection(collectionName);
+  setCollection(collectionName, name = 'collection') {
+    if (collectionName && !this[name]) this[name] = this.db.collection(collectionName);
   }
   getItem(params) {
     let key = params.key || params[this._keyName];
@@ -49,7 +49,13 @@ class DataCollector {
     return new Promise((resolve, reject) => {
       if (!action) reject('Missing action');
       if (!params) reject('No params provided');
-      item = item || this.getItem(params);
+      if (item === '*') {
+        //find item
+        item = null;
+        item = this.searchItemByAction(action);
+      } else {
+        item = item || this.getItem(params);
+      }
       if (action && item) {
         let method = item.publicActions[action];
         if (method) {
@@ -58,6 +64,12 @@ class DataCollector {
       }
       reject('Unknown action or bad params requested');
     });
+  }
+  searchItemByAction(action) {
+    for (let i in this.items) {
+      let item = this.items[i];
+      if (item.publicActions[action]) return item;
+    }
   }
   addItem(collectionName, key, itemClass) {
     if (collectionName && key) {
@@ -90,10 +102,11 @@ class DataCollector {
 
 exports.DataCollector = DataCollector;
 class DataCollectorItem {
-  constructor(collection, key) {
+  constructor(collection, key, parent) {
     this.db = collection;
     this.key = key;
     this.publicActions = {};
+    this.parent = parent;
   }
   paginator(query, params) {
     return this.db.count(query).then(total => {
@@ -144,14 +157,23 @@ class DataCollectorItem {
       return { DATA };
     });
   }
-  getPrevNext(params, query, queryCount, sort) {
-    params.skip = 0;
-    params.perPage = 3;
-    return this.paginator(queryCount, params).then(pages => {
-      params.TOTAL = pages.total;
-      return this._findPages(query, params, sort).then(res => {
-        if (res) return this._formatPrevNext(...res);
-      });
+  getPrevNext(params, query, queryP, queryN, sort) {
+    return this._findPN(query, sort).then(DATA => {
+      if (DATA) {
+        let jsonData = JSON.stringify(DATA);
+        return this._findPN(queryP, sort).then(PREV => {
+          if (jsonData == JSON.stringify(PREV)) PREV = null;
+          return this._findPN(queryN, sort).then(NEXT => {
+            if (jsonData == JSON.stringify(NEXT)) NEXT = null;
+            return { DATA, NEXT, PREV };
+          });
+        });
+      }
+    });
+  }
+  _findPN(query, sort) {
+    return this.db.find(query).sort(sort).limit(1).toArray().then(res => {
+      return res[0];
     });
   }
   _findPages(query, PAGES, sort) {
