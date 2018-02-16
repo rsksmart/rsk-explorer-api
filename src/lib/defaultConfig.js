@@ -21,16 +21,7 @@ export default {
     perPage: 50
   },
   blocks: {
-    blocks: [
-      {
-        start: 0,
-        end: 'latest'
-      }
-    ],
     output: '.',
-    quiet: false,
-    terminateAtExistingDB: false,
-    listenOnly: true,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     accountsCollection: 'accounts'

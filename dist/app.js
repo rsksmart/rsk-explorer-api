@@ -57,7 +57,7 @@ _db2.default.then(db => {
   });
 
   io.on('connection', socket => {
-    io.emit('open', { time: Date.now() });
+    io.emit('open', { time: Date.now(), settings: publicSettings() });
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()));
     io.emit('data', formatRes('tokens', erc20.getTokens()));
     socket.on('message', () => {});
@@ -99,6 +99,10 @@ _db2.default.then(db => {
     });
   });
 });
+
+const publicSettings = () => {
+  return _config2.default.publicSettings;
+};
 
 const formatRes = (action, result, req, error) => {
   let data;

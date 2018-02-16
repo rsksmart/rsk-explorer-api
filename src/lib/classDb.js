@@ -8,12 +8,12 @@ class Db {
     this.url = 'mongodb://' + this.server + ':' + this.port + '/' + this.db
     this.client = null
 
-    this.connect = function() {
+    this.connect = function () {
       if (!this.client) this.client = MongoClient.connect(this.url)
       return this.client
     }
 
-    this.db = async function() {
+    this.db = async function () {
       let client = await this.connect()
       let db = await client.db(this.dbName)
       return db

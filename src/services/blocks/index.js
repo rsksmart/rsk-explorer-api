@@ -47,8 +47,7 @@ dataSource.then(db => {
           txCollection,
           accountsCollection
         )
-        exporter.grabBlocks()
-        exporter.patchBlocks()
+        exporter.start()
       })
     })
   })

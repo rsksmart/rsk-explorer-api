@@ -45,8 +45,7 @@ _db2.default.then(db => {
         unique: true
       }]).then(accountsCollection => {
         const exporter = new _Blocks2.default(config, blocksCollection, txCollection, accountsCollection);
-        exporter.grabBlocks();
-        exporter.patchBlocks();
+        exporter.start();
       });
     });
   });

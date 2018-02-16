@@ -34,11 +34,11 @@ dataSource.then(db => {
   })
 
   io.on('connection', socket => {
-    io.emit('open', { time: Date.now() })
+    io.emit('open', { time: Date.now(), settings: publicSettings() })
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
     io.emit('data', formatRes('tokens', erc20.getTokens()))
-    socket.on('message', () => {})
-    socket.on('disconnect', () => {})
+    socket.on('message', () => { })
+    socket.on('disconnect', () => { })
     socket.on('error', err => {
       console.log(err)
     })
@@ -82,6 +82,14 @@ dataSource.then(db => {
     })
   })
 })
+
+
+
+
+const publicSettings = () => {
+  return config.publicSettings
+}
+
 
 const formatRes = (action, result, req, error) => {
   let data

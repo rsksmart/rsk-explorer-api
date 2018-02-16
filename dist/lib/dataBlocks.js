@@ -46,7 +46,7 @@ class Blocks extends _dataCollector.DataCollector {
   setLastBlocks() {
     this.collection.find().sort({ number: -1 }).limit(this.lastLimit).toArray((err, blocks) => {
       if (err) console.log(err);else {
-        this.txCollection.find().sort({ _id: -1 }).limit(this.lastLimit).toArray((err, txs) => {
+        this.txCollection.find().sort({ blockNumber: -1, transactionIndex: -1 }).limit(this.lastLimit).toArray((err, txs) => {
           if (err) console.log(err);else {
             this.updateLastBlocks(blocks, txs);
           }

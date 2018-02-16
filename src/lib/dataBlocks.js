@@ -24,14 +24,14 @@ class Blocks extends DataCollector {
     this.items['block'] = this.Block
     this.items['tx'] = this.Tx
   }
-  tick() {
+  tick () {
     this.setLastBlocks()
   }
 
-  run(action, params) {
+  run (action, params) {
     return this.itemPublicAction(action, params, '*')
   }
-  setLastBlocks() {
+  setLastBlocks () {
     this.collection
       .find()
       .sort({ number: -1 })
@@ -41,7 +41,7 @@ class Blocks extends DataCollector {
         else {
           this.txCollection
             .find()
-            .sort({ _id: -1 })
+            .sort({ blockNumber: -1, transactionIndex: -1 })
             .limit(this.lastLimit)
             .toArray((err, txs) => {
               if (err) console.log(err)
@@ -53,13 +53,13 @@ class Blocks extends DataCollector {
       })
   }
 
-  getLastBlocks() {
+  getLastBlocks () {
     let blocks = this.lastBlocks
     let transactions = this.lastTransactions
     return this.formatData({ blocks, transactions })
   }
 
-  updateLastBlocks(blocks, transactions) {
+  updateLastBlocks (blocks, transactions) {
     this.lastBlocks = blocks
     this.lastTransactions = transactions
     let latest
@@ -145,10 +145,10 @@ class Tx extends DataCollectorItem {
             },
             { blockNumber: -1, transactionIndex: -1 }
           ).then(res => {
-          //FIX IT
-          res.NEXT = null
-          res.PREV = null
-          return res
+            //FIX IT
+            res.NEXT = null
+            res.PREV = null
+            return res
           })
         })
       },
@@ -178,8 +178,8 @@ class Account extends DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent)
     this.publicActions = {
-      getAccount: params => {},
-      getAccounts: params => {}
+      getAccount: params => { },
+      getAccounts: params => { }
     }
   }
 }
