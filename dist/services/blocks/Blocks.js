@@ -8,6 +8,10 @@ var _web = require('web3');
 
 var _web2 = _interopRequireDefault(_web);
 
+var _Logger = require('../../lib/Logger');
+
+var _Logger2 = _interopRequireDefault(_Logger);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class SaveBlocks {
@@ -20,47 +24,41 @@ class SaveBlocks {
     this.requestingBlocks = {};
     this.blocksProcessSize = 30;
     this.blocksQueue = -1;
+    this.log = (0, _Logger2.default)('Blocks');
   }
   web3Connect() {
     return new _web2.default(new _web2.default.providers.HttpProvider('http://' + this.config.node + ':' + this.config.port));
   }
   checkDB() {
-    console.log('checkig db');
+    this.log.info('checkig db');
     return this.getBlockAndSave('latest').then(blockData => {
       return this.checkDbBlocks().then(missingBlocks => {
         this.blocksQueue = missingBlocks;
         return this.processAllQueues();
       });
     }).catch(err => {
-      console.log('Error getting latest block');
+      this.log.error('Error getting latest block');
     });
   }
 
   listenBlocks() {
-    console.log('Listen to blocks...');
+    this.log.info('Listen to blocks...');
     this.web3.reset();
     let filter = this.web3.eth.filter({ fromBlock: 'latest', toBlock: 'latest' });
     filter.watch((error, log) => {
       if (error) {
-        console.log('Error: ' + error);
+        this.log.error('Error: ' + error);
       } else if (log === null) {
-        console.log('Warning: null block hash');
+        this.log.warn('Warning: null block hash');
       } else {
         let blockNumber = log.blockNumber || null;
         if (blockNumber) {
-          console.log('new block!', blockNumber);
+          this.log.debug('new block!', blockNumber);
           this.getBlocksFrom(blockNumber);
         } else {
-          console.log('Error, log.blockNumber is empty');
+          this.log.warn('Error, log.blockNumber is empty');
         }
       }
-    });
-  }
-  init() {
-    console.log('INIT');
-    this.checkDB().then(res => {
-      console.log('db checked!');
-      this.listenBlocks();
     });
   }
   processAllQueues() {
@@ -70,8 +68,9 @@ class SaveBlocks {
         Promise.all(pending).then(values => {
           this.processAllQueues();
         }, reason => {
-          console.log(reason);
-          this.init(); // review
+          this.log.error(reason);
+          this.checkDB();
+          this.listenBlocks();
         });
       } else {
         resolve();
@@ -82,7 +81,7 @@ class SaveBlocks {
     if (this.blocksQueue > -1) {
       let pending = [];
       for (let i = 0; i <= this.blocksProcessSize; i++) {
-        pending.push(this.getBlockIfNotPresent(this.blocksQueue));
+        pending.push(this.getBlockIfNotExistsInDb(this.blocksQueue));
         this.blocksQueue--;
       }
       return pending;
@@ -100,7 +99,7 @@ class SaveBlocks {
         }
       });
     }).catch(err => {
-      console.log(err);
+      this.log.error(err);
     });
   }
   checkBlock(blockNumber) {
@@ -108,10 +107,10 @@ class SaveBlocks {
       return doc;
     });
   }
-  getBlockIfNotPresent(blockNumber) {
+  getBlockIfNotExistsInDb(blockNumber) {
     return this.checkBlock(blockNumber).then(block => {
       if (!block) {
-        console.log('missing block ' + blockNumber);
+        this.log.debug('missing block ' + blockNumber);
         return this.getBlockAndSave(blockNumber);
       }
     });
@@ -128,7 +127,7 @@ class SaveBlocks {
 
       if (this.web3.isConnected()) {
         if (!this.requestingBlocks[blockNumber]) {
-          console.log('Getting Block: ', blockNumber);
+          this.log.debug('Getting Block: ', blockNumber);
           this.requestingBlocks[blockNumber] = true;
           this.web3.eth.getBlock(blockNumber, true, (err, blockData) => {
             if (err) {
@@ -137,7 +136,7 @@ class SaveBlocks {
               if (!blockData) {
                 reject('Warning: null block data received from ' + blockNumber);
               } else {
-                console.log('newBlockData', blockData.number, blockData.timestamp);
+                this.log.debug('New Block Data', blockData.number, blockData.timestamp);
                 delete this.requestingBlocks[blockData.number];
                 resolve(this.writeBlockToDB(blockData));
               }
@@ -178,7 +177,7 @@ class SaveBlocks {
   insertAccounts(accounts) {
     for (let account of accounts) {
       this.Accounts.insertOne(account).then(res => {
-        console.log(this.dbInsertMsg(res, accounts, 'accounts'));
+        this.log.info(this.dbInsertMsg(res, accounts, 'accounts'));
       }).catch(err => {
         // hide duplicate accounts log 
         if (err.code !== 11000) console.log('Errror inserting account ' + err);
@@ -187,7 +186,6 @@ class SaveBlocks {
   }
 
   writeBlockToDB(blockData) {
-    console.log('write to db');
     return new Promise((resolve, reject) => {
       if (!blockData) reject('no blockdata');
       let transactions = this.getBlockTransactions(blockData);
@@ -196,16 +194,16 @@ class SaveBlocks {
       let accounts = this.extractTransactionsAccounts(transactions);
       // insert block
       this.Blocks.insertOne(blockData).then(res => {
-        console.log('Inserted Block ' + blockData.number);
+        this.log.info('Inserted Block ' + blockData.number);
 
         // insert transactions
         if (transactions.length) {
           this.Txs.insertMany(transactions).then(res => {
-            console.log(this.dbInsertMsg(res, transactions, 'transactions'));
+            this.log.debug(this.dbInsertMsg(res, transactions, 'transactions'));
             resolve(blockData);
           }).catch(err => {
             // insert txs error
-            console.log('Error inserting txs ' + err);
+            this.log.error('Error inserting txs ' + err);
           });
         }
 
@@ -214,17 +212,17 @@ class SaveBlocks {
       }).catch(err => {
         // insert block error
         if (err.code === 11000) {
-          console.log('Skip: Duplicate key ' + blockData.number.toString());
+          this.log.debug('Skip: Duplicate key ' + blockData.number.toString());
           resolve(blockData);
         } else {
-          console.log('Error: Aborted due to error on ' + 'block number ' + blockData.number.toString() + ': ' + err);
+          this.log.error('Error: Aborted due to error on ' + 'block number ' + blockData.number.toString() + ': ' + err);
           process.exit(9);
         }
       });
     });
   }
   getBlocksFrom(blockNumber) {
-    console.log('get block from ', blockNumber);
+    this.log.debug('get block from ', blockNumber);
     this.checkBlock(blockNumber).then(block => {
       if (!block) {
         this.getBlockAndSave(blockNumber);
@@ -238,7 +236,7 @@ class SaveBlocks {
       this.checkDB();
       this.listenBlocks();
     } else {
-      console.log('Web3 is not connected!');
+      this.log.warn('Web3 is not connected!');
       this.start();
     }
   }
@@ -253,15 +251,15 @@ class SaveBlocks {
             let block = sync.currentBlock;
             this.getBlocksFrom(block);
           } else {
-            console.log('NO SYNC');
-            this.init();
+            this.checkDB();
+            this.listenBlocks();
           }
         } else {
-          console.log('syncing error', err);
+          this.log.error('syncing error', err);
         }
       });
     } else {
-      console.log('Web3 is not connected!');
+      this.log.warn('Web3 is not connected!');
       this.start();
     }
   }
