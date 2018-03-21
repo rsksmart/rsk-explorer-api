@@ -11,12 +11,15 @@ function web3Connect () {
 
 const web3 = web3Connect()
 
+const test = (err, sync) => { console.log(err, sync, 'hola') }
+
 if (web3.isConnected()) {
   console.log('web3 is connected')
-  web3.eth.isSyncing(function (err, sync) {
-    console.log('callback')
-    console.log(err, sync)
-  })
+  web3.eth.isSyncing(test(arguments[2]))
+  /*   web3.eth.isSyncing((err, sync) => {
+      console.log('callback')
+      console.log(err, sync)
+    }) */
 } else {
   console.log('web3 is not connected')
 }

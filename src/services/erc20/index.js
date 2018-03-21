@@ -2,6 +2,8 @@ import Web3 from 'web3'
 import config from '../../lib/config.js'
 import dataSource from '../../lib/db.js'
 import Exporter from './Erc20'
+import Logger from '../../lib/Logger'
+const log = Logger('Erc20_Service')
 
 const provider = new Web3.providers.HttpProvider(
   'http://' + config.erc20.node + ':' + config.erc20.port
@@ -11,7 +13,7 @@ const tokens = config.erc20.tokens || null
 const exporters = {}
 
 if (!tokens) {
-  console.log('There are no tokens in config file')
+  log.warn('There are no tokens in config file')
   process.exit(1)
 }
 
@@ -19,14 +21,14 @@ let erc20Config = Object.assign({}, config.erc20)
 erc20Config.provider = provider
 
 dataSource.then(db => {
-  console.log('Database Connected')
+  log.debug('Database Connected')
   const tokensCollection = db.collection(config.erc20.tokenCollection)
 
   for (let t in tokens) {
     let token = tokens[t]
     let tokenConfig = formatToken(token)
     if (tokenConfig) {
-      console.log('TOKEN: ' + JSON.stringify(token))
+      log.info('TOKEN: ' + JSON.stringify(token))
       let tokenDoc = Object.assign({}, token)
       tokensCollection
         .update(
@@ -56,7 +58,7 @@ const formatToken = token => {
     }
     return newToken
   } else {
-    console.log('Invalid token configuration')
+    log.warn('Invalid token configuration')
   }
 }
 
@@ -68,9 +70,9 @@ const checkToken = token => {
 
 const createTokenCollection = async (db, token) => {
   const name = config.erc20.dbPrefix + token.address
-  console.log('Creating collection: ' + name)
+  log.info('Creating collection: ' + name)
   const collection = db.collection(name)
-  console.log('Creating indexes')
+  log.info('Creating indexes')
   let doc = await collection.createIndexes([
     {
       key: { balance: 1 }
@@ -86,13 +88,13 @@ const createTokenCollection = async (db, token) => {
     }
   ])
   if (!doc.ok) {
-    console.log('Error creating indexes')
+    log.error('Error creating indexes')
     // process.exit(1)
   }
   return collection
 }
 
 process.on('unhandledRejection', err => {
-  console.error(err)
+  log.error(err)
   process.exit(1)
 })
