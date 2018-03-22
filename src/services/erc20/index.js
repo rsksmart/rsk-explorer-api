@@ -1,6 +1,6 @@
 import Web3 from 'web3'
 import config from '../../lib/config.js'
-import dataSource from '../../lib/db.js'
+import dataSource from '../../lib/dataSource.js'
 import Exporter from './Erc20'
 import Logger from '../../lib/Logger'
 const log = Logger('Erc20_Service')

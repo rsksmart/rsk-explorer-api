@@ -23,5 +23,17 @@ class Db {
     this.connect()
   }
 }
+export function indexesError (collectionName) {
+  console.log('Error creating' + collectionName + 'indexes')
+  process.exit(9)
+}
+
+export function createCollection (db, collectionName, indexes) {
+  let collection = db.collection(collectionName)
+  return collection.createIndexes(indexes).then(doc => {
+    if (!doc.ok) indexesError(collectionName)
+    return collection
+  })
+}
 
 export default Db
