@@ -12,7 +12,7 @@ class SaveBlocks {
     this.requestingBlocks = {}
     this.blocksProcessSize = 30
     this.blocksQueue = -1
-    this.log = Logger('Blocks')
+    this.log = Logger('Blocks', config.log)
   }
   web3Connect () {
     return new Web3(
@@ -39,13 +39,13 @@ class SaveBlocks {
     let filter = this.web3.eth.filter({ fromBlock: 'latest', toBlock: 'latest' })
     filter.watch((error, log) => {
       if (error) {
-        this.log.error('Error: ' + error)
+        this.log.error('Filter Watch Error: ' + error)
       } else if (log === null) {
         this.log.warn('Warning: null block hash')
       } else {
         let blockNumber = log.blockNumber || null
         if (blockNumber) {
-          this.log.debug('new block!', blockNumber)
+          this.log.debug('New Block:', blockNumber)
           this.getBlocksFrom(blockNumber)
         } else {
           this.log.warn('Error, log.blockNumber is empty')
@@ -143,6 +143,10 @@ class SaveBlocks {
           })
         }
       }
+    }).catch((err) => {
+      this.requestingBlocks[blockNumber] = false
+      this.log.error(err)
+      this.start()
     })
   }
 
@@ -229,7 +233,7 @@ class SaveBlocks {
     })
   }
   getBlocksFrom (blockNumber) {
-    this.log.debug('get block from ', blockNumber)
+    this.log.debug('Getting block from ', blockNumber)
     this.checkBlock(blockNumber).then((block) => {
       if (!block) {
         this.getBlockAndSave(blockNumber)
@@ -239,33 +243,29 @@ class SaveBlocks {
     })
   }
   start () {
-    if (this.web3.isConnected()) {
-      this.checkDB()
-      this.listenBlocks()
-    } else {
-      this.log.warn('Web3 is not connected!')
-      this.start()
-    }
-
-  }
-  startOLD () {
-    if (this.web3.isConnected()) {
-      this.web3.eth.isSyncing((err, sync) => {
-        if (!err) {
-          if (sync === true) {
-            this.web3.reset(true)
-            this.checkDB()
-          } else if (sync) {
-            let block = sync.currentBlock
-            this.getBlocksFrom(block)
+    if (this.web3 && this.web3.isConnected()) {
+      // node is syncing
+      if (this.web3.syncing) {
+        this.web3.eth.isSyncing((err, sync) => {
+          if (!err) {
+            if (sync === true) {
+              this.web3.reset(true)
+              this.checkDB()
+            } else if (sync) {
+              let block = sync.currentBlock
+              this.getBlocksFrom(block)
+            } else {
+              this.checkDB()
+              this.listenBlocks()
+            }
           } else {
-            this.checkDB()
-            this.listenBlocks()
+            this.log.error('syncing error', err)
           }
-        } else {
-          this.log.error('syncing error', err)
-        }
-      })
+        })
+      } else { // node is not syncing
+        this.checkDB()
+        this.listenBlocks()
+      }
     } else {
       this.log.warn('Web3 is not connected!')
       this.start()
@@ -282,9 +282,7 @@ class SaveBlocks {
     if (dataType) msg.push(dataType)
     return msg.join(' ')
   }
-
-
-
 }
+
 
 export default SaveBlocks

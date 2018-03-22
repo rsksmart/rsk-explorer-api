@@ -11,22 +11,28 @@ export default {
     node: 'localhost',
     port: 4444
   },
+  log: {
+    dir: "/var/log/rsk-explorer"
+  },
   db: {
     server: 'localhost',
     port: 27017,
     database: 'blockDB'
   },
   api: {
+    log: {},
     lastBlocks: 50,
     perPage: 50
+
   },
   blocks: {
-    output: '.',
+    log: {},
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     accountsCollection: 'accounts'
   },
   erc20: {
+    log: {},
     dbPrefix: 'erc20_',
     tokenCollection: 'erc20Tokens',
     logFormat: 'combined',

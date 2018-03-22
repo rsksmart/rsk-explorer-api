@@ -10,7 +10,7 @@ class Exporter {
     this.web3.setProvider(config.provider)
 
     const logName = this.config.name || 'Erc20-' + this.config.tokenShortName
-    this.log = Logger(logName)
+    this.log = Logger(logName, config.log)
 
     this.fromBlock = this.config.exportStartBlock || 0
     this.toBlock = this.config.exportEndBlock || 'latest'

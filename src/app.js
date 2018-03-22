@@ -4,15 +4,17 @@ import dataSource from './lib/db'
 import Blocks from './lib/dataBlocks'
 import Erc20 from './lib/dataErc20'
 import * as errors from './lib/errors'
+import Logger from './lib/Logger'
 
 const port = config.server.port || '3000'
+const log = Logger('explorer-api', config.api.log)
 
 dataSource.then(db => {
-  console.log('Database connected')
+  log.info('Database connected')
   const io = new IO(port)
 
   io.httpServer.on('listening', () => {
-    console.log('Server listen on port ' + port)
+    log.info('Server listen on port ' + port)
   })
 
   // data collectors
@@ -40,7 +42,7 @@ dataSource.then(db => {
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
-      console.log(err)
+      log.error('Socket Error: ' + err)
     })
 
     socket.on('data', payload => {
@@ -69,7 +71,7 @@ dataSource.then(db => {
               io.emit('data', formatRes(resAction, result, payload))
             })
             .catch(err => {
-              console.log(err)
+              log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err)
               io.emit(
                 'error',
                 formatRes(resAction, null, payload, errors.INVALID_REQUEST)
@@ -117,6 +119,6 @@ const formatError = error => {
 }
 
 process.on('unhandledRejection', err => {
-  console.error(err)
+  log.error(err)
   // process.exit(1)
 })
