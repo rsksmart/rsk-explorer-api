@@ -1,16 +1,16 @@
 'use strict';
 
-var _web = require('web3');
-
-var _web2 = _interopRequireDefault(_web);
-
 var _config = require('../../lib/config.js');
 
 var _config2 = _interopRequireDefault(_config);
 
-var _db = require('../../lib/db.js');
+var _dataSource = require('../../lib/dataSource.js');
 
-var _db2 = _interopRequireDefault(_db);
+var _dataSource2 = _interopRequireDefault(_dataSource);
+
+var _Db = require('../../lib/Db');
+
+var dataBase = _interopRequireWildcard(_Db);
 
 var _Erc = require('./Erc20');
 
@@ -20,13 +20,17 @@ var _Logger = require('../../lib/Logger');
 
 var _Logger2 = _interopRequireDefault(_Logger);
 
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const log = (0, _Logger2.default)('Erc20_Service');
+let config = Object.assign({}, _config2.default.erc20);
 
-const provider = new _web2.default.providers.HttpProvider('http://' + _config2.default.erc20.node + ':' + _config2.default.erc20.port);
-const names = _config2.default.erc20.names || {};
-const tokens = _config2.default.erc20.tokens || null;
+const log = (0, _Logger2.default)('Erc20_Service', config.log);
+config.Logger = log;
+
+const names = config.names || {};
+const tokens = config.tokens || null;
 const exporters = {};
 
 if (!tokens) {
@@ -34,32 +38,41 @@ if (!tokens) {
   process.exit(1);
 }
 
-let erc20Config = Object.assign({}, _config2.default.erc20);
-erc20Config.provider = provider;
-
-_db2.default.then(db => {
+_dataSource2.default.then(async db => {
   log.debug('Database Connected');
-  const tokensCollection = db.collection(_config2.default.erc20.tokenCollection);
+  const tokensCollection = await dataBase.createCollection(db, config.tokenCollection);
 
   for (let t in tokens) {
     let token = tokens[t];
     let tokenConfig = formatToken(token);
     if (tokenConfig) {
       log.info('TOKEN: ' + JSON.stringify(token));
-      let tokenDoc = Object.assign({}, token);
       tokensCollection.update({ _id: token.address }, {
         $set: token
-      }, { upsert: true }).then(() => {
-        tokenConfig = Object.assign(tokenConfig, erc20Config);
-        createTokenCollection(db, token).then(collection => {
-          exporters[token.address] = new _Erc2.default(tokenConfig, collection);
-        });
+      }, { upsert: true }).then(async () => {
+        tokenConfig = Object.assign(tokenConfig, config);
+        let collectionName = config.dbPrefix + token.address;
+        log.info('Creating collection: ' + collectionName);
+        let collection = await tokenCollection(db, collectionName);
+        exporters[token.address] = new _Erc2.default(tokenConfig, collection);
       });
     }
   }
 });
 
-const formatToken = token => {
+async function tokenCollection(db, name) {
+  return dataBase.createCollection(db, name, [{
+    key: { balance: 1 }
+  }, {
+    key: { timestamp: 1 }
+  }, {
+    key: { 'args._from': 1 }
+  }, {
+    key: { 'args._to': 1 }
+  }]);
+}
+
+function formatToken(token) {
   token = checkToken(token);
   if (token) {
     let newToken = {};
@@ -71,34 +84,13 @@ const formatToken = token => {
   } else {
     log.warn('Invalid token configuration');
   }
-};
+}
 
-const checkToken = token => {
+function checkToken(token) {
   if (token.address) {
     return token;
   }
-};
-
-const createTokenCollection = async (db, token) => {
-  const name = _config2.default.erc20.dbPrefix + token.address;
-  log.info('Creating collection: ' + name);
-  const collection = db.collection(name);
-  log.info('Creating indexes');
-  let doc = await collection.createIndexes([{
-    key: { balance: 1 }
-  }, {
-    key: { timestamp: 1 }
-  }, {
-    key: { 'args._from': 1 }
-  }, {
-    key: { 'args._to': 1 }
-  }]);
-  if (!doc.ok) {
-    log.error('Error creating indexes');
-    // process.exit(1)
-  }
-  return collection;
-};
+}
 
 process.on('unhandledRejection', err => {
   log.error(err);

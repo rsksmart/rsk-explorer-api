@@ -8,28 +8,27 @@ var _web = require('web3');
 
 var _web2 = _interopRequireDefault(_web);
 
-var _Logger = require('../../lib/Logger');
+var _web3Connect = require('../../lib/web3Connect');
 
-var _Logger2 = _interopRequireDefault(_Logger);
+var _web3Connect2 = _interopRequireDefault(_web3Connect);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 class Exporter {
-  constructor(config, db) {
-    this.config = config;
+  constructor(options, db) {
+    this.options = options;
     this.db = db;
 
-    this.web3 = new _web2.default();
-    this.web3.setProvider(config.provider);
+    this.web3 = (0, _web3Connect2.default)(options.node, options.port);
 
-    const logName = this.config.name || 'Erc20-' + this.config.tokenShortName;
-    this.log = (0, _Logger2.default)(logName);
+    const logName = this.options.name || 'Erc20-' + this.options.tokenShortName;
+    this.log = options.Logger || console;
 
-    this.fromBlock = this.config.exportStartBlock || 0;
-    this.toBlock = this.config.exportEndBlock || 'latest';
-    this.logTag = this.config.tokenShortName || this.config.tokenAddress;
+    this.fromBlock = this.options.exportStartBlock || 0;
+    this.toBlock = this.options.exportEndBlock || 'latest';
+    this.logTag = this.options.tokenShortName || this.options.tokenAddress;
 
-    this.contract = this.web3.eth.contract(this.config.erc20ABI).at(this.config.tokenAddress);
+    this.contract = this.web3.eth.contract(this.options.erc20ABI).at(this.options.tokenAddress);
     this.allEvents = this.contract.allEvents({
       fromBlock: this.toBlock,
       toBlock: this.toBlock

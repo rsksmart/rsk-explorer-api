@@ -1,8 +1,8 @@
 'use strict';
 
-var _db = require('../../lib/db.js');
+var _dataSource = require('../../lib/dataSource.js');
 
-var _db2 = _interopRequireDefault(_db);
+var _dataSource2 = _interopRequireDefault(_dataSource);
 
 var _config = require('../../lib/config');
 
@@ -12,57 +12,29 @@ var _Blocks = require('./Blocks');
 
 var _Blocks2 = _interopRequireDefault(_Blocks);
 
+var _Db = require('../../lib/Db');
+
+var dataBase = _interopRequireWildcard(_Db);
+
+var _Logger = require('../../lib/Logger');
+
+var _Logger2 = _interopRequireDefault(_Logger);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const config = Object.assign({}, _config2.default.blocks);
+const log = (0, _Logger2.default)('Blocks', config.log);
 
-_db2.default.then(db => {
-  console.log('Using configuration:');
-  console.log(config);
-
-  createCollection(db, config.blocksCollection, [{
-    key: { number: 1 },
-    unique: true
-  }]).then(blocksCollection => {
-    createCollection(db, config.txCollection, [{
-      key: { hash: 1 },
-      unique: true
-    }, {
-      key: {
-        blockNumber: 1,
-        transactionIndex: 1
-      },
-      name: 'blockTrasaction'
-    }, {
-      key: { from: 1 },
-      name: 'fromIndex'
-    }, {
-      key: { to: 1 },
-      name: 'toIndex'
-    }]).then(txCollection => {
-      createCollection(db, config.accountsCollection, [{
-        key: { address: 1 },
-        unique: true
-      }]).then(accountsCollection => {
-        const exporter = new _Blocks2.default(config, blocksCollection, txCollection, accountsCollection);
-        exporter.start();
-      });
-    });
+_dataSource2.default.then(db => {
+  log.info('Using configuration:');
+  log.info(config);
+  config.Logger = log;
+  (0, _Blocks2.default)(config, db).then(blocks => {
+    blocks.start();
   });
 });
-
-const indexesError = collectionName => {
-  console.log('Error creating' + collectionName + 'indexes');
-  process.exit(9);
-};
-
-const createCollection = (db, collectionName, indexes) => {
-  let collection = db.collection(collectionName);
-  return collection.createIndexes(indexes).then(doc => {
-    if (!doc.ok) indexesError(collectionName);
-    return collection;
-  });
-};
 
 process.on('unhandledRejection', err => {
   console.error(err);

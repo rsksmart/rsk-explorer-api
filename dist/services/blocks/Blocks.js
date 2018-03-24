@@ -8,27 +8,75 @@ var _web = require('web3');
 
 var _web2 = _interopRequireDefault(_web);
 
-var _Logger = require('../../lib/Logger');
+var _web3Connect = require('../../lib/web3Connect');
 
-var _Logger2 = _interopRequireDefault(_Logger);
+var _web3Connect2 = _interopRequireDefault(_web3Connect);
+
+var _Db = require('../../lib/Db');
+
+var dataBase = _interopRequireWildcard(_Db);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const blocksCollections = {
+  blocksCollection: [{
+    key: { number: 1 },
+    unique: true
+  }],
+  txCollection: [{
+    key: { hash: 1 },
+    unique: true
+  }, {
+    key: {
+      blockNumber: 1,
+      transactionIndex: 1
+    },
+    name: 'blockTrasaction'
+  }, {
+    key: { from: 1 },
+    name: 'fromIndex'
+  }, {
+    key: { to: 1 },
+    name: 'toIndex'
+  }],
+  accountsCollection: [{
+    key: { address: 1 },
+    unique: true
+  }]
+};
+
+function blocks(config, db) {
+  let queue = [];
+  let log = config.Logger || console;
+  for (let c in blocksCollections) {
+    let name = config[c] || c;
+    queue.push(dataBase.createCollection(db, name, blocksCollections[c]));
+  }
+  return Promise.all(queue).then(collections => {
+    return new SaveBlocks(config, ...collections);
+  }).catch(err => {
+    log.error('Error creating collections');
+    log.error(err);
+    process.exit(9);
+  });
+}
 class SaveBlocks {
-  constructor(config, blocksCollection, txCollection, accountsCollection) {
-    this.config = config;
+  constructor(options, blocksCollection, txCollection, accountsCollection, statsCollection) {
+    this.node = options.node;
+    this.port = options.port;
     this.Blocks = blocksCollection;
     this.Txs = txCollection;
+    this.Stats = statsCollection;
     this.Accounts = accountsCollection;
-    this.web3 = this.web3Connect();
+    this.web3 = (0, _web3Connect2.default)(options.node, options.port);
     this.requestingBlocks = {};
-    this.blocksProcessSize = 30;
+    this.blocksQueueSize = options.blocksQueueSize || 30; // max blocks per queue
     this.blocksQueue = -1;
-    this.log = (0, _Logger2.default)('Blocks');
+    this.log = options.Logger || console;
   }
-  web3Connect() {
-    return new _web2.default(new _web2.default.providers.HttpProvider('http://' + this.config.node + ':' + this.config.port));
-  }
+
   checkDB() {
     this.log.info('checkig db');
     return this.getBlockAndSave('latest').then(blockData => {
@@ -37,7 +85,8 @@ class SaveBlocks {
         return this.processAllQueues();
       });
     }).catch(err => {
-      this.log.error('Error getting latest block');
+      this.log.error('Error getting latest block: ' + err);
+      process.exit();
     });
   }
 
@@ -47,13 +96,13 @@ class SaveBlocks {
     let filter = this.web3.eth.filter({ fromBlock: 'latest', toBlock: 'latest' });
     filter.watch((error, log) => {
       if (error) {
-        this.log.error('Error: ' + error);
+        this.log.error('Filter Watch Error: ' + error);
       } else if (log === null) {
         this.log.warn('Warning: null block hash');
       } else {
         let blockNumber = log.blockNumber || null;
         if (blockNumber) {
-          this.log.debug('new block!', blockNumber);
+          this.log.debug('New Block:', blockNumber);
           this.getBlocksFrom(blockNumber);
         } else {
           this.log.warn('Error, log.blockNumber is empty');
@@ -69,8 +118,7 @@ class SaveBlocks {
           this.processAllQueues();
         }, reason => {
           this.log.error(reason);
-          this.checkDB();
-          this.listenBlocks();
+          this.checkAndListen();
         });
       } else {
         resolve();
@@ -80,7 +128,7 @@ class SaveBlocks {
   processQueue() {
     if (this.blocksQueue > -1) {
       let pending = [];
-      for (let i = 0; i <= this.blocksProcessSize; i++) {
+      for (let i = 0; i < this.blocksQueueSize; i++) {
         pending.push(this.getBlockIfNotExistsInDb(this.blocksQueue));
         this.blocksQueue--;
       }
@@ -88,19 +136,10 @@ class SaveBlocks {
     }
   }
 
-  checkDbBlocks() {
-    return this.getHighDbBlock().then(lastBlock => {
-      return this.countDbBlocks().then(dbBlocks => {
-        if (lastBlock.number > dbBlocks) {
-          // missing blocks in db
-          return lastBlock.number;
-        } else {
-          return null;
-        }
-      });
-    }).catch(err => {
-      this.log.error(err);
-    });
+  async checkDbBlocks() {
+    let lastBlock = await this.getHighDbBlock();
+    let dbBlocks = await this.countDbBlocks();
+    return lastBlock.number > dbBlocks ? lastBlock.number : null;
   }
   checkBlock(blockNumber) {
     return this.Blocks.findOne({ number: blockNumber }).then(doc => {
@@ -110,7 +149,7 @@ class SaveBlocks {
   getBlockIfNotExistsInDb(blockNumber) {
     return this.checkBlock(blockNumber).then(block => {
       if (!block) {
-        this.log.debug('missing block ' + blockNumber);
+        this.log.debug('Missing block ' + blockNumber);
         return this.getBlockAndSave(blockNumber);
       }
     });
@@ -144,6 +183,10 @@ class SaveBlocks {
           });
         }
       }
+    }).catch(err => {
+      this.requestingBlocks[blockNumber] = false;
+      this.log.error(err);
+      this.start();
     });
   }
 
@@ -188,6 +231,7 @@ class SaveBlocks {
   writeBlockToDB(blockData) {
     return new Promise((resolve, reject) => {
       if (!blockData) reject('no blockdata');
+      blockData._received = Date.now();
       let transactions = this.getBlockTransactions(blockData);
       delete blockData.transactions;
       blockData.txs = transactions.length;
@@ -222,7 +266,8 @@ class SaveBlocks {
     });
   }
   getBlocksFrom(blockNumber) {
-    this.log.debug('get block from ', blockNumber);
+    if (this.requestingBlocks[blockNumber]) blockNumber--;
+    this.log.debug('Getting block from ', blockNumber);
     this.checkBlock(blockNumber).then(block => {
       if (!block) {
         this.getBlockAndSave(blockNumber);
@@ -232,38 +277,38 @@ class SaveBlocks {
     });
   }
   start() {
-    if (this.web3.isConnected()) {
-      this.checkDB();
-      this.listenBlocks();
-    } else {
-      this.log.warn('Web3 is not connected!');
-      this.start();
-    }
-  }
-  startOLD() {
-    if (this.web3.isConnected()) {
-      this.web3.eth.isSyncing((err, sync) => {
-        if (!err) {
-          if (sync === true) {
-            this.web3.reset(true);
-            this.checkDB();
-          } else if (sync) {
-            let block = sync.currentBlock;
-            this.getBlocksFrom(block);
+    if (this.web3 && this.web3.isConnected()) {
+      // node is syncing
+      if (this.web3.syncing) {
+        this.web3.eth.isSyncing((err, sync) => {
+          if (!err) {
+            if (sync === true) {
+              this.web3.reset(true);
+              this.checkDB();
+            } else if (sync) {
+              let block = sync.currentBlock;
+              this.getBlocksFrom(block);
+            } else {
+              this.checkAndListen();
+            }
           } else {
-            this.checkDB();
-            this.listenBlocks();
+            this.log.error('syncing error', err);
           }
-        } else {
-          this.log.error('syncing error', err);
-        }
-      });
+        });
+      } else {
+        // node is not syncing
+        this.checkAndListen();
+      }
     } else {
       this.log.warn('Web3 is not connected!');
       this.start();
     }
   }
 
+  checkAndListen() {
+    this.checkDB();
+    this.listenBlocks();
+  }
   dbInsertMsg(insertResult, data, dataType) {
     let count = data ? data.length : null;
     let msg = ['Inserted', insertResult.result.n];
@@ -274,7 +319,6 @@ class SaveBlocks {
     if (dataType) msg.push(dataType);
     return msg.join(' ');
   }
-
 }
 
-exports.default = SaveBlocks;
+exports.default = blocks;

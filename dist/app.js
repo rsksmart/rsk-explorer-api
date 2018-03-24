@@ -8,9 +8,9 @@ var _config = require('./lib/config');
 
 var _config2 = _interopRequireDefault(_config);
 
-var _db = require('./lib/db');
+var _dataSource = require('./lib/dataSource');
 
-var _db2 = _interopRequireDefault(_db);
+var _dataSource2 = _interopRequireDefault(_dataSource);
 
 var _dataBlocks = require('./lib/dataBlocks');
 
@@ -24,18 +24,23 @@ var _errors = require('./lib/errors');
 
 var errors = _interopRequireWildcard(_errors);
 
+var _Logger = require('./lib/Logger');
+
+var _Logger2 = _interopRequireDefault(_Logger);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const port = _config2.default.server.port || '3000';
+const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
 
-_db2.default.then(db => {
-  console.log('Database connected');
+_dataSource2.default.then(db => {
+  log.info('Database connected');
   const io = new _socket2.default(port);
 
   io.httpServer.on('listening', () => {
-    console.log('Server listen on port ' + port);
+    log.info('Server listen on port ' + port);
   });
 
   // data collectors
@@ -63,7 +68,7 @@ _db2.default.then(db => {
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
-      console.log(err);
+      log.error('Socket Error: ' + err);
     });
 
     socket.on('data', payload => {
@@ -89,7 +94,7 @@ _db2.default.then(db => {
           collector.run(action, params).then(result => {
             io.emit('data', formatRes(resAction, result, payload));
           }).catch(err => {
-            console.log(err);
+            log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err);
             io.emit('error', formatRes(resAction, null, payload, errors.INVALID_REQUEST));
           });
         }
@@ -130,6 +135,6 @@ const formatError = error => {
 };
 
 process.on('unhandledRejection', err => {
-  console.error(err);
+  log.error(err);
   // process.exit(1)
 });

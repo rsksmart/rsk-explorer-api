@@ -11,9 +11,9 @@ exports.default = function (name, options) {
     level: 'debug'
   });
 
-  if (options.path) {
+  if (options.file) {
     log.addStream({
-      path: options.path,
+      path: options.file,
       level: options.level || 'info'
     });
   }
