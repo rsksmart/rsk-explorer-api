@@ -76,9 +76,12 @@ class SaveBlocks {
         return this.processAllQueues()
       })
     }).catch((err) => {
-      this.log.error('Error getting latest block')
+      this.log.error('Error getting latest block: ' + err)
+      process.exit()
     })
   }
+
+
 
   listenBlocks () {
     this.log.info('Listen to blocks...')
@@ -108,8 +111,7 @@ class SaveBlocks {
           this.processAllQueues()
         }, (reason) => {
           this.log.error(reason)
-          this.checkDB()
-          this.listenBlocks()
+          this.checkAndListen()
         })
       } else {
         resolve()
@@ -120,7 +122,7 @@ class SaveBlocks {
   processQueue () {
     if (this.blocksQueue > -1) {
       let pending = []
-      for (let i = 0; i <= this.blocksProcessSize; i++) {
+      for (let i = 0; i < this.blocksQueueSize; i++) {
         pending.push(this.getBlockIfNotExistsInDb(this.blocksQueue))
         this.blocksQueue--
       }
@@ -128,19 +130,10 @@ class SaveBlocks {
     }
   }
 
-  checkDbBlocks () {
-    return this.getHighDbBlock().then((lastBlock) => {
-      return this.countDbBlocks().then((dbBlocks) => {
-        if (lastBlock.number > dbBlocks) {
-          // missing blocks in db
-          return lastBlock.number
-        } else {
-          return null
-        }
-      })
-    }).catch((err) => {
-      this.log.error(err)
-    })
+  async checkDbBlocks () {
+    let lastBlock = await this.getHighDbBlock()
+    let dbBlocks = await this.countDbBlocks()
+    return (lastBlock.number > dbBlocks) ? lastBlock.number : null
   }
   checkBlock (blockNumber) {
     return this.Blocks.findOne({ number: blockNumber }).then((doc => {
@@ -150,7 +143,7 @@ class SaveBlocks {
   getBlockIfNotExistsInDb (blockNumber) {
     return this.checkBlock(blockNumber).then((block) => {
       if (!block) {
-        this.log.debug('missing block ' + blockNumber)
+        this.log.debug('Missing block ' + blockNumber)
         return this.getBlockAndSave(blockNumber)
       }
     })
@@ -238,6 +231,7 @@ class SaveBlocks {
   writeBlockToDB (blockData) {
     return new Promise((resolve, reject) => {
       if (!blockData) reject('no blockdata')
+      blockData._received = Date.now()
       let transactions = this.getBlockTransactions(blockData)
       delete blockData.transactions
       blockData.txs = transactions.length
@@ -280,6 +274,7 @@ class SaveBlocks {
     })
   }
   getBlocksFrom (blockNumber) {
+    if (this.requestingBlocks[blockNumber]) blockNumber--
     this.log.debug('Getting block from ', blockNumber)
     this.checkBlock(blockNumber).then((block) => {
       if (!block) {
@@ -302,16 +297,14 @@ class SaveBlocks {
               let block = sync.currentBlock
               this.getBlocksFrom(block)
             } else {
-              this.checkDB()
-              this.listenBlocks()
+              this.checkAndListen()
             }
           } else {
             this.log.error('syncing error', err)
           }
         })
       } else { // node is not syncing
-        this.checkDB()
-        this.listenBlocks()
+        this.checkAndListen()
       }
     } else {
       this.log.warn('Web3 is not connected!')
@@ -319,6 +312,10 @@ class SaveBlocks {
     }
   }
 
+  checkAndListen () {
+    this.checkDB()
+    this.listenBlocks()
+  }
   dbInsertMsg (insertResult, data, dataType) {
     let count = (data) ? data.length : null
     let msg = ['Inserted', insertResult.result.n]
