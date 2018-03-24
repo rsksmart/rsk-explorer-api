@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/app.js --exec babel-node | ./node_modules/.bin/bunyan -o short",
-    "blocks": "nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
-    "erc20": "nodemon src/services/erc20 --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "dev": "./node_modules/.bin/nodemon src/app.js --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "blocks": "./node_modules/.bin/nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "erc20": "./node_modules/.bin/nodemon src/services/erc20 --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist",
     "clean": "rm -rf dist",
     "md": "mkdir dist",
