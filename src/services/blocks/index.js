@@ -1,57 +1,22 @@
 import dataSource from '../../lib/dataSource.js'
 import conf from '../../lib/config'
-import SaveBlocks from './Blocks'
+import Blocks from './Blocks'
 import * as dataBase from '../../lib/Db'
+import Logger from '../../lib/Logger'
 
 const config = Object.assign({}, conf.blocks)
+const log = Logger('Blocks', config.log)
+
+
 
 dataSource.then(db => {
-  console.log('Using configuration:')
-  console.log(config)
-
-  dataBase.createCollection(db, config.blocksCollection, [
-    {
-      key: { number: 1 },
-      unique: true
-    }
-  ]).then(blocksCollection => {
-    dataBase.createCollection(db, config.txCollection, [
-      {
-        key: { hash: 1 },
-        unique: true
-      },
-      {
-        key: {
-          blockNumber: 1,
-          transactionIndex: 1
-        },
-        name: 'blockTrasaction'
-      },
-      {
-        key: { from: 1 },
-        name: 'fromIndex'
-      },
-      {
-        key: { to: 1 },
-        name: 'toIndex'
-      }
-    ]).then(txCollection => {
-      dataBase.createCollection(db, config.accountsCollection, [
-        {
-          key: { address: 1 },
-          unique: true
-        }
-      ]).then(accountsCollection => {
-        const exporter = new SaveBlocks(
-          config,
-          blocksCollection,
-          txCollection,
-          accountsCollection
-        )
-        exporter.start()
-      })
-    })
+  log.info('Using configuration:')
+  log.info(config)
+  config.Logger = log
+  Blocks(config, db).then((blocks) => {
+    blocks.start()
   })
+
 })
 
 

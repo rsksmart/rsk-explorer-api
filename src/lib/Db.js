@@ -18,20 +18,15 @@ class Db {
       let db = await client.db(this.dbName)
       return db
     }
-
-
     this.connect()
   }
 }
-export function indexesError (collectionName) {
-  console.log('Error creating' + collectionName + 'indexes')
-  process.exit(9)
-}
 
 export function createCollection (db, collectionName, indexes) {
+  if (!collectionName) return Promise.reject('Invalid collection name')
   let collection = db.collection(collectionName)
+  if (!indexes || !indexes.length) return Promise.resolve(collection)
   return collection.createIndexes(indexes).then(doc => {
-    if (!doc.ok) indexesError(collectionName)
     return collection
   })
 }

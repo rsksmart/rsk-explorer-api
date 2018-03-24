@@ -1,26 +1,73 @@
 import Web3 from 'web3'
-import Logger from '../../lib/Logger'
+import web3Connect from '../../lib/web3Connect'
+import * as dataBase from '../../lib/Db'
 
+const blocksCollections = {
+  blocksCollection: [
+    {
+      key: { number: 1 },
+      unique: true
+    }
+  ],
+  txCollection: [
+    {
+      key: { hash: 1 },
+      unique: true
+    },
+    {
+      key: {
+        blockNumber: 1,
+        transactionIndex: 1
+      },
+      name: 'blockTrasaction'
+    },
+    {
+      key: { from: 1 },
+      name: 'fromIndex'
+    },
+    {
+      key: { to: 1 },
+      name: 'toIndex'
+    }
+  ],
+  accountsCollection: [
+    {
+      key: { address: 1 },
+      unique: true
+    }
+  ]
+}
 
+function blocks (config, db) {
+  let queue = []
+  let log = config.Logger || console
+  for (let c in blocksCollections) {
+    let name = config[c] || c
+    queue.push(dataBase.createCollection(db, name, blocksCollections[c]))
+  }
+  return Promise.all(queue).then((collections) => {
+    return new SaveBlocks(config, ...collections)
+  }).catch((err) => {
+    log.error('Error creating collections')
+    log.error(err)
+    process.exit(9)
+  })
+}
 class SaveBlocks {
-  constructor(config, blocksCollection, txCollection, accountsCollection) {
-    this.config = config
+  constructor(options, blocksCollection, txCollection, accountsCollection, statsCollection) {
+    this.node = options.node
+    this.port = options.port
     this.Blocks = blocksCollection
     this.Txs = txCollection
+    this.Stats = statsCollection
     this.Accounts = accountsCollection
-    this.web3 = this.web3Connect()
+    this.web3 = web3Connect(options.node, options.port)
     this.requestingBlocks = {}
     this.blocksProcessSize = 30
     this.blocksQueue = -1
-    this.log = Logger('Blocks', config.log)
+    this.log = options.Logger || console
   }
-  web3Connect () {
-    return new Web3(
-      new Web3.providers.HttpProvider(
-        'http://' + this.config.node + ':' + this.config.port
-      )
-    )
-  }
+
   checkDB () {
     this.log.info('checkig db')
     return this.getBlockAndSave('latest').then((blockData) => {
@@ -285,4 +332,4 @@ class SaveBlocks {
 }
 
 
-export default SaveBlocks
+export default blocks
