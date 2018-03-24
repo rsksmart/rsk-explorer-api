@@ -1,6 +1,6 @@
 /**
  *  This file provides default values,
- *  to change the configuration, use /config.json
+ *  use /config.json, to overwrite settings
  */
 
 export default {
@@ -27,6 +27,7 @@ export default {
   },
   blocks: {
     log: {},
+    blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     accountsCollection: 'accounts'

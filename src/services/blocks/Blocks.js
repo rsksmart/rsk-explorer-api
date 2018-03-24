@@ -63,7 +63,7 @@ class SaveBlocks {
     this.Accounts = accountsCollection
     this.web3 = web3Connect(options.node, options.port)
     this.requestingBlocks = {}
-    this.blocksProcessSize = 30
+    this.blocksQueueSize = options.blocksQueueSize || 30 // max blocks per queue
     this.blocksQueue = -1
     this.log = options.Logger || console
   }
