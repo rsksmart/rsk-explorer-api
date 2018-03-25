@@ -35,6 +35,12 @@ const blocksCollections = {
       key: { address: 1 },
       unique: true
     }
+  ],
+  statsCollection: [
+    {
+      key: { timestamp: 1 },
+      unique: true
+    }
   ]
 }
 
@@ -66,6 +72,19 @@ class SaveBlocks {
     this.blocksQueueSize = options.blocksQueueSize || 30 // max blocks per queue
     this.blocksQueue = -1
     this.log = options.Logger || console
+    this.stateTimeout = null
+    this.state = new Proxy({}, {
+      set: (obj, prop, val) => {
+        if (prop !== '_id') { // prevents _id insertion
+          obj[prop] = val
+          obj.timestamp = Date.now()
+          // prevents multiple updates 
+          if (this.stateTimeout) clearTimeout(this.stateTimeout)
+          this.stateTimeout = setTimeout(() => { this.statsUpdate() }, 1000)
+        }
+        return true
+      }
+    })
   }
 
   checkDB () {
@@ -81,11 +100,17 @@ class SaveBlocks {
     })
   }
 
-
+  // writes state to db
+  statsUpdate () {
+    let stats = this.state
+    this.Stats.insertOne(stats).catch((err) => {
+      this.log.error(err)
+    })
+  }
 
   listenBlocks () {
     this.log.info('Listen to blocks...')
-    this.web3.reset()
+    this.web3.reset(true)
     let filter = this.web3.eth.filter({ fromBlock: 'latest', toBlock: 'latest' })
     filter.watch((error, log) => {
       if (error) {
@@ -132,6 +157,11 @@ class SaveBlocks {
 
   async isDbOutdated () {
     let lastBlock = await this.getHighDbBlock()
+    lastBlock = lastBlock.number
+    let blocks = await this.countDbBlocks()
+
+    this.state.lastBlock = lastBlock
+    this.state.blocks = blocks
     return (lastBlock > blocks) ? lastBlock : null
   }
 
@@ -183,6 +213,8 @@ class SaveBlocks {
             }
           })
         }
+      } else {
+        this.start()
       }
     }).catch((err) => {
       this.requestingBlocks[blockNumber] = false
@@ -314,6 +346,7 @@ class SaveBlocks {
   }
 
   checkAndListen () {
+    this.state.sync = this.web3.eth.syncing
     this.checkDB()
     this.listenBlocks()
   }
