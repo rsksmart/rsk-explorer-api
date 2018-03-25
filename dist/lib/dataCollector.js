@@ -181,7 +181,8 @@ class DataCollectorItem {
   }
   _aggregatePages(aggregate, PAGES) {
     // review this
-    let options = { allowDiskUse: true };
+    let options = {};
+    // options.allowDiskUse = true
     aggregate.push({ $skip: PAGES.skip });
     aggregate.push({ $limit: PAGES.perPage });
     return this.db.aggregate(aggregate, options).toArray();
@@ -191,6 +192,7 @@ class DataCollectorItem {
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
       if (sort) aggregate.push({ $sort: sort });
       return this._aggregatePages(aggregate, PAGES).then(DATA => {
+        console.log(PAGES, DATA);
         return { PAGES, DATA };
       });
     });

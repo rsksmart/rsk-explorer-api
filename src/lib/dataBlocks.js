@@ -116,7 +116,7 @@ class Tx extends DataCollectorItem {
     super(collection, key, parent)
     this.publicActions = {
       getTransactions: params => {
-      return this.getPageData({}, params, { _id: -1 })
+        return this.getPageData({}, params, { blockNumber: -1, transactionIndex: -1 })
       },
       getTransaction2: params => {
         let hash = params.hash

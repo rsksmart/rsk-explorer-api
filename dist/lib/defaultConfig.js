@@ -30,12 +30,14 @@ exports.default = {
     perPage: 50
 
   },
+  publicSettings: {},
   blocks: {
     log: {},
     blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
-    accountsCollection: 'accounts'
+    accountsCollection: 'accounts',
+    statsCollection: 'stats'
   },
   erc20: {
     log: {},

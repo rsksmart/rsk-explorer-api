@@ -18,7 +18,7 @@ const lastLimit = _config2.default.api.lastBlocks || 50;
 const blocks = _config2.default.blocks;
 const blocksCollection = blocks.blocksCollection;
 const txCollection = blocks.txCollection;
-const accountsCollection = blocks.accountsCollection;
+const accountCollection = blocks.accountsCollection;
 
 class Blocks extends _dataCollector.DataCollector {
   constructor(db) {
@@ -29,12 +29,16 @@ class Blocks extends _dataCollector.DataCollector {
     this.lastBlocks = [];
     this.lastTransactions = [];
     this.txCollection = null;
+    this.accountCollection = null;
     this.setCollection(txCollection, 'txCollection', this);
+    this.setCollection(accountCollection, 'accountCollection', this);
+
     this.Block = new Block(this.collection, 'block', this);
     this.Tx = new Tx(this.txCollection, 'tx');
-    this.Account = new Account(this.accountsCollection, 'account');
+    this.Account = new Account(this.accountCollection, 'account');
     this.items['block'] = this.Block;
     this.items['tx'] = this.Tx;
+    this.items['account'] = this.Account;
   }
   tick() {
     this.setLastBlocks();
@@ -104,7 +108,7 @@ class Tx extends _dataCollector.DataCollectorItem {
     super(collection, key, parent);
     this.publicActions = {
       getTransactions: params => {
-        return this.getPageData({}, params, { _id: -1 });
+        return this.getPageData({}, params, { blockNumber: -1, transactionIndex: -1 });
       },
       getTransaction2: params => {
         let hash = params.hash;
@@ -150,7 +154,9 @@ class Account extends _dataCollector.DataCollectorItem {
     super(collection, key, parent);
     this.publicActions = {
       getAccount: params => {},
-      getAccounts: params => {}
+      getAccounts: params => {
+        return this.getPageData({}, params, { _id: -1 });
+      }
     };
   }
 }

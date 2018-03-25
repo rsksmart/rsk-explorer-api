@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
     "blocks": "./node_modules/.bin/nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "erc20": "./node_modules/.bin/nodemon src/services/erc20 --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

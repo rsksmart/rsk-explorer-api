@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.createCollection = createCollection;
+exports.insertMsg = insertMsg;
 
 var _mongodb = require('mongodb');
 
@@ -36,6 +37,17 @@ function createCollection(db, collectionName, indexes) {
   return collection.createIndexes(indexes).then(doc => {
     return collection;
   });
+}
+
+function insertMsg(insertResult, data, dataType) {
+  let count = data ? data.length : null;
+  let msg = ['Inserted', insertResult.result.n];
+  if (count) {
+    msg.push('of');
+    msg.push(count);
+  }
+  if (dataType) msg.push(dataType);
+  return msg.join(' ');
 }
 
 exports.default = Db;
