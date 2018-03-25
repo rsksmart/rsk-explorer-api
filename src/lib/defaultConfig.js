@@ -25,6 +25,7 @@ export default {
     perPage: 50
 
   },
+  publicSettings: {},
   blocks: {
     log: {},
     blocksQueueSize: 30,

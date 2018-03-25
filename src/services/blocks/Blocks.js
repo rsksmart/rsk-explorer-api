@@ -1,6 +1,7 @@
 import Web3 from 'web3'
 import web3Connect from '../../lib/web3Connect'
 import * as dataBase from '../../lib/Db'
+import txFormat from '../../lib/txFormat'
 
 const blocksCollections = {
   blocksCollection: [
@@ -238,9 +239,9 @@ class SaveBlocks {
   getBlockTransactions (blockData) {
     let transactions = blockData.transactions
     if (transactions) {
-      transactions = transactions.map(item => {
-        item.timestamp = blockData.timestamp
-        return item
+      transactions = transactions.map(tx => {
+        tx.timestamp = blockData.timestamp
+        return txFormat(tx)
       })
     }
     return transactions

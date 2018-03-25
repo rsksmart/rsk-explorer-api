@@ -24,4 +24,8 @@ if (config.log.dir) {
 }
 
 
+config.bridgeAddress = config.publicSettings.bridgeAddress || null
+config.remascAddress = config.publicSettings.remascAddress || null
+
+
 export default config
