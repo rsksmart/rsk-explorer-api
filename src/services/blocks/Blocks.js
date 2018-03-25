@@ -252,11 +252,18 @@ class SaveBlocks {
 
   insertAccounts (accounts) {
     for (let account of accounts) {
-      this.Accounts.insertOne(account).then((res) => {
-        this.log.info(this.dbInsertMsg(res, accounts, 'accounts'))
-      }).catch((err) => {
-        // hide duplicate accounts log 
-        if (err.code !== 11000) console.log('Errror inserting account ' + err)
+      this.web3.eth.getBalance(account.address, 'latest', (err, balance) => {
+        if (err) this.log.error(`Error getting balance of account ${account.address}: ${err}`)
+        else account.balance = balance
+        this.log.info(`Updating account: ${account.address}`)
+        this.log.debug(JSON.stringify(account))
+        this.Accounts.updateOne(
+          { address: account.address },
+          { $set: account },
+          { upsert: true }
+        ).catch((err) => {
+          this.log.error(err)
+        })
       })
     }
   }
