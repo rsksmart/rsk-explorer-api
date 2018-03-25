@@ -31,4 +31,15 @@ export function createCollection (db, collectionName, indexes) {
   })
 }
 
+export function insertMsg (insertResult, data, dataType) {
+  let count = (data) ? data.length : null
+  let msg = ['Inserted', insertResult.result.n]
+  if (count) {
+    msg.push('of')
+    msg.push(count)
+  }
+  if (dataType) msg.push(dataType)
+  return msg.join(' ')
+}
+
 export default Db
