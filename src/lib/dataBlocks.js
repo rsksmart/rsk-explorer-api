@@ -22,8 +22,8 @@ class Blocks extends DataCollector {
     this.setCollection(accountCollection, 'accountCollection', this)
 
     this.Block = new Block(this.collection, 'block', this)
-    this.Tx = new Tx(this.txCollection, 'tx')
-    this.Account = new Account(this.accountCollection, 'account')
+    this.Tx = new Tx(this.txCollection, 'tx', this)
+    this.Account = new Account(this.accountCollection, 'account', this)
     this.items['block'] = this.Block
     this.items['tx'] = this.Tx
     this.items['account'] = this.Account
@@ -165,6 +165,8 @@ class Tx extends DataCollectorItem {
       },
       getAccountTransactions: params => {
         let address = params.address
+        let Account = this.parent.Account
+        return Account.find({ address }).then((account) => {
         return this.getPageData(
           {
             $or: [{ from: address }, { to: address }]
@@ -172,9 +174,11 @@ class Tx extends DataCollectorItem {
           params,
           { timestamp: -1 }
         ).then(res => {
-          res.PARENT_DATA = { address, account: address }
+            res.PARENT_DATA = account.DATA[0]
           return res
         })
+        })
+
       }
     }
   }
