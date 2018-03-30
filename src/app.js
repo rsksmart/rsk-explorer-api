@@ -49,7 +49,7 @@ dataSource.then(db => {
       if (payload && payload.type) {
         let type = payload.type
         let action = payload.action
-        let params = payload.options
+        let params = filterParams(payload.options)
         let collector = null
 
         switch (type) {
@@ -86,7 +86,10 @@ dataSource.then(db => {
 })
 
 
-
+const filterParams = (params) => {
+  params.query = params.query || null
+  return params
+}
 
 const publicSettings = () => {
   return config.publicSettings
