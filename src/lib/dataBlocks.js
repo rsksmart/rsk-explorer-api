@@ -116,7 +116,12 @@ class Tx extends DataCollectorItem {
     super(collection, key, parent)
     this.publicActions = {
       getTransactions: params => {
-        return this.getPageData({}, params, { blockNumber: -1, transactionIndex: -1 })
+        let query = {}
+        let txType = (params.query) ? params.query.txType : null
+        if (txType) {
+          query = this.fieldFilterParse('txType', txType)
+        }
+        return this.getPageData(query, params, { blockNumber: -1, transactionIndex: -1 })
       },
       getTransaction2: params => {
         let hash = params.hash
@@ -130,12 +135,13 @@ class Tx extends DataCollectorItem {
       },
       getTransaction: params => {
         let hash = params.hash
-        return this.db.findOne({ hash: { $eq: hash } }).then(tx => {
+        let query = { hash }
+        return this.db.findOne(query).then(tx => {
           if (!tx) return
 
           return this.getPrevNext(
             params,
-            { hash: hash },
+            query,
             {
               $or: [
                 { transactionIndex: { $gt: tx.transactionIndex } },
@@ -166,17 +172,17 @@ class Tx extends DataCollectorItem {
       getAccountTransactions: params => {
         let address = params.address
         let Account = this.parent.Account
-        return Account.find({ address }).then((account) => {
-        return this.getPageData(
-          {
-            $or: [{ from: address }, { to: address }]
-          },
-          params,
-          { timestamp: -1 }
-        ).then(res => {
-            res.PARENT_DATA = account.DATA[0]
-          return res
-        })
+        return Account.getOne({ address }).then((account) => {
+          return this.getPageData(
+            {
+              $or: [{ from: address }, { to: address }]
+            },
+            params,
+            { timestamp: -1 }
+          ).then(res => {
+            res.PARENT_DATA = account.DATA
+            return res
+          })
         })
 
       }
