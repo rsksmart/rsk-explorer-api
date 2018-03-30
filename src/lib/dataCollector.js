@@ -128,11 +128,16 @@ export class DataCollectorItem {
   }
 
   _pages (params, total) {
-    let perPage = params.limit
-    let page = params.page > 0 ? params.page : 1
-    let pages = Math.ceil(total / perPage)
-    page = page * perPage < total ? page : pages
-    let skip = (page - 1) * perPage
+    let page = 1
+    let skip = 0
+    let pages = 1
+    let perPage = params.limit || 10
+    if (total) {
+      page = params.page > 0 ? params.page : 1
+      pages = Math.ceil(total / perPage)
+      page = page * perPage < total ? page : pages
+      skip = (page - 1) * perPage
+    }
     return { page, total, pages, perPage, skip }
   }
   _formatPrevNext (PREV, DATA, NEXT) {
@@ -209,5 +214,28 @@ export class DataCollectorItem {
       })
     })
   }
+  // value: string| array of searched values | Object: 'value':true|false
+  fieldFilterParse (field, value, query) {
+    query = query || {}
+    let fieldQuery
+    let inArr = []
+    let ninArr = []
+    if ('string' === typeof (value)) {
+      fieldQuery = value
+    } else if (Array.isArray(value)) {
+      inArr = value
+    } else if ('object' === typeof (value)) {
+      for (let p in value) {
+        if (value[p]) inArr.push(p)
+        else ninArr.push(p)
+      }
+    }
+    if (inArr.length || ninArr.length) fieldQuery = {}
+    if (inArr.length) fieldQuery['$in'] = inArr
+    if (ninArr.length) fieldQuery['$nin'] = ninArr
+    if (fieldQuery) query[field] = fieldQuery
+    return query
+  }
+
 }
 export default DataCollector
