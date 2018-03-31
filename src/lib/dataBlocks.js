@@ -180,6 +180,7 @@ class Tx extends DataCollectorItem {
             params,
             { timestamp: -1 }
           ).then(res => {
+            account.DATA.account = address
             res.PARENT_DATA = account.DATA
             return res
           })
