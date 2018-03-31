@@ -1,8 +1,8 @@
 import IO from 'socket.io'
 import config from './lib/config'
 import dataSource from './lib/dataSource'
-import Blocks from './lib/dataBlocks'
-import Erc20 from './lib/dataErc20'
+import Blocks from './lib/blocksData'
+import Erc20 from './lib/erc20data'
 import * as errors from './lib/errors'
 import Logger from './lib/Logger'
 
