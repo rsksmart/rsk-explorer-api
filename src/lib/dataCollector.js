@@ -150,8 +150,8 @@ export class DataCollectorItem {
   _formatPrevNext (PREV, DATA, NEXT) {
     return { PREV, DATA, NEXT }
   }
-  getOne (query) {
-    return this.db.findOne(query).then(DATA => {
+  getOne (query, projection) {
+    return this.db.findOne(query, projection).then(DATA => {
       return { DATA }
     })
   }
