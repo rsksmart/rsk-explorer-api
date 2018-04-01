@@ -11,29 +11,29 @@ class Erc20 extends DataCollector {
     this.dbPrefix = config.erc20.dbPrefix || 'erc20_'
     this.updateTokens()
   }
-  tick() {
+  tick () {
     this.eventsCount()
   }
-  getTokens() {
+  getTokens () {
     return this.formatData(Object.values(this.tokenList))
   }
-  eventsCount() {
+  eventsCount () {
     for (let key in this.items) {
       this.updateTokenEvents(key)
     }
     this.events.emit('newTokens', this.getTokens())
   }
-  run(action, params) {
+  run (action, params) {
     return this.itemPublicAction(action, params)
   }
-  addTokenToList(key, token) {
+  addTokenToList (key, token) {
     if (token) {
       this.tokenList[key] = token
       this.updateTokenEvents(key)
     }
   }
 
-  updateTokenEvents(key) {
+  updateTokenEvents (key) {
     let token = this.getItem({ key })
     if (token) {
       token.getTotalEvents().then(total => {
@@ -41,7 +41,7 @@ class Erc20 extends DataCollector {
       })
     }
   }
-  updateTokens() {
+  updateTokens () {
     this.collection.find().toArray((err, docs) => {
       if (err) {
         console.log(err)
@@ -91,10 +91,10 @@ class Token extends DataCollectorItem {
         let sort = { _id: 1 }
         return this.getPageData(query, params, sort)
       },
-      searchByAddress: params => {}
+      searchByAddress: params => { }
     }
   }
-  getTotalEvents() {
+  getTotalEvents () {
     return this.db.count({ balance: { $exists: false } }).then(total => {
       return total
     })

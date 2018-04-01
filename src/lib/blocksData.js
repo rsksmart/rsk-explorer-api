@@ -3,10 +3,10 @@ import config from './config'
 const perPage = config.api.perPage
 const lastLimit = config.api.lastBlocks || 50
 
-const blocks = config.blocks
-const blocksCollection = blocks.blocksCollection
-const txCollection = blocks.txCollection
-const accountCollection = blocks.accountsCollection
+const c = config.blocks
+const blocksCollection = c.blocksCollection
+const txCollection = c.txCollection
+const accountCollection = c.accountsCollection
 
 class Blocks extends DataCollector {
   constructor(db) {
@@ -16,18 +16,10 @@ class Blocks extends DataCollector {
     this.latest = 0
     this.lastBlocks = []
     this.lastTransactions = []
-    this.txCollection = null
-    this.accountCollection = null
-    this.setCollection(txCollection, 'txCollection', this)
-    this.setCollection(accountCollection, 'accountCollection', this)
 
-    this.Block = new Block(this.collection, 'block', this)
-    this.Tx = new Tx(this.txCollection, 'tx', this)
-    this.Account = new Account(this.accountCollection, 'account', this)
-    this.items['block'] = this.Block
-    this.items['tx'] = this.Tx
-    this.items['account'] = this.Account
-
+    this.addItem(blocksCollection, 'Block', Block, true)
+    this.addItem(txCollection, 'Tx', Tx, true)
+    this.addItem(accountCollection, 'Account', Account, true)
   }
   tick () {
     this.setLastBlocks()
@@ -44,7 +36,7 @@ class Blocks extends DataCollector {
       .toArray((err, blocks) => {
         if (err) console.log(err)
         else {
-          this.txCollection
+          this.Tx.db
             .find()
             .sort({ blockNumber: -1, transactionIndex: -1 })
             .limit(this.lastLimit)
@@ -95,7 +87,7 @@ class Block extends DataCollectorItem {
               return this.parent
                 .itemPublicAction('getBlockTransactions', {
                   blockNumber: block.DATA.number,
-                  key: 'tx'
+                  key: 'Tx'
                 })
                 .then(txs => {
                   block.DATA.transactions = txs.DATA

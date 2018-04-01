@@ -52,9 +52,11 @@ export class DataCollector {
         let method = item.publicActions[action]
         if (method) {
           resolve(method(this.filterParams(params)))
+        } else {
+          reject('Unknown method ' + action)
         }
       }
-      reject('Unknown action or bad params requested')
+      reject('Unknown action or bad params requested, action:' + action)
     })
   }
   searchItemByAction (action) {
@@ -63,13 +65,18 @@ export class DataCollector {
       if (item.publicActions[action]) return item
     }
   }
-  addItem (collectionName, key, itemClass) {
+  addItem (collectionName, key, itemClass, addToRoot) {
     if (collectionName && key) {
       itemClass = itemClass || DataCollectorItem
       if (!this.items[key]) {
         let collection = this.db.collection(collectionName)
         if (collection) {
-          this.items[key] = new itemClass(collection, key)
+          let item = new itemClass(collection, key, this)
+          this.items[key] = item
+          if (addToRoot) {
+            if (!this[key]) this[key] = item
+            else console.log(`Error key: ${key} exists`)
+          }
         }
       } else {
         console.log('Error the key: ' + key + ' already exists')
