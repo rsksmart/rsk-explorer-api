@@ -12,13 +12,17 @@ var _dataSource = require('./lib/dataSource');
 
 var _dataSource2 = _interopRequireDefault(_dataSource);
 
-var _dataBlocks = require('./lib/dataBlocks');
+var _blocksData = require('./lib/blocksData');
 
-var _dataBlocks2 = _interopRequireDefault(_dataBlocks);
+var _blocksData2 = _interopRequireDefault(_blocksData);
 
-var _dataErc = require('./lib/dataErc20');
+var _erc20data = require('./lib/erc20data');
 
-var _dataErc2 = _interopRequireDefault(_dataErc);
+var _erc20data2 = _interopRequireDefault(_erc20data);
+
+var _statsData = require('./lib/statsData');
+
+var _statsData2 = _interopRequireDefault(_statsData);
 
 var _errors = require('./lib/errors');
 
@@ -27,6 +31,8 @@ var errors = _interopRequireWildcard(_errors);
 var _Logger = require('./lib/Logger');
 
 var _Logger2 = _interopRequireDefault(_Logger);
+
+var _utils = require('./lib/utils');
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -44,10 +50,12 @@ _dataSource2.default.then(db => {
   });
 
   // data collectors
-  const erc20 = new _dataErc2.default(db);
-  const blocks = new _dataBlocks2.default(db);
+  const erc20 = new _erc20data2.default(db);
+  const blocks = new _blocksData2.default(db);
+  const stats = new _statsData2.default(db);
   blocks.start();
   erc20.start();
+  stats.start();
 
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data));
@@ -61,10 +69,15 @@ _dataSource2.default.then(db => {
     io.emit('data', formatRes('tokens', data));
   });
 
+  stats.events.on('newStats', data => {
+    io.emit('data', formatRes('stats', data));
+  });
+
   io.on('connection', socket => {
     io.emit('open', { time: Date.now(), settings: publicSettings() });
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()));
     io.emit('data', formatRes('tokens', erc20.getTokens()));
+    io.emit('data', formatRes('stats', stats.getState()));
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
@@ -75,7 +88,7 @@ _dataSource2.default.then(db => {
       if (payload && payload.type) {
         let type = payload.type;
         let action = payload.action;
-        let params = payload.options;
+        let params = (0, _utils.filterParams)(payload.params);
         let collector = null;
 
         switch (type) {

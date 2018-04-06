@@ -9,6 +9,8 @@ var _events = require('events');
 
 var _timers = require('timers');
 
+var _utils = require('./utils');
+
 class Emitter extends _events.EventEmitter {}
 const emitter = new Emitter();
 
@@ -23,6 +25,7 @@ class DataCollector {
     this.items = {};
     this.perPage = options.perPage || 50;
     this.setCollection(options.collectionName);
+    this.tickDelay = 1000;
   }
   tick() {}
   stop() {
@@ -34,7 +37,7 @@ class DataCollector {
     if (!this._interval) {
       this._interval = setInterval(() => {
         this.tick();
-      }, 1000);
+      }, this.tickDelay);
     }
   }
   setCollection(collectionName, name = 'collection') {
@@ -60,9 +63,11 @@ class DataCollector {
         let method = item.publicActions[action];
         if (method) {
           resolve(method(this.filterParams(params)));
+        } else {
+          reject('Unknown method ' + action);
         }
       }
-      reject('Unknown action or bad params requested');
+      reject('Unknown action or bad params requested, action:' + action);
     });
   }
   searchItemByAction(action) {
@@ -71,13 +76,17 @@ class DataCollector {
       if (item.publicActions[action]) return item;
     }
   }
-  addItem(collectionName, key, itemClass) {
+  addItem(collectionName, key, itemClass, addToRoot) {
     if (collectionName && key) {
       itemClass = itemClass || DataCollectorItem;
       if (!this.items[key]) {
         let collection = this.db.collection(collectionName);
         if (collection) {
-          this.items[key] = new itemClass(collection, key);
+          let item = new itemClass(collection, key, this);
+          this.items[key] = item;
+          if (addToRoot) {
+            if (!this[key]) this[key] = item;else console.log(`Error key: ${key} exists`);
+          }
         }
       } else {
         console.log('Error the key: ' + key + ' already exists');
@@ -86,13 +95,7 @@ class DataCollector {
   }
 
   filterParams(params) {
-    let page = params.page || 1;
-    let perPage = this.perPage;
-    params.page = page;
-    let limit = params.limit || perPage;
-    limit = limit <= perPage ? limit : perPage;
-    params.limit = limit;
-    return params;
+    return (0, _utils.filterParams)(params, this.perPage);
   }
 
   formatData(data) {
@@ -125,7 +128,8 @@ class DataCollectorItem {
         $group: { _id: 'result', TOTAL: { $sum: 1 } }
       });
       // review this
-      let options = { allowDiskUse: true };
+      // let options = { allowDiskUse: true }
+      let options = {};
       this.db.aggregate(aggregate, options, (err, cursor) => {
         if (err) reject(err);
         cursor.toArray().then(res => {
@@ -137,23 +141,29 @@ class DataCollectorItem {
   }
 
   _pages(params, total) {
-    let perPage = params.limit;
-    let page = params.page > 0 ? params.page : 1;
-    let pages = Math.ceil(total / perPage);
-    page = page * perPage < total ? page : pages;
-    let skip = (page - 1) * perPage;
+    let page = 1;
+    let skip = 0;
+    let pages = 1;
+    let perPage = params.limit || 10;
+    if (total) {
+      page = params.page > 0 ? params.page : 1;
+      pages = Math.ceil(total / perPage);
+      page = page * perPage < total ? page : pages;
+      skip = (page - 1) * perPage;
+    }
     return { page, total, pages, perPage, skip };
   }
   _formatPrevNext(PREV, DATA, NEXT) {
     return { PREV, DATA, NEXT };
   }
-  getOne(query) {
-    return this.db.findOne(query).then(DATA => {
+  getOne(query, projection) {
+    return this.db.findOne(query, projection).then(DATA => {
       return { DATA };
     });
   }
-  find(query) {
-    return this.db.find(query).toArray().then(DATA => {
+  find(query, sort) {
+    sort = sort || {};
+    return this.db.find(query).sort(sort).toArray().then(DATA => {
       return { DATA };
     });
   }
@@ -192,18 +202,40 @@ class DataCollectorItem {
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
       if (sort) aggregate.push({ $sort: sort });
       return this._aggregatePages(aggregate, PAGES).then(DATA => {
-        console.log(PAGES, DATA);
+        // console.log(PAGES, DATA)
         return { PAGES, DATA };
       });
     });
   }
-  getPageData(query, params, sort) {
-    sort = sort || { _id: -1 };
+  getPageData(query, params) {
+    let sort = params.sort || this.sort || {};
     return this.getPages(query, params).then(PAGES => {
+      PAGES.sort = sort;
       return this._findPages(query, PAGES, sort).then(DATA => {
         return { PAGES, DATA };
       });
     });
+  }
+  // value: string| array of searched values | Object: 'value':true|false
+  fieldFilterParse(field, value, query) {
+    query = query || {};
+    let fieldQuery;
+    let inArr = [];
+    let ninArr = [];
+    if ('string' === typeof value) {
+      fieldQuery = value;
+    } else if (Array.isArray(value)) {
+      inArr = value;
+    } else if ('object' === typeof value) {
+      for (let p in value) {
+        if (value[p]) inArr.push(p);else ninArr.push(p);
+      }
+    }
+    if (inArr.length || ninArr.length) fieldQuery = {};
+    if (inArr.length) fieldQuery['$in'] = inArr;
+    if (ninArr.length) fieldQuery['$nin'] = ninArr;
+    if (fieldQuery) query[field] = fieldQuery;
+    return query;
   }
 }
 exports.DataCollectorItem = DataCollectorItem;

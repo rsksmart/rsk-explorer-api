@@ -79,49 +79,116 @@ class SaveBlocks {
     this.Stats = statsCollection;
     this.Accounts = accountsCollection;
     this.web3 = (0, _web3Connect2.default)(options.node, options.port);
-    this.requestingBlocks = {};
-    this.blocksQueueSize = options.blocksQueueSize || 30; // max blocks per queue
-    this.blocksQueue = -1;
-    this.log = options.Logger || console;
-    this.stateTimeout = null;
-    this.state = new Proxy({}, {
+    this.requestingBlocks = new Proxy({}, {
       set: (obj, prop, val) => {
-        if (prop !== '_id') {
-          // prevents _id insertion
-          obj[prop] = val;
-          obj.timestamp = Date.now();
-          // prevents multiple updates 
-          if (this.stateTimeout) clearTimeout(this.stateTimeout);
-          this.stateTimeout = setTimeout(() => {
-            this.statsUpdate();
-          }, 1000);
-        }
+        if (prop !== 'latest') obj[prop] = val;
         return true;
       }
     });
+    this.blocksQueueSize = options.blocksQueueSize || 30; // max blocks per queue
+    this.blocksQueue = null;
+    this.log = options.Logger || console;
+    this.state = {};
+  }
+
+  start() {
+    if (this.web3 && this.web3.isConnected()) {
+      // node is syncing
+      this.web3.eth.isSyncing((err, sync) => {
+        this.log.debug('Node isSyncing');
+        if (!err) {
+          this.updateState({ sync });
+          if (sync === true) {
+            this.web3.reset(true);
+            this.checkDB();
+          } else if (sync) {
+            let block = sync.currentBlock;
+            this.getBlocksFrom(block);
+          } else {
+            this.checkAndListen();
+          }
+        } else {
+          this.log.error('syncing error', err);
+        }
+      });
+
+      if (!this.web3.eth.syncing) this.checkAndListen();
+    } else {
+      this.log.warn('Web3 is not connected!');
+      this.start();
+    }
   }
 
   checkDB() {
     this.log.info('checkig db');
     return this.getBlockAndSave('latest').then(blockData => {
-      return this.isDbOutdated().then(checkFromBlock => {
-        this.blocksQueue = checkFromBlock;
-        return this.processBlocksQueue();
-      });
+      return this.getMissingBlocks();
     }).catch(err => {
       this.log.error('Error getting latest block: ' + err);
       process.exit();
     });
   }
 
-  // writes state to db
-  statsUpdate() {
-    let stats = this.state;
+  isDbOutdated() {
+    return this.dbBlocksStats().then(res => {
+      console.log(res);
+      this.updateState({ res });
+      return res.lastBlock > res.blocks ? res.lastBlock : null;
+    });
+  }
+  async dbBlocksStats() {
+    let lastBlock = await this.getHighDbBlock();
+    lastBlock = lastBlock.number;
+    let blocks = await this.countDbBlocks();
+    return { blocks, lastBlock };
+  }
+
+  getMissingBlocks() {
+    return this.isDbOutdated().then(checkFromBlock => {
+      this.blocksQueue = checkFromBlock;
+      return this.processBlocksQueue();
+    });
+  }
+  processBlocksQueue() {
+    return new Promise((resolve, reject) => {
+      let pending = this.makeBlockQueue();
+      if (pending) {
+        Promise.all(pending).then(values => {
+          this.processBlocksQueue();
+        }, reason => {
+          this.log.error(reason);
+          reject(reason);
+        });
+      } else {
+        resolve();
+      }
+    });
+  }
+  makeBlockQueue() {
+    if (this.blocksQueue > -1) {
+      let pending = [];
+      for (let i = 0; i < this.blocksQueueSize; i++) {
+        pending.push(this.getBlockIfNotExistsInDb(this.blocksQueue));
+        this.blocksQueue--;
+      }
+      return pending;
+    }
+  }
+
+  updateState(newState) {
+    for (let p in newState) {
+      this.state[p] = newState[p];
+    }
+    this.state.timestamp = Date.now();
+    this.saveStatsToDb();
+  }
+
+  saveStatsToDb() {
+    let stats = Object.assign({}, this.state);
     this.Stats.insertOne(stats).catch(err => {
       this.log.error(err);
     });
   }
-
   listenBlocks() {
     this.log.info('Listen to blocks...');
     this.web3.reset(true);
@@ -142,42 +209,6 @@ class SaveBlocks {
       }
     });
   }
-  processBlocksQueue() {
-    return new Promise((resolve, reject) => {
-      let pending = this.makeBlockQueue();
-      if (pending) {
-        Promise.all(pending).then(values => {
-          this.processBlocksQueue();
-        }, reason => {
-          this.log.error(reason);
-          this.checkAndListen();
-        });
-      } else {
-        resolve();
-      }
-    });
-  }
-  makeBlockQueue() {
-    if (this.blocksQueue > -1) {
-      let pending = [];
-      for (let i = 0; i < this.blocksQueueSize; i++) {
-        pending.push(this.getBlockIfNotExistsInDb(this.blocksQueue));
-        this.blocksQueue--;
-      }
-      return pending;
-    }
-  }
-
-  async isDbOutdated() {
-    let lastBlock = await this.getHighDbBlock();
-    lastBlock = lastBlock.number;
-    let blocks = await this.countDbBlocks();
-
-    this.state.lastBlock = lastBlock;
-    this.state.blocks = blocks;
-    return lastBlock > blocks ? lastBlock : null;
-  }
-
   getDbBlock(blockNumber) {
     return this.Blocks.findOne({ number: blockNumber }).then(doc => {
       return doc;
@@ -288,11 +319,16 @@ class SaveBlocks {
             resolve(blockData);
           }).catch(err => {
             // insert txs error
-            this.log.error('Error inserting txs ' + err);
+            let errorMsg = 'Error inserting txs ' + err;
+            if (err.code !== 11000) {
+              this.log.error(errorMsg);
+              reject(err);
+            } else {
+              this.log.debug(errorMsg);
+              resolve(blockData);
+            }
           });
         }
-
-        // insert accounts
         this.insertAccounts(accounts);
       }).catch(err => {
         // insert block error
@@ -317,36 +353,9 @@ class SaveBlocks {
       }
     });
   }
-  start() {
-    if (this.web3 && this.web3.isConnected()) {
-      // node is syncing
-      this.web3.eth.isSyncing((err, sync) => {
-        this.log.debug('Node isSyncing');
-        if (!err) {
-          this.state.sync = sync;
-          if (sync === true) {
-            this.web3.reset(true);
-            this.checkDB();
-          } else if (sync) {
-            let block = sync.currentBlock;
-            this.getBlocksFrom(block);
-          } else {
-            this.checkAndListen();
-          }
-        } else {
-          this.log.error('syncing error', err);
-        }
-      });
-
-      if (!this.web3.eth.syncing) this.checkAndListen();
-    } else {
-      this.log.warn('Web3 is not connected!');
-      this.start();
-    }
-  }
 
   checkAndListen() {
-    this.state.sync = this.web3.eth.syncing;
+    this.updateState({ sync: this.web3.eth.syncing });
     this.checkDB();
     this.listenBlocks();
   }

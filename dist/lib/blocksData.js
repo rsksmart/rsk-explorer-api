@@ -15,10 +15,10 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const perPage = _config2.default.api.perPage;
 const lastLimit = _config2.default.api.lastBlocks || 50;
 
-const blocks = _config2.default.blocks;
-const blocksCollection = blocks.blocksCollection;
-const txCollection = blocks.txCollection;
-const accountCollection = blocks.accountsCollection;
+const c = _config2.default.blocks;
+const blocksCollection = c.blocksCollection;
+const txCollection = c.txCollection;
+const accountCollection = c.accountsCollection;
 
 class Blocks extends _dataCollector.DataCollector {
   constructor(db) {
@@ -28,17 +28,10 @@ class Blocks extends _dataCollector.DataCollector {
     this.latest = 0;
     this.lastBlocks = [];
     this.lastTransactions = [];
-    this.txCollection = null;
-    this.accountCollection = null;
-    this.setCollection(txCollection, 'txCollection', this);
-    this.setCollection(accountCollection, 'accountCollection', this);
 
-    this.Block = new Block(this.collection, 'block', this);
-    this.Tx = new Tx(this.txCollection, 'tx');
-    this.Account = new Account(this.accountCollection, 'account');
-    this.items['block'] = this.Block;
-    this.items['tx'] = this.Tx;
-    this.items['account'] = this.Account;
+    this.addItem(blocksCollection, 'Block', Block, true);
+    this.addItem(txCollection, 'Tx', Tx, true);
+    this.addItem(accountCollection, 'Account', Account, true);
   }
   tick() {
     this.setLastBlocks();
@@ -50,7 +43,7 @@ class Blocks extends _dataCollector.DataCollector {
   setLastBlocks() {
     this.collection.find().sort({ number: -1 }).limit(this.lastLimit).toArray((err, blocks) => {
       if (err) console.log(err);else {
-        this.txCollection.find().sort({ blockNumber: -1, transactionIndex: -1 }).limit(this.lastLimit).toArray((err, txs) => {
+        this.Tx.db.find().sort({ blockNumber: -1, transactionIndex: -1 }).limit(this.lastLimit).toArray((err, txs) => {
           if (err) console.log(err);else {
             this.updateLastBlocks(blocks, txs);
           }
@@ -81,14 +74,15 @@ class Blocks extends _dataCollector.DataCollector {
 class Block extends _dataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
+    this.sort = { number: -1 };
     this.publicActions = {
       getBlock: params => {
         let number = parseInt(params.number);
-        if (number) return this.getPrevNext(params, { number: number }, { number: { $lte: number - 1 } }, { number: { $lte: number + 1 } }, { number: -1 }).then(block => {
+        if (number) return this.getPrevNext(params, { number: number }, { number: { $lte: number - 1 } }, { number: { $lte: number + 1 } }, this.sort).then(block => {
           if (block && block.DATA) {
             return this.parent.itemPublicAction('getBlockTransactions', {
               blockNumber: block.DATA.number,
-              key: 'tx'
+              key: 'Tx'
             }).then(txs => {
               block.DATA.transactions = txs.DATA;
               return block;
@@ -97,7 +91,7 @@ class Block extends _dataCollector.DataCollectorItem {
         });
       },
       getBlocks: params => {
-        return this.getPageData({}, params, { number: -1 });
+        return this.getPageData({}, params);
       }
     };
   }
@@ -106,24 +100,32 @@ class Block extends _dataCollector.DataCollectorItem {
 class Tx extends _dataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
+    this.sort = { blockNumber: -1, transactionIndex: -1 };
     this.publicActions = {
       getTransactions: params => {
-        return this.getPageData({}, params, { blockNumber: -1, transactionIndex: -1 });
+        let query = {};
+        let txType = params.query ? params.query.txType : null;
+        if (txType) {
+          query = this.fieldFilterParse('txType', txType);
+        }
+        return this.getPageData(query, params);
       },
       getTransaction2: params => {
         let hash = params.hash;
-        return this.getPrevNext(params, { hash: hash }, {}, {}, { blockNumber: 1, transactionIndex: 1 });
+        let sort = params.sort || this.sort;
+        return this.getPrevNext(params, { hash: hash }, {}, {}, sort);
       },
       getTransaction: params => {
         let hash = params.hash;
-        return this.db.findOne({ hash: { $eq: hash } }).then(tx => {
+        let query = { hash };
+        return this.db.findOne(query).then(tx => {
           if (!tx) return;
 
-          return this.getPrevNext(params, { hash: hash }, {
+          return this.getPrevNext(params, query, {
             $or: [{ transactionIndex: { $gt: tx.transactionIndex } }, { blockNumber: { $gte: tx.blockNumber } }]
           }, {
             $and: [{ transactionIndex: { $lt: tx.transactionIndex } }, { blockNumber: { $lte: tx.blockNumber } }]
-          }, { blockNumber: -1, transactionIndex: -1 }).then(res => {
+          }, this.sort).then(res => {
             //FIX IT
             res.NEXT = null;
             res.PREV = null;
@@ -134,16 +136,20 @@ class Tx extends _dataCollector.DataCollectorItem {
       getBlockTransactions: params => {
         let blockNumber = params.blockNumber;
         if (blockNumber) {
-          return this.find({ blockNumber });
+          return this.find({ blockNumber }, { transactionIndex: -1 });
         }
       },
       getAccountTransactions: params => {
         let address = params.address;
-        return this.getPageData({
-          $or: [{ from: address }, { to: address }]
-        }, params, { timestamp: -1 }).then(res => {
-          res.PARENT_DATA = { address, account: address };
-          return res;
+        let Account = this.parent.Account;
+        return Account.getOne({ address }).then(account => {
+          return this.getPageData({
+            $or: [{ from: address }, { to: address }]
+          }, params, { timestamp: -1 }).then(res => {
+            account.DATA.account = address;
+            res.PARENT_DATA = account.DATA;
+            return res;
+          });
         });
       }
     };
@@ -152,10 +158,13 @@ class Tx extends _dataCollector.DataCollectorItem {
 class Account extends _dataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
+    this.sort = { address: 1 };
     this.publicActions = {
-      getAccount: params => {},
+      getAccount: params => {
+        return this.parent.Tx.getAccountTransactions(params);
+      },
       getAccounts: params => {
-        return this.getPageData({}, params, { _id: -1 });
+        return this.getPageData({}, params);
       }
     };
   }
