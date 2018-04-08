@@ -72,6 +72,7 @@ class Blocks extends DataCollector {
 class Block extends DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent)
+    this.sort = { number: -1 }
     this.publicActions = {
       getBlock: params => {
         let number = parseInt(params.number)
@@ -81,7 +82,7 @@ class Block extends DataCollectorItem {
             { number: number },
             { number: { $lte: number - 1 } },
             { number: { $lte: number + 1 } },
-            { number: -1 }
+            this.sort
           ).then(block => {
             if (block && block.DATA) {
               return this.parent
@@ -97,7 +98,7 @@ class Block extends DataCollectorItem {
           })
       },
       getBlocks: params => {
-        return this.getPageData({}, params, { number: -1 })
+        return this.getPageData({}, params)
       }
     }
   }
@@ -106,6 +107,7 @@ class Block extends DataCollectorItem {
 class Tx extends DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent)
+    this.sort = { blockNumber: -1, transactionIndex: -1 }
     this.publicActions = {
       getTransactions: params => {
         let query = {}
@@ -113,16 +115,17 @@ class Tx extends DataCollectorItem {
         if (txType) {
           query = this.fieldFilterParse('txType', txType)
         }
-        return this.getPageData(query, params, { blockNumber: -1, transactionIndex: -1 })
+        return this.getPageData(query, params)
       },
       getTransaction2: params => {
         let hash = params.hash
+        let sort = params.sort || this.sort
         return this.getPrevNext(
           params,
           { hash: hash },
           {},
           {},
-          { blockNumber: 1, transactionIndex: 1 }
+          sort
         )
       },
       getTransaction: params => {
@@ -146,7 +149,7 @@ class Tx extends DataCollectorItem {
                 { blockNumber: { $lte: tx.blockNumber } }
               ]
             },
-            { blockNumber: -1, transactionIndex: -1 }
+            this.sort
           ).then(res => {
             //FIX IT
             res.NEXT = null
@@ -158,7 +161,7 @@ class Tx extends DataCollectorItem {
       getBlockTransactions: params => {
         let blockNumber = params.blockNumber
         if (blockNumber) {
-          return this.find({ blockNumber })
+          return this.find({ blockNumber }, { transactionIndex: -1 })
         }
       },
       getAccountTransactions: params => {
@@ -185,10 +188,13 @@ class Tx extends DataCollectorItem {
 class Account extends DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent)
+    this.sort = { address: 1 }
     this.publicActions = {
-      getAccount: params => { },
+      getAccount: params => {
+        return this.parent.Tx.getAccountTransactions(params)
+      },
       getAccounts: params => {
-        return this.getPageData({}, params, { _id: -1 })
+        return this.getPageData({}, params)
       }
     }
   }

@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
+import { filterParams } from './utils'
 class Emitter extends EventEmitter { }
 const emitter = new Emitter()
 
@@ -14,6 +15,7 @@ export class DataCollector {
     this.items = {}
     this.perPage = options.perPage || 50
     this.setCollection(options.collectionName)
+    this.tickDelay = 1000
   }
   tick () { }
   stop () {
@@ -25,7 +27,7 @@ export class DataCollector {
     if (!this._interval) {
       this._interval = setInterval(() => {
         this.tick()
-      }, 1000)
+      }, this.tickDelay)
     }
   }
   setCollection (collectionName, name = 'collection') {
@@ -85,13 +87,7 @@ export class DataCollector {
   }
 
   filterParams (params) {
-    let page = params.page || 1
-    let perPage = this.perPage
-    params.page = page
-    let limit = params.limit || perPage
-    limit = limit <= perPage ? limit : perPage
-    params.limit = limit
-    return params
+    return filterParams(params, this.perPage)
   }
 
   formatData (data) {
@@ -123,7 +119,8 @@ export class DataCollectorItem {
         $group: { _id: 'result', TOTAL: { $sum: 1 } }
       })
       // review this
-      let options = { allowDiskUse: true }
+      // let options = { allowDiskUse: true }
+      let options = {}
       this.db.aggregate(aggregate, options, (err, cursor) => {
         if (err) reject(err)
         cursor.toArray().then(res => {
@@ -155,9 +152,11 @@ export class DataCollectorItem {
       return { DATA }
     })
   }
-  find (query) {
+  find (query, sort) {
+    sort = sort || {}
     return this.db
       .find(query)
+      .sort(sort)
       .toArray()
       .then(DATA => {
         return { DATA }
@@ -208,14 +207,15 @@ export class DataCollectorItem {
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
       if (sort) aggregate.push({ $sort: sort })
       return this._aggregatePages(aggregate, PAGES).then(DATA => {
-        console.log(PAGES, DATA)
+        // console.log(PAGES, DATA)
         return { PAGES, DATA }
       })
     })
   }
-  getPageData (query, params, sort) {
-    sort = sort || { _id: -1 }
+  getPageData (query, params) {
+    let sort = params.sort || this.sort || {}
     return this.getPages(query, params).then(PAGES => {
+      PAGES.sort = sort
       return this._findPages(query, PAGES, sort).then(DATA => {
         return { PAGES, DATA }
       })
@@ -243,6 +243,5 @@ export class DataCollectorItem {
     if (fieldQuery) query[field] = fieldQuery
     return query
   }
-
 }
 export default DataCollector

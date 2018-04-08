@@ -5,6 +5,7 @@ import Blocks from './lib/blocksData'
 import Erc20 from './lib/erc20data'
 import * as errors from './lib/errors'
 import Logger from './lib/Logger'
+import { filterParams } from './lib/utils'
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
@@ -49,7 +50,7 @@ dataSource.then(db => {
       if (payload && payload.type) {
         let type = payload.type
         let action = payload.action
-        let params = filterParams(payload.options)
+        let params = filterParams(payload.params)
         let collector = null
 
         switch (type) {
@@ -84,12 +85,6 @@ dataSource.then(db => {
     })
   })
 })
-
-
-const filterParams = (params) => {
-  params.query = params.query || null
-  return params
-}
 
 const publicSettings = () => {
   return config.publicSettings

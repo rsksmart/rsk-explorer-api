@@ -69,17 +69,17 @@ class Token extends DataCollectorItem {
       },
       getEvents: params => {
         let query = { balance: { $exists: false } }
-        let sort = { timestamp: -1 }
-        return this.getPageData(query, params, sort)
+        params.sort = { timestamp: -1 }
+        return this.getPageData(query, params)
       },
       getAccount: params => {
         let account = params.account
         let query = {
           $or: [{ 'args._from': account }, { 'args._to': account }]
         }
-        let sort = { timestamp: -1 }
+        params.sort = { timestamp: -1 }
         return this.db.findOne({ _id: account }).then(balance => {
-          return this.getPageData(query, params, sort).then(res => {
+          return this.getPageData(query, params).then(res => {
             let PAGES = res.PAGES
             let DATA = { account: res.DATA, balance }
             return { DATA, PAGES }
@@ -88,8 +88,8 @@ class Token extends DataCollectorItem {
       },
       getAccounts: params => {
         let query = { balance: { $exists: true } }
-        let sort = { _id: 1 }
-        return this.getPageData(query, params, sort)
+        params.sort = { _id: 1 }
+        return this.getPageData(query, params)
       },
       searchByAddress: params => { }
     }
