@@ -13,12 +13,11 @@ var _config2 = _interopRequireDefault(_config);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 const perPage = _config2.default.api.perPage;
-const lastLimit = _config2.default.api.lastBlocks || 50;
-
+const lastLimit = _config2.default.api.lastBlocks || 10;
 const c = _config2.default.blocks;
 const blocksCollection = c.blocksCollection;
 const txCollection = c.txCollection;
-const accountCollection = c.accountsCollection;
+const addrCollection = c.addrCollection;
 
 class Blocks extends _dataCollector.DataCollector {
   constructor(db) {
@@ -31,7 +30,7 @@ class Blocks extends _dataCollector.DataCollector {
 
     this.addItem(blocksCollection, 'Block', Block, true);
     this.addItem(txCollection, 'Tx', Tx, true);
-    this.addItem(accountCollection, 'Account', Account, true);
+    this.addItem(addrCollection, 'Address', Address, true);
   }
   tick() {
     this.setLastBlocks();
@@ -139,10 +138,10 @@ class Tx extends _dataCollector.DataCollectorItem {
           return this.find({ blockNumber }, { transactionIndex: -1 });
         }
       },
-      getAccountTransactions: params => {
+      getAddressTransactions: params => {
         let address = params.address;
-        let Account = this.parent.Account;
-        return Account.getOne({ address }).then(account => {
+        let Address = this.parent.Address;
+        return Address.getOne({ address }).then(account => {
           return this.getPageData({
             $or: [{ from: address }, { to: address }]
           }, params, { timestamp: -1 }).then(res => {
@@ -155,15 +154,15 @@ class Tx extends _dataCollector.DataCollectorItem {
     };
   }
 }
-class Account extends _dataCollector.DataCollectorItem {
+class Address extends _dataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
     this.sort = { address: 1 };
     this.publicActions = {
-      getAccount: params => {
-        return this.parent.Tx.getAccountTransactions(params);
+      getAddress: params => {
+        return this.parent.Tx.getAddressTransactions(params);
       },
-      getAccounts: params => {
+      getAddresses: params => {
         return this.getPageData({}, params);
       }
     };
