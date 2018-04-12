@@ -31,7 +31,7 @@ const blocksCollections = {
       name: 'toIndex'
     }
   ],
-  accountsCollection: [
+  addrCollection: [
     {
       key: { address: 1 },
       unique: true
@@ -61,13 +61,13 @@ function blocks (config, db) {
   })
 }
 class SaveBlocks {
-  constructor(options, blocksCollection, txCollection, accountsCollection, statsCollection) {
+  constructor(options, blocksCollection, txCollection, addrCollection, statsCollection) {
     this.node = options.node
     this.port = options.port
     this.Blocks = blocksCollection
     this.Txs = txCollection
     this.Stats = statsCollection
-    this.Accounts = accountsCollection
+    this.Addr = addrCollection
     this.web3 = web3Connect(options.node, options.port)
     this.requestingBlocks = new Proxy({}, {
       set: (obj, prop, val) => {
@@ -256,15 +256,15 @@ class SaveBlocks {
     })
   }
 
-  extractTransactionsAccounts (transactions) {
-    let accounts = []
+  extractTransactionsAddresses (transactions) {
+    let addresses = []
     for (let tx of transactions) {
-      accounts.push(this.accountDoc(tx.from))
-      accounts.push(this.accountDoc(tx.to))
+      addresses.push(this.addressDoc(tx.from))
+      addresses.push(this.addressDoc(tx.to))
     }
-    return accounts
+    return addresses
   }
-  accountDoc (address) {
+  addressDoc (address) {
     return { address, balance: 0 }
   }
 
@@ -283,16 +283,16 @@ class SaveBlocks {
     return this.Blocks.insertOne(blockData)
   }
 
-  insertAccounts (accounts) {
-    for (let account of accounts) {
-      this.web3.eth.getBalance(account.address, 'latest', (err, balance) => {
-        if (err) this.log.error(`Error getting balance of account ${account.address}: ${err}`)
-        else account.balance = balance
-        this.log.info(`Updating account: ${account.address}`)
-        this.log.debug(JSON.stringify(account))
-        this.Accounts.updateOne(
-          { address: account.address },
-          { $set: account },
+  insertAddresses (addresses) {
+    for (let addr of addresses) {
+      this.web3.eth.getBalance(addr.address, 'latest', (err, balance) => {
+        if (err) this.log.error(`Error getting balance of address ${addr.address}: ${err}`)
+        else addr.balance = balance
+        this.log.info(`Updating address: ${addr.address}`)
+        this.log.debug(JSON.stringify(addr))
+        this.Addr.updateOne(
+          { address: addr.address },
+          { $set: addr },
           { upsert: true }
         ).catch((err) => {
           this.log.error(err)
@@ -308,7 +308,7 @@ class SaveBlocks {
       let transactions = this.getBlockTransactions(blockData)
       delete blockData.transactions
       blockData.txs = transactions.length
-      let accounts = this.extractTransactionsAccounts(transactions)
+      let addresses = this.extractTransactionsAddresses(transactions)
       // insert block
       this.Blocks.insertOne(blockData).then((res) => {
         this.log.info('Inserted Block ' + blockData.number)
@@ -331,7 +331,7 @@ class SaveBlocks {
             }
           })
         }
-        this.insertAccounts(accounts)
+        this.insertAddresses(addresses)
       }).catch((err) => {
         // insert block error
         if (err.code === 11000) {

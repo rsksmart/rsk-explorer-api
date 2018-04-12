@@ -31,7 +31,7 @@ export default {
     blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
-    accountsCollection: 'accounts',
+    addrCollection: 'addresses',
     statsCollection: 'stats',
   },
   erc20: {

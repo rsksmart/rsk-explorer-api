@@ -1,12 +1,11 @@
 import { DataCollector, DataCollectorItem } from './dataCollector'
 import config from './config'
 const perPage = config.api.perPage
-const lastLimit = config.api.lastBlocks || 50
-
+const lastLimit = config.api.lastBlocks || 10
 const c = config.blocks
 const blocksCollection = c.blocksCollection
 const txCollection = c.txCollection
-const accountCollection = c.accountsCollection
+const addrCollection = c.addrCollection
 
 class Blocks extends DataCollector {
   constructor(db) {
@@ -19,7 +18,7 @@ class Blocks extends DataCollector {
 
     this.addItem(blocksCollection, 'Block', Block, true)
     this.addItem(txCollection, 'Tx', Tx, true)
-    this.addItem(accountCollection, 'Account', Account, true)
+    this.addItem(addrCollection, 'Address', Address, true)
   }
   tick () {
     this.setLastBlocks()
@@ -164,10 +163,10 @@ class Tx extends DataCollectorItem {
           return this.find({ blockNumber }, { transactionIndex: -1 })
         }
       },
-      getAccountTransactions: params => {
+      getAddressTransactions: params => {
         let address = params.address
-        let Account = this.parent.Account
-        return Account.getOne({ address }).then((account) => {
+        let Address = this.parent.Address
+        return Address.getOne({ address }).then((account) => {
           return this.getPageData(
             {
               $or: [{ from: address }, { to: address }]
@@ -185,18 +184,19 @@ class Tx extends DataCollectorItem {
     }
   }
 }
-class Account extends DataCollectorItem {
+class Address extends DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent)
     this.sort = { address: 1 }
     this.publicActions = {
-      getAccount: params => {
-        return this.parent.Tx.getAccountTransactions(params)
+      getAddress: params => {
+        return this.parent.Tx.getAddressTransactions(params)
       },
-      getAccounts: params => {
+      getAddresses: params => {
         return this.getPageData({}, params)
       }
     }
   }
 }
 export default Blocks
+  

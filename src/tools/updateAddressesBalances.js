@@ -8,24 +8,24 @@ const web3 = web3Connect(config.blocks.node, config.blocks.port)
 
 
 datasource.then((db) => {
-  let Accounts = db.collection(config.blocks.accountsCollection)
-  update(Accounts)
+  let Addresses = db.collection(config.blocks.addrCollection)
+  update(Addresses)
 })
 
-const update = (Accounts) => {
+const update = (Addrs) => {
 
   if (web3.isConnected()) {
     let n = 0
-    Accounts.count().then((total) => {
-      Accounts.find().forEach((account) => {
+    Addrs.count().then((total) => {
+      Addrs.find().forEach((address) => {
         n++
-        log.info(`Getting Balance ${n} of ${total}, ${account.address}`)
-        if (isAddress(account.address)) {
-          web3.eth.getBalance(account.address, 'latest', (err, balance) => {
-            log.info(`Updating balance of account ${account.address}`)
+        log.info(`Getting Balance ${n} of ${total}, ${address.address}`)
+        if (isAddress(address.address)) {
+          web3.eth.getBalance(address.address, 'latest', (err, balance) => {
+            log.info(`Updating balance of address ${address.address}`)
             if (!err) {
-              account.balance = balance
-              Accounts.updateOne({ _id: account._id }, { $set: account }).catch((err) => log.error(err))
+              address.balance = balance
+              Addrs.updateOne({ _id: address._id }, { $set: address }).catch((err) => log.error(err))
             }
           })
         }
@@ -33,7 +33,7 @@ const update = (Accounts) => {
     })
   } else {
     log.info('web3 is not connected')
-    update(Accounts)
+    update(Addrs)
   }
 }
 
