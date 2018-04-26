@@ -26,7 +26,7 @@ exports.default = {
   },
   api: {
     log: {},
-    lastBlocks: 50,
+    lastBlocks: 10,
     perPage: 50
 
   },
@@ -46,7 +46,7 @@ exports.default = {
     logFormat: 'combined',
     exportStartBlock: 0,
     exportEndBlock: 'latest',
-    erc20ABI: [{
+    abi: [{
       constant: false,
       inputs: [{ name: '_spender', type: 'address' }, { name: '_value', type: 'uint256' }],
       name: 'approve',
