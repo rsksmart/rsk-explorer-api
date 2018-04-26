@@ -16,7 +16,7 @@ class Exporter {
     this.logTag = this.options.tokenShortName || this.options.tokenAddress
 
     this.contract = this.web3.eth
-      .contract(this.options.erc20ABI)
+      .contract(this.options.abi)
       .at(this.options.tokenAddress)
     this.allEvents = this.contract.allEvents({
       fromBlock: this.toBlock,

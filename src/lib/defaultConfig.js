@@ -21,7 +21,7 @@ export default {
   },
   api: {
     log: {},
-    lastBlocks: 50,
+    lastBlocks: 10,
     perPage: 50
 
   },
@@ -41,7 +41,7 @@ export default {
     logFormat: 'combined',
     exportStartBlock: 0,
     exportEndBlock: 'latest',
-    erc20ABI: [
+    abi: [
       {
         constant: false,
         inputs: [
