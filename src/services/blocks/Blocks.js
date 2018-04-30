@@ -80,7 +80,7 @@ class SaveBlocks {
     this.log = options.Logger || console
     this.state = {}
   }
-  
+
   start () {
     if (this.web3 && this.web3.isConnected()) {
       // node is syncing
@@ -256,14 +256,17 @@ class SaveBlocks {
     })
   }
 
-  extractTransactionsAddresses (transactions) {
-    let addresses = []
+  extractBlockAddresses (blockdata) {
+    let addresses = {}
+    addresses[blockdata.miner] = this.addressDoc(blockdata.miner)
+    const transactions = blockdata.transactions || []
     for (let tx of transactions) {
-      addresses.push(this.addressDoc(tx.from))
-      addresses.push(this.addressDoc(tx.to))
+      addresses[tx.form] = this.addressDoc(tx.from)
+      addresses[tx.to] = this.addressDoc(tx.to)
     }
-    return addresses
+    return Object.values(addresses)
   }
+
   addressDoc (address) {
     return { address, balance: 0 }
   }
@@ -305,10 +308,11 @@ class SaveBlocks {
     return new Promise((resolve, reject) => {
       if (!blockData) reject('no blockdata')
       blockData._received = Date.now()
+      let addresses = this.extractBlockAddresses(blockData)
       let transactions = this.getBlockTransactions(blockData)
       delete blockData.transactions
       blockData.txs = transactions.length
-      let addresses = this.extractTransactionsAddresses(transactions)
+
       // insert block
       this.Blocks.insertOne(blockData).then((res) => {
         this.log.info('Inserted Block ' + blockData.number)
