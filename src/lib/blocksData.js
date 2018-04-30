@@ -75,7 +75,7 @@ class Block extends DataCollectorItem {
     this.publicActions = {
       getBlock: params => {
         let number = parseInt(params.number)
-        if (number)
+        if (undefined !== number)
           return this.getPrevNext(
             params,
             { number: number },
@@ -159,7 +159,7 @@ class Tx extends DataCollectorItem {
       },
       getBlockTransactions: params => {
         let blockNumber = params.blockNumber
-        if (blockNumber) {
+        if (undefined !== blockNumber) {
           return this.find({ blockNumber }, { transactionIndex: -1 })
         }
       },
@@ -199,4 +199,3 @@ class Address extends DataCollectorItem {
   }
 }
 export default Blocks
-  
