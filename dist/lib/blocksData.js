@@ -77,7 +77,7 @@ class Block extends _dataCollector.DataCollectorItem {
     this.publicActions = {
       getBlock: params => {
         let number = parseInt(params.number);
-        if (number) return this.getPrevNext(params, { number: number }, { number: { $lte: number - 1 } }, { number: { $lte: number + 1 } }, this.sort).then(block => {
+        if (undefined !== number) return this.getPrevNext(params, { number: number }, { number: { $lte: number - 1 } }, { number: { $lte: number + 1 } }, this.sort).then(block => {
           if (block && block.DATA) {
             return this.parent.itemPublicAction('getBlockTransactions', {
               blockNumber: block.DATA.number,
@@ -134,7 +134,7 @@ class Tx extends _dataCollector.DataCollectorItem {
       },
       getBlockTransactions: params => {
         let blockNumber = params.blockNumber;
-        if (blockNumber) {
+        if (undefined !== blockNumber) {
           return this.find({ blockNumber }, { transactionIndex: -1 });
         }
       },
