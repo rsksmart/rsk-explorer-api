@@ -214,6 +214,8 @@ export class DataCollectorItem {
   }
   getPageData (query, params) {
     let sort = params.sort || this.sort || {}
+    // allow only one field to user sort
+    if (Object.keys(sort).length > 1) sort = this.sort
     return this.getPages(query, params).then(PAGES => {
       PAGES.sort = sort
       return this._findPages(query, PAGES, sort).then(DATA => {
