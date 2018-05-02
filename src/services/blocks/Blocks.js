@@ -8,6 +8,22 @@ const blocksCollections = {
     {
       key: { number: 1 },
       unique: true
+    },
+    {
+      key: { timestamp: 1 },
+      name: 'blocksTime'
+    },
+    {
+      key: { miner: 1 },
+      name: 'blocksMiner'
+    },
+    {
+      key: { txs: 1 },
+      name: 'blocksTxs'
+    },
+    {
+      key: { size: 1 },
+      name: 'blocksSize'
     }
   ],
   txCollection: [
