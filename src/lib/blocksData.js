@@ -1,4 +1,4 @@
-import { DataCollector, DataCollectorItem } from './dataCollector'
+import { DataCollector, DataCollectorItem } from './DataCollector'
 import config from './config'
 const perPage = config.api.perPage
 const lastLimit = config.api.lastBlocks || 10
