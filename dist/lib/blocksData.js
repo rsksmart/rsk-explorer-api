@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _dataCollector = require('./dataCollector');
+var _DataCollector = require('./DataCollector');
 
 var _config = require('./config');
 
@@ -19,7 +19,7 @@ const blocksCollection = c.blocksCollection;
 const txCollection = c.txCollection;
 const addrCollection = c.addrCollection;
 
-class Blocks extends _dataCollector.DataCollector {
+class Blocks extends _DataCollector.DataCollector {
   constructor(db) {
     let collectionName = blocksCollection;
     super(db, { perPage, collectionName });
@@ -70,7 +70,7 @@ class Blocks extends _dataCollector.DataCollector {
   }
 }
 
-class Block extends _dataCollector.DataCollectorItem {
+class Block extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
     this.sort = { number: -1 };
@@ -96,7 +96,7 @@ class Block extends _dataCollector.DataCollectorItem {
   }
 }
 
-class Tx extends _dataCollector.DataCollectorItem {
+class Tx extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
     this.sort = { blockNumber: -1, transactionIndex: -1 };
@@ -154,7 +154,7 @@ class Tx extends _dataCollector.DataCollectorItem {
     };
   }
 }
-class Address extends _dataCollector.DataCollectorItem {
+class Address extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
     this.sort = { address: 1 };

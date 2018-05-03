@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _dataCollector = require('./dataCollector');
+var _DataCollector = require('./DataCollector');
 
 var _config = require('./config');
 
@@ -15,7 +15,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const perPage = _config2.default.api.perPage;
 const statsCollection = _config2.default.blocks.statsCollection;
 
-class Stats extends _dataCollector.DataCollector {
+class Stats extends _DataCollector.DataCollector {
   constructor(db) {
     super(db, { perPage, statsCollection });
     this.state = {};

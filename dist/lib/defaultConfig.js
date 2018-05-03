@@ -25,14 +25,16 @@ exports.default = {
     database: 'blockDB'
   },
   api: {
-    log: {},
     lastBlocks: 10,
     perPage: 50
 
   },
-  publicSettings: {},
+  publicSettings: {
+    bridgeAddress: '0x0000000000000000000000000000000001000006',
+    remascAddress: '0x0000000000000000000000000000000001000008',
+    contractDeployAddress: '0x0000000000000000000000000000000000000000'
+  },
   blocks: {
-    log: {},
     blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
@@ -40,7 +42,6 @@ exports.default = {
     statsCollection: 'stats'
   },
   erc20: {
-    log: {},
     dbPrefix: 'erc20_',
     tokenCollection: 'erc20Tokens',
     logFormat: 'combined',

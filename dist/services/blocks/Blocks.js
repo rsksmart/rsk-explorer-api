@@ -28,6 +28,18 @@ const blocksCollections = {
   blocksCollection: [{
     key: { number: 1 },
     unique: true
+  }, {
+    key: { timestamp: 1 },
+    name: 'blocksTime'
+  }, {
+    key: { miner: 1 },
+    name: 'blocksMiner'
+  }, {
+    key: { txs: 1 },
+    name: 'blocksTxs'
+  }, {
+    key: { size: 1 },
+    name: 'blocksSize'
   }],
   txCollection: [{
     key: { hash: 1 },
@@ -39,15 +51,27 @@ const blocksCollections = {
     },
     name: 'blockTrasaction'
   }, {
+    key: { blockNumber: 1 },
+    name: 'blockIndex'
+  }, {
     key: { from: 1 },
     name: 'fromIndex'
   }, {
     key: { to: 1 },
     name: 'toIndex'
+  }, {
+    key: { value: 1 },
+    name: 'valueIndex'
+  }, {
+    key: { timestamp: 1 },
+    name: 'timeIndex'
   }],
   addrCollection: [{
     key: { address: 1 },
     unique: true
+  }, {
+    key: { balance: 1 },
+    name: 'balanceIndex'
   }],
   statsCollection: [{
     key: { timestamp: 1 },

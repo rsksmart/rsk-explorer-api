@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _dataCollector = require('./dataCollector');
+var _DataCollector = require('./DataCollector');
 
 var _config = require('./config');
 
@@ -16,7 +16,7 @@ const perPage = _config2.default.api.perPage;
 const keyName = 'address';
 const collectionName = _config2.default.erc20.tokenCollection || 'erc20Tokens';
 
-class Erc20 extends _dataCollector.DataCollector {
+class Erc20 extends _DataCollector.DataCollector {
   constructor(db) {
     super(db, { perPage, keyName, collectionName });
     this.tokenList = [];
@@ -71,7 +71,7 @@ class Erc20 extends _dataCollector.DataCollector {
   }
 }
 
-class Token extends _dataCollector.DataCollectorItem {
+class Token extends _DataCollector.DataCollectorItem {
   constructor(collection, address) {
     super(collection, address);
     this.publicActions = {
