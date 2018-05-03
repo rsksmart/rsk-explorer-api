@@ -20,7 +20,6 @@ export default {
     database: 'blockDB'
   },
   api: {
-    log: {},
     lastBlocks: 10,
     perPage: 50
 
@@ -31,7 +30,6 @@ export default {
     contractDeployAddress: '0x0000000000000000000000000000000000000000'
   },
   blocks: {
-    log: {},
     blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
@@ -39,7 +37,6 @@ export default {
     statsCollection: 'stats',
   },
   erc20: {
-    log: {},
     dbPrefix: 'erc20_',
     tokenCollection: 'erc20Tokens',
     logFormat: 'combined',
