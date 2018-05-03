@@ -16,16 +16,16 @@ config.blocks.node = config.blocks.node || config.source.node
 config.blocks.port = config.blocks.port || config.source.port
 
 // defaults log files
-
 if (config.log.dir) {
   config.api.log.file = config.api.log.file || config.log.dir + '/explorer-api.json'
   config.blocks.log = config.blocks.log || { file: config.log.dir + '/blocks.json' }
   config.erc20.log = config.erc20.log || { file: config.log.dir + '/erc20.json' }
 }
 
-
+// tx addresses
 config.bridgeAddress = config.publicSettings.bridgeAddress || null
 config.remascAddress = config.publicSettings.remascAddress || null
+config.contractDeployAddress = config.publicSettings.contractDeployAddress || null
 
 
 export default config
