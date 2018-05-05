@@ -7,9 +7,9 @@
 
 ### api
 
-### blocks
+### blocks service
 
-### erc20
+### erc20 service
 
 ## Requisites
 
@@ -29,6 +29,23 @@ Create configuration file
 ``` shell
     cp config.json.example config.json
   ```
+Check database configuration, and create the database.
+
+
+**Then start:** 
+
+**services**
+
+``` shell
+  node dist/services/blocks
+  node dist/services/erc20
+```
+
+**api**
+
+``` shell
+  node dist/api.js
+```
 
 ## Commands
 
@@ -58,10 +75,14 @@ Run erc20 service in development mode
 
 ## Configuration
 
-  See defaults on: **lib/defaultConfig** *(config.json overrides this values)*
+  See defaults on: **lib/defaultConfig** 
+  *(config.json overrides this values)*
 
 
 ### Source
+
+  "node": "localhost",
+  "port": 4444
 
 ### db
 
@@ -73,11 +94,11 @@ Run erc20 service in development mode
 - tokens: Array of token objects:
     ``` javascript
     {
-      shortName: 'GNT',
-      address: '0xa74476443119a942de498590fe1f2454d7d4ac0d',
+      shortName: '<token-short-name>',
+      address: '<token-address>',
       decimals: 18,
-      name: 'Golem Network Token',
-      description: 'Golem Network Token',
+      name: '<token-name>',
+      description: '<token-description>',
       totalSupply: -1,
     }
 
