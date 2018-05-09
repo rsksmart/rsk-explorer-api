@@ -86,6 +86,15 @@ Run erc20 service in development mode
 
 ### db
 
+  "server": "localhost"
+  "port": 27017
+  "database": "explorerDB"
+
+**Optionals:**
+
+  "user": < user >
+  "password": < password >
+
 ### blocks
 
 ### erc20
