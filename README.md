@@ -2,7 +2,6 @@
 
 ## Description
 
-
 ## Components
 
 ### api
@@ -18,30 +17,30 @@
 
 ## Install
 
-Install dependecies
+- Install dependecies
 
 ``` shell
     npm install
   ```
 
-Create configuration file
+- Create configuration file
 
 ``` shell
-    cp config.json.example config.json
+    cp config-example.json config.json
   ```
-Check database configuration, and create the database.
 
+- Check database configuration.
 
-**Then start:** 
+## Start
 
-**services**
+### services
 
 ``` shell
   node dist/services/blocks
   node dist/services/erc20
 ```
 
-**api**
+### api
 
 ``` shell
   node dist/api.js
@@ -77,7 +76,6 @@ Run erc20 service in development mode
 
   See defaults on: **lib/defaultConfig** 
   *(config.json overrides this values)*
-
 
 ### Source
 
