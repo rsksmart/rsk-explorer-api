@@ -55,11 +55,13 @@ export class DataCollectorItem {
       return { DATA }
     })
   }
-  find (query, sort) {
+  find (query, sort, limit) {
     sort = sort || {}
+    limit = limit || 0
     return this.db
       .find(query)
       .sort(sort)
+      .limit(limit)
       .toArray()
       .then(DATA => {
         return { DATA }
