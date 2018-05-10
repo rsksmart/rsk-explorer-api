@@ -16,7 +16,7 @@ class Status extends DataCollector {
   tick () {
     this.updateState().then((newState) => {
       if (newState) {
-        this.events.emit('newStatus', { DATA: newState })
+        this.events.emit('newStatus', this.formatData(newState))
       }
     })
   }
@@ -32,10 +32,13 @@ class Status extends DataCollector {
       })
   }
   async updateState () {
-    let status = await this.getBlocksServiceStatus()
-    let last = await this.getLastblock()
-    let high = await this.getHighestBlock()
-    let dbBlocks = await this.getTotalBlocks()
+    let [status, last, high, dbBlocks] =
+      await Promise.all([
+        this.getBlocksServiceStatus(),
+        this.getLastblock(),
+        this.getHighestBlock(),
+        this.getTotalBlocks()
+      ])
     status = Object.assign(status, {
       dbLastBlockInserted: last.number,
       dbHighBlock: high.number,
