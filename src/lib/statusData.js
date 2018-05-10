@@ -2,25 +2,25 @@ import { DataCollector, DataCollectorItem } from './DataCollector'
 import config from './config'
 
 const perPage = config.api.perPage
-const statsCollection = config.blocks.statsCollection
+const statusCollection = config.blocks.statusCollection
 
 
-class Stats extends DataCollector {
+class Status extends DataCollector {
   constructor(db) {
-    super(db, { perPage, statsCollection })
+    super(db, { perPage, statusCollection })
     this.state = {}
-    this.addItem(statsCollection, 'stats', null, true)
+    this.addItem(statusCollection, 'status', null, true)
   }
   tick () {
     let state = this.state
     this.updateState().then((newState) => {
       if (state.timestamp !== newState.timestamp) {
-        this.events.emit('newStats', newState)
+        this.events.emit('newStatus', newState)
       }
     })
   }
-  getStatsFromDb () {
-    return this.stats.getOne({}).then((res) => {
+  getStatusFromDb () {
+    return this.status.getOne({}).then((res) => {
       return res
     })
   }
@@ -28,10 +28,10 @@ class Stats extends DataCollector {
     return this.formatData(this.state)
   }
   updateState () {
-    return this.getStatsFromDb().then((stat) => {
-      stat = stat.DATA
-      this.state = stat
-      return stat
+    return this.getStatusFromDb().then((status) => {
+      status = status.DATA
+      this.state = status
+      return status
     })
   }
   dbStatus (blocks, lastBlock) {
@@ -40,4 +40,4 @@ class Stats extends DataCollector {
   }
 }
 
-export default Stats
+export default Status

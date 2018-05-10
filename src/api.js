@@ -3,7 +3,7 @@ import config from './lib/config'
 import dataSource from './lib/dataSource'
 import Blocks from './lib/blocksData'
 import Erc20 from './lib/erc20data'
-import Stats from './lib/statsData'
+import Status from './lib/statusData'
 import * as errors from './lib/errors'
 import Logger from './lib/Logger'
 import { filterParams } from './lib/utils'
@@ -22,10 +22,10 @@ dataSource.then(db => {
   // data collectors
   const erc20 = new Erc20(db)
   const blocks = new Blocks(db)
-  const stats = new Stats(db)
+  const status = new Status(db)
   blocks.start()
   erc20.start()
-  stats.start()
+  status.start()
 
 
   blocks.events.on('newBlocks', data => {
@@ -40,15 +40,15 @@ dataSource.then(db => {
     io.emit('data', formatRes('tokens', data))
   })
 
-  stats.events.on('newStats', data => {
-    io.emit('data', formatRes('stats', data))
+  status.events.on('newStatus', data => {
+    io.emit('data', formatRes('status', data))
   })
 
   io.on('connection', socket => {
     io.emit('open', { time: Date.now(), settings: publicSettings() })
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
     io.emit('data', formatRes('tokens', erc20.getTokens()))
-    io.emit('data', formatRes('stats', stats.getState()))
+    io.emit('data', formatRes('status', status.getState()))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {

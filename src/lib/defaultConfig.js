@@ -34,7 +34,7 @@ export default {
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     addrCollection: 'addresses',
-    statsCollection: 'stats',
+    statusCollection: 'status',
   },
   erc20: {
     dbPrefix: 'erc20_',

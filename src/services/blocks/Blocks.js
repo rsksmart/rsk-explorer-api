@@ -69,7 +69,7 @@ const blocksCollections = {
       name: 'balanceIndex'
     }
   ],
-  statsCollection: [
+  statusCollection: [
     {
       key: { timestamp: 1 },
       unique: true
@@ -93,12 +93,12 @@ function blocks (config, db) {
   })
 }
 class SaveBlocks {
-  constructor(options, blocksCollection, txCollection, addrCollection, statsCollection) {
+  constructor(options, blocksCollection, txCollection, addrCollection, statusCollection) {
     this.node = options.node
     this.port = options.port
     this.Blocks = blocksCollection
     this.Txs = txCollection
-    this.Stats = statsCollection
+    this.Status = statusCollection
     this.Addr = addrCollection
     this.web3 = web3Connect(options.node, options.port)
     this.requestingBlocks = new Proxy({}, {
@@ -152,13 +152,13 @@ class SaveBlocks {
   }
 
   isDbOutdated () {
-    return this.dbBlocksStats().then((res) => {
+    return this.dbBlocksStatus().then((res) => {
       console.log(res)
       this.updateState({ res })
       return (res.lastBlock > res.blocks) ? res.lastBlock : null
     })
   }
-  async dbBlocksStats () {
+  async dbBlocksStatus () {
     let lastBlock = await this.getHighDbBlock()
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
@@ -201,13 +201,15 @@ class SaveBlocks {
     for (let p in newState) {
       this.state[p] = newState[p]
     }
+    console.log(this.state.timestamp)
     this.state.timestamp = Date.now()
-    this.saveStatsToDb()
+    console.log(this.state.timestamp)
+    this.saveStatusToDb()
   }
 
-  saveStatsToDb () {
-    let stats = Object.assign({}, this.state)
-    this.Stats.insertOne(stats).catch((err) => {
+  saveStatusToDb () {
+    let status = Object.assign({}, this.state)
+    this.Status.insertOne(status).catch((err) => {
       this.log.error(err)
     })
   }
