@@ -7,17 +7,14 @@ import Status from './lib/statusData'
 import * as errors from './lib/errors'
 import Logger from './lib/Logger'
 import { filterParams } from './lib/utils'
+import http from 'http'
+
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
 
 dataSource.then(db => {
   log.info('Database connected')
-  const io = new IO(port)
-
-  io.httpServer.on('listening', () => {
-    log.info('Server listen on port ' + port)
-  })
 
   // data collectors
   const erc20 = new Erc20(db)
@@ -27,6 +24,26 @@ dataSource.then(db => {
   erc20.start()
   status.start()
 
+
+  const httpServer = http.createServer((req, res) => {
+    const url = req.url || null
+    if (url && url === '/status') {
+      res.writeHead(200, { 'Content-type': 'application/json' })
+      res.write(JSON.stringify(status.state))
+    } else {
+      res.writeHead(404, 'Not Foud')
+    }
+    res.end()
+  })
+  httpServer.listen(port)
+  const io = new IO(httpServer)
+
+  io.httpServer.on('listening', () => {
+    log.info('Server listen on port ' + port)
+  })
+
+
+  console.log(status.state)
 
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data))
