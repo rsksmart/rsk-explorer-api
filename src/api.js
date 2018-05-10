@@ -41,7 +41,7 @@ dataSource.then(db => {
   })
 
   status.events.on('newStatus', data => {
-    io.emit('data', formatRes('status', data))
+    io.emit('data', formatRes('dbStatus', data))
   })
 
   io.on('connection', socket => {
