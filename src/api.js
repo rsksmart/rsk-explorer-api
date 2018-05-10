@@ -42,9 +42,6 @@ dataSource.then(db => {
     log.info('Server listen on port ' + port)
   })
 
-
-  console.log(status.state)
-
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data))
   })
@@ -115,7 +112,6 @@ dataSource.then(db => {
 const publicSettings = () => {
   return config.publicSettings
 }
-
 
 const formatRes = (action, result, req, error) => {
   let data
