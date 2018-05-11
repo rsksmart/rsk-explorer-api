@@ -10,15 +10,13 @@ const log = Logger('Blocks', config.log)
 
 
 dataSource.then(db => {
-  log.info('Using configuration:')
-  log.info(config)
+  log.info(`Using configuration: ${JSON.stringify(config)}`)
   config.Logger = log
   Blocks(config, db).then((blocks) => {
     blocks.start()
   })
 
 })
-
 
 
 process.on('unhandledRejection', err => {

@@ -41,22 +41,37 @@ class SaveBlocks {
     this.state = {}
   }
 
-  start () {
-    if (this.web3 && this.web3.isConnected()) {
+  getSavedState () {
+    return this.Status.find({},
+      {
+        sort: { timestamp: -1 },
+        limit: 1,
+        projection: { _id: 0 }
+      })
+      .toArray().then(savedStatus => {
+        return this.updateState(savedStatus[0])
+      })
+  }
+
+  async start () {
+    let state = await this.getSavedState()
+    this.state = state
+    if (this.web3.isConnected()) {
       // node is syncing
       this.web3.eth.isSyncing((err, sync) => {
         this.log.debug('Node isSyncing')
         if (!err) {
-          this.updateSycState(sync)
-          if (sync === true) {
-            this.web3.reset(true)
-            this.checkDB()
-          } else if (sync) {
-            let block = sync.currentBlock
-            this.getBlocksFrom(block)
-          } else {
-            this.checkAndListen()
-          }
+          this.updateState({ sync }).then(() => {
+            if (sync === true) {
+              this.web3.reset(true)
+              this.checkDB()
+            } else if (sync) {
+              let block = sync.currentBlock
+              this.getBlocksFrom(block)
+            } else {
+              this.checkAndListen()
+            }
+          })
         } else {
           this.log.error('syncing error', err)
         }
@@ -67,6 +82,7 @@ class SaveBlocks {
       this.log.warn('Web3 is not connected!')
       this.updateState().then(() => {
         this.start()
+        // process.exit(33)
       })
     }
   }
@@ -77,15 +93,15 @@ class SaveBlocks {
       return this.getMissingBlocks()
     }).catch((err) => {
       this.log.error('Error getting latest block: ' + err)
-      process.exit()
     })
   }
 
   isDbOutdated () {
     return this.dbBlocksStatus().then((res) => {
       this.log.debug(`The DB is outdated: ${JSON.stringify(res)}`)
-      this.updateState(res)
-      return (res.lastBlock > res.blocks) ? res.lastBlock : null
+      return this.updateState(res).then(() => {
+        return (res.lastBlock > res.blocks) ? res.lastBlock : null
+      })
     })
   }
   async dbBlocksStatus () {
@@ -106,6 +122,7 @@ class SaveBlocks {
       let pending = this.makeBlockQueue()
       if (pending) {
         Promise.all(pending).then((values) => {
+          // review
           this.processBlocksQueue()
         }, (reason) => {
           this.log.error(reason)
@@ -115,6 +132,9 @@ class SaveBlocks {
         resolve()
       }
     })
+  }
+  resetBlockQueue () {
+    this.blocksQueue = -1
   }
   makeBlockQueue () {
     if (this.blocksQueue > -1) {
@@ -127,31 +147,30 @@ class SaveBlocks {
     }
   }
 
-  updateSycState (sync) {
-    sync = sync || this.web3.eth.syncing
-    if (this.state.sync !== sync) this.updateState({ sync })
-  }
-
   updateState (newState) {
-    if (newState) {
-      if (!newState.hasOwnProperty('sync')) newState.sync = this.web3.eth.syncing
-      if (!newState.hasOwnProperty('nodeDown')) newState.nodeDown = false
-    }
-    newState = newState || { nodeDown: true }
+    let connected = this.web3.isConnected()
+    newState = newState || {}
+    newState.nodeDown = !connected
+    // if (connected && undefined === newState.sync) newState.sync = this.web3.eth.syncing
+
     this.log.debug(`newState: ${JSON.stringify(newState)}`)
-    let state = this.state
+    let state = Object.assign({}, this.state)
     let changed = Object.keys(newState).find(k => newState[k] !== state[k])
-    this.state = Object.assign(this.state, newState)
-    this.state.timestamp = Date.now()
-    if (changed) return this.saveStateToDb()
-    else return Promise.resolve()
-  }
-  saveStateToDb () {
-    let status = Object.assign({}, this.state)
-    return this.Status.insertOne(status)
-      .catch((err) => {
-        this.log.error(err)
-      })
+    // let changed = JSON.stringify(newState) === JSON.stringify(state)
+    this.state = Object.assign(state, newState)
+    if (changed) {
+      newState.timestamp = Date.now()
+      return this.Status.insertOne(newState)
+        .then(res => {
+          return newState
+        })
+        .catch((err) => {
+          this.log.error(err)
+        })
+    }
+    else {
+      return Promise.resolve(this.state)
+    }
   }
 
   listenBlocks () {
@@ -201,6 +220,7 @@ class SaveBlocks {
         if (!this.requestingBlocks[blockNumber]) {
           this.log.debug('Getting Block: ', blockNumber)
           this.requestingBlocks[blockNumber] = true
+          this.updateState({ requestingBlocks: Object.keys(this.requestingBlocks).length })
           this.web3.eth.getBlock(blockNumber, true, (err, blockData) => {
             if (err) {
               reject(
@@ -342,9 +362,11 @@ class SaveBlocks {
   }
 
   checkAndListen () {
-    this.updateSycState()
-    this.checkDB()
-    this.listenBlocks()
+    this.resetBlockQueue()
+    this.updateState().then(() => {
+      this.checkDB()
+      this.listenBlocks()
+    })
   }
 }
 
