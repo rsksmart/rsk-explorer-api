@@ -62,7 +62,7 @@ dataSource.then(db => {
     io.emit('open', { time: Date.now(), settings: publicSettings() })
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
     io.emit('data', formatRes('tokens', erc20.getTokens()))
-    io.emit('data', formatRes('status', status.getState()))
+    io.emit('data', formatRes('dbStatus', status.getState()))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
