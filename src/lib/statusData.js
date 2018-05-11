@@ -35,14 +35,15 @@ class Status extends DataCollector {
     let [status, last, high, dbBlocks] =
       await Promise.all([
         this.getBlocksServiceStatus(),
-        this.getLastblock(),
+        this.getLastblockReceived(),
         this.getHighestBlock(),
         this.getTotalBlocks()
       ])
     status = Object.assign(status, {
-      dbLastBlockInserted: last.number,
+      dbLastBlockReceived: last.number,
       dbHighBlock: high.number,
-      dbBlocks
+      dbBlocks,
+      dbMissingBlocks: high.number - dbBlocks
     })
     let state = this.state
     let changed = Object.keys(status).find(k => status[k] !== state[k])
@@ -56,9 +57,9 @@ class Status extends DataCollector {
     return this.Blocks.find({}, { number: -1 }, 1)
       .then(hBlock => hBlock.DATA[0])
   }
-  getLastblock () {
-    return this.Blocks.getOne()
-      .then(lastBlock => lastBlock.DATA)
+  getLastblockReceived () {
+    return this.Blocks.find({}, { _received: -1 }, 1)
+      .then(lastBlock => lastBlock.DATA[0])
   }
   getTotalBlocks () {
     return this.Blocks.db.count({})
