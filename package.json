@@ -10,6 +10,7 @@
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
+    "status": "./node_modules/.bin/nodemon src/tools/statusClient.js --exec babel-node",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
