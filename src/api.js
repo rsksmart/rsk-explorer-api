@@ -31,7 +31,7 @@ dataSource.then(db => {
       res.writeHead(200, { 'Content-type': 'application/json' })
       res.write(JSON.stringify(status.state))
     } else {
-      res.writeHead(404, 'Not Foud')
+      res.writeHead(404, 'Not Found')
     }
     res.end()
   })
