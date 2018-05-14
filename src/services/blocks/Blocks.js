@@ -151,6 +151,7 @@ class SaveBlocks {
     let connected = this.web3.isConnected()
     newState = newState || {}
     newState.nodeDown = !connected
+    newState.requestingBlocks = Object.keys(this.requestingBlocks).length
     // if (connected && undefined === newState.sync) newState.sync = this.web3.eth.syncing
 
     this.log.debug(`newState: ${JSON.stringify(newState)}`)
@@ -220,7 +221,7 @@ class SaveBlocks {
         if (!this.requestingBlocks[blockNumber]) {
           this.log.debug('Getting Block: ', blockNumber)
           this.requestingBlocks[blockNumber] = true
-          this.updateState({ requestingBlocks: Object.keys(this.requestingBlocks).length })
+          this.updateState()
           this.web3.eth.getBlock(blockNumber, true, (err, blockData) => {
             if (err) {
               reject(
