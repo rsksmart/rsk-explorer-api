@@ -251,6 +251,18 @@ class SaveBlocks {
     })
   }
 
+  async deleteBlock (number) {
+    let [txs, block] = await Promise.all([this.Txs.remove({ block: number }),
+    this.Blocks.remove({ number })]).catch(error => {
+      this.log.error(`Error deleting block: ${number} ${error}`)
+    })
+    if (txs.result.ok && block.result.ok) {
+      this.log.debug(`Delete block ${number}  
+      ${block.result.n} blocks removed, ${txs.result.n} transactions removed`)
+      return { block: block.result, txs: txs.result }
+    }
+  }
+
   extractBlockAddresses (blockdata) {
     let addresses = {}
     addresses[blockdata.miner] = this.addressDoc(blockdata.miner)
