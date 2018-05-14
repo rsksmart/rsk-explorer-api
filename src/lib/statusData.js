@@ -41,9 +41,10 @@ class Status extends DataCollector {
       ])
     status = Object.assign(status, {
       dbLastBlockReceived: last.number,
+      dbLastBlockReceivedTime: last._received,
       dbHighBlock: high.number,
       dbBlocks,
-      dbMissingBlocks: high.number - dbBlocks
+      dbMissingBlocks: high.number + 1 - dbBlocks
     })
     let state = this.state
     let changed = Object.keys(status).find(k => status[k] !== state[k])
