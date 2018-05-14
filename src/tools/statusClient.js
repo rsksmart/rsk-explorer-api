@@ -1,6 +1,5 @@
 import io from 'socket.io-client'
 import config from '../lib/config'
-
 const server = process.env.SERVER || 'localhost'
 const port = process.env.PORT || config.server.port
 const url = `ws://${server}:${port}`
@@ -33,9 +32,12 @@ socket.on('data', data => {
   if (action === 'dbStatus' && data.data) {
     const status = data.data
     console.clear()
-    console.log(`Api : ${(socket.connected) ? green : red} ● ${reset}`)
-    console.log(`Node: ${(!status.nodeDown) ? green : red} ● ${reset}`)
-    console.log(`Db  : ${(!status.dbMissingBlocks) ? green : (status.requestingBlocks) ? orange : red} ● ${reset}`)
+    console.log()
+    info(url)
+    console.log()
+    console.log(`   Api  ${(socket.connected) ? green : red} ● ${reset}`)
+    console.log(`   Node ${(!status.nodeDown) ? green : red} ● ${reset}`)
+    console.log(`   Db   ${(status.dbMissingBlocks > 0) ? red : (status.requestingBlocks > 5) ? orange : green} ● ${reset}`)
     console.log()
     console.dir(status, { colors: true })
     if (status.nodeDown) error('The node is down... ☹ ')
