@@ -1,9 +1,10 @@
 import config from './config'
+const cfg = config.publicSettings
 
 export default function (tx) {
-  tx.txType = 'normal'
-  if (tx.to == config.remascAddress) tx.txType = 'remasc'
-  if (tx.to == config.bridgeAddress) tx.txType = 'bridge'
-  if (tx.to == config.contractDeployAddress) tx.txType = 'contract deploy'
+  tx.txType = cfg.txTypes.default
+  if (tx.to == cfg.remascAddress) tx.txType = cfg.txTypes.remasc
+  if (tx.to == cfg.bridgeAddress) tx.txType = cfg.txTypes.bridge
+  if (tx.to == cfg.contractDeployAddress) tx.txType = cfg.txTypes.contract
   return tx
 }
