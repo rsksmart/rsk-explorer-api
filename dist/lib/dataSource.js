@@ -14,6 +14,6 @@ var _config2 = _interopRequireDefault(_config);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const db = new _Db2.default(_config2.default.db.server, _config2.default.db.port, _config2.default.db.database);
+const db = new _Db2.default(_config2.default.db);
 
 exports.default = db.db();

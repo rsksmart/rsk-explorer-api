@@ -9,11 +9,17 @@ exports.insertMsg = insertMsg;
 var _mongodb = require('mongodb');
 
 class Db {
-  constructor(server, port, dbName) {
-    this.server = server;
-    this.port = port;
-    this.dbName = dbName;
-    this.url = 'mongodb://' + this.server + ':' + this.port + '/' + this.db;
+  constructor(config) {
+    config = config || {};
+    this.server = config.server;
+    this.port = config.port;
+    this.dbName = config.database;
+    const user = config.user;
+    const password = config.password;
+    let url = 'mongodb://';
+    if (user && password) url += `${user}:${password}@`;
+    url += `${this.server}:${this.port}/${this.dbName}`;
+    this.url = url;
     this.client = null;
 
     this.connect = function () {

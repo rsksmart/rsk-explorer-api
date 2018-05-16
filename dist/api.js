@@ -20,13 +20,11 @@ var _erc20data = require('./lib/erc20data');
 
 var _erc20data2 = _interopRequireDefault(_erc20data);
 
-var _statsData = require('./lib/statsData');
+var _statusData = require('./lib/statusData');
 
-var _statsData2 = _interopRequireDefault(_statsData);
+var _statusData2 = _interopRequireDefault(_statusData);
 
-var _errors = require('./lib/errors');
-
-var errors = _interopRequireWildcard(_errors);
+var _types = require('./lib/types');
 
 var _Logger = require('./lib/Logger');
 
@@ -34,7 +32,9 @@ var _Logger2 = _interopRequireDefault(_Logger);
 
 var _utils = require('./lib/utils');
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+var _http = require('http');
+
+var _http2 = _interopRequireDefault(_http);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -43,19 +43,31 @@ const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
 
 _dataSource2.default.then(db => {
   log.info('Database connected');
-  const io = new _socket2.default(port);
-
-  io.httpServer.on('listening', () => {
-    log.info('Server listen on port ' + port);
-  });
 
   // data collectors
   const erc20 = new _erc20data2.default(db);
   const blocks = new _blocksData2.default(db);
-  const stats = new _statsData2.default(db);
+  const status = new _statusData2.default(db);
   blocks.start();
   erc20.start();
-  stats.start();
+  status.start();
+
+  const httpServer = _http2.default.createServer((req, res) => {
+    const url = req.url || null;
+    if (url && url === '/status') {
+      res.writeHead(200, { 'Content-type': 'application/json' });
+      res.write(JSON.stringify(status.state));
+    } else {
+      res.writeHead(404, 'Not Found');
+    }
+    res.end();
+  });
+  httpServer.listen(port);
+  const io = new _socket2.default(httpServer);
+
+  io.httpServer.on('listening', () => {
+    log.info('Server listen on port ' + port);
+  });
 
   blocks.events.on('newBlocks', data => {
     io.emit('data', formatRes('newBlocks', data));
@@ -69,15 +81,15 @@ _dataSource2.default.then(db => {
     io.emit('data', formatRes('tokens', data));
   });
 
-  stats.events.on('newStats', data => {
-    io.emit('data', formatRes('stats', data));
+  status.events.on('newStatus', data => {
+    io.emit('data', formatRes('dbStatus', data));
   });
 
   io.on('connection', socket => {
     io.emit('open', { time: Date.now(), settings: publicSettings() });
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()));
     io.emit('data', formatRes('tokens', erc20.getTokens()));
-    io.emit('data', formatRes('stats', stats.getState()));
+    io.emit('data', formatRes('dbStatus', status.getState()));
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
@@ -99,7 +111,7 @@ _dataSource2.default.then(db => {
             collector = erc20;
             break;
           default:
-            io.emit('error', formatError(errors.INVALID_TYPE));
+            io.emit('error', formatError(_types.errors.INVALID_TYPE));
             break;
         }
         if (collector) {
@@ -108,11 +120,11 @@ _dataSource2.default.then(db => {
             io.emit('data', formatRes(resAction, result, payload));
           }).catch(err => {
             log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err);
-            io.emit('error', formatRes(resAction, null, payload, errors.INVALID_REQUEST));
+            io.emit('error', formatRes(resAction, null, payload, _types.errors.INVALID_REQUEST));
           });
         }
       } else {
-        io.emit('error', formatError(errors.INVALID_REQUEST));
+        io.emit('error', formatError(_types.errors.INVALID_REQUEST));
       }
     });
   });
@@ -128,7 +140,7 @@ const formatRes = (action, result, req, error) => {
   let next;
   let prev;
   let parentData;
-  if (!result && !error) error = errors.EMPTY_RESULT;
+  if (!result && !error) error = _types.errors.EMPTY_RESULT;
   if (error) {
     error = formatError(error);
   } else {
@@ -138,7 +150,7 @@ const formatRes = (action, result, req, error) => {
     prev = result.PREV || null;
     parentData = result.PARENT_DATA || null;
   }
-  if (!data && !error) error = formatError(errors.EMPTY_RESULT);
+  if (!data && !error) error = formatError(_types.errors.EMPTY_RESULT);
   return { action, data, req, pages, error, prev, next, parentData };
 };
 

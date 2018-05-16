@@ -9,6 +9,7 @@ class DataCollectorItem {
     this.key = key;
     this.publicActions = {};
     this.parent = parent;
+    this.sortableFields = null;
   }
   paginator(query, params) {
     return this.db.count(query).then(total => {
@@ -60,9 +61,10 @@ class DataCollectorItem {
       return { DATA };
     });
   }
-  find(query, sort) {
+  find(query, sort, limit) {
     sort = sort || {};
-    return this.db.find(query).sort(sort).toArray().then(DATA => {
+    limit = limit || 0;
+    return this.db.find(query).sort(sort).limit(limit).toArray().then(DATA => {
       return { DATA };
     });
   }
@@ -97,9 +99,27 @@ class DataCollectorItem {
     return this.db.aggregate(aggregate, options).toArray();
   }
 
+  async setSortableFields() {
+    const indexes = await this.db.indexes();
+    let fields = {};
+    for (let index of indexes) {
+      let keys = Object.keys(index.key);
+      if (keys.length === 1) fields[keys[0]] = index.key[keys[0]];
+    }
+    this.sortableFields = fields;
+    return fields;
+  }
+
+  async getSortableFields() {
+    if (this.sortableFields) return Promise.resolve(this.sortableFields);
+    return this.setSortableFields();
+  }
+
   getAggPageData(aggregate, params, sort) {
     return this.getAggPages(aggregate.concat(), params).then(PAGES => {
-      if (sort) aggregate.push({ $sort: sort });
+      if (sort) {
+        aggregate.push({ $sort: sort });
+      }
       return this._aggregatePages(aggregate, PAGES).then(DATA => {
         // console.log(PAGES, DATA)
         return { PAGES, DATA };
@@ -108,14 +128,26 @@ class DataCollectorItem {
   }
   getPageData(query, params) {
     let sort = params.sort || this.sort || {};
-    // allow only one field to user sort
-    if (Object.keys(sort).length > 1) sort = this.sort;
-    return this.getPages(query, params).then(PAGES => {
-      PAGES.sort = sort;
-      return this._findPages(query, PAGES, sort).then(DATA => {
-        return { PAGES, DATA };
+    return this.getSortableFields().then(sortable => {
+      sort = this.filterSort(sort, sortable);
+      return this.getPages(query, params).then(PAGES => {
+        PAGES.sort = sort;
+        PAGES.sortable = sortable;
+        PAGES.defaultSort = this.sort;
+        return this._findPages(query, PAGES, sort).then(DATA => {
+          return { PAGES, DATA };
+        });
       });
     });
+  }
+  filterSort(sort, sortable) {
+    let filteredSort = {};
+    // allow only one field to user sort 
+    if (Object.keys(sort).length > 1) return this.sort;
+    for (let field in sort) {
+      if (undefined !== sortable[field]) filteredSort[field] = sort[field];
+    }
+    return Object.keys(filteredSort).length > 0 ? filteredSort : this.sort;
   }
   // value: string| array of searched values | Object: 'value':true|false
   fieldFilterParse(field, value, query) {

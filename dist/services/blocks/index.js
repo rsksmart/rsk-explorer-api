@@ -28,8 +28,7 @@ const config = Object.assign({}, _config2.default.blocks);
 const log = (0, _Logger2.default)('Blocks', config.log);
 
 _dataSource2.default.then(db => {
-  log.info('Using configuration:');
-  log.info(config);
+  log.info(`Using configuration: ${JSON.stringify(config)}`);
   config.Logger = log;
   (0, _Blocks2.default)(config, db).then(blocks => {
     blocks.start();

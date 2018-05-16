@@ -20,71 +20,20 @@ var _txFormat = require('../../lib/txFormat');
 
 var _txFormat2 = _interopRequireDefault(_txFormat);
 
+var _collections = require('./collections');
+
+var _collections2 = _interopRequireDefault(_collections);
+
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const blocksCollections = {
-  blocksCollection: [{
-    key: { number: 1 },
-    unique: true
-  }, {
-    key: { timestamp: 1 },
-    name: 'blocksTime'
-  }, {
-    key: { miner: 1 },
-    name: 'blocksMiner'
-  }, {
-    key: { txs: 1 },
-    name: 'blocksTxs'
-  }, {
-    key: { size: 1 },
-    name: 'blocksSize'
-  }],
-  txCollection: [{
-    key: { hash: 1 },
-    unique: true
-  }, {
-    key: {
-      blockNumber: 1,
-      transactionIndex: 1
-    },
-    name: 'blockTrasaction'
-  }, {
-    key: { blockNumber: 1 },
-    name: 'blockIndex'
-  }, {
-    key: { from: 1 },
-    name: 'fromIndex'
-  }, {
-    key: { to: 1 },
-    name: 'toIndex'
-  }, {
-    key: { value: 1 },
-    name: 'valueIndex'
-  }, {
-    key: { timestamp: 1 },
-    name: 'timeIndex'
-  }],
-  addrCollection: [{
-    key: { address: 1 },
-    unique: true
-  }, {
-    key: { balance: 1 },
-    name: 'balanceIndex'
-  }],
-  statsCollection: [{
-    key: { timestamp: 1 },
-    unique: true
-  }]
-};
-
-function blocks(config, db) {
+function Blocks(config, db) {
   let queue = [];
   let log = config.Logger || console;
-  for (let c in blocksCollections) {
+  for (let c in _collections2.default) {
     let name = config[c] || c;
-    queue.push(dataBase.createCollection(db, name, blocksCollections[c]));
+    queue.push(dataBase.createCollection(db, name, _collections2.default[c]));
   }
   return Promise.all(queue).then(collections => {
     return new SaveBlocks(config, ...collections);
@@ -95,12 +44,12 @@ function blocks(config, db) {
   });
 }
 class SaveBlocks {
-  constructor(options, blocksCollection, txCollection, addrCollection, statsCollection) {
+  constructor(options, blocksCollection, txCollection, addrCollection, statusCollection) {
     this.node = options.node;
     this.port = options.port;
     this.Blocks = blocksCollection;
     this.Txs = txCollection;
-    this.Stats = statsCollection;
+    this.Status = statusCollection;
     this.Addr = addrCollection;
     this.web3 = (0, _web3Connect2.default)(options.node, options.port);
     this.requestingBlocks = new Proxy({}, {
@@ -115,22 +64,35 @@ class SaveBlocks {
     this.state = {};
   }
 
-  start() {
-    if (this.web3 && this.web3.isConnected()) {
+  getSavedState() {
+    return this.Status.find({}, {
+      sort: { timestamp: -1 },
+      limit: 1,
+      projection: { _id: 0 }
+    }).toArray().then(savedStatus => {
+      return this.updateState(savedStatus[0]);
+    });
+  }
+
+  async start() {
+    let state = await this.getSavedState();
+    this.state = state;
+    if (this.web3.isConnected()) {
       // node is syncing
       this.web3.eth.isSyncing((err, sync) => {
         this.log.debug('Node isSyncing');
         if (!err) {
-          this.updateState({ sync });
-          if (sync === true) {
-            this.web3.reset(true);
-            this.checkDB();
-          } else if (sync) {
-            let block = sync.currentBlock;
-            this.getBlocksFrom(block);
-          } else {
-            this.checkAndListen();
-          }
+          this.updateState({ sync }).then(() => {
+            if (sync === true) {
+              this.web3.reset(true);
+              this.checkDB();
+            } else if (sync) {
+              let block = sync.currentBlock;
+              this.getBlocksFrom(block);
+            } else {
+              this.checkAndListen();
+            }
+          });
         } else {
           this.log.error('syncing error', err);
         }
@@ -139,7 +101,10 @@ class SaveBlocks {
       if (!this.web3.eth.syncing) this.checkAndListen();
     } else {
       this.log.warn('Web3 is not connected!');
-      this.start();
+      this.updateState().then(() => {
+        this.start();
+        // process.exit(33)
+      });
     }
   }
 
@@ -149,18 +114,18 @@ class SaveBlocks {
       return this.getMissingBlocks();
     }).catch(err => {
       this.log.error('Error getting latest block: ' + err);
-      process.exit();
     });
   }
 
   isDbOutdated() {
-    return this.dbBlocksStats().then(res => {
-      console.log(res);
-      this.updateState({ res });
-      return res.lastBlock > res.blocks ? res.lastBlock : null;
+    return this.dbBlocksStatus().then(res => {
+      this.log.debug(`The DB is outdated: ${JSON.stringify(res)}`);
+      return this.updateState(res).then(() => {
+        return res.lastBlock > res.blocks ? res.lastBlock : null;
+      });
     });
   }
-  async dbBlocksStats() {
+  async dbBlocksStatus() {
     let lastBlock = await this.getHighDbBlock();
     lastBlock = lastBlock.number;
     let blocks = await this.countDbBlocks();
@@ -178,6 +143,7 @@ class SaveBlocks {
       let pending = this.makeBlockQueue();
       if (pending) {
         Promise.all(pending).then(values => {
+          // review
           this.processBlocksQueue();
         }, reason => {
           this.log.error(reason);
@@ -187,6 +153,9 @@ class SaveBlocks {
         resolve();
       }
     });
+  }
+  resetBlockQueue() {
+    this.blocksQueue = -1;
   }
   makeBlockQueue() {
     if (this.blocksQueue > -1) {
@@ -200,19 +169,29 @@ class SaveBlocks {
   }
 
   updateState(newState) {
-    for (let p in newState) {
-      this.state[p] = newState[p];
+    let connected = this.web3.isConnected();
+    newState = newState || {};
+    newState.nodeDown = !connected;
+    newState.requestingBlocks = Object.keys(this.requestingBlocks).length;
+    // if (connected && undefined === newState.sync) newState.sync = this.web3.eth.syncing
+
+    this.log.debug(`newState: ${JSON.stringify(newState)}`);
+    let state = Object.assign({}, this.state);
+    let changed = Object.keys(newState).find(k => newState[k] !== state[k]);
+    // let changed = JSON.stringify(newState) === JSON.stringify(state)
+    this.state = Object.assign(state, newState);
+    if (changed) {
+      newState.timestamp = Date.now();
+      return this.Status.insertOne(newState).then(res => {
+        return newState;
+      }).catch(err => {
+        this.log.error(err);
+      });
+    } else {
+      return Promise.resolve(this.state);
     }
-    this.state.timestamp = Date.now();
-    this.saveStatsToDb();
   }
 
-  saveStatsToDb() {
-    let stats = Object.assign({}, this.state);
-    this.Stats.insertOne(stats).catch(err => {
-      this.log.error(err);
-    });
-  }
   listenBlocks() {
     this.log.info('Listen to blocks...');
     this.web3.reset(true);
@@ -260,6 +239,7 @@ class SaveBlocks {
         if (!this.requestingBlocks[blockNumber]) {
           this.log.debug('Getting Block: ', blockNumber);
           this.requestingBlocks[blockNumber] = true;
+          this.updateState();
           this.web3.eth.getBlock(blockNumber, true, (err, blockData) => {
             if (err) {
               reject('Warning: error on getting block with hash/number: ' + blockNumber + ': ' + err);
@@ -282,6 +262,17 @@ class SaveBlocks {
       this.log.error(err);
       this.start();
     });
+  }
+
+  async deleteBlock(number) {
+    let [txs, block] = await Promise.all([this.Txs.remove({ block: number }), this.Blocks.remove({ number })]).catch(error => {
+      this.log.error(`Error deleting block: ${number} ${error}`);
+    });
+    if (txs.result.ok && block.result.ok) {
+      this.log.debug(`Delete block ${number}  
+      ${block.result.n} blocks removed, ${txs.result.n} transactions removed`);
+      return { block: block.result, txs: txs.result };
+    }
   }
 
   extractBlockAddresses(blockdata) {
@@ -383,10 +374,12 @@ class SaveBlocks {
   }
 
   checkAndListen() {
-    this.updateState({ sync: this.web3.eth.syncing });
-    this.checkDB();
-    this.listenBlocks();
+    this.resetBlockQueue();
+    this.updateState().then(() => {
+      this.checkDB();
+      this.listenBlocks();
+    });
   }
 }
 
-exports.default = blocks;
+exports.default = Blocks;

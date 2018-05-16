@@ -3,10 +3,8 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-/**
- *  This file provides default values,
- *  use /config.json, to overwrite settings
- */
+
+var _types = require('./types');
 
 exports.default = {
   server: {
@@ -32,14 +30,15 @@ exports.default = {
   publicSettings: {
     bridgeAddress: '0x0000000000000000000000000000000001000006',
     remascAddress: '0x0000000000000000000000000000000001000008',
-    contractDeployAddress: '0x0000000000000000000000000000000000000000'
+    contractDeployAddress: '0x0000000000000000000000000000000000000000',
+    txTypes: _types.txTypes
   },
   blocks: {
     blocksQueueSize: 30,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     addrCollection: 'addresses',
-    statsCollection: 'stats'
+    statusCollection: 'status'
   },
   erc20: {
     dbPrefix: 'erc20_',
@@ -101,4 +100,7 @@ exports.default = {
       type: 'event'
     }]
   }
-};
+}; /**
+    *  This file provides default values,
+    *  use /config.json, to overwrite settings
+    */
