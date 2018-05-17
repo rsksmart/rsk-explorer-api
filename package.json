@@ -27,14 +27,14 @@
   "homepage": "https://bitbucket.org/jsjsfun/rsk-explorer-api#readme",
   "dependencies": {
     "bunyan": "^2.0.2",
-    "mongodb": "^3.0.0-rc0",
-    "socket.io": "^2.0.4",
+    "mongodb": "^3.0.8",
+    "socket.io": "^2.1.0",
     "web3": "0.19.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "eslint": "^4.12.1",
-    "nodemon": "^1.12.1"
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^4.19.1",
+    "nodemon": "^1.17.4"
   }
 }
