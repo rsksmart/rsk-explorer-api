@@ -44,6 +44,6 @@ socket.on('data', data => {
   }
 })
 
-socket.on('error', error => {
-  error(error)
+socket.on('error', err => {
+  error(err)
 })
