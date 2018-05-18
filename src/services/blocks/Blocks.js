@@ -294,24 +294,24 @@ class SaveBlocks {
     return this.Blocks.insertOne(blockData)
   }
 
-  insertAddresses (addresses) {
-    for (let addr of addresses) {
+  insertAddress (addr) {
+    return new Promise((resolve, reject) => {
       this.web3.eth.getBalance(addr.address, 'latest', (err, balance) => {
         if (err) this.log.error(`Error getting balance of address ${addr.address}: ${err}`)
         else addr.balance = balance
         this.log.info(`Updating address: ${addr.address}`)
         this.log.debug(JSON.stringify(addr))
-        this.Addr.updateOne(
+        resolve(this.Addr.updateOne(
           { address: addr.address },
           { $set: addr },
           { upsert: true }
-        ).catch((err) => {
-          this.log.error(err)
-        })
+        ).then(res => res)
+          .catch((err) => {
+            this.log.error(err)
+          }))
       })
-    }
+    })
   }
-
   writeBlockToDB (blockData) {
     return new Promise((resolve, reject) => {
       if (!blockData) reject('no blockdata')
@@ -324,26 +324,9 @@ class SaveBlocks {
       // insert block
       this.Blocks.insertOne(blockData).then((res) => {
         this.log.info('Inserted Block ' + blockData.number)
-
-        // insert transactions
-        if (transactions.length) {
-          this.Txs.insertMany(transactions).then((res) => {
-            this.log.debug(dataBase.insertMsg(res, transactions, 'transactions'))
-            resolve(blockData)
-          }).catch((err) => {
-            // insert txs error
-            let errorMsg = 'Error inserting txs ' + err
-            if (err.code !== 11000) {
-              this.log.error(errorMsg)
-              reject(err)
-            }
-            else {
-              this.log.debug(errorMsg)
-              resolve(blockData)
-            }
-          })
-        }
-        this.insertAddresses(addresses)
+        resolve(Promise.all([
+          this.insertTxs(transactions),
+          addresses.map(addr => this.insertAddress(addr))]))
       }).catch((err) => {
         // insert block error
         if (err.code === 11000) {
@@ -358,6 +341,35 @@ class SaveBlocks {
             err
           )
           process.exit(9)
+        }
+      })
+    })
+  }
+  insertTxs (transactions) {
+    return this.Txs.insertMany(transactions).then(res => {
+      this.log.debug(dataBase.insertMsg(res, transactions, 'transactions'))
+      return Promise.all(transactions.map(tx => this.getTransactionReceiptAndSave(tx.hash)))
+    }).catch(err => {
+      let errorMsg = `Error inserting txs ${err}`
+      if (err.code === 11000) this.log.debug(errorMsg)
+      else this.log.error(errorMsg)
+    })
+  }
+
+  getTransactionReceiptAndSave (txHash) {
+    return this.getTransactionReceipt(txHash).then(receipt => {
+      return this.Txs.updateOne({ hash: txHash }, { $set: { receipt } })
+        .catch(err => { this.log.error(`Errror inserting receipt of tx ${txHash}`) })
+    })
+  }
+  getTransactionReceipt (txHash) {
+    return new Promise((resolve, reject) => {
+      this.web3.eth.getTransactionReceipt(txHash, (err, receipt) => {
+        if (err) {
+          this.log.error(`Error getting receipt from tx ${txHash}`)
+          reject(err)
+        } else {
+          resolve(receipt)
         }
       })
     })
