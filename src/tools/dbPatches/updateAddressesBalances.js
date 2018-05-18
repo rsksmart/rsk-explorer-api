@@ -1,7 +1,7 @@
-import config from '../lib/config'
-import datasource from '../lib/dataSource'
-import Logger from '../lib/Logger'
-import web3Connect from '../lib/web3Connect'
+import config from '../../lib/config'
+import datasource from '../../lib/dataSource'
+import Logger from '../../lib/Logger'
+import web3Connect from '../../lib/web3Connect'
 
 const log = Logger('updateAccountsBalances')
 const web3 = web3Connect(config.blocks.node, config.blocks.port)

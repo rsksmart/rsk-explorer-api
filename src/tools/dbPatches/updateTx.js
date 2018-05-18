@@ -1,7 +1,7 @@
-import config from '../lib/config'
-import datasource from '../lib/dataSource'
-import Logger from '../lib/Logger'
-import txFormat from '../lib/txFormat'
+import config from '../../lib/config'
+import datasource from '../../lib/dataSource'
+import Logger from '../../lib/Logger'
+import txFormat from '../../lib/txFormat'
 
 const log = Logger('updateTx')
 
