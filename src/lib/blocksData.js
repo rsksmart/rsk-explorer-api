@@ -167,6 +167,7 @@ class Tx extends DataCollectorItem {
         let address = params.address
         let Address = this.parent.Address
         return Address.getOne({ address }).then((account) => {
+          if (!account.DATA) return Promise.resolve(account)
           return this.getPageData(
             {
               $or: [{ from: address }, { to: address }]
