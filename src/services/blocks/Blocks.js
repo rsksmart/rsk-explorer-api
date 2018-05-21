@@ -5,7 +5,7 @@ import txFormat from '../../lib/txFormat'
 import blocksCollections from './collections'
 
 
-function Blocks (config, db) {
+export function Blocks (config, db) {
   let queue = []
   let log = config.Logger || console
   for (let c in blocksCollections) {
