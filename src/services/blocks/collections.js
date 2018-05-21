@@ -63,6 +63,10 @@ export default {
     {
       key: { balance: 1 },
       name: 'balanceIndex'
+    },
+    {
+      key: { type: 1 },
+      name: 'addTypeIndex'
     }
   ],
   statusCollection: [

@@ -20,7 +20,7 @@ function Blocks (config, db) {
     process.exit(9)
   })
 }
-class SaveBlocks {
+export class SaveBlocks {
   constructor(options, blocksCollection, txCollection, addrCollection, statusCollection) {
     this.node = options.node
     this.port = options.port
@@ -276,7 +276,7 @@ class SaveBlocks {
   }
 
   addressDoc (address) {
-    return { address, balance: 0 }
+    return { address, balance: 0, type: 'address' }
   }
 
   getBlockTransactions (blockData) {
@@ -295,20 +295,34 @@ class SaveBlocks {
   }
 
   insertAddress (addr) {
+    const address = addr.address
+    addr.type = 'address'
     return new Promise((resolve, reject) => {
-      this.web3.eth.getBalance(addr.address, 'latest', (err, balance) => {
-        if (err) this.log.error(`Error getting balance of address ${addr.address}: ${err}`)
+      if (!address) reject('Invalid address')
+      this.web3.eth.getBalance(address, 'latest', (err, balance) => {
+        if (err) this.log.error(`Error getting balance of address ${address}: ${err}`)
         else addr.balance = balance
-        this.log.info(`Updating address: ${addr.address}`)
+        this.log.info(`Updating address: ${address}`)
         this.log.debug(JSON.stringify(addr))
-        resolve(this.Addr.updateOne(
-          { address: addr.address },
-          { $set: addr },
-          { upsert: true }
-        ).then(res => res)
-          .catch((err) => {
-            this.log.error(err)
-          }))
+        this.web3.eth.getCode(address, 'latest', (err, code) => {
+          if (err) {
+            this.log.error(`Error getting code for address: ${address} ERROR: ${err}`)
+          } else {
+            if (parseInt(code)) {
+              addr.code = code
+              addr.type = 'contract'
+            }
+          }
+
+          resolve(this.Addr.updateOne(
+            { address: addr.address },
+            { $set: addr },
+            { upsert: true }
+          ).then(res => res)
+            .catch((err) => {
+              this.log.error(err)
+            }))
+        })
       })
     })
   }
@@ -358,8 +372,10 @@ class SaveBlocks {
 
   getTransactionReceiptAndSave (txHash) {
     return this.getTransactionReceipt(txHash).then(receipt => {
+      let address = receipt.contract
+      if (address) this.insertAddress({ address })
       return this.Txs.updateOne({ hash: txHash }, { $set: { receipt } })
-        .catch(err => { this.log.error(`Errror inserting receipt of tx ${txHash}`) })
+        .catch(err => { this.log.error(`Errror inserting receipt of tx ${txHash} ${err}`) })
     })
   }
   getTransactionReceipt (txHash) {
