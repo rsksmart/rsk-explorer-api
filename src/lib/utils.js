@@ -1,6 +1,7 @@
-export const filterParams = (params, perPage) => {
+export const filterParams = (params, perPageMax = 50) => {
   params = params || {}
-  perPage = perPage || 50
+  let perPage = params.perPage || perPageMax
+  perPage = (perPage <= perPageMax) ? perPage : perPageMax
   params.page = params.page || 1
   let limit = params.limit || perPage
   limit = limit <= perPage ? limit : perPage

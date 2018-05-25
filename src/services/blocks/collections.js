@@ -53,6 +53,10 @@ export default {
     {
       key: { timestamp: 1 },
       name: 'timeIndex'
+    },
+    {
+      key: { txType: 1 },
+      name: 'txTypeIndex'
     }
   ],
   addrCollection: [
