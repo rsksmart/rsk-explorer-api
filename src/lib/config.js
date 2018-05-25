@@ -8,6 +8,7 @@ for (let key of keys) {
     if (!config[key][p]) config[key][p] = defaultConf[key][p]
   }
 }
+
 // defaults  servers/ports
 config.erc20.node = config.erc20.node || config.source.node
 config.erc20.port = config.erc20.port || config.source.port
@@ -36,6 +37,7 @@ function defaultLogs (key) {
   if (!dir) return
   config[key].log = config[key].log || {}
   config[key].log.file = config[key].log.file || `${dir}/${key}.json`
+  config[key].log.level = config[key].log.level || config.log.level || 'error'
 }
 
 export default config
