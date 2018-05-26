@@ -1,26 +1,14 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.DataCollector = undefined;
-
-var _events = require('events');
-
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.DataCollector = undefined;var _events = require('events');
 var _timers = require('timers');
-
 var _utils = require('../utils');
-
-var _DataCollectorItem = require('./DataCollectorItem');
-
-var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+var _mongodb = require('mongodb');
+var _DataCollectorItem = require('./DataCollectorItem');var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class Emitter extends _events.EventEmitter {}
 const emitter = new Emitter();
+
 class DataCollector {
   constructor(db, options) {
+    if (!(db instanceof _mongodb.Db)) {throw new Error('Db is not mongodb Db');}
     this.db = db;
     this.options = options;
     this.collection = null;
@@ -38,6 +26,7 @@ class DataCollector {
       this._interval = (0, _timers.clearInterval)(this._interval);
     }
   }
+
   start() {
     if (!this._interval) {
       this._interval = setInterval(() => {
@@ -45,20 +34,26 @@ class DataCollector {
       }, this.tickDelay);
     }
   }
+
   setCollection(collectionName, name = 'collection') {
-    if (collectionName && !this[name]) this[name] = this.db.collection(collectionName);
+    if (collectionName && !this[name]) {
+      this[name] = this.db.collection(collectionName);
+    }
   }
+
   getItem(params) {
     let key = params.key || params[this._keyName];
     if (key) return this.items[key];
   }
+
   run() {}
+
   itemPublicAction(action, params, item) {
     return new Promise((resolve, reject) => {
-      if (!action) reject('Missing action');
-      if (!params) reject('No params provided');
+      if (!action) reject(new Error('Missing action'));
+      if (!params) reject(new Error('No params provided'));
       if (item === '*') {
-        //find item
+        // find item
         item = null;
         item = this.searchItemByAction(action);
       } else {
@@ -69,28 +64,31 @@ class DataCollector {
         if (method) {
           resolve(method(this.filterParams(params)));
         } else {
-          reject('Unknown method ' + action);
+          return reject(new Error('Unknown method ' + action));
         }
       }
-      reject('Unknown action or bad params requested, action:' + action);
+      return reject(new Error('Unknown action or bad params requested, action:' + action));
     });
   }
+
   searchItemByAction(action) {
     for (let i in this.items) {
       let item = this.items[i];
       if (item.publicActions[action]) return item;
     }
   }
-  addItem(collectionName, key, itemClass, addToRoot) {
+
+  addItem(collectionName, key, ItemClass, addToRoot) {
     if (collectionName && key) {
-      itemClass = itemClass || _DataCollectorItem2.default;
+      ItemClass = ItemClass || _DataCollectorItem2.default;
       if (!this.items[key]) {
         let collection = this.db.collection(collectionName);
         if (collection) {
-          let item = new itemClass(collection, key, this);
+          let item = new ItemClass(collection, key, this);
           this.items[key] = item;
           if (addToRoot) {
-            if (!this[key]) this[key] = item;else console.log(`Error key: ${key} exists`);
+            if (!this[key]) this[key] = item;else
+            console.log(`Error key: ${key} exists`);
           }
         }
       } else {
@@ -105,8 +103,7 @@ class DataCollector {
 
   formatData(data) {
     return { DATA: data };
-  }
-}
+  }}exports.DataCollector = DataCollector;exports.default =
 
-exports.DataCollector = DataCollector;
-exports.default = DataCollector;
+
+DataCollector;

@@ -1,16 +1,17 @@
 {
   "name": "rsk-explorer-api",
-  "version": "0.2.8",
+  "version": "0.3.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "./node_modules/.bin/nodemon src/api.js --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "dev": "./node_modules/.bin/nodemon src/api --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "blocks": "./node_modules/.bin/nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "erc20": "./node_modules/.bin/nodemon src/services/erc20 --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
     "status": "./node_modules/.bin/nodemon src/tools/statusClient.js --exec babel-node",
+    "lint": "./node_modules/.bin/eslint src/**/*",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -27,14 +28,19 @@
   "homepage": "https://bitbucket.org/jsjsfun/rsk-explorer-api#readme",
   "dependencies": {
     "bunyan": "^2.0.2",
-    "mongodb": "^3.0.8",
+    "mongodb": "^3.0.10",
     "socket.io": "^2.1.0",
-    "web3": "0.19.1"
+    "web3": "^0.20.6"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "eslint": "^4.19.1",
-    "nodemon": "^1.17.4"
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.12.0",
+    "eslint-plugin-node": "^6.0.1",
+    "eslint-plugin-promise": "^3.8.0",
+    "eslint-plugin-standard": "^3.1.0",
+    "nodemon": "^1.17.5"
   }
 }

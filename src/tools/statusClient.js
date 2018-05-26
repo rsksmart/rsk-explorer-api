@@ -4,7 +4,6 @@ const server = process.env.SERVER || 'localhost'
 const port = process.env.PORT || config.server.port
 const url = `ws://${server}:${port}`
 
-
 const reset = '\x1b[0m'
 const red = '\x1b[31m'
 const blue = '\x1b[36m'
@@ -31,6 +30,7 @@ socket.on('data', data => {
   let action = data.action
   if (action === 'dbStatus' && data.data) {
     const status = data.data
+    delete (status.missingSegments)
     console.clear()
     console.log()
     info(url)

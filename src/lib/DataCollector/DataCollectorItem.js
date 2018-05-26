@@ -1,10 +1,22 @@
+import { Collection } from 'mongodb'
 export class DataCollectorItem {
-  constructor(collection, key, parent) {
+  constructor (collection, key, parent) {
+    if (!(collection instanceof Collection)) {
+      throw (new Error('Collection is not mongodb Collection'))
+    }
     this.db = collection
     this.key = key
     this.publicActions = {}
     this.parent = parent
     this.sortableFields = null
+  }
+  run (action, params) {
+    let f = this.publicActions[action]
+    if (f) {
+      return f(params)
+    } else {
+      console.log('Unknown action' + action)
+    }
   }
   paginator (query, params) {
     return this.db.count(query).then(total => {
@@ -73,9 +85,9 @@ export class DataCollectorItem {
       if (DATA) {
         let jsonData = JSON.stringify(DATA)
         return this._findPN(queryP, sort).then(PREV => {
-          if (jsonData == JSON.stringify(PREV)) PREV = null
+          if (jsonData === JSON.stringify(PREV)) PREV = null
           return this._findPN(queryN, sort).then(NEXT => {
-            if (jsonData == JSON.stringify(NEXT)) NEXT = null
+            if (jsonData === JSON.stringify(NEXT)) NEXT = null
             return { DATA, NEXT, PREV }
           })
         })
@@ -152,7 +164,7 @@ export class DataCollectorItem {
   }
   filterSort (sort, sortable) {
     let filteredSort = {}
-    // allow only one field to user sort 
+    // allow only one field to user sort
     if (Object.keys(sort).length > 1) return this.sort
     for (let field in sort) {
       if (undefined !== sortable[field]) filteredSort[field] = sort[field]
@@ -165,11 +177,11 @@ export class DataCollectorItem {
     let fieldQuery
     let inArr = []
     let ninArr = []
-    if ('string' === typeof (value)) {
+    if (typeof value === 'string') {
       fieldQuery = value
     } else if (Array.isArray(value)) {
       inArr = value
-    } else if ('object' === typeof (value)) {
+    } else if (typeof value === 'object') {
       for (let p in value) {
         if (value[p]) inArr.push(p)
         else ninArr.push(p)

@@ -1,11 +1,12 @@
 import { MongoClient } from 'mongodb'
 
-class Db {
-  constructor(config) {
+export class Db {
+  constructor (config) {
     config = config || {}
-    this.server = config.server
-    this.port = config.port
-    this.dbName = config.database
+    this.server = config.server || 'localhost'
+    this.port = config.port || 27017
+    this.dbName = config.database || config.db
+    if (!this.dbName) throw new Error('Missing database name')
     const user = config.user
     const password = config.password
     let url = 'mongodb://'
@@ -13,23 +14,22 @@ class Db {
     url += `${this.server}:${this.port}/${this.dbName}`
     this.url = url
     this.client = null
-
-    this.connect = function () {
-      if (!this.client) this.client = MongoClient.connect(this.url)
-      return this.client
-    }
-
-    this.db = async function () {
-      let client = await this.connect()
-      let db = await client.db(this.dbName)
-      return db
-    }
     this.connect()
+  }
+  connect () {
+    if (!this.client) this.client = MongoClient.connect(this.url)
+    return this.client
+  }
+
+  async db () {
+    let client = await this.connect()
+    let db = await client.db(this.dbName)
+    return db
   }
 }
 
 export function createCollection (db, collectionName, indexes) {
-  if (!collectionName) return Promise.reject('Invalid collection name')
+  if (!collectionName) return Promise.reject(new Error('Invalid collection name'))
   let collection = db.collection(collectionName)
   if (!indexes || !indexes.length) return Promise.resolve(collection)
   return collection.createIndexes(indexes).then(doc => {

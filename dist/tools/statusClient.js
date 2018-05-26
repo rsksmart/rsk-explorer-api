@@ -1,15 +1,5 @@
-'use strict';
-
-var _socket = require('socket.io-client');
-
-var _socket2 = _interopRequireDefault(_socket);
-
-var _config = require('../lib/config');
-
-var _config2 = _interopRequireDefault(_config);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
+'use strict';var _socket = require('socket.io-client');var _socket2 = _interopRequireDefault(_socket);
+var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const server = process.env.SERVER || 'localhost';
 const port = process.env.PORT || _config2.default.server.port;
 const url = `ws://${server}:${port}`;
@@ -40,6 +30,7 @@ socket.on('data', data => {
   let action = data.action;
   if (action === 'dbStatus' && data.data) {
     const status = data.data;
+    delete status.missingSegments;
     console.clear();
     console.log();
     info(url);
@@ -53,6 +44,6 @@ socket.on('data', data => {
   }
 });
 
-socket.on('error', error => {
-  error(error);
+socket.on('error', err => {
+  error(err);
 });

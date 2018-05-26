@@ -4,7 +4,7 @@ export default function (name, options) {
   options = options || {}
   const log = bunyan.createLogger({
     name,
-    level: 'debug',
+    level: 'debug'
   })
 
   if (options.file) {

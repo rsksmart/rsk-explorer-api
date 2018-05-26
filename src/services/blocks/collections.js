@@ -1,8 +1,11 @@
-// order matters
 export default {
   blocksCollection: [
     {
       key: { number: 1 },
+      unique: true
+    },
+    {
+      key: { hash: 1 },
       unique: true
     },
     {
@@ -71,11 +74,36 @@ export default {
     {
       key: { type: 1 },
       name: 'addTypeIndex'
+    },
+    {
+      key: { name: 1 },
+      name: 'addressNameIndex'
     }
   ],
   statusCollection: [
     {
       key: { timestamp: 1 },
+      unique: true
+    }
+  ],
+  eventsCollection: [
+    {
+      key: { address: 1 }
+    },
+    {
+      key: { event: 1 }
+    },
+    {
+      key: { timestamp: 1 },
+      name: 'eventTsIndex'
+    }
+  ],
+  tokenAddrCollection: [
+    {
+      key: {
+        address: 1,
+        contract: 1
+      },
       unique: true
     }
   ]

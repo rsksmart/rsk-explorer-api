@@ -12,8 +12,8 @@ export default {
     port: 4444
   },
   log: {
-    dir: "/var/log/rsk-explorer",
-    level: "error"
+    dir: '/var/log/rsk-explorer',
+    level: 'error'
   },
   db: {
     server: 'localhost',
@@ -32,18 +32,12 @@ export default {
     txTypes
   },
   blocks: {
-    blocksQueueSize: 30,
+    blocksQueueSize: 100,
     blocksCollection: 'blocks',
     txCollection: 'transactions',
     addrCollection: 'addresses',
     statusCollection: 'status',
-  },
-  erc20: {
-    dbPrefix: 'erc20_',
-    tokenCollection: 'erc20Tokens',
-    tokenLogsCollection: 'erc20Logs',
-    logFormat: 'combined',
-    exportStartBlock: 0,
-    exportEndBlock: 'latest'
+    eventsCollection: 'events',
+    tokenAddrCollection: 'tokensAddresses'
   }
 }

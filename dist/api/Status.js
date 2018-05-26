@@ -1,16 +1,5 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _DataCollector = require('./DataCollector');
-
-var _config = require('./config');
-
-var _config2 = _interopRequireDefault(_config);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Status = undefined;var _DataCollector = require('../lib/DataCollector');
+var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const perPage = _config2.default.api.perPage;
 const statusCollection = _config2.default.blocks.statusCollection;
@@ -34,21 +23,28 @@ class Status extends _DataCollector.DataCollector {
     return this.formatData(this.state);
   }
   getBlocksServiceStatus() {
-    return this.Status.find({}, { timestamp: -1 }, 1).then(res => {
+    return this.Status.find({}, { timestamp: -1 }, 1).
+    then(res => {
       res = res.DATA[0];
       delete res._id;
       return res;
     });
   }
   async updateState() {
-    let [status, last, high, dbBlocks] = await Promise.all([this.getBlocksServiceStatus(), this.getLastblockReceived(), this.getHighestBlock(), this.getTotalBlocks()]);
+    let [status, last, high, dbBlocks] =
+    await Promise.all([
+    this.getBlocksServiceStatus(),
+    this.getLastblockReceived(),
+    this.getHighestBlock(),
+    this.getTotalBlocks()]);
+
     status = Object.assign(status, {
       dbLastBlockReceived: last.number,
       dbLastBlockReceivedTime: last._received,
       dbHighBlock: high.number,
       dbBlocks,
-      dbMissingBlocks: high.number + 1 - dbBlocks
-    });
+      dbMissingBlocks: high.number + 1 - dbBlocks });
+
     let state = this.state;
     let changed = Object.keys(status).find(k => status[k] !== state[k]);
     if (changed) {
@@ -58,14 +54,16 @@ class Status extends _DataCollector.DataCollector {
     }
   }
   getHighestBlock() {
-    return this.Blocks.find({}, { number: -1 }, 1).then(hBlock => hBlock.DATA[0]);
+    return this.Blocks.find({}, { number: -1 }, 1).
+    then(hBlock => hBlock.DATA[0]);
   }
   getLastblockReceived() {
-    return this.Blocks.find({}, { _received: -1 }, 1).then(lastBlock => lastBlock.DATA[0]);
+    return this.Blocks.find({}, { _received: -1 }, 1).
+    then(lastBlock => lastBlock.DATA[0]);
   }
   getTotalBlocks() {
     return this.Blocks.db.count({});
-  }
-}
+  }}exports.Status = Status;exports.default =
 
-exports.default = Status;
+
+Status;

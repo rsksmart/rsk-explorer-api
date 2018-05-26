@@ -10,8 +10,6 @@ for (let key of keys) {
 }
 
 // defaults  servers/ports
-config.erc20.node = config.erc20.node || config.source.node
-config.erc20.port = config.erc20.port || config.source.port
 
 config.blocks.node = config.blocks.node || config.source.node
 config.blocks.port = config.blocks.port || config.source.port
@@ -20,13 +18,11 @@ config.blocks.port = config.blocks.port || config.source.port
 
 defaultLogs('api')
 defaultLogs('blocks')
-defaultLogs('erc20')
 
 // tx addresses
 publicSettings('bridgeAddress')
 publicSettings('remascAddress')
 publicSettings('contractDeployAddress')
-
 
 function publicSettings (key) {
   config[key] = config.publicSettings[key] || null

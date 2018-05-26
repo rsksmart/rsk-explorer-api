@@ -12,4 +12,13 @@ export const errors = {
   EMPTY_RESULT: 'Not Found'
 }
 
-export default { txTypes, errors }
+export const addrTypes = {
+  ADDRESS: 'account',
+  CONTRACT: 'contract'
+}
+
+export const contractsTypes = {
+  ERC20: 'ERC20'
+}
+
+export default { txTypes, errors, addrTypes, contractsTypes }

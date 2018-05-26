@@ -1,14 +1,12 @@
 import IO from 'socket.io'
-import config from './lib/config'
-import dataSource from './lib/dataSource'
-import Blocks from './lib/blocksData'
-import Erc20 from './lib/erc20data'
-import Status from './lib/statusData'
-import { errors } from './lib/types'
-import Logger from './lib/Logger'
-import { filterParams } from './lib/utils'
+import config from '../lib/config'
+import dataSource from '../lib/dataSource'
+import Blocks from './Blocks'
+import Status from './Status'
+import { errors } from '../lib/types'
+import Logger from '../lib/Logger'
+import { filterParams } from '../lib/utils'
 import http from 'http'
-
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
@@ -17,13 +15,11 @@ dataSource.then(db => {
   log.info('Database connected')
 
   // data collectors
-  const erc20 = new Erc20(db)
+  // const erc20 = new Erc20(db)
   const blocks = new Blocks(db)
   const status = new Status(db)
   blocks.start()
-  erc20.start()
   status.start()
-
 
   const httpServer = http.createServer((req, res) => {
     const url = req.url || null
@@ -50,10 +46,6 @@ dataSource.then(db => {
     io.emit('data', formatRes('block', data))
   })
 
-  erc20.events.on('newTokens', data => {
-    io.emit('data', formatRes('tokens', data))
-  })
-
   status.events.on('newStatus', data => {
     io.emit('data', formatRes('dbStatus', data))
   })
@@ -61,7 +53,6 @@ dataSource.then(db => {
   io.on('connection', socket => {
     io.emit('open', { time: Date.now(), settings: publicSettings() })
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
-    io.emit('data', formatRes('tokens', erc20.getTokens()))
     io.emit('data', formatRes('dbStatus', status.getState()))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
@@ -79,9 +70,6 @@ dataSource.then(db => {
         switch (type) {
           case 'blocks':
             collector = blocks
-            break
-          case 'erc20':
-            collector = erc20
             break
           default:
             io.emit('error', formatError(errors.INVALID_TYPE))

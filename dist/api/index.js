@@ -1,42 +1,12 @@
-'use strict';
-
-var _socket = require('socket.io');
-
-var _socket2 = _interopRequireDefault(_socket);
-
-var _config = require('./lib/config');
-
-var _config2 = _interopRequireDefault(_config);
-
-var _dataSource = require('./lib/dataSource');
-
-var _dataSource2 = _interopRequireDefault(_dataSource);
-
-var _blocksData = require('./lib/blocksData');
-
-var _blocksData2 = _interopRequireDefault(_blocksData);
-
-var _erc20data = require('./lib/erc20data');
-
-var _erc20data2 = _interopRequireDefault(_erc20data);
-
-var _statusData = require('./lib/statusData');
-
-var _statusData2 = _interopRequireDefault(_statusData);
-
-var _types = require('./lib/types');
-
-var _Logger = require('./lib/Logger');
-
-var _Logger2 = _interopRequireDefault(_Logger);
-
-var _utils = require('./lib/utils');
-
-var _http = require('http');
-
-var _http2 = _interopRequireDefault(_http);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+'use strict';var _socket = require('socket.io');var _socket2 = _interopRequireDefault(_socket);
+var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
+var _dataSource = require('../lib/dataSource');var _dataSource2 = _interopRequireDefault(_dataSource);
+var _Blocks = require('./Blocks');var _Blocks2 = _interopRequireDefault(_Blocks);
+var _Status = require('./Status');var _Status2 = _interopRequireDefault(_Status);
+var _types = require('../lib/types');
+var _Logger = require('../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
+var _utils = require('../lib/utils');
+var _http = require('http');var _http2 = _interopRequireDefault(_http);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const port = _config2.default.server.port || '3000';
 const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
@@ -45,11 +15,10 @@ _dataSource2.default.then(db => {
   log.info('Database connected');
 
   // data collectors
-  const erc20 = new _erc20data2.default(db);
-  const blocks = new _blocksData2.default(db);
-  const status = new _statusData2.default(db);
+  // const erc20 = new Erc20(db)
+  const blocks = new _Blocks2.default(db);
+  const status = new _Status2.default(db);
   blocks.start();
-  erc20.start();
   status.start();
 
   const httpServer = _http2.default.createServer((req, res) => {
@@ -77,10 +46,6 @@ _dataSource2.default.then(db => {
     io.emit('data', formatRes('block', data));
   });
 
-  erc20.events.on('newTokens', data => {
-    io.emit('data', formatRes('tokens', data));
-  });
-
   status.events.on('newStatus', data => {
     io.emit('data', formatRes('dbStatus', data));
   });
@@ -88,7 +53,6 @@ _dataSource2.default.then(db => {
   io.on('connection', socket => {
     io.emit('open', { time: Date.now(), settings: publicSettings() });
     io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()));
-    io.emit('data', formatRes('tokens', erc20.getTokens()));
     io.emit('data', formatRes('dbStatus', status.getState()));
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
@@ -107,20 +71,23 @@ _dataSource2.default.then(db => {
           case 'blocks':
             collector = blocks;
             break;
-          case 'erc20':
-            collector = erc20;
-            break;
           default:
             io.emit('error', formatError(_types.errors.INVALID_TYPE));
-            break;
-        }
+            break;}
+
         if (collector) {
           let resAction = type + action;
-          collector.run(action, params).then(result => {
+          collector.
+          run(action, params).
+          then(result => {
             io.emit('data', formatRes(resAction, result, payload));
-          }).catch(err => {
+          }).
+          catch(err => {
             log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err);
-            io.emit('error', formatRes(resAction, null, payload, _types.errors.INVALID_REQUEST));
+            io.emit(
+            'error',
+            formatRes(resAction, null, payload, _types.errors.INVALID_REQUEST));
+
           });
         }
       } else {

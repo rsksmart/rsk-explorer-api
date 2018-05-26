@@ -1,15 +1,22 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.DataCollectorItem = undefined;var _mongodb = require('mongodb');
 class DataCollectorItem {
   constructor(collection, key, parent) {
+    if (!(collection instanceof _mongodb.Collection)) {
+      throw new Error('Collection is not mongodb Collection');
+    }
     this.db = collection;
     this.key = key;
     this.publicActions = {};
     this.parent = parent;
     this.sortableFields = null;
+  }
+  run(action, params) {
+    let f = this.publicActions[action];
+    if (f) {
+      return f(params);
+    } else {
+      console.log('Unknown action' + action);
+    }
   }
   paginator(query, params) {
     return this.db.count(query).then(total => {
@@ -25,8 +32,8 @@ class DataCollectorItem {
   getAggPages(aggregate, params) {
     return new Promise((resolve, reject) => {
       aggregate.push({
-        $group: { _id: 'result', TOTAL: { $sum: 1 } }
-      });
+        $group: { _id: 'result', TOTAL: { $sum: 1 } } });
+
       // review this
       // let options = { allowDiskUse: true }
       let options = {};
@@ -64,7 +71,12 @@ class DataCollectorItem {
   find(query, sort, limit) {
     sort = sort || {};
     limit = limit || 0;
-    return this.db.find(query).sort(sort).limit(limit).toArray().then(DATA => {
+    return this.db.
+    find(query).
+    sort(sort).
+    limit(limit).
+    toArray().
+    then(DATA => {
       return { DATA };
     });
   }
@@ -73,9 +85,9 @@ class DataCollectorItem {
       if (DATA) {
         let jsonData = JSON.stringify(DATA);
         return this._findPN(queryP, sort).then(PREV => {
-          if (jsonData == JSON.stringify(PREV)) PREV = null;
+          if (jsonData === JSON.stringify(PREV)) PREV = null;
           return this._findPN(queryN, sort).then(NEXT => {
-            if (jsonData == JSON.stringify(NEXT)) NEXT = null;
+            if (jsonData === JSON.stringify(NEXT)) NEXT = null;
             return { DATA, NEXT, PREV };
           });
         });
@@ -83,12 +95,22 @@ class DataCollectorItem {
     });
   }
   _findPN(query, sort) {
-    return this.db.find(query).sort(sort).limit(1).toArray().then(res => {
+    return this.db.
+    find(query).
+    sort(sort).
+    limit(1).
+    toArray().
+    then(res => {
       return res[0];
     });
   }
   _findPages(query, PAGES, sort) {
-    return this.db.find(query).sort(sort).skip(PAGES.skip).limit(PAGES.perPage).toArray();
+    return this.db.
+    find(query).
+    sort(sort).
+    skip(PAGES.skip).
+    limit(PAGES.perPage).
+    toArray();
   }
   _aggregatePages(aggregate, PAGES) {
     // review this
@@ -142,7 +164,7 @@ class DataCollectorItem {
   }
   filterSort(sort, sortable) {
     let filteredSort = {};
-    // allow only one field to user sort 
+    // allow only one field to user sort
     if (Object.keys(sort).length > 1) return this.sort;
     for (let field in sort) {
       if (undefined !== sortable[field]) filteredSort[field] = sort[field];
@@ -155,13 +177,14 @@ class DataCollectorItem {
     let fieldQuery;
     let inArr = [];
     let ninArr = [];
-    if ('string' === typeof value) {
+    if (typeof value === 'string') {
       fieldQuery = value;
     } else if (Array.isArray(value)) {
       inArr = value;
-    } else if ('object' === typeof value) {
+    } else if (typeof value === 'object') {
       for (let p in value) {
-        if (value[p]) inArr.push(p);else ninArr.push(p);
+        if (value[p]) inArr.push(p);else
+        ninArr.push(p);
       }
     }
     if (inArr.length || ninArr.length) fieldQuery = {};
@@ -169,7 +192,6 @@ class DataCollectorItem {
     if (ninArr.length) fieldQuery['$nin'] = ninArr;
     if (fieldQuery) query[field] = fieldQuery;
     return query;
-  }
-}
-exports.DataCollectorItem = DataCollectorItem;
-exports.default = DataCollectorItem;
+  }}exports.DataCollectorItem = DataCollectorItem;exports.default =
+
+DataCollectorItem;

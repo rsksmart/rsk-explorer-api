@@ -1,13 +1,12 @@
-import { DataCollector, DataCollectorItem } from './DataCollector'
-import config from './config'
+import { DataCollector } from '../lib/DataCollector'
+import config from '../lib/config'
 
 const perPage = config.api.perPage
 const statusCollection = config.blocks.statusCollection
 const blocksCollection = config.blocks.blocksCollection
 
-
-class Status extends DataCollector {
-  constructor(db) {
+export class Status extends DataCollector {
+  constructor (db) {
     super(db, { perPage, statusCollection })
     this.state = {}
     this.addItem(statusCollection, 'Status', null, true)

@@ -1,11 +1,7 @@
-'use strict';
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-const filterParams = exports.filterParams = (params, perPage) => {
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });const filterParams = exports.filterParams = (params, perPageMax = 50) => {
   params = params || {};
-  perPage = perPage || 50;
+  let perPage = params.perPage || perPageMax;
+  perPage = perPage <= perPageMax ? perPage : perPageMax;
   params.page = params.page || 1;
   let limit = params.limit || perPage;
   limit = limit <= perPage ? limit : perPage;

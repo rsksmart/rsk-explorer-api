@@ -8,7 +8,6 @@
 
 ### blocks service
 
-### erc20 service
 
 ## Requisites
 
@@ -37,13 +36,12 @@
 
 ``` shell
   node dist/services/blocks
-  node dist/services/erc20
 ```
 
 ### api
 
 ``` shell
-  node dist/api.js
+  node dist/api
 ```
 
 ## Commands
@@ -60,13 +58,7 @@ Run blocks service in development mode
     npm run blocks
   ```
 
-Run erc20 service in development mode
-
-``` shell
-    npm run erc20
-  ```
-
-  Production build to ./dist folder
+Production build to ./dist folder
 
 ``` shell
     npm run build
@@ -76,6 +68,29 @@ Run erc20 service in development mode
 
   See defaults on: **lib/defaultConfig** 
   *(config.json overrides this values)*
+  
+Required values
+
+``` javascript
+   "source": {
+    "node": "localhost",
+    "port": 4444
+  },
+  "publicSettings": {
+    "bridgeAddress": "0x0000000000000000000000000000000001000006",
+    "remascAddress": "0x0000000000000000000000000000000001000008",
+    "contractDeployAddress": "0x0000000000000000000000000000000000000000"
+  },
+  "server": {
+    "port": 3003
+  },
+  "db": {
+    "server": "localhost",
+    "port": 27017,
+    "database": "blockDB"
+  }
+
+```
 
 ### Source
 
@@ -94,18 +109,3 @@ Run erc20 service in development mode
   "password": < password >
 
 ### blocks
-
-### erc20
-
-- ABI
-- tokens: Array of token objects:
-    ``` javascript
-    {
-      shortName: '<token-short-name>',
-      address: '<token-address>',
-      decimals: 18,
-      name: '<token-name>',
-      description: '<token-description>',
-      totalSupply: -1,
-    }
-
