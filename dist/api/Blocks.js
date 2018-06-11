@@ -12,8 +12,7 @@ const blocksCollection = c.blocksCollection;
 const txCollection = c.txCollection;
 const addrCollection = c.addrCollection;
 const eventsCollection = c.eventsCollection;
-const tokensAccountsCollection = c.tokensAccountsCollection;
-
+const tokensAccountsCollection = c.tokenAddrCollection;
 class Blocks extends _DataCollector.DataCollector {
   constructor(db) {
     let collectionName = blocksCollection;

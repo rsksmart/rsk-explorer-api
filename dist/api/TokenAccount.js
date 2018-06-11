@@ -7,14 +7,16 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
     this.publicActions = {
 
       getTokenAccounts: async params => {
-        const data = await this.getPages(params);
+        const contract = params.contract;
+        const data = await this.getPageData({ contract }, params);
         return this.parent.getAddress(params.address, data);
       },
 
       getTokenAccount: async params => {
-        const query = { address: params.address, contract: params.contract };
-        const data = await this.getOne(query);
-        return this.parent.getAddress(params.address, data);
+        const address = params.address;
+        const contract = params.contract;
+        const data = await this.getOne({ address, contract });
+        return this.parent.getAddress(address, data);
       } };
 
   }}exports.TokenAccount = TokenAccount;exports.default =
