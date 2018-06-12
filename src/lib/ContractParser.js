@@ -63,19 +63,23 @@ class ContractParser {
   call (method, contract, params) {
     return new Promise((resolve, reject) => {
       contract[method].call(params, (err, res) => {
-        if (err !== null) reject(err)
-        else resolve(res)
+        if (err !== null) {
+          resolve(null)
+          return reject(err)
+        } else {
+          resolve(res)
+        }
       })
     })
   }
 
   async getTokenData (contract) {
-    let [name, symbol, decimals, totalSupply] = await Promise.all([
-      this.call('name', contract),
-      this.call('symbol', contract),
-      this.call('decimals', contract),
-      this.call('totalSupply', contract)
-    ])
+    const methods = ['name', 'symbol', 'decimals', 'totalSupply']
+    let [name, symbol, decimals, totalSupply] = await Promise.all(
+      methods.map(m =>
+        this.call(m, contract)
+          .catch(err => console.log(`Error executing ${m}  Error: ${err}`)))
+    )
     return { name, symbol, decimals, totalSupply }
   }
 
