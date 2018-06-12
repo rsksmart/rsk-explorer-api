@@ -1,9 +1,13 @@
 import Contract from './Contract'
+import { isAddress } from '../../lib/utils'
 
 export class TokenAddress {
   constructor (address, contract) {
     if (!(contract instanceof Contract)) {
-      throw (new Error('contract is not instance of Contract'))
+      throw new Error('contract is not instance of Contract')
+    }
+    if (!isAddress(address)) {
+      throw new Error(`TokenAddress: invalid address: ${address}`)
     }
     this.Contract = contract
     this.address = address

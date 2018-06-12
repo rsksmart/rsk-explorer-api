@@ -2,7 +2,7 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-
+import { isAddress } from '../../lib/utils'
 /**
  * @param  {Number} Block number
  * @param  {Blocks} parent
@@ -211,11 +211,13 @@ export class Block {
       return Promise.resolve({ block: block.result, txs: txs.result })
     }
   }
+
   addAddress (address, type) {
-    if (address) {
-      this.addresses[address] = new Address(address, this.web3, this.parent.Addr)
-    }
+    if (!isAddress(address)) return
+    const Addr = new Address(address, this.web3, this.parent.Addr)
+    this.addresses[address] = Addr
   }
+
   addContract (tx) {
     let address = tx.receipt.contractAddress
     if (address) {
@@ -235,9 +237,11 @@ export class Block {
     this.contracts[address] = contract
     return contract
   }
+
   getAddressCode (address) {
     return this.addresses[address].code
   }
+
   addEventsAddresses () {
     this.data.events.forEach(event => {
       if (event && event.args) {
@@ -259,10 +263,10 @@ export class Block {
     let contracts = this.data.contracts
     contracts.forEach(contract => {
       let address = contract.address
-      let Address = this.addresses[address]
-      if (Address) {
+      let Addr = this.addresses[address]
+      if (Addr) {
         for (let prop in contract) {
-          if (prop !== 'addresses') Address.setData(prop, contract[prop])
+          if (prop !== 'addresses') Addr.setData(prop, contract[prop])
         }
       }
     })
@@ -279,6 +283,7 @@ export class Block {
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
   }
+
   getData () {
     return this.data
   }

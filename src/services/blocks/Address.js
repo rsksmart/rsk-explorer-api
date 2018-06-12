@@ -1,5 +1,7 @@
+import { isAddress } from '../../lib/utils'
 export class Address {
   constructor (address, web3, db, block = 'latest') {
+    if (!isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
     this.web3 = web3
     this.db = db
@@ -45,7 +47,12 @@ export class Address {
   }
   async fetch () {
     let balance = await this.getBalance()
+      .catch(err => {
+        console.log(`Address: error getting balance of ${this.address} ${err}`)
+      })
+    balance = balance || null
     this.data.balance = balance
+
     let code = null
     let dbData = await this.getFromDb()
 

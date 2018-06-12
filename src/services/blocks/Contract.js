@@ -1,8 +1,10 @@
 import ContractParser from '../../lib/ContractParser'
 import { contractsTypes as types } from '../../lib/types'
 import TokenAddress from './TokenAddress'
+import { isAddress } from '../../lib/utils'
 class Contract {
   constructor (address, creationData, web3, parser) {
+    if (!isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     parser = parser || new ContractParser(web3)
     this.parser = parser
     this.address = address
@@ -49,7 +51,7 @@ class Contract {
   }
 
   addAddress (address) {
-    if (!address) return
+    if (!isAddress(address)) return
     if (!this.addresses[address]) {
       let Address = this.newAddress(address)
       this.addresses[address] = Address

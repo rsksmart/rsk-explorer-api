@@ -1,3 +1,6 @@
+import Web3 from 'web3'
+const web3 = new Web3()
+
 export const filterParams = (params, perPageMax = 50) => {
   params = params || {}
   let perPage = params.perPage || perPageMax
@@ -45,4 +48,8 @@ const sanitizeQuery = (query) => {
 
 const retFiltered = (filtered) => {
   return (filtered && Object.keys(filtered).length > 0) ? filtered : null
+}
+
+export const isAddress = (address) => {
+  return web3.isAddress(address)
 }
