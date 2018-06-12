@@ -153,10 +153,12 @@ export class Block {
     let db = this.parent
     // if (this.fetched) data = this.getData()
     let data = await this.fetch()
+    if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.number}`))
     let block, txs, addresses, events, tokenAddresses
     ({ block, txs, addresses, events, tokenAddresses } = data)
     let result = {}
     if (!block) return Promise.reject(new Error('Block data is empty'))
+
     await Promise.all([db.Blocks.insertOne(block), ...txs.map(tx => db.Txs.insertOne(tx))])
       .then(res => { result.blocks = res })
       .catch(err => {
