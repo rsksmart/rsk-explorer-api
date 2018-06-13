@@ -27,9 +27,10 @@ export class SaveBlocks {
 
   async start () {
     if (this.web3.isConnected()) {
-      this.requestBlock('latest').then(() => this.isDbOutDated().then(() => this.getBlocks()))
+      Promise.all([this.requestBlock(0), this.requestBlock('latest')])
+        .then(() => this.isDbOutDated().then(() => this.getBlocks()))
 
-      // node is syncing
+        // node is syncing
       this.web3.eth.isSyncing((err, sync) => {
         this.log.debug('Node is syncing')
         if (!err) {
