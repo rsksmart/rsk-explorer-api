@@ -1,9 +1,9 @@
-import { isAddress } from '../../lib/utils'
-export class Address {
+import { BcThing } from './BcThing'
+export class Address extends BcThing {
   constructor (address, web3, db, block = 'latest') {
-    if (!isAddress(address)) throw new Error((`Invalid address: ${address}`))
+    super(web3)
+    if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
-    this.web3 = web3
     this.db = db
     this.codeIsSaved = false
     this.data = new Proxy(

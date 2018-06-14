@@ -27,6 +27,7 @@
   "license": "MIT",
   "homepage": "https://bitbucket.org/jsjsfun/rsk-explorer-api#readme",
   "dependencies": {
+    "bignumber.js": "^7.2.1",
     "bunyan": "^2.0.2",
     "mongodb": "^3.0.10",
     "socket.io": "^2.1.0",

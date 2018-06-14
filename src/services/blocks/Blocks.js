@@ -30,7 +30,7 @@ export class SaveBlocks {
       Promise.all([this.requestBlock(0), this.requestBlock('latest')])
         .then(() => this.isDbOutDated().then(() => this.getBlocks()))
 
-        // node is syncing
+      // node is syncing
       this.web3.eth.isSyncing((err, sync) => {
         this.log.debug('Node is syncing')
         if (!err) {

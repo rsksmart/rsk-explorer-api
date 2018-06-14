@@ -1,4 +1,7 @@
 import Web3 from 'web3'
+import { BigNumber } from 'bignumber.js'
+import { BIG_NUMBER } from './types'
+
 const web3 = new Web3()
 
 export const filterParams = (params, perPageMax = 50) => {
@@ -52,4 +55,46 @@ const retFiltered = (filtered) => {
 
 export const isAddress = (address) => {
   return web3.isAddress(address)
+}
+
+export const bigNumberDoc = bigNumber => {
+  return { type: BIG_NUMBER, value: bigNumber.toString() }
+}
+
+export const isBigNumber = value => {
+  return isObj(value) && (
+    (value.isBigNumber === true) ||
+    (value instanceof BigNumber) ||
+    (value.lte && value.toNumber))
+}
+
+const serializeBigNumber = value => {
+  return (isBigNumber(value)) ? bigNumberDoc(value) : value
+}
+
+const isObj = (value) => {
+  if (undefined === value || value === null) return false
+  let is = (typeof value === 'object')
+  is = (is) ? (value instanceof Array === false) : is
+  return is
+}
+
+export const serialize = (obj) => {
+  if (typeof obj !== 'object') return obj
+  if (isBigNumber(obj)) return serializeBigNumber(obj)
+  let serialized = {}
+  for (let p in obj) {
+    let value = obj[p]
+    if (value !== null && typeof value === 'object') {
+      if (value instanceof Array) {
+        serialized[p] = value.map(v => serialize(v))
+      } else {
+        if (!isBigNumber(value)) serialized[p] = serialize(value)
+        else serialized[p] = serializeBigNumber(value)
+      }
+    } else {
+      serialized[p] = value
+    }
+  }
+  return serialized
 }

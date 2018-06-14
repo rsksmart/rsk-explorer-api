@@ -1,19 +1,19 @@
+import { BcThing } from './BcThing'
 import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-import { isAddress } from '../../lib/utils'
 /**
  * @param  {Number} Block number
  * @param  {Blocks} parent
  * @param  {Object} Options: {override:<Boolean>, forceFetch:<Boolean>}
  */
-export class Block {
+export class Block extends BcThing {
   constructor (number, parent, options) {
+    super(parent.web3)
     this.parent = parent
     this.fetched = false
     this.options = options || {}
-    this.web3 = parent.web3
     this.log = this.parent.log || console
     this.number = number
     this.addresses = {}
@@ -151,15 +151,15 @@ export class Block {
 
   async save () {
     let db = this.parent
-    // if (this.fetched) data = this.getData()
     let data = await this.fetch()
     if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.number}`))
+    data = this.serialize(data)
     let block, txs, addresses, events, tokenAddresses
     ({ block, txs, addresses, events, tokenAddresses } = data)
     let result = {}
     if (!block) return Promise.reject(new Error('Block data is empty'))
 
-    await Promise.all([db.Blocks.insertOne(block), ...txs.map(tx => db.Txs.insertOne(tx))])
+    await Promise.all([db.Blocks.insertOne(block, { serializeFunctions: true }), ...txs.map(tx => db.Txs.insertOne(tx))])
       .then(res => { result.blocks = res })
       .catch(err => {
         if (err.code !== 11000) return Promise.reject(new Error(`Writing block error ${err}`))
@@ -213,7 +213,7 @@ export class Block {
   }
 
   addAddress (address, type) {
-    if (!isAddress(address)) return
+    if (!this.isAddress(address)) return
     const Addr = new Address(address, this.web3, this.parent.Addr)
     this.addresses[address] = Addr
   }
@@ -282,10 +282,6 @@ export class Block {
   }
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
-  }
-
-  getData () {
-    return this.data
   }
 }
 

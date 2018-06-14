@@ -1,10 +1,12 @@
+import { BcThing } from './BcThing'
 import ContractParser from '../../lib/ContractParser'
 import { contractsTypes as types } from '../../lib/types'
 import TokenAddress from './TokenAddress'
-import { isAddress } from '../../lib/utils'
-class Contract {
+
+class Contract extends BcThing {
   constructor (address, creationData, web3, parser) {
-    if (!isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
+    super(web3)
+    if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     parser = parser || new ContractParser(web3)
     this.parser = parser
     this.address = address
@@ -15,7 +17,6 @@ class Contract {
       createdByTx,
       addresses: []
     }
-    this.web3 = web3
     this.contract = this.makeContract()
     this.addresses = {}
   }
@@ -30,10 +31,6 @@ class Contract {
     }
     this.data.addresses = await this.fetchAddresses()
     return this.getData()
-  }
-
-  getData () {
-    return this.data
   }
 
   makeContract () {
@@ -51,7 +48,7 @@ class Contract {
   }
 
   addAddress (address) {
-    if (!isAddress(address)) return
+    if (!this.isAddress(address)) return
     if (!this.addresses[address]) {
       let Address = this.newAddress(address)
       this.addresses[address] = Address

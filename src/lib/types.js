@@ -21,4 +21,6 @@ export const contractsTypes = {
   ERC20: 'ERC20'
 }
 
+export const BIG_NUMBER = 'BigNumber'
+
 export default { txTypes, errors, addrTypes, contractsTypes }

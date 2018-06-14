@@ -1,12 +1,13 @@
+import { BcThing } from './BcThing'
 import Contract from './Contract'
-import { isAddress } from '../../lib/utils'
 
-export class TokenAddress {
+export class TokenAddress extends BcThing {
   constructor (address, contract) {
+    super()
     if (!(contract instanceof Contract)) {
       throw new Error('contract is not instance of Contract')
     }
-    if (!isAddress(address)) {
+    if (!this.isAddress(address)) {
       throw new Error(`TokenAddress: invalid address: ${address}`)
     }
     this.Contract = contract
@@ -25,9 +26,6 @@ export class TokenAddress {
     let address = this.address
     let balance = await this.Contract.call('balanceOf', address)
     return balance
-  }
-  getData () {
-    return this.data
   }
 }
 
