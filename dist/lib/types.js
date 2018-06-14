@@ -18,7 +18,9 @@ const addrTypes = exports.addrTypes = {
 
 
 const contractsTypes = exports.contractsTypes = {
-  ERC20: 'ERC20' };exports.default =
+  ERC20: 'ERC20' };
 
+
+const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';exports.default =
 
 { txTypes, errors, addrTypes, contractsTypes };

@@ -1,19 +1,22 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _ContractParser = require('../../lib/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _BcThing = require('./BcThing');
+var _ContractParser = require('../../lib/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
 var _types = require('../../lib/types');
 var _TokenAddress = require('./TokenAddress');var _TokenAddress2 = _interopRequireDefault(_TokenAddress);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-class Contract {
+
+class Contract extends _BcThing.BcThing {
   constructor(address, creationData, web3, parser) {
+    super(web3);
+    if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`);
     parser = parser || new _ContractParser2.default(web3);
     this.parser = parser;
     this.address = address;
     this.creationData = creationData;
-    const createdByTx = creationData && creationData.tx ? creationData.tx.hash : null;
+    const createdByTx = creationData && creationData.tx ? creationData.tx : null;
     this.data = {
       address,
       createdByTx,
       addresses: [] };
 
-    this.web3 = web3;
     this.contract = this.makeContract();
     this.addresses = {};
   }
@@ -25,13 +28,13 @@ class Contract {
       if (tokenData) this.data = Object.assign(this.data, tokenData);
       let isErc20 = this.isErc20();
       if (isErc20) this.data.contractType = _types.contractsTypes.ERC20;
+    } else {
+      // saved contracts
+      let totalSupply = await this.call('totalSupply');
+      if (totalSupply) this.data = Object.assign(this.data, { totalSupply });
     }
     this.data.addresses = await this.fetchAddresses();
     return this.getData();
-  }
-
-  getData() {
-    return this.data;
   }
 
   makeContract() {
@@ -49,7 +52,7 @@ class Contract {
   }
 
   addAddress(address) {
-    if (!address) return;
+    if (!this.isAddress(address)) return;
     if (!this.addresses[address]) {
       let Address = this.newAddress(address);
       this.addresses[address] = Address;

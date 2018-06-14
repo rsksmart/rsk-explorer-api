@@ -1,19 +1,19 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Block = undefined;var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Block = undefined;var _BcThing = require('./BcThing');
+var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
 var _txFormat = require('../../lib/txFormat');var _txFormat2 = _interopRequireDefault(_txFormat);
 var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);
 var _ContractParser = require('../../lib/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
 /**
                                                                                                                                                                                                                         * @param  {Number} Block number
                                                                                                                                                                                                                         * @param  {Blocks} parent
                                                                                                                                                                                                                         * @param  {Object} Options: {override:<Boolean>, forceFetch:<Boolean>}
                                                                                                                                                                                                                         */
-class Block {
+class Block extends _BcThing.BcThing {
   constructor(number, parent, options) {
+    super(parent.web3);
     this.parent = parent;
     this.fetched = false;
     this.options = options || {};
-    this.web3 = parent.web3;
     this.log = this.parent.log || console;
     this.number = number;
     this.addresses = {};
@@ -89,8 +89,8 @@ class Block {
     tx.receipt = receipt;
     if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex;
     this.addAddress(receipt.contractAddress);
-    this.addContract(tx);
     tx.timestamp = this.data.block.timestamp;
+    this.addContract(tx);
     this.addAddress(tx.to);
     this.addAddress(tx.from);
     tx = (0, _txFormat2.default)(tx);
@@ -151,13 +151,15 @@ class Block {
 
   async save() {
     let db = this.parent;
-    // if (this.fetched) data = this.getData()
     let data = await this.fetch();
+    if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.number}`));
+    data = this.serialize(data);
     let block, txs, addresses, events, tokenAddresses;
     ({ block, txs, addresses, events, tokenAddresses } = data);
     let result = {};
     if (!block) return Promise.reject(new Error('Block data is empty'));
-    await Promise.all([db.Blocks.insertOne(block), ...txs.map(tx => db.Txs.insertOne(tx))]).
+
+    await Promise.all([db.Blocks.insertOne(block, { serializeFunctions: true }), ...txs.map(tx => db.Txs.insertOne(tx))]).
     then(res => {result.blocks = res;}).
     catch(err => {
       if (err.code !== 11000) return Promise.reject(new Error(`Writing block error ${err}`));
@@ -209,11 +211,13 @@ class Block {
       return Promise.resolve({ block: block.result, txs: txs.result });
     }
   }
+
   addAddress(address, type) {
-    if (address) {
-      this.addresses[address] = new _Address2.default(address, this.web3, this.parent.Addr);
-    }
+    if (!this.isAddress(address)) return;
+    const Addr = new _Address2.default(address, this.web3, this.parent.Addr);
+    this.addresses[address] = Addr;
   }
+
   addContract(tx) {
     let address = tx.receipt.contractAddress;
     if (address) {
@@ -233,9 +237,11 @@ class Block {
     this.contracts[address] = contract;
     return contract;
   }
+
   getAddressCode(address) {
     return this.addresses[address].code;
   }
+
   addEventsAddresses() {
     this.data.events.forEach(event => {
       if (event && event.args) {
@@ -257,10 +263,10 @@ class Block {
     let contracts = this.data.contracts;
     contracts.forEach(contract => {
       let address = contract.address;
-      let Address = this.addresses[address];
-      if (Address) {
+      let Addr = this.addresses[address];
+      if (Addr) {
         for (let prop in contract) {
-          if (prop !== 'addresses') Address.setData(prop, contract[prop]);
+          if (prop !== 'addresses') Addr.setData(prop, contract[prop]);
         }
       }
     });
@@ -276,9 +282,6 @@ class Block {
   }
   fetchItems(items) {
     return Promise.all(Object.values(items).map(i => i.fetch()));
-  }
-  getData() {
-    return this.data;
   }}exports.Block = Block;exports.default =
 
 

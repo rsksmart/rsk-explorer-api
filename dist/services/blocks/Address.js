@@ -1,7 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });class Address {
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Address = undefined;var _BcThing = require('./BcThing');
+class Address extends _BcThing.BcThing {
   constructor(address, web3, db, block = 'latest') {
+    super(web3);
+    if (!this.isAddress(address)) throw new Error(`Invalid address: ${address}`);
     this.address = address;
-    this.web3 = web3;
     this.db = db;
     this.codeIsSaved = false;
     this.data = new Proxy(
@@ -44,8 +46,13 @@
     });
   }
   async fetch() {
-    let balance = await this.getBalance();
+    let balance = await this.getBalance().
+    catch(err => {
+      console.log(`Address: error getting balance of ${this.address} ${err}`);
+    });
+    balance = balance || null;
     this.data.balance = balance;
+
     let code = null;
     let dbData = await this.getFromDb();
 

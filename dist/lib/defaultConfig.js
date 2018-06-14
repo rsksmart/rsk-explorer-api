@@ -21,7 +21,7 @@ var _types = require('./types');exports.default =
     database: 'blockDB' },
 
   api: {
-    lastBlocks: 10,
+    lastBlocks: 30,
     perPage: 50 },
 
 

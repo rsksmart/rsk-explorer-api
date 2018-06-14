@@ -1,4 +1,10 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });const filterParams = exports.filterParams = (params, perPageMax = 50) => {
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.serialize = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
+var _bignumber = require('bignumber.js');
+var _types = require('./types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+
+const web3 = new _web2.default();
+
+const filterParams = exports.filterParams = (params, perPageMax = 50) => {
   params = params || {};
   let perPage = params.perPage || perPageMax;
   perPage = perPage <= perPageMax ? perPage : perPageMax;
@@ -45,4 +51,52 @@ const sanitizeQuery = query => {
 
 const retFiltered = filtered => {
   return filtered && Object.keys(filtered).length > 0 ? filtered : null;
+};
+
+const isAddress = exports.isAddress = address => {
+  return web3.isAddress(address);
+};
+
+const bigNumberDoc = exports.bigNumberDoc = bigNumber => {
+  const bn = Object.assign({}, bigNumber);
+  return Object.assign(bn, { type: _types.BIG_NUMBER, value: bigNumber.toString() });
+};
+
+const isBigNumber = exports.isBigNumber = value => {
+  return isObj(value) && (
+  value._isBigNumber === true ||
+  value.isBigNumber === true ||
+  value instanceof _bignumber.BigNumber ||
+  value.lte && value.toNumber);
+};
+
+const serializeBigNumber = value => {
+  return isBigNumber(value) ? bigNumberDoc(value) : value;
+};
+
+const isObj = value => {
+  if (undefined === value || value === null) return false;
+  let is = typeof value === 'object';
+  is = is ? value instanceof Array === false : is;
+  return is;
+};
+
+const serialize = exports.serialize = obj => {
+  if (typeof obj !== 'object') return obj;
+  if (isBigNumber(obj)) return serializeBigNumber(obj);
+  let serialized = {};
+  for (let p in obj) {
+    let value = obj[p];
+    if (value !== null && typeof value === 'object') {
+      if (value instanceof Array) {
+        serialized[p] = value.map(v => serialize(v));
+      } else {
+        if (!isBigNumber(value)) serialized[p] = serialize(value);else
+        serialized[p] = serializeBigNumber(value);
+      }
+    } else {
+      serialized[p] = value;
+    }
+  }
+  return serialized;
 };
