@@ -89,8 +89,8 @@ export class Block extends BcThing {
     tx.receipt = receipt
     if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
     this.addAddress(receipt.contractAddress)
-    this.addContract(tx)
     tx.timestamp = this.data.block.timestamp
+    this.addContract(tx)
     this.addAddress(tx.to)
     this.addAddress(tx.from)
     tx = txFormat(tx)

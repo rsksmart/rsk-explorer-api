@@ -11,7 +11,7 @@ class Contract extends BcThing {
     this.parser = parser
     this.address = address
     this.creationData = creationData
-    const createdByTx = (creationData && creationData.tx) ? creationData.tx.hash : null
+    const createdByTx = (creationData && creationData.tx) ? creationData.tx : null
     this.data = {
       address,
       createdByTx,
