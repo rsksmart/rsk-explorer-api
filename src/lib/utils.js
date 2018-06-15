@@ -58,11 +58,13 @@ export const isAddress = (address) => {
 }
 
 export const bigNumberDoc = bigNumber => {
-  return { type: BIG_NUMBER, value: bigNumber.toString() }
+  const bn = Object.assign({}, bigNumber)
+  return Object.assign(bn, { type: BIG_NUMBER, value: bigNumber.toString() })
 }
 
 export const isBigNumber = value => {
   return isObj(value) && (
+    (value._isBigNumber === true) ||
     (value.isBigNumber === true) ||
     (value instanceof BigNumber) ||
     (value.lte && value.toNumber))
