@@ -28,6 +28,10 @@ class Contract extends BcThing {
       if (tokenData) this.data = Object.assign(this.data, tokenData)
       let isErc20 = this.isErc20()
       if (isErc20) this.data.contractType = types.ERC20
+    } else {
+      // saved contracts
+      let totalSupply = await this.call('totalSupply')
+      if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
     }
     this.data.addresses = await this.fetchAddresses()
     return this.getData()
