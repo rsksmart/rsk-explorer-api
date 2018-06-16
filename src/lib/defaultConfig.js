@@ -21,7 +21,7 @@ export default {
     database: 'blockDB'
   },
   api: {
-    lastBlocks: 10,
+    lastBlocks: 30,
     perPage: 50
 
   },
