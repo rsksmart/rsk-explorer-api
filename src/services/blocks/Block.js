@@ -159,7 +159,7 @@ export class Block extends BcThing {
     let result = {}
     if (!block) return Promise.reject(new Error('Block data is empty'))
 
-    await Promise.all([db.Blocks.insertOne(block, { serializeFunctions: true }), ...txs.map(tx => db.Txs.insertOne(tx))])
+    await Promise.all([db.Blocks.insertOne(block), {}, ...txs.map(tx => db.Txs.insertOne(tx))])
       .then(res => { result.blocks = res })
       .catch(err => {
         if (err.code !== 11000) return Promise.reject(new Error(`Writing block error ${err}`))
