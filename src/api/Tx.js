@@ -1,10 +1,12 @@
 import { DataCollectorItem } from '../lib/DataCollector'
+import { isBlockHash } from '../lib/utils'
 
 export class Tx extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
     this.sort = { blockNumber: -1, transactionIndex: -1 }
     this.publicActions = {
+
       getTransactions: params => {
         let query = {}
         let txType = (params.query) ? params.query.txType : null
@@ -13,72 +15,53 @@ export class Tx extends DataCollectorItem {
         }
         return this.getPageData(query, params)
       },
-      getTransaction2: params => {
-        let hash = params.hash
-        let sort = params.sort || this.sort
-        return this.getPrevNext(
-          params,
-          { hash: hash },
-          {},
-          {},
-          sort
-        )
-      },
-      getTransaction: params => {
-        let hash = params.hash
-        let query = { hash }
-        return this.db.findOne(query).then(tx => {
-          if (!tx) return
 
-          return this.getPrevNext(
-            params,
-            query,
-            {
-              $or: [
-                { transactionIndex: { $gt: tx.transactionIndex } },
-                { blockNumber: { $gte: tx.blockNumber } }
-              ]
-            },
-            {
-              $and: [
-                { transactionIndex: { $lt: tx.transactionIndex } },
-                { blockNumber: { $lte: tx.blockNumber } }
-              ]
-            },
-            this.sort
-          ).then(res => {
-            // FIX IT
-            res.NEXT = null
-            res.PREV = null
-            return res
-          })
-        })
-      },
-      getBlockTransactions: params => {
-        let blockNumber = params.blockNumber
-        if (undefined !== blockNumber) {
-          return this.find({ blockNumber }, { transactionIndex: -1 })
+      getTransaction: params => {
+        const hash = params.hash
+        const blockNumber = params.block || params.blockNumber
+        const transactionIndex = params.index || params.transactionIndex
+        if (hash) {
+          return this.getOne({ hash })
+        } else if (undefined !== blockNumber && undefined !== transactionIndex) {
+          return this.getOne({ blockNumber, transactionIndex })
         }
       },
-      getAddressTransactions: params => {
+
+      getTransactionsByBlock: params => {
+        const hashOrNumber = params.hashOrNumber || params.number
+
+        if (isBlockHash(hashOrNumber)) {
+          params.blockHash = hashOrNumber
+          return this.getTransactionsByBlockHash(params)
+        } else {
+          params.blockNumber = parseInt(hashOrNumber)
+          return this.getTransactionsByBlockNumber(params)
+        }
+      },
+
+      getTransactionsByAddress: params => {
         let address = params.address
-        let Address = this.parent.Address
-        return Address.run('getAddress', { address })
-          .then((account) => {
-            if (!account.DATA) return Promise.resolve(account)
-            return this.getPageData(
-              {
-                $or: [{ from: address }, { to: address }]
-              },
-              params,
-              { timestamp: -1 }
-            ).then(res => {
-              account.DATA.account = address
-              res.PARENT_DATA = account.DATA
-              return res
-            })
-          })
+        return this.getPageData(
+          {
+            $or: [{ from: address }, { to: address }]
+          },
+          params
+        )
       }
+    }
+  }
+
+  getTransactionsByBlockNumber (params) {
+    const blockNumber = parseInt(params.blockNumber || params.number)
+    if (undefined !== blockNumber) {
+      return this.getPageData({ blockNumber }, params)
+    }
+  }
+
+  getTransactionsByBlockHash (params) {
+    const blockHash = params.blockHash
+    if (blockHash) {
+      return this.getPageData({ blockHash }, params)
     }
   }
 }

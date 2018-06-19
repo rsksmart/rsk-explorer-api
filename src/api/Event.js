@@ -7,15 +7,14 @@ export class Event extends DataCollectorItem {
 
       getEvent: async params => {
         const _id = params.id
-        const address = params.address
         const data = await this.getOne({ _id })
-        return this.parent.getAddress(address, data)
+        const address = data.DATA.address
+        return this.parent.addAddressData(address, data)
       },
 
-      getEvents: async params => {
+      getEventsByAddress: async params => {
         const address = params.address
-        const data = await this.getPageData({ address }, params)
-        return this.parent.getAddress(address, data)
+        if (address) return this.getPageData({ address }, params)
       }
     }
   }

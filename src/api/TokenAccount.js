@@ -6,17 +6,22 @@ export class TokenAccount extends DataCollectorItem {
     this.sort = { address: 1 }
     this.publicActions = {
 
-      getTokenAccounts: async params => {
+      getTokenAccounts: params => {
+        const contract = params.contract || params.address
+        if (contract) return this.getPageData({ contract }, params)
+      },
+
+      getContractAccount: params => {
+        const address = params.address
         const contract = params.contract
-        const data = await this.getPageData({ contract }, params)
-        return this.parent.getAddress(params.address, data)
+        return this.getOne({ address, contract })
       },
 
       getTokenAccount: async params => {
         const address = params.address
         const contract = params.contract
-        const data = await this.getOne({ address, contract })
-        return this.parent.getAddress(address, data)
+        const account = await this.getOne({ address, contract })
+        return this.parent.addAddressData(contract, account, '_contractData')
       }
     }
   }

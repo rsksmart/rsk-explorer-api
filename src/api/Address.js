@@ -8,7 +8,8 @@ export class Address extends DataCollectorItem {
     this.publicActions = {
 
       getAddress: params => {
-        return this.getOne(params)
+        const address = params.address
+        return this.getOne({address})
       },
 
       getAddresses: params => {

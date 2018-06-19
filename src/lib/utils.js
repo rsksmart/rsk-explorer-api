@@ -100,3 +100,8 @@ export const serialize = (obj) => {
   }
   return serialized
 }
+
+export const isBlockHash = (value) => {
+  value = String(value).toLowerCase()
+  return /^(0x)?[0-9a-f]{64}$/.test(value)
+}
