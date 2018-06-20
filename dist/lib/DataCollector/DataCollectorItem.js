@@ -143,7 +143,6 @@ class DataCollectorItem {
         aggregate.push({ $sort: sort });
       }
       return this._aggregatePages(aggregate, PAGES).then(DATA => {
-        // console.log(PAGES, DATA)
         return { PAGES, DATA };
       });
     });

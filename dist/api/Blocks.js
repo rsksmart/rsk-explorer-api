@@ -73,9 +73,9 @@ class Blocks extends _DataCollector.DataCollector {
     }
   }
 
-  async getAddress(address, data = null) {
+  async addAddressData(address, data, key = '_addressData') {
     const account = await this.Address.run('getAddress', { address });
-    if (data && account) data.PARENT_DATA = account.DATA;
+    if (data && account) data.DATA[key] = account.DATA;
     return data || account;
   }}exports.default =
 

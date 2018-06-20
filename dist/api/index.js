@@ -42,10 +42,6 @@ _dataSource2.default.then(db => {
     io.emit('data', formatRes('newBlocks', data));
   });
 
-  blocks.events.on('block', data => {
-    io.emit('data', formatRes('block', data));
-  });
-
   status.events.on('newStatus', data => {
     io.emit('data', formatRes('dbStatus', data));
   });

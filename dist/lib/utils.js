@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.serialize = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.isBlockHash = exports.serialize = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
 var _bignumber = require('bignumber.js');
 var _types = require('./types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
@@ -99,4 +99,9 @@ const serialize = exports.serialize = obj => {
     }
   }
   return serialized;
+};
+
+const isBlockHash = exports.isBlockHash = value => {
+  value = String(value).toLowerCase();
+  return (/^(0x)?[0-9a-f]{64}$/.test(value));
 };

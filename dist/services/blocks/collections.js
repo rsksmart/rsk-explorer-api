@@ -32,8 +32,8 @@
 
   {
     key: {
-      blockNumber: 1,
-      transactionIndex: 1 },
+      blockNumber: -1,
+      transactionIndex: -1 },
 
     name: 'blockTrasaction' },
 
