@@ -33,7 +33,7 @@ export function createCollection (db, collectionName, indexes) {
   let collection = db.collection(collectionName)
   if (!indexes || !indexes.length) return Promise.resolve(collection)
   return collection.createIndexes(indexes).then(doc => {
-    return collection
+    return db.admin().validateCollection(collectionName).then(() => collection)
   })
 }
 
