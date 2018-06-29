@@ -202,7 +202,7 @@ export class SaveBlocks {
     return this.Blocks.findOne({}, { sort: { number: -1 } })
   }
   countDbBlocks () {
-    return this.Blocks.count({})
+    return this.Blocks.countDocuments({})
   }
 }
 

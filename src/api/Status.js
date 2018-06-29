@@ -62,7 +62,7 @@ export class Status extends DataCollector {
       .then(lastBlock => lastBlock.DATA[0])
   }
   getTotalBlocks () {
-    return this.Blocks.db.count({})
+    return this.Blocks.db.countDocuments({})
   }
 }
 
