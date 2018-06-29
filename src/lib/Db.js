@@ -17,7 +17,7 @@ export class Db {
     this.connect()
   }
   connect () {
-    if (!this.client) this.client = MongoClient.connect(this.url)
+    if (!this.client) this.client = MongoClient.connect(this.url, { useNewUrlParser: true })
     return this.client
   }
 
