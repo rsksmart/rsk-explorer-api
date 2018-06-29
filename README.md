@@ -11,7 +11,7 @@
 
 ## Requisites
 
-- mongodb > 3.2
+- mongodb > 4
 - node > 8
 
 ## Install
