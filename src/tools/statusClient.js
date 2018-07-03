@@ -1,8 +1,6 @@
 import io from 'socket.io-client'
 import config from '../lib/config'
-const server = process.env.SERVER || 'localhost'
-const port = process.env.PORT || config.server.port
-const url = `ws://${server}:${port}`
+const url = process.env.URL || `ws://localhost:${config.server.port}`
 
 const reset = '\x1b[0m'
 const red = '\x1b[31m'
