@@ -168,14 +168,19 @@ export class SaveBlocks {
       this.requestingBlocks[number] = block
       return block.save()
         .then(res => {
-          this.Status.update()
-          this.requestingBlocks[number] = null
-          delete this.requestingBlocks[number]
+          return this.endBlockRequest(number)
         })
         .catch(err => {
           this.log.error(err)
+          return this.endBlockRequest(number)
         })
     }
+  }
+
+  endBlockRequest (number) {
+    this.requestingBlocks[number] = null
+    delete this.requestingBlocks[number]
+    return this.Status.update()
   }
 
   listen () {
