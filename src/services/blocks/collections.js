@@ -1,7 +1,10 @@
 export default {
   blocksCollection: [
     {
-      key: { number: 1 },
+      key: { number: -1 },
+      partialFilterExpression: {
+        number: { $exists: true }
+      },
       unique: true
     },
     {
@@ -9,8 +12,8 @@ export default {
       unique: true
     },
     {
-      key: { timestamp: 1 },
-      name: 'blocksTime'
+      key: { timestamp: -1 },
+      name: 'blocksTimestamp'
     },
     {
       key: { miner: 1 },
@@ -23,6 +26,13 @@ export default {
     {
       key: { size: 1 },
       name: 'blocksSize'
+    },
+    {
+      key: { _received: -1 },
+      partialFilterExpression: {
+        _received: { $exists: true }
+      },
+      name: 'blockReceivedTime'
     }
   ],
   txCollection: [
@@ -82,7 +92,10 @@ export default {
   ],
   statusCollection: [
     {
-      key: { timestamp: 1 },
+      key: { timestamp: -1 },
+      partialFilterExpression: {
+        timestamp: { $exists: true }
+      },
       unique: true
     }
   ],
