@@ -31,14 +31,14 @@ export class Status extends DataCollector {
       })
   }
   async updateState () {
-    let [status, last, high, dbBlocks] =
+    const [blocksStatus, last, high, dbBlocks] =
       await Promise.all([
         this.getBlocksServiceStatus(),
         this.getLastblockReceived(),
         this.getHighestBlock(),
         this.getTotalBlocks()
       ])
-    status = Object.assign(status, {
+    const status = Object.assign(blocksStatus, {
       dbLastBlockReceived: last.number,
       dbLastBlockReceivedTime: last._received,
       dbHighBlock: high.number,
@@ -54,12 +54,10 @@ export class Status extends DataCollector {
     }
   }
   getHighestBlock () {
-    return this.Blocks.find({}, { number: -1 }, 1)
-      .then(hBlock => hBlock.DATA[0])
+    return this.Blocks.db.findOne({}, { sort: { number: -1 } })
   }
   getLastblockReceived () {
-    return this.Blocks.find({}, { _received: -1 }, 1)
-      .then(lastBlock => lastBlock.DATA[0])
+    return this.Blocks.db.findOne({}, { sort: { _received: -1 } })
   }
   getTotalBlocks () {
     return this.Blocks.db.countDocuments({})
