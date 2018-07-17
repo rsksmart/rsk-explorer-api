@@ -10,7 +10,7 @@ class Block extends _DataCollector.DataCollectorItem {
         const hashOrNumber = params.hashOrNumber || params.number;
         if ((0, _utils.isBlockHash)(hashOrNumber)) {
           const block = await this.getOne({ hash: hashOrNumber });
-          if (block) return this.getBlockNextPrev(block.DATA.number, params);
+          if (block && block.DATA) return this.getBlockNextPrev(block.DATA.number, params);
         } else {
           const number = parseInt(hashOrNumber);
           return this.getBlockNextPrev(number, params);

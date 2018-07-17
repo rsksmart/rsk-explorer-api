@@ -1,7 +1,10 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.default = {
   blocksCollection: [
   {
-    key: { number: 1 },
+    key: { number: -1 },
+    partialFilterExpression: {
+      number: { $exists: true } },
+
     unique: true },
 
   {
@@ -9,8 +12,8 @@
     unique: true },
 
   {
-    key: { timestamp: 1 },
-    name: 'blocksTime' },
+    key: { timestamp: -1 },
+    name: 'blocksTimestamp' },
 
   {
     key: { miner: 1 },
@@ -22,7 +25,14 @@
 
   {
     key: { size: 1 },
-    name: 'blocksSize' }],
+    name: 'blocksSize' },
+
+  {
+    key: { _received: -1 },
+    partialFilterExpression: {
+      _received: { $exists: true } },
+
+    name: 'blockReceivedTime' }],
 
 
   txCollection: [
@@ -82,7 +92,10 @@
 
   statusCollection: [
   {
-    key: { timestamp: 1 },
+    key: { timestamp: -1 },
+    partialFilterExpression: {
+      timestamp: { $exists: true } },
+
     unique: true }],
 
 

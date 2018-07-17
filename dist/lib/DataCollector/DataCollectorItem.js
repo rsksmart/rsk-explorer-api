@@ -19,13 +19,13 @@ class DataCollectorItem {
     }
   }
   paginator(query, params) {
-    return this.db.count(query).then(total => {
+    return this.db.countDocuments(query, { hint: '_id_' }).then(total => {
       let pages = Math.ceil(total / params.limit);
       return { total, pages };
     });
   }
   getPages(query, params) {
-    return this.db.count(query).then(total => {
+    return this.db.countDocuments(query, { hint: '_id_' }).then(total => {
       return this._pages(params, total);
     });
   }

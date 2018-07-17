@@ -22,13 +22,23 @@ function createBlocks(config, db) {
   let log = config.Logger || console;
   for (let c in _collections2.default) {
     let name = config[c] || c;
-    queue.push(dataBase.createCollection(db, name, _collections2.default[c]));
+    queue.push(dataBase.createCollection(db, name, _collections2.default[c]).
+    then(collection => {
+      log.info(`Created collection ${name}`);
+      return collection;
+    }).
+    catch(err => {
+      log.error(`Error creating collection ${name} ${err}`);
+      return Promise.reject(err);
+    }));
+
   }
   return Promise.all(queue).then(dbCollections => {
     let collections = {};
     Object.keys(_collections2.default).forEach((k, i) => {
       collections[k] = dbCollections[i];
     });
+    log.info(`Starting blocks service`);
     return new _Blocks.SaveBlocks(config, collections);
   }).catch(err => {
     log.error('Error creating collections');
