@@ -5,19 +5,18 @@ export class BlocksStatus {
     this.web3 = Blocks.web3
     this.state = {}
     this.log = Blocks.log || console
+    this.requestingBlocks = this.Blocks.requestingBlocks
   }
 
   update (newState) {
     let connected = this.web3.isConnected()
     newState = newState || {}
     newState.nodeDown = !connected
-    newState.requestingBlocks = Object.keys(this.Blocks.requestingBlocks).length
-    // if (connected && undefined === newState.sync) newState.sync = this.web3.eth.syncing
+    newState.requestingBlocks = this.requestingBlocks.total()
 
     this.log.debug(`newState: ${JSON.stringify(newState)}`)
     let state = Object.assign({}, this.state)
     let changed = Object.keys(newState).find(k => newState[k] !== state[k])
-    // let changed = JSON.stringify(newState) === JSON.stringify(state)
     this.state = Object.assign(state, newState)
     if (changed) {
       newState.timestamp = Date.now()

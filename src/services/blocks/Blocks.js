@@ -1,6 +1,7 @@
 import web3Connect from '../../lib/web3Connect'
-import Block from './Block.js'
+import Block from './Block'
 import { BlocksStatus } from './BlocksStatus'
+import { RequestingBlocks } from './RequestingBlocks'
 
 export class SaveBlocks {
   constructor (options, collections) {
@@ -12,12 +13,7 @@ export class SaveBlocks {
     this.Events = collections.eventsCollection
     this.TokenAddr = collections.tokenAddrCollection
     this.web3 = web3Connect(options.node, options.port)
-    this.requestingBlocks = new Proxy({}, {
-      set (obj, prop, val) {
-        if (prop !== 'latest') obj[prop] = val
-        return true
-      }
-    })
+    this.requestingBlocks = RequestingBlocks
     this.blocksQueueSize = options.blocksQueueSize || 100 // max blocks per queue
     this.blocksQueue = {}
     this.segments = []
@@ -118,8 +114,11 @@ export class SaveBlocks {
     if (Number.isInteger(blockNumber)) {
       block = await this.getBlockFromDb(blockNumber)
     }
-    if (block) return Promise.resolve(block)
-    else return this.newBlock(blockNumber).save()
+    if (block) {
+      return Promise.resolve(block)
+    } else {
+      return this.requestBlock(blockNumber)
+    }
   }
 
   getBlocks () {
@@ -141,10 +140,6 @@ export class SaveBlocks {
     }
   }
 
-  isRequested (number) {
-    return this.requestingBlocks[number]
-  }
-
   // shared with Block
   getBlockFromDb (blockNumber) {
     return this.Blocks.findOne({ number: blockNumber })
@@ -162,24 +157,25 @@ export class SaveBlocks {
   }
 
   async requestBlock (number) {
-    if (!this.isRequested(number)) {
-      this.log.debug(`Requesting block ${number}`)
-      let block = await this.newBlock(number)
-      this.requestingBlocks[number] = block
-      return block.save()
-        .then(res => {
-          return this.endBlockRequest(number)
-        })
-        .catch(err => {
-          this.log.error(err)
-          return this.endBlockRequest(number)
-        })
+    if (this.requestingBlocks.isRequested(number)) {
+      return Promise.resolve(number)
     }
+    this.log.debug(`Requesting block ${number}`)
+    let block = await this.newBlock(number)
+    this.requestingBlocks.add(number, block)
+    this.Status.update()
+    return block.save()
+      .then(res => {
+        return this.endBlockRequest(number)
+      })
+      .catch(err => {
+        this.log.error(err)
+        return this.endBlockRequest(number)
+      })
   }
 
   endBlockRequest (number) {
-    this.requestingBlocks[number] = null
-    delete this.requestingBlocks[number]
+    this.requestingBlocks.delete(number)
     return this.Status.update()
   }
 
@@ -196,7 +192,7 @@ export class SaveBlocks {
         let blockNumber = log.blockNumber || null
         if (blockNumber) {
           this.log.debug('New Block:', blockNumber)
-          this.requestBlock(blockNumber)
+          this.getBlock(blockNumber)
         } else {
           this.log.warn('Error, log.blockNumber is empty')
         }
