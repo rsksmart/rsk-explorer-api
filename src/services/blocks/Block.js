@@ -74,9 +74,11 @@ export class Block extends BcThing {
     return new Promise((resolve, reject) => {
       this.web3.eth.getBlock(number, txArr, (err, blockData) => {
         if (err !== null) return reject(err)
-        else {
+        if (blockData) {
           blockData._received = Date.now()
           resolve(blockData)
+        } else {
+          return reject(new Error(`BlockData of block ${number} is empty`))
         }
       })
     })
