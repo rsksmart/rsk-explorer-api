@@ -118,6 +118,10 @@ export class SaveBlocks {
       return Promise.resolve(block)
     } else {
       return this.requestBlock(blockNumber)
+        .then(number => {
+          this.log.debug(`Getting parent of block ${number}`)
+          return this.getBlock(number - 1)
+        })
     }
   }
 
@@ -176,7 +180,8 @@ export class SaveBlocks {
 
   endBlockRequest (number) {
     this.requestingBlocks.delete(number)
-    return this.Status.update()
+    this.Status.update()
+    return number
   }
 
   listen () {
