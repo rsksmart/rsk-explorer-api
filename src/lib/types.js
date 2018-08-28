@@ -1,3 +1,4 @@
+import { apiErrors } from '../lib/errors'
 
 export const txTypes = {
   default: 'normal',
@@ -6,11 +7,13 @@ export const txTypes = {
   contract: 'contract deploy'
 }
 
-export const errors = {
-  INVALID_REQUEST: 'Invalid Request',
-  INVALID_TYPE: 'Invalid Type',
-  EMPTY_RESULT: 'Not Found'
-}
+export const errors = apiErrors(
+  {
+    INVALID_REQUEST: 'Invalid Request',
+    INVALID_TYPE: 'Invalid Type',
+    EMPTY_RESULT: 'Not Found'
+  }
+)
 
 export const addrTypes = {
   ADDRESS: 'account',

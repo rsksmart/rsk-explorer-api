@@ -118,8 +118,8 @@ const formatRes = (action, result, req, error) => {
 }
 
 const formatError = error => {
-  let serverTime = Date.now()
-  return { error, serverTime }
+  error.serverTime = Date.now()
+  return error
 }
 
 process.on('unhandledRejection', err => {
