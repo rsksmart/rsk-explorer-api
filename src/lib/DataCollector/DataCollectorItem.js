@@ -105,10 +105,11 @@ export class DataCollectorItem {
       })
   }
   _findPages (query, PAGES, sort) {
+    const options = {}
+    if (PAGES.skip) options.skip = PAGES.skip
     return this.db
-      .find(query)
+      .find(query, options)
       .sort(sort)
-      .skip(PAGES.skip)
       .limit(PAGES.perPage)
       .toArray()
   }
