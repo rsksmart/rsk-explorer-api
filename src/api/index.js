@@ -15,7 +15,6 @@ dataSource.then(db => {
   log.info('Database connected')
 
   // data collectors
-  // const erc20 = new Erc20(db)
   const blocks = new Blocks(db)
   const status = new Status(db)
   blocks.start()
@@ -47,9 +46,9 @@ dataSource.then(db => {
   })
 
   io.on('connection', socket => {
-    io.emit('open', { time: Date.now(), settings: publicSettings() })
-    io.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
-    io.emit('data', formatRes('dbStatus', status.getState()))
+    socket.emit('open', { time: Date.now(), settings: publicSettings() })
+    socket.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
+    socket.emit('data', formatRes('dbStatus', status.getState()))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
@@ -68,7 +67,7 @@ dataSource.then(db => {
             collector = blocks
             break
           default:
-            io.emit('error', formatError(errors.INVALID_TYPE))
+            socket.emit('error', formatError(errors.INVALID_TYPE))
             break
         }
         if (collector) {
@@ -76,18 +75,18 @@ dataSource.then(db => {
           collector
             .run(action, params)
             .then(result => {
-              io.emit('data', formatRes(resAction, result, payload))
+              socket.emit('data', formatRes(resAction, result, payload))
             })
             .catch(err => {
               log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err)
-              io.emit(
+              socket.emit(
                 'error',
                 formatRes(resAction, null, payload, errors.INVALID_REQUEST)
               )
             })
         }
       } else {
-        io.emit('error', formatError(errors.INVALID_REQUEST))
+        socket.emit('error', formatError(errors.INVALID_REQUEST))
       }
     })
   })
