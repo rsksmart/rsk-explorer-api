@@ -76,6 +76,10 @@ export class Address extends BcThing {
     if (this.codeIsSaved) delete data.code
     return data
   }
+  save () {
+    const a = this.getData()
+    return this.db.updateOne({ address: a.address }, { $set: a }, { upsert: true })
+  }
 }
 
 export default Address

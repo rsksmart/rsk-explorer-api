@@ -15,7 +15,13 @@ export class BcThing {
     return isAddress(address)
   }
   fetch () {
-    console.error('Method fetch is not imlpemented')
+    return this._methodNotImplemented('fetch')
+  }
+  save () {
+    return this._methodNotImplemented('save')
+  }
+  _methodNotImplemented (method) {
+    console.error(`Method ${method} is not implemented`)
     return null
   }
 }
