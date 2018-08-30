@@ -1,7 +1,7 @@
 import web3Connect from '../../lib/web3Connect'
-import Block from './Block'
-import { BlocksStatus } from './BlocksStatus'
-import { RequestingBlocks } from './RequestingBlocks'
+import Block from '../classes/Block'
+import { BlocksStatus } from '../classes/BlocksStatus'
+import { RequestingBlocks } from '../classes/RequestingBlocks'
 
 export class SaveBlocks {
   constructor (options, collections) {

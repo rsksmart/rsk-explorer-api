@@ -1,7 +1,7 @@
 import * as dataBase from '../../lib/Db'
 import dataSource from '../../lib/dataSource.js'
 import conf from '../../lib/config'
-import blocksCollections from './collections'
+import blocksCollections from '../../lib/collections'
 import { SaveBlocks } from './Blocks'
 import Logger from '../../lib/Logger'
 

@@ -1,13 +1,12 @@
-import Block from '../services/blocks/Block'
+import Block from '../services/classes/Block'
 import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
-import blocksCollections from '../services/blocks/collections'
+import blocksCollections from '../lib/collections'
 import { Blocks } from '../services/blocks/Blocks'
 const config = Object.assign({}, conf.blocks)
 const number = process.argv[2] || 'latest'
 const opt = process.argv[3]
 const save = (opt === '--save')
-// 50310 557893
 console.log(`Getting block ${number}`)
 dataSource.then(db => {
   const blocks = Blocks(db, config, blocksCollections)
