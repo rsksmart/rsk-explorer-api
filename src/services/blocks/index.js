@@ -13,6 +13,7 @@ dataSource.then(db => {
   config.Logger = log
   createBlocks(config, db)
     .then((blocks) => {
+      log.info(`Starting blocks service`)
       blocks.start()
     })
 })
@@ -38,7 +39,6 @@ function createBlocks (config, db) {
     Object.keys(blocksCollections).forEach((k, i) => {
       collections[k] = dbCollections[i]
     })
-    log.info(`Starting blocks service`)
     return new SaveBlocks(config, collections)
   }).catch((err) => {
     log.error('Error creating collections')
