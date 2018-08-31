@@ -8,7 +8,7 @@ export class Event extends DataCollectorItem {
       getEvent: async params => {
         const _id = params.id
         const data = await this.getOne({ _id })
-        const address = data.DATA.address
+        const address = data.data.address
         return this.parent.addAddressData(address, data)
       },
 

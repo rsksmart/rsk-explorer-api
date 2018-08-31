@@ -84,20 +84,12 @@ const publicSettings = () => {
 }
 
 const formatRes = (action, result, req, error) => {
-  let data
-  let pages
-  let next
-  let prev
-  let parentData
+  let data, pages, next, prev, parentData
   if (!result && !error) error = errors.EMPTY_RESULT
   if (error) {
     error = formatError(error)
   } else {
-    data = result.DATA || null
-    pages = result.PAGES || null
-    next = result.NEXT || null
-    prev = result.PREV || null
-    parentData = result.PARENT_DATA || null
+    ({ data, pages, next, prev, parentData } = result)
   }
   if (!data && !error) error = formatError(errors.EMPTY_RESULT)
   return { action, data, req, pages, error, prev, next, parentData }
