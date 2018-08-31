@@ -56,35 +56,22 @@ dataSource.then(db => {
     })
 
     socket.on('data', payload => {
-      if (payload && payload.type) {
-        let type = payload.type
+      if (payload) {
         let action = payload.action
         let params = filterParams(payload.params)
-        let collector = null
-
-        switch (type) {
-          case 'blocks':
-            collector = blocks
-            break
-          default:
-            socket.emit('error', formatError(errors.INVALID_TYPE))
-            break
-        }
-        if (collector) {
-          let resAction = type + action
-          collector
-            .run(action, params)
-            .then(result => {
-              socket.emit('data', formatRes(resAction, result, payload))
-            })
-            .catch(err => {
-              log.debug('Collector: ' + type + ', Action: ' + action + ' ERROR: ' + err)
-              socket.emit(
-                'error',
-                formatRes(resAction, null, payload, errors.INVALID_REQUEST)
-              )
-            })
-        }
+        let collector = blocks
+        collector
+          .run(action, params)
+          .then(result => {
+            socket.emit('data', formatRes(action, result, payload))
+          })
+          .catch(err => {
+            log.debug('Action: ' + action + ' ERROR: ' + err)
+            socket.emit(
+              'error',
+              formatRes(action, null, payload, errors.INVALID_REQUEST)
+            )
+          })
       } else {
         socket.emit('error', formatError(errors.INVALID_REQUEST))
       }
