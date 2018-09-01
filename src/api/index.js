@@ -7,6 +7,8 @@ import { errors } from '../lib/types'
 import Logger from '../lib/Logger'
 import { filterParams } from '../lib/utils'
 import http from 'http'
+import config from '../lib/config'
+import { errors, formatError, formatRes, publicSettings } from './apiLib'
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
@@ -78,27 +80,6 @@ dataSource.then(db => {
     })
   })
 })
-
-const publicSettings = () => {
-  return config.publicSettings
-}
-
-const formatRes = (action, result, req, error) => {
-  let data, pages, next, prev, parentData
-  if (!result && !error) error = errors.EMPTY_RESULT
-  if (error) {
-    error = formatError(error)
-  } else {
-    ({ data, pages, next, prev, parentData } = result)
-  }
-  if (!data && !error) error = formatError(errors.EMPTY_RESULT)
-  return { action, data, req, pages, error, prev, next, parentData }
-}
-
-const formatError = error => {
-  error.serverTime = Date.now()
-  return error
-}
 
 process.on('unhandledRejection', err => {
   log.error(err)
