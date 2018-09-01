@@ -1,17 +1,17 @@
 import IO from 'socket.io'
-import config from '../lib/config'
 import dataSource from '../lib/dataSource'
 import Blocks from './Blocks'
 import Status from './Status'
-import { errors } from '../lib/types'
 import Logger from '../lib/Logger'
 import { filterParams } from '../lib/utils'
 import http from 'http'
+import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
 import { errors, formatError, formatRes, publicSettings } from './apiLib'
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
+const delayedFields = config.api.delayedFields || {}
 
 dataSource.then(db => {
   log.info('Database connected')
@@ -35,16 +35,17 @@ dataSource.then(db => {
   httpServer.listen(port)
   const io = new IO(httpServer)
 
+  const userEvents = UserEventsApi(io, blocks, log)
   io.httpServer.on('listening', () => {
     log.info('Server listen on port ' + port)
   })
 
-  blocks.events.on('newBlocks', data => {
-    io.emit('data', formatRes('newBlocks', data))
+  blocks.events.on('newBlocks', result => {
+    io.emit('data', formatRes('newBlocks', result))
   })
 
-  status.events.on('newStatus', data => {
-    io.emit('data', formatRes('dbStatus', data))
+  status.events.on('newStatus', result => {
+    io.emit('data', formatRes('dbStatus', result))
   })
 
   io.on('connection', socket => {
@@ -59,12 +60,25 @@ dataSource.then(db => {
 
     socket.on('data', payload => {
       if (payload) {
-        let action = payload.action
-        let params = filterParams(payload.params)
-        let collector = blocks
-        collector
+        const action = payload.action
+        const params = filterParams(payload.params)
+        const delayed = delayedFields[action]
+        blocks
           .run(action, params)
           .then(result => {
+            if (delayed && userEvents) {
+              const registry = !result.data && delayed.runIfEmpty
+              result.delayed = { fields: delayed.fields, registry }
+              if (payload.getDelayed) {
+                userEvents.send({
+                  action: delayed.action,
+                  params,
+                  socketId: socket.id,
+                  payload,
+                  block: blocks.getLastBlock().number
+                })
+              }
+            }
             socket.emit('data', formatRes(action, result, payload))
           })
           .catch(err => {

@@ -3,6 +3,8 @@
  *  use /config.json, to overwrite settings
  */
 import { txTypes } from './types'
+import delayedFields from './delayedFields'
+
 export default {
   server: {
     port: 3003
@@ -22,8 +24,9 @@ export default {
   },
   api: {
     lastBlocks: 30,
-    perPage: 50
-
+    perPage: 50,
+    allowUserEvents: true,
+    delayedFields
   },
   publicSettings: {
     bridgeAddress: '0x0000000000000000000000000000000001000006',
