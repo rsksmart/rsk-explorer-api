@@ -61,7 +61,9 @@ class Blocks extends DataCollector {
     let transactions = this.lastTransactions
     return this.formatData({ blocks, transactions })
   }
-
+  getLastBlock () {
+    return this.lastBlocks[0] || null
+  }
   updateLastBlocks (blocks, transactions) {
     this.lastBlocks = blocks
     this.lastTransactions = transactions
