@@ -11,7 +11,8 @@ export const errors = apiErrors(
   {
     INVALID_REQUEST: 'Invalid Request',
     INVALID_TYPE: 'Invalid Type',
-    EMPTY_RESULT: 'Not Found'
+    EMPTY_RESULT: 'Not Found',
+    TEMPORARILY_UNAVAILABLE: 'Service temporarily unavailable'
   }
 )
 

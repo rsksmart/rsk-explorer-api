@@ -3,6 +3,7 @@ import conf from '../lib/config'
 import web3Connect from '../lib/web3Connect'
 import Address from './classes/Address'
 import Logger from '../lib/Logger'
+import { errors } from '../lib/types'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('UserRequests', config.log)
@@ -31,14 +32,20 @@ dataSource.then(db => {
                 let balance = (result.balance) ? result.balance.toString() : 0
                 if (balance > 0) {
                   Addr.save()
-                    .then(res => { process.send(msg) })
                     .catch(err => {
                       log.error(`Error saving address ${address}, ${err}`)
                     })
+                    .finally(
+                      process.send(msg)
+                    )
                 } else {
                   msg.data = result
                   process.send(msg)
                 }
+              }).catch(err => {
+                log.error(err)
+                msg.error = errors.TEMPORARILY_UNAVAILABLE
+                process.send(msg)
               })
             }
           } catch (err) {
