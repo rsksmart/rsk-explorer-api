@@ -68,7 +68,6 @@ dataSource.then(db => {
           .then(result => {
             if (delayed && userEvents) {
               const registry = !result.data && delayed.runIfEmpty
-              result.delayed = { fields: delayed.fields, registry }
               if (payload.getDelayed) {
                 userEvents.send({
                   action: delayed.action,
@@ -78,7 +77,9 @@ dataSource.then(db => {
                   block: blocks.getLastBlock().number
                 })
               }
+              result.delayed = { fields: delayed.fields, registry }
             }
+
             socket.emit('data', formatRes(action, result, payload))
           })
           .catch(err => {

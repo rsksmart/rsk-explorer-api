@@ -19,7 +19,6 @@ export const UserEventsApi = (io, blocks, log) => {
       const action = payload.action
       processMsg(action, msg, blocks)
         .then(res => {
-          console.log(res)
           socket.emit('data', formatRes(action, res.data, payload, res.error))
         }).catch(err => {
           log.error(err)
