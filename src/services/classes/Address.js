@@ -48,7 +48,7 @@ export class Address extends BcThing {
   async fetch () {
     let balance = await this.getBalance()
       .catch(err => {
-        console.log(`Address: error getting balance of ${this.address} ${err}`)
+        return new Error(`Address: error getting balance of ${this.address} ${err}`)
       })
     balance = balance || null
     this.data.balance = balance
