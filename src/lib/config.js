@@ -22,7 +22,6 @@ defaultLogs('blocks')
 // tx addresses
 publicSettings('bridgeAddress')
 publicSettings('remascAddress')
-publicSettings('contractDeployAddress')
 
 function publicSettings (key) {
   config[key] = config.publicSettings[key] || null

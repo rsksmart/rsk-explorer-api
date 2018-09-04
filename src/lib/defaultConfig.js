@@ -31,7 +31,6 @@ export default {
   publicSettings: {
     bridgeAddress: '0x0000000000000000000000000000000001000006',
     remascAddress: '0x0000000000000000000000000000000001000008',
-    contractDeployAddress: '0x0000000000000000000000000000000000000000',
     txTypes
   },
   blocks: {
