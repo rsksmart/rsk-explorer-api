@@ -6,8 +6,8 @@ const isDeployment = (tx) => {
 }
 
 const test = (values) => {
-  for (let to of values) {
-    console.log(to, isDeployment({ to }))
+  for (let contractAddress of values) {
+    console.log(contractAddress, isDeployment({ receipt: { contractAddress } }))
   }
 }
 
