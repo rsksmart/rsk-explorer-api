@@ -55,7 +55,7 @@ dataSource.then(db => {
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
-      log.error('Socket Error: ' + err)
+      log.debug('Socket Error: ' + err)
     })
 
     socket.on('data', payload => {
