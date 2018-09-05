@@ -10,8 +10,11 @@ export const formatRes = (action, result, req, error) => {
     ({ data, pages, next, prev, parentData, delayed } = result)
   }
   if (!data && !error) {
-    if (req.getDelayed) error = formatError(errors.UPDATING_REGISTRY)
-    else error = formatError(errors.EMPTY_RESULT)
+    if (req.getDelayed && delayed && delayed.registry) {
+      error = formatError(errors.UPDATING_REGISTRY)
+    } else {
+      error = formatError(errors.EMPTY_RESULT)
+    }
   }
   return { action, data, req, pages, error, prev, next, delayed, parentData }
 }
