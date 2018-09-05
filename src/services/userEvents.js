@@ -33,10 +33,11 @@ dataSource.then(db => {
                 const balance = (result.balance) ? result.balance.toString() : 0
                 if (balance > 0) {
                   Addr.save()
+                    .then(() => {
+                      sendMessage(msg)
+                    })
                     .catch(err => {
                       log.error(`Error saving address ${address}, ${err}`)
-                    })
-                    .finally(() => {
                       sendMessage(msg)
                     })
                 } else {
