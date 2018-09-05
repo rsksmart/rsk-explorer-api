@@ -109,3 +109,7 @@ Required values
   "password": < password >
 
 ### blocks
+
+### api
+
+- allowUserEvents [boolean]: enable/disable userEventsApigit 
