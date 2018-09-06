@@ -1,7 +1,7 @@
 'use strict';var _Db = require('../../lib/Db');var dataBase = _interopRequireWildcard(_Db);
 var _dataSource = require('../../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
 var _config = require('../../lib/config');var _config2 = _interopRequireDefault(_config);
-var _collections = require('./collections');var _collections2 = _interopRequireDefault(_collections);
+var _collections = require('../../lib/collections');var _collections2 = _interopRequireDefault(_collections);
 var _Blocks = require('./Blocks');
 var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}function _interopRequireWildcard(obj) {if (obj && obj.__esModule) {return obj;} else {var newObj = {};if (obj != null) {for (var key in obj) {if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];}}newObj.default = obj;return newObj;}}
 
@@ -13,6 +13,7 @@ _dataSource2.default.then(db => {
   config.Logger = log;
   createBlocks(config, db).
   then(blocks => {
+    log.info(`Starting blocks service`);
     blocks.start();
   });
 });
@@ -38,7 +39,6 @@ function createBlocks(config, db) {
     Object.keys(_collections2.default).forEach((k, i) => {
       collections[k] = dbCollections[i];
     });
-    log.info(`Starting blocks service`);
     return new _Blocks.SaveBlocks(config, collections);
   }).catch(err => {
     log.error('Error creating collections');

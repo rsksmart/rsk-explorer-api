@@ -32,7 +32,7 @@ class DataCollectorItem {
   getAggPages(aggregate, params) {
     return new Promise((resolve, reject) => {
       aggregate.push({
-        $group: { _id: 'result', TOTAL: { $sum: 1 } } });
+        $group: { _id: 'result', total: { $sum: 1 } } });
 
       // review this
       // let options = { allowDiskUse: true }
@@ -40,7 +40,7 @@ class DataCollectorItem {
       this.db.aggregate(aggregate, options, (err, cursor) => {
         if (err) reject(err);
         cursor.toArray().then(res => {
-          let total = res[0].TOTAL;
+          let total = res[0].total;
           resolve(this._pages(params, total));
         });
       });
@@ -60,12 +60,12 @@ class DataCollectorItem {
     }
     return { page, total, pages, perPage, skip };
   }
-  _formatPrevNext(PREV, DATA, NEXT) {
-    return { PREV, DATA, NEXT };
+  _formatPrevNext(prev, data, next) {
+    return { prev, data, next };
   }
   getOne(query, projection) {
-    return this.db.findOne(query, projection).then(DATA => {
-      return { DATA };
+    return this.db.findOne(query, projection).then(data => {
+      return { data };
     });
   }
   find(query, sort, limit) {
@@ -76,19 +76,19 @@ class DataCollectorItem {
     sort(sort).
     limit(limit).
     toArray().
-    then(DATA => {
-      return { DATA };
+    then(data => {
+      return { data };
     });
   }
   getPrevNext(params, query, queryP, queryN, sort) {
-    return this._findPN(query, sort).then(DATA => {
-      if (DATA) {
-        let jsonData = JSON.stringify(DATA);
-        return this._findPN(queryP, sort).then(PREV => {
-          if (jsonData === JSON.stringify(PREV)) PREV = null;
-          return this._findPN(queryN, sort).then(NEXT => {
-            if (jsonData === JSON.stringify(NEXT)) NEXT = null;
-            return { DATA, NEXT, PREV };
+    return this._findPN(query, sort).then(data => {
+      if (data) {
+        let jsonData = JSON.stringify(data);
+        return this._findPN(queryP, sort).then(prev => {
+          if (jsonData === JSON.stringify(prev)) prev = null;
+          return this._findPN(queryN, sort).then(next => {
+            if (jsonData === JSON.stringify(next)) next = null;
+            return { data, next, prev };
           });
         });
       }
@@ -104,20 +104,21 @@ class DataCollectorItem {
       return res[0];
     });
   }
-  _findPages(query, PAGES, sort) {
+  _findPages(query, pages, sort) {
+    const options = {};
+    if (pages.skip) options.skip = pages.skip;
     return this.db.
-    find(query).
+    find(query, options).
     sort(sort).
-    skip(PAGES.skip).
-    limit(PAGES.perPage).
+    limit(pages.perPage).
     toArray();
   }
-  _aggregatePages(aggregate, PAGES) {
+  _aggregatePages(aggregate, pages) {
     // review this
     let options = {};
     // options.allowDiskUse = true
-    aggregate.push({ $skip: PAGES.skip });
-    aggregate.push({ $limit: PAGES.perPage });
+    aggregate.push({ $skip: pages.skip });
+    aggregate.push({ $limit: pages.perPage });
     return this.db.aggregate(aggregate, options).toArray();
   }
 
@@ -138,12 +139,12 @@ class DataCollectorItem {
   }
 
   getAggPageData(aggregate, params, sort) {
-    return this.getAggPages(aggregate.concat(), params).then(PAGES => {
+    return this.getAggPages(aggregate.concat(), params).then(pages => {
       if (sort) {
         aggregate.push({ $sort: sort });
       }
-      return this._aggregatePages(aggregate, PAGES).then(DATA => {
-        return { PAGES, DATA };
+      return this._aggregatePages(aggregate, pages).then(data => {
+        return { pages, data };
       });
     });
   }
@@ -151,12 +152,12 @@ class DataCollectorItem {
     let sort = params.sort || this.sort || {};
     return this.getSortableFields().then(sortable => {
       sort = this.filterSort(sort, sortable);
-      return this.getPages(query, params).then(PAGES => {
-        PAGES.sort = sort;
-        PAGES.sortable = sortable;
-        PAGES.defaultSort = this.sort;
-        return this._findPages(query, PAGES, sort).then(DATA => {
-          return { PAGES, DATA };
+      return this.getPages(query, params).then(pages => {
+        pages.sort = sort;
+        pages.sortable = sortable;
+        pages.defaultSort = this.sort;
+        return this._findPages(query, pages, sort).then(data => {
+          return { pages, data };
         });
       });
     });

@@ -61,7 +61,9 @@ class Blocks extends _DataCollector.DataCollector {
     let transactions = this.lastTransactions;
     return this.formatData({ blocks, transactions });
   }
-
+  getLastBlock() {
+    return this.lastBlocks[0] || null;
+  }
   updateLastBlocks(blocks, transactions) {
     this.lastBlocks = blocks;
     this.lastTransactions = transactions;
@@ -75,7 +77,7 @@ class Blocks extends _DataCollector.DataCollector {
 
   async addAddressData(address, data, key = '_addressData') {
     const account = await this.Address.run('getAddress', { address });
-    if (data && account) data.DATA[key] = account.DATA;
+    if (data && account) data.data[key] = account.data;
     return data || account;
   }}exports.default =
 

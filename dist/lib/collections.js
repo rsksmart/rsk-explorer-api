@@ -2,9 +2,6 @@
   blocksCollection: [
   {
     key: { number: -1 },
-    partialFilterExpression: {
-      number: { $exists: true } },
-
     unique: true },
 
   {
@@ -29,9 +26,6 @@
 
   {
     key: { _received: -1 },
-    partialFilterExpression: {
-      _received: { $exists: true } },
-
     name: 'blockReceivedTime' }],
 
 

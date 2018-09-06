@@ -19,6 +19,7 @@ class DataCollector {
     this.perPage = options.perPage || 50;
     this.setCollection(options.collectionName);
     this.tickDelay = 1000;
+    this.serialize = _utils.serialize;
   }
   tick() {}
   stop() {
@@ -85,6 +86,7 @@ class DataCollector {
         let collection = this.db.collection(collectionName);
         if (collection) {
           let item = new ItemClass(collection, key, this);
+          item.serialize = this.serialize;
           this.items[key] = item;
           if (addToRoot) {
             if (!this[key]) this[key] = item;else
@@ -102,7 +104,7 @@ class DataCollector {
   }
 
   formatData(data) {
-    return { DATA: data };
+    return { data: data };
   }}exports.DataCollector = DataCollector;exports.default =
 
 
