@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
-import { filterParams } from '../utils'
+import { filterParams, serialize } from '../utils'
 import { Db } from 'mongodb'
 import DataCollectorItem from './DataCollectorItem'
 class Emitter extends EventEmitter { }
@@ -19,6 +19,7 @@ export class DataCollector {
     this.perPage = options.perPage || 50
     this.setCollection(options.collectionName)
     this.tickDelay = 1000
+    this.serialize = serialize
   }
   tick () { }
   stop () {
@@ -85,6 +86,7 @@ export class DataCollector {
         let collection = this.db.collection(collectionName)
         if (collection) {
           let item = new ItemClass(collection, key, this)
+          item.serialize = this.serialize
           this.items[key] = item
           if (addToRoot) {
             if (!this[key]) this[key] = item
