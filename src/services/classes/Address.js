@@ -22,6 +22,7 @@ export class Address extends BcThing {
         }
       })
     this.block = block
+    this.dbData = null
   }
 
   setData (prop, value) {
@@ -55,6 +56,7 @@ export class Address extends BcThing {
 
     let code = null
     let dbData = await this.getFromDb()
+    this.dbData = dbData
 
     if (dbData && dbData.code) {
       code = dbData.code
@@ -71,13 +73,13 @@ export class Address extends BcThing {
   getFromDb () {
     return this.db.findOne({ address: this.address })
   }
-  getData () {
+  getData (serialize) {
     let data = Object.assign(this.data)
     if (this.codeIsSaved) delete data.code
-    return data
+    return (serialize) ? this.serialize(data) : data
   }
   save () {
-    const a = this.getData()
+    const a = this.getData(true)
     return this.db.updateOne({ address: a.address }, { $set: a }, { upsert: true })
   }
 }
