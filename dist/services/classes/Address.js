@@ -22,6 +22,7 @@ class Address extends _BcThing.BcThing {
       } });
 
     this.block = block;
+    this.dbData = null;
   }
 
   setData(prop, value) {
@@ -48,13 +49,14 @@ class Address extends _BcThing.BcThing {
   async fetch() {
     let balance = await this.getBalance().
     catch(err => {
-      console.log(`Address: error getting balance of ${this.address} ${err}`);
+      return new Error(`Address: error getting balance of ${this.address} ${err}`);
     });
     balance = balance || null;
     this.data.balance = balance;
 
     let code = null;
     let dbData = await this.getFromDb();
+    this.dbData = dbData;
 
     if (dbData && dbData.code) {
       code = dbData.code;
@@ -71,10 +73,14 @@ class Address extends _BcThing.BcThing {
   getFromDb() {
     return this.db.findOne({ address: this.address });
   }
-  getData() {
+  getData(serialize) {
     let data = Object.assign(this.data);
     if (this.codeIsSaved) delete data.code;
-    return data;
+    return serialize ? this.serialize(data) : data;
+  }
+  save() {
+    const a = this.getData(true);
+    return this.db.updateOne({ address: a.address }, { $set: a }, { upsert: true });
   }}exports.Address = Address;exports.default =
 
 

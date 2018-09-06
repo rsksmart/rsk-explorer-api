@@ -2,9 +2,11 @@
 
 
 
-var _types = require('./types');exports.default =
-{
-  server: {
+var _types = require('./types');
+var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRequireDefault(_delayedFields);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
+                                                                                                                                                                                                            *  This file provides default values,
+                                                                                                                                                                                                            *  use /config.json, to overwrite settings
+                                                                                                                                                                                                            */exports.default = { server: {
     port: 3003 },
 
   source: {
@@ -22,13 +24,13 @@ var _types = require('./types');exports.default =
 
   api: {
     lastBlocks: 30,
-    perPage: 50 },
-
+    perPage: 50,
+    allowUserEvents: true,
+    delayedFields: _delayedFields2.default },
 
   publicSettings: {
     bridgeAddress: '0x0000000000000000000000000000000001000006',
     remascAddress: '0x0000000000000000000000000000000001000008',
-    contractDeployAddress: '0x0000000000000000000000000000000000000000',
     txTypes: _types.txTypes },
 
   blocks: {
@@ -38,7 +40,4 @@ var _types = require('./types');exports.default =
     addrCollection: 'addresses',
     statusCollection: 'status',
     eventsCollection: 'events',
-    tokenAddrCollection: 'tokensAddresses' } }; /**
-                                                 *  This file provides default values,
-                                                 *  use /config.json, to overwrite settings
-                                                 */
+    tokenAddrCollection: 'tokensAddresses' } };

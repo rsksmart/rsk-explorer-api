@@ -102,7 +102,7 @@ class DataCollector {
   }
 
   formatData(data) {
-    return { DATA: data };
+    return { data: data };
   }}exports.DataCollector = DataCollector;exports.default =
 
 

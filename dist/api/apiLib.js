@@ -1,0 +1,31 @@
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.errors = exports.publicSettings = exports.formatError = exports.formatRes = undefined;var _types = require('../lib/types');Object.defineProperty(exports, 'errors', { enumerable: true, get: function () {return _types.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    errors;} });var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}const formatRes = exports.formatRes = (action, result, req, error) => {let data, pages, next, prev, parentData, delayed;if (!result && !error) error = _types.errors.EMPTY_RESULT;if (error) {error = formatError(error);} else {({ data, pages, next, prev, parentData, delayed } = result);}if (!data && !error) {if (req.getDelayed && delayed && delayed.registry) {error = formatError(_types.errors.UPDATING_REGISTRY);} else {error = formatError(_types.errors.EMPTY_RESULT);}}return { action, data, req, pages, error, prev, next, delayed, parentData };};const formatError = exports.formatError = error => {error.serverTime = Date.now();return error;};const publicSettings = exports.publicSettings = () => {return _config2.default.publicSettings;};

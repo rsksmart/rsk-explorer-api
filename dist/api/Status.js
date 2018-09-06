@@ -25,7 +25,7 @@ class Status extends _DataCollector.DataCollector {
   getBlocksServiceStatus() {
     return this.Status.find({}, { timestamp: -1 }, 1).
     then(res => {
-      res = res.DATA[0];
+      res = res.data[0];
       delete res._id;
       return res;
     });

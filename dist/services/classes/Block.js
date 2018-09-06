@@ -156,8 +156,8 @@ class Block extends _BcThing.BcThing {
     let data = await this.fetch();
     if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.number}`));
     data = this.serialize(data);
-    let block, txs, addresses, events, tokenAddresses;
-    ({ block, txs, addresses, events, tokenAddresses } = data);
+    let block, txs, events, tokenAddresses;
+    ({ block, txs, events, tokenAddresses } = data);
     let result = {};
     if (!block) return Promise.reject(new Error('Block data is empty'));
 
@@ -168,7 +168,7 @@ class Block extends _BcThing.BcThing {
     });
 
     await Promise.all(
-    addresses.map(a => db.Addr.updateOne({ address: a.address }, { $set: a }, { upsert: true }))).
+    Object.values(this.addresses).map(a => a.save())).
     then(res => {result.addresses = res;}).
     catch(err => Promise.reject(new Error(`Error updating Addresses ${err}`)));
 
