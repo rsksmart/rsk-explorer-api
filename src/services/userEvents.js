@@ -31,7 +31,8 @@ dataSource.then(db => {
                 msg.result = result
                 cache.set(action, address, result, block)
                 const balance = (result.balance) ? result.balance.toString() : 0
-                if (balance > 0) {
+                const dbBalance = (Addr.dbData) ? Addr.dbData.balance : null
+                if (balance > 0 || dbBalance) {
                   Addr.save()
                     .then(() => {
                       sendMessage(msg)
