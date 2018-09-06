@@ -66,8 +66,10 @@ Production build to ./dist folder
 
 ## Configuration
 
-  See defaults on: **lib/defaultConfig** 
+  See defaults on: **lib/defaultConfig**
   *(config.json overrides this values)*
+
+  Use dist/tools/showConfig to check values
   
 Required values
 
@@ -78,8 +80,7 @@ Required values
   },
   "publicSettings": {
     "bridgeAddress": "0x0000000000000000000000000000000001000006",
-    "remascAddress": "0x0000000000000000000000000000000001000008",
-    "contractDeployAddress": "0x0000000000000000000000000000000000000000"
+    "remascAddress": "0x0000000000000000000000000000000001000008"
   },
   "server": {
     "port": 3003
@@ -112,4 +113,5 @@ Required values
 
 ### api
 
-- allowUserEvents [boolean]: enable/disable userEventsApigit 
+- allowUserEvents [boolean]: enable/disable userEventsApi
+
