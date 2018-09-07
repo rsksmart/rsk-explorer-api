@@ -8,7 +8,7 @@
   ```
 2. Run db patches
   ```
-  node node dist/dbPatches/0.4.0.js
+  node dist/dbPatches/0.4.0.js
   ```
 3. Start blocks service
 4. Start api 
