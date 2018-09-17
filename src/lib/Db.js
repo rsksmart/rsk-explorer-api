@@ -14,6 +14,7 @@ export class Db {
     url += `${this.server}:${this.port}/${this.dbName}`
     this.url = url
     this.client = null
+    this.log = config.Logger || console
     this.connect()
   }
   connect () {
@@ -26,26 +27,45 @@ export class Db {
     let db = await client.db(this.dbName)
     return db
   }
-}
 
-export function createCollection (db, collectionName, indexes) {
-  if (!collectionName) return Promise.reject(new Error('Invalid collection name'))
-  let collection = db.collection(collectionName)
-  if (!indexes || !indexes.length) return Promise.resolve(collection)
-  return collection.createIndexes(indexes).then(doc => {
-    return db.admin().validateCollection(collectionName).then(() => collection)
-  })
-}
 
-export function insertMsg (insertResult, data, dataType) {
-  let count = (data) ? data.length : null
-  let msg = ['Inserted', insertResult.result.n]
-  if (count) {
-    msg.push('of')
-    msg.push(count)
+  async createCollection (collectionName, indexes) {
+    const db = await this.db()
+    if (!collectionName) return Promise.reject(new Error('Invalid collection name'))
+    let collection = db.collection(collectionName)
+    if (!indexes || !indexes.length) return Promise.resolve(collection)
+    return collection.createIndexes(indexes).then(doc => {
+      return db.admin().validateCollection(collectionName).then(() => collection)
+    })
   }
-  if (dataType) msg.push(dataType)
-  return msg.join(' ')
-}
 
+  createCollections (collections, config = {}) {
+    let queue = []
+    for (let c in collections) {
+      let name = config[c] || c
+      queue.push(this.createCollection(name, collections[c])
+        .then(collection => {
+          this.log.info(`Created collection ${name}`)
+          return collection
+        })
+        .catch(err => {
+          this.log.error(`Error creating collection ${name} ${err}`)
+          return Promise.reject(err)
+        })
+      )
+    }
+    return Promise.all(queue)
+  }
+
+  insertMsg (insertResult, data, dataType) {
+    let count = (data) ? data.length : null
+    let msg = ['Inserted', insertResult.result.n]
+    if (count) {
+      msg.push('of')
+      msg.push(count)
+    }
+    if (dataType) msg.push(dataType)
+    return msg.join(' ')
+  }
+}
 export default Db
