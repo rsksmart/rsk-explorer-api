@@ -7,18 +7,15 @@ export class SaveBlocks {
   constructor (options, collections) {
     this.node = options.node
     this.port = options.port
-    this.Blocks = collections.blocksCollection
-    this.Txs = collections.txCollection
-    this.Addr = collections.addrCollection
-    this.Events = collections.eventsCollection
-    this.TokenAddr = collections.tokenAddrCollection
+    this.collections = collections
+    this.Blocks = collections.Blocks
     this.web3 = web3Connect(options.node, options.port)
     this.requestingBlocks = RequestingBlocks
     this.blocksQueueSize = options.blocksQueueSize || 100 // max blocks per queue
     this.blocksQueue = {}
     this.segments = []
     this.log = options.Logger || console
-    this.Status = new BlocksStatus(collections.statusCollection, this)
+    this.Status = new BlocksStatus(collections.Status, this)
   }
 
   async start () {
@@ -216,7 +213,7 @@ export class SaveBlocks {
 export function Blocks (db, config, blocksCollections) {
   let collections = {}
   Object.keys(blocksCollections).forEach((k, i) => {
-    collections[k] = db.collection(config[k])
+    collections[k] = db.collection(config.collections[k])
   })
   return new SaveBlocks(config, collections)
 }

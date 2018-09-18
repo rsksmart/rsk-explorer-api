@@ -35,11 +35,13 @@ export default {
   },
   blocks: {
     blocksQueueSize: 100,
-    blocksCollection: 'blocks',
-    txCollection: 'transactions',
-    addrCollection: 'addresses',
-    statusCollection: 'status',
-    eventsCollection: 'events',
-    tokenAddrCollection: 'tokensAddresses'
+    collections: {
+      Blocks: 'blocks',
+      Txs: 'transactions',
+      Addrs: 'addresses',
+      Status: 'status',
+      Events: 'events',
+      TokensAddrs: 'tokensAddresses'
+    }
   }
 }

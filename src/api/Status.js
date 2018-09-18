@@ -2,8 +2,8 @@ import { DataCollector } from '../lib/DataCollector'
 import config from '../lib/config'
 
 const perPage = config.api.perPage
-const statusCollection = config.blocks.statusCollection
-const blocksCollection = config.blocks.blocksCollection
+const statusCollection = config.blocks.collections.Status
+const blocksCollection = config.blocks.collections.Blocks
 
 export class Status extends DataCollector {
   constructor (db) {

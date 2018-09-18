@@ -11,7 +11,7 @@ const log = Logger('UserRequests', config.log)
 const web3 = web3Connect(config.node, config.port)
 
 dataSource.then(db => {
-  const addressCollection = db.collection(config.addrCollection)
+  const addressCollection = db.collection(config.collections.Addrs)
   const cache = new RequestCache()
   process.on('message', msg => {
     let action, params, block

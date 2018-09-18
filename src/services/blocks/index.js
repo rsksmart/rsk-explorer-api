@@ -18,7 +18,7 @@ dataSource.then(db => {
 
 async function createBlocks (config, db) {
   try {
-    const dbCollections = await dataBase.createCollections(blocksCollections, config)
+    const dbCollections = await dataBase.createCollections(blocksCollections, config.collections)
     let collections = {}
     Object.keys(blocksCollections).forEach((k, i) => {
       collections[k] = dbCollections[i]

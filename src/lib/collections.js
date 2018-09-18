@@ -1,12 +1,5 @@
 export default {
-  forkedBlocksCollection: [
-    {
-      key: { hash: 1 },
-      unique: true
-    },
-    { key: { number: 1 } }
-  ],
-  blocksCollection: [
+  Blocks: [
     {
       key: { number: -1 },
       unique: true
@@ -36,7 +29,7 @@ export default {
       name: 'blockReceivedTime'
     }
   ],
-  txCollection: [
+  Txs: [
     {
       key: { hash: 1 },
       unique: true
@@ -62,7 +55,7 @@ export default {
     },
     {
       key: { value: 1 },
-      name: 'valueIndex'
+      name: 'txValueIndex'
     },
     {
       key: { timestamp: 1 },
@@ -73,7 +66,7 @@ export default {
       name: 'txTypeIndex'
     }
   ],
-  addrCollection: [
+  Addrs: [
     {
       key: { address: 1 },
       unique: true
@@ -91,7 +84,7 @@ export default {
       name: 'addressNameIndex'
     }
   ],
-  statusCollection: [
+  Status: [
     {
       key: { timestamp: -1 },
       partialFilterExpression: {
@@ -100,7 +93,7 @@ export default {
       unique: true
     }
   ],
-  eventsCollection: [
+  Events: [
     {
       key: { address: 1 }
     },
@@ -112,7 +105,7 @@ export default {
       name: 'eventTsIndex'
     }
   ],
-  tokenAddrCollection: [
+  TokensAddrs: [
     {
       key: {
         address: 1,
