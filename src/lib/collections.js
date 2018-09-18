@@ -1,4 +1,11 @@
 export default {
+  forkedBlocksCollection: [
+    {
+      key: { hash: 1 },
+      unique: true
+    },
+    { key: { number: 1 } }
+  ],
   blocksCollection: [
     {
       key: { number: -1 },
@@ -42,8 +49,8 @@ export default {
       name: 'blockTrasaction'
     },
     {
-      key: { blockNumber: 1 },
-      name: 'blockIndex'
+      key: { blockNumber: -1 },
+      name: 'txBlockIndex'
     },
     {
       key: { from: 1 },
