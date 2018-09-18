@@ -28,7 +28,6 @@ export class Db {
     return db
   }
 
-
   async createCollection (collectionName, indexes) {
     const db = await this.db()
     if (!collectionName) return Promise.reject(new Error('Invalid collection name'))

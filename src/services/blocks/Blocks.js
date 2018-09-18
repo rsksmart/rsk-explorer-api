@@ -1,5 +1,5 @@
 import web3Connect from '../../lib/web3Connect'
-import Block from '../classes/Block'
+import { Block, getBlockFromDb } from '../classes/Block'
 import { BlocksStatus } from '../classes/BlocksStatus'
 import { RequestingBlocks } from '../classes/RequestingBlocks'
 
@@ -118,6 +118,8 @@ export class SaveBlocks {
       return Promise.resolve(block)
     } else {
       return this.requestBlock(blockNumber)
+
+        // fix by hash
         .then(number => {
           this.log.debug(`Getting parent of block ${number}`)
           return this.getBlock(number - 1)
@@ -144,9 +146,8 @@ export class SaveBlocks {
     }
   }
 
-  // shared with Block
   getBlockFromDb (blockNumber) {
-    return this.Blocks.findOne({ number: blockNumber })
+    return getBlockFromDb(blockNumber, this.Blocks)
   }
 
   newBlock (blockNumber, options) {

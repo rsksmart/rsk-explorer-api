@@ -3,19 +3,14 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-/**
- * @param  {Number} Block number
- * @param  {Blocks} parent
- * @param  {Object} Options: {override:<Boolean>, forceFetch:<Boolean>}
- */
+import { isBlockHash } from '../../lib/utils'
 export class Block extends BcThing {
-  constructor (number, parent, options) {
-    super(parent.web3)
-    this.parent = parent
+  constructor (hashOrNumber, Blocks) {
+    super(Blocks.web3)
+    this.Blocks = Blocks
     this.fetched = false
-    this.options = options || {}
-    this.log = this.parent.log || console
-    this.number = number
+    this.log = this.Blocks.log || console
+    this.hashOrNumber = hashOrNumber
     this.addresses = {}
     this.contracts = {}
     this.tokenAddresses = {}
@@ -29,19 +24,15 @@ export class Block extends BcThing {
       events: []
     }
   }
-  async fetch (options) {
-    options = options || this.options
-    if (this.fetched && !options.forceFetch) {
+  async fetch (forceFetch) {
+    if (this.fetched && !forceFetch) {
       return Promise.resolve(this.getData())
     }
-    let blockNumber = this.number
     if (!this.web3.isConnected()) {
       return Promise.reject(new Error('web3 is not connected'))
     }
     try {
-      let override = await this.override(options)
-      if (override) await this.deleteBlock(blockNumber, override)
-      let blockData = await this.getBlock(blockNumber)
+      let blockData = await this.getBlock(this.hashOrNumber)
       this.data.block = blockData
       this.addAddress(blockData.miner)
       this.data.txs = await Promise.all(blockData.transactions
@@ -63,13 +54,6 @@ export class Block extends BcThing {
     }
   }
 
-  async override (options) {
-    let blockNumber = this.number
-    if (typeof (blockNumber) === 'number') {
-      if (options.override) return this.getDbBlock(blockNumber)
-    }
-    return Promise.resolve(null)
-  }
   getBlock (number, txArr = false) {
     return new Promise((resolve, reject) => {
       this.web3.eth.getBlock(number, txArr, (err, blockData) => {
@@ -113,10 +97,10 @@ export class Block extends BcThing {
   }
   getTransactionByIndex (index) {
     return new Promise((resolve, reject) => {
-      this.web3.eth.getTransactionFromBlock(this.number, index, (err, tx) => {
+      this.web3.eth.getTransactionFromBlock(this.hashOrNumber, index, (err, tx) => {
         if (err !== null) return reject(err)
         else {
-          if (!tx) return reject(new Error(`The Tx: ${this.number}/${index}, returns null value`))
+          if (!tx) return reject(new Error(`The Tx: ${this.hashOrNumber}/${index}, returns null value`))
           else resolve(tx)
         }
       })
@@ -152,9 +136,9 @@ export class Block extends BcThing {
   }
 
   async save () {
-    let db = this.parent
+    let db = this.Blocks
     let data = await this.fetch()
-    if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.number}`))
+    if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.hashOrNumber}`))
     data = this.serialize(data)
     let block, txs, events, tokenAddresses
     ({ block, txs, events, tokenAddresses } = data)
@@ -188,7 +172,7 @@ export class Block extends BcThing {
   }
 
   getDbBlock (blockNumber) {
-    return this.parent.getBlockFromDb(blockNumber)
+    return getBlockFromDb(blockNumber, this.Blocks.Blocks)
   }
   // UNCOMPLETE
   async deleteBlock (number, blockData) {
@@ -200,7 +184,7 @@ export class Block extends BcThing {
       blockQuery = { hash }
       txQuery = { blockHash: hash }
     }
-    let db = this.parent
+    let db = this.Blocks
     let [txs, block] = await Promise.all([
       db.Txs.remove(txQuery),
       db.Blocks.remove(blockQuery)])
@@ -216,7 +200,7 @@ export class Block extends BcThing {
 
   addAddress (address, type) {
     if (!this.isAddress(address)) return
-    const Addr = new Address(address, this.web3, this.parent.Addr)
+    const Addr = new Address(address, this.web3, this.Blocks.Addr)
     this.addresses[address] = Addr
   }
 
@@ -285,6 +269,14 @@ export class Block extends BcThing {
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
   }
+}
+
+export const getBlockFromDb = (blockHashOrNumber, collection) => {
+  const hash = isBlockHash(blockHashOrNumber)
+  const number = parseInt(blockHashOrNumber)
+  if (hash) return collection.findOne({ hash })
+  if (number) return collection.findOne({ number })
+  return Promise.reject(new Error('blockHashOrNumber is not block hash or number'))
 }
 
 export default Block
