@@ -3,7 +3,7 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-import { blockQuery } from '../../lib/utils'
+import { blockQuery, getBestBlock } from '../../lib/utils'
 export class Block extends BcThing {
   constructor (hashOrNumber, options) {
     super(options.web3, options.collections)
@@ -137,26 +137,21 @@ export class Block extends BcThing {
 
   async save () {
     let db = this.collections
-    let data = await this.fetch()
-    if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.hashOrNumber}`))
-    data = this.serialize(data)
-    let block, txs, events, tokenAddresses
-    ({ block, txs, events, tokenAddresses } = data)
-    let result = {}
-    if (!block || !block.hash) return Promise.reject(new Error('Block data is empty'))
-    // const blockHash = block.hash
     try {
-      let res, error
-      ({ res, error } = await this.insertBlock(block))
-      if (error) {
-        if (error.code === 11000) {
-          await this.deleteBlock(block)
-        } else {
-          throw error
-        }
-      } else {
-        result.block = res
+      let data = await this.fetch()
+      if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
+      data = this.serialize(data)
+      let block, txs, events, tokenAddresses
+      ({ block, txs, events, tokenAddresses } = data)
+      let result = {}
+
+      // catch this exeption
+      result.block = await this.saveOrReplaceBlock(block)
+      if (!result.block) {
+        this.log.debug(`Block ${block.number} - ${block.hash} was not saved`)
+        return { result, data }
       }
+
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))])
         .then(res => { result.txs = res })
 
@@ -172,8 +167,35 @@ export class Block extends BcThing {
         tokenAddresses.map(ta => db.TokensAddrs.updateOne(
           { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
         .then(res => { result.tokenAddresses = res })
-
       return { result, data }
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  /// REFACTOR
+  async saveOrReplaceBlock (block) {
+    try {
+      if (!block || !block.hash) throw new Error('Block data is empty')
+      let res, error
+      ({ res, error } = await this.insertBlock(block))
+      if (error) {
+        if (error.code === 11000) { // block exists
+          let oldBlock = await this.getBlockFromDb(block.number, true)
+          if (!oldBlock || !oldBlock.block) throw error
+          if (oldBlock.block.hash === block.hash) return Promise.resolve()
+          let bestBlock = getBestBlock([block, oldBlock.block])
+          if (bestBlock.hash !== block.hash) {
+            // same problem that dupplicated
+            throw new Error(`The stored block ${oldBlock.hash} is better than ${block.hash}`)
+          }
+          await this.replaceBlock(block, oldBlock)
+        } else {
+          throw error
+        }
+      } else {
+        return res
+      }
     } catch (err) {
       return Promise.reject(err)
     }
@@ -185,15 +207,33 @@ export class Block extends BcThing {
       .catch(error => { return { error } })
   }
 
-  getDbBlock (hashOrNumber) {
-    return getBlockFromDb(hashOrNumber, this.collections.Blocks)
-  }
-  async deleteBlock (block) {
-    try {
+  async getBlockFromDb (hashOrNumber, allData) {
+    let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks)
+    if (allData) {
+      if (!block) return
+      block = { block }
       let blockHash = block.hash
+      await Promise.all([
+        this.getBlockTransactionsFromDb(blockHash).then(txs => { block.txs = txs }),
+        this.getBlockEventsFromDb(blockHash).then(events => { block.events = events })
+      ])
+    }
+    return block
+  }
+
+  getBlockEventsFromDb (blockHash) {
+    return this.collections.Events.find({ blockHash }).toArray()
+  }
+
+  getBlockTransactionsFromDb (blockHash) {
+    return this.collections.Txs.find({ blockHash }).toArray()
+  }
+
+  async deleteBlockDataFromDb (blockHash) {
+    try {
+      if (!blockHash) throw new Error('Invalid block hash')
       let hash = blockHash
       let db = this.collections
-      if (!blockHash) throw Error('Invalid block hash')
       let result = await Promise.all([
         db.Blocks.deleteOne({ hash }),
         db.Txs.deleteMany({ blockHash }),
@@ -203,6 +243,31 @@ export class Block extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  async replaceBlock (newBlock, oldBlock) {
+    try {
+      let block, txs, events
+      ({ block, txs, events } = oldBlock)
+      let blockHash = block.hash
+      block._replacedBy = newBlock.hash
+      block._events = events
+      block.transactions = txs
+      await this.saveOrphanBlock(block)
+      await this.deleteBlockDataFromDb(blockHash)
+      newBlock._replacedBlockHash = blockHash
+      let insert = await this.insertBlock(newBlock)
+      if (insert.error) throw insert.error
+      return insert.res
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  saveOrphanBlock (blockData) {
+    delete (blockData._id)
+    blockData._updated = Date.now()
+    return this.collections.OrphanBlocks.updateOne({ hash: blockData.hash }, { $set: blockData }, { upsert: true })
   }
 
   addAddress (address, type) {

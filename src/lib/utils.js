@@ -74,6 +74,11 @@ const serializeBigNumber = value => {
   return (isBigNumber(value)) ? bigNumberDoc(value) : value
 }
 
+export const bigNumberToSring = bn => {
+  if (bn.type && bn.type === BIG_NUMBER) return bn.value
+  if (isBigNumber(bn)) return bn.toString()
+}
+
 const isObj = (value) => {
   if (undefined === value || value === null) return false
   let is = (typeof value === 'object')
@@ -112,6 +117,13 @@ export const blockQuery = (blockHashOrNumber) => {
   const hash = isBlockHash(blockHashOrNumber)
   const number = parseInt(blockHashOrNumber)
   if (hash) return { hash }
-  if (number) return { number }
+  if (number || number === 0) return { number }
   return null
+}
+
+const blockTotalDiff = block => bigNumberToSring(block.totalDifficulty)
+
+// COMPLETe
+export const getBestBlock = blocks => {
+  return blocks[0]
 }
