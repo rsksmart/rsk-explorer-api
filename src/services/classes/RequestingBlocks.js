@@ -1,17 +1,17 @@
 export const RequestingBlocks = {
   requesting: {},
-  add (number, data) {
+  add (key, data) {
     data = data || true
-    if (Number.isInteger(number)) {
-      this.requesting[number] = data
+    if (!isNaN(parseInt(key))) {
+      this.requesting[key] = data
     }
   },
-  delete (number) {
-    this.requesting[number] = null
-    delete (this.requesting[number])
+  delete (key) {
+    this.requesting[key] = null
+    delete (this.requesting[key])
   },
-  isRequested (number) {
-    return this.requesting[number]
+  isRequested (key) {
+    return this.requesting[key]
   },
   total () {
     return Object.keys(this.requesting).length

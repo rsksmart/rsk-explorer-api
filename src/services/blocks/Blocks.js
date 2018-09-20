@@ -31,8 +31,8 @@ export class SaveBlocks {
             if (sync === true) {
               this.web3.reset(true)
             } else if (sync) {
-              let block = sync.currentBlock
-              this.requestBlock(block)
+              let number = sync.currentBlock
+              this.requestBlock(number)
             } else {
               this.listen()
             }
@@ -106,20 +106,18 @@ export class SaveBlocks {
     })])
   }
 
-  async getBlock (blockNumber) {
-    let block
-    if (Number.isInteger(blockNumber)) {
-      block = await this.getBlockFromDb(blockNumber)
-    }
-    if (block) {
+  async getBlock (hashOrNumber) {
+    let block = await this.getBlockFromDb(hashOrNumber)
+    if (block && block.hash === hashOrNumber) {
       return Promise.resolve(block)
     } else {
-      return this.requestBlock(blockNumber)
-
-        // fix by hash
-        .then(number => {
-          this.log.debug(`Getting parent of block ${number}`)
-          return this.getBlock(number - 1)
+      return this.requestBlock(hashOrNumber)
+        .then(block => {
+          this.log.debug(`Getting parent of block ${block.number}`)
+          return this.getBlock(block.parentHash)
+        }).catch(err => {
+          this.log.error(err)
+          this.endBlockRequest(hashOrNumber)
         })
     }
   }
@@ -143,12 +141,12 @@ export class SaveBlocks {
     }
   }
 
-  getBlockFromDb (blockNumber) {
-    return getBlockFromDb(blockNumber, this.Blocks)
+  getBlockFromDb (hashOrNumber) {
+    return getBlockFromDb(hashOrNumber, this.Blocks)
   }
 
-  newBlock (blockNumber, options) {
-    return new Block(blockNumber, this, options)
+  newBlock (hashOrNumber, options) {
+    return new Block(hashOrNumber, this, options)
   }
 
   async dbBlocksStatus () {
@@ -158,47 +156,42 @@ export class SaveBlocks {
     return { blocks, lastBlock }
   }
 
-  async requestBlock (number) {
-    if (this.requestingBlocks.isRequested(number)) {
-      return Promise.resolve(number)
+  async requestBlock (hashOrNumber) {
+    // Review ----------------------
+    if (this.requestingBlocks.isRequested(hashOrNumber)) {
+      return Promise.resolve(hashOrNumber)
     }
-    this.log.debug(`Requesting block ${number}`)
-    let block = await this.newBlock(number)
-    this.requestingBlocks.add(number, block)
-    this.Status.update()
-    return block.save()
-      .then(res => {
-        return this.endBlockRequest(number)
-      })
-      .catch(err => {
-        this.log.error(err)
-        return this.endBlockRequest(number)
-      })
+    try {
+      this.log.debug(`Requesting block ${hashOrNumber}`)
+      let block = await this.newBlock(hashOrNumber)
+      this.requestingBlocks.add(hashOrNumber, true)
+      this.Status.update()
+      let res = await block.save()
+      this.endBlockRequest(hashOrNumber)
+      return res.data.block
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
-  endBlockRequest (number) {
-    this.requestingBlocks.delete(number)
+  endBlockRequest (hashOrNumber) {
+    this.requestingBlocks.delete(hashOrNumber)
     this.Status.update()
-    return number
+    return hashOrNumber
   }
 
   listen () {
     this.log.info('Listen to blocks...')
     this.web3.reset(true)
-    let filter = this.web3.eth.filter({ fromBlock: 'latest', toBlock: 'latest' })
-    filter.watch((error, log) => {
+    let filter = this.web3.eth.filter('latest')
+    filter.watch((error, blockHash) => {
       if (error) {
         this.log.error('Filter Watch Error: ' + error)
-      } else if (log === null) {
+      } else if (!blockHash) {
         this.log.warn('Warning: null block hash')
       } else {
-        let blockNumber = log.blockNumber || null
-        if (blockNumber) {
-          this.log.debug('New Block:', blockNumber)
-          this.getBlock(blockNumber)
-        } else {
-          this.log.warn('Error, log.blockNumber is empty')
-        }
+        this.log.debug('New Block:', blockHash)
+        this.getBlock(blockHash)
       }
     })
   }

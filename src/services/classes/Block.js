@@ -143,58 +143,65 @@ export class Block extends BcThing {
     let block, txs, events, tokenAddresses
     ({ block, txs, events, tokenAddresses } = data)
     let result = {}
-    if (!block) return Promise.reject(new Error('Block data is empty'))
+    if (!block || !block.hash) return Promise.reject(new Error('Block data is empty'))
+    // const blockHash = block.hash
+    try {
+      let res, error
+      ({ res, error } = await this.insertBlock(block))
+      if (error) {
+        if (error.code === 11000) {
+          await this.deleteBlock(block)
+        } else {
+          throw error
+        }
+      } else {
+        result.block = res
+      }
+      await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))])
+        .then(res => { result.txs = res })
 
-    await Promise.all([
-      db.Blocks.insertOne(block), {}, ...txs.map(tx => db.Txs.insertOne(tx))])
-      .then(res => { result.blocks = res })
-      .catch(err => {
-        if (err.code !== 11000) return Promise.reject(new Error(`Writing block error ${err}`))
-      })
+      await Promise.all(
+        Object.values(this.addresses).map(a => a.save()))
+        .then(res => { result.addresses = res })
 
-    await Promise.all(
-      Object.values(this.addresses).map(a => a.save()))
-      .then(res => { result.addresses = res })
-      .catch(err => Promise.reject(new Error(`Error updating Addresses ${err}`)))
+      await Promise.all(
+        events.map(e => db.Events.insertOne(e)))
+        .then(res => { result.events = res })
 
-    await Promise.all(
-      events.map(e => db.Events.insertOne(e)))
-      .then(res => { result.events = res })
-      .catch(err => Promise.reject(new Error(`Error inserting Events ${err}`)))
+      await Promise.all(
+        tokenAddresses.map(ta => db.TokensAddrs.updateOne(
+          { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
+        .then(res => { result.tokenAddresses = res })
 
-    await Promise.all(
-      tokenAddresses.map(ta => db.TokensAddrs.updateOne(
-        { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
-      .then(res => { result.tokenAddresses = res })
-      .catch(err => Promise.reject(new Error(`Error saving token Addresses ${err}`)))
+      return { result, data }
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
 
-    return { result, data }
+  insertBlock (block) {
+    return this.collections.Blocks.insertOne(block)
+      .then(res => { return { res } })
+      .catch(error => { return { error } })
   }
 
   getDbBlock (hashOrNumber) {
     return getBlockFromDb(hashOrNumber, this.collections.Blocks)
   }
-  // UNCOMPLETE
-  async deleteBlock (number, blockData) {
-    let blockQuery = { number }
-    let txQuery = { blockNumber: number }
-
-    if (blockData) {
-      let hash = blockData.hash
-      blockQuery = { hash }
-      txQuery = { blockHash: hash }
-    }
-    let db = this.collections
-    let [txs, block] = await Promise.all([
-      db.Txs.remove(txQuery),
-      db.Blocks.remove(blockQuery)])
-      .catch(err => {
-        return Promise.reject(err)
-      })
-    if (txs.result.ok && block.result.ok) {
-      this.log.info(`Delete block ${number}  
-          ${block.result.n} blocks removed, ${txs.result.n} transactions removed`)
-      return Promise.resolve({ block: block.result, txs: txs.result })
+  async deleteBlock (block) {
+    try {
+      let blockHash = block.hash
+      let hash = blockHash
+      let db = this.collections
+      if (!blockHash) throw Error('Invalid block hash')
+      let result = await Promise.all([
+        db.Blocks.deleteOne({ hash }),
+        db.Txs.deleteMany({ blockHash }),
+        db.Events.deleteMany({ blockHash })
+      ])
+      return result
+    } catch (err) {
+      return Promise.reject(err)
     }
   }
 
