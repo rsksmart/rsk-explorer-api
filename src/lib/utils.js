@@ -107,3 +107,11 @@ export const isBlockHash = (value) => {
   if (/^[0-9a-f]{64}$/.test(value)) return '0x' + value
   return null
 }
+
+export const blockQuery = (blockHashOrNumber) => {
+  const hash = isBlockHash(blockHashOrNumber)
+  const number = parseInt(blockHashOrNumber)
+  if (hash) return { hash }
+  if (number) return { number }
+  return null
+}

@@ -3,7 +3,7 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-import { isBlockHash } from '../../lib/utils'
+import { blockQuery } from '../../lib/utils'
 export class Block extends BcThing {
   constructor (hashOrNumber, Blocks) {
     super(Blocks.web3)
@@ -271,12 +271,10 @@ export class Block extends BcThing {
   }
 }
 
-export const getBlockFromDb = (blockHashOrNumber, collection) => {
-  const hash = isBlockHash(blockHashOrNumber)
-  const number = parseInt(blockHashOrNumber)
-  if (hash) return collection.findOne({ hash })
-  if (number) return collection.findOne({ number })
-  return Promise.reject(new Error('blockHashOrNumber is not block hash or number'))
+export const getBlockFromDb = async (blockHashOrNumber, collection) => {
+  let query = blockQuery(blockHashOrNumber)
+  if (query) return collection.findOne(query)
+  return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
 }
 
 export default Block
