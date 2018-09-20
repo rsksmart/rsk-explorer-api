@@ -5,11 +5,11 @@ import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
 import { blockQuery } from '../../lib/utils'
 export class Block extends BcThing {
-  constructor (hashOrNumber, Blocks) {
-    super(Blocks.web3)
-    this.Blocks = Blocks
+  constructor (hashOrNumber, options) {
+    super(options.web3, options.collections)
+    this.Blocks = this.collections.Blocks
     this.fetched = false
-    this.log = this.Blocks.log || console
+    this.log = options.log || console
     this.hashOrNumber = hashOrNumber
     this.addresses = {}
     this.contracts = {}
@@ -136,7 +136,7 @@ export class Block extends BcThing {
   }
 
   async save () {
-    let db = this.Blocks
+    let db = this.collections
     let data = await this.fetch()
     if (!data) return Promise.reject(new Error(`Fetch returns empty data for block #${this.hashOrNumber}`))
     data = this.serialize(data)
@@ -145,7 +145,8 @@ export class Block extends BcThing {
     let result = {}
     if (!block) return Promise.reject(new Error('Block data is empty'))
 
-    await Promise.all([db.Blocks.insertOne(block), {}, ...txs.map(tx => db.Txs.insertOne(tx))])
+    await Promise.all([
+      db.Blocks.insertOne(block), {}, ...txs.map(tx => db.Txs.insertOne(tx))])
       .then(res => { result.blocks = res })
       .catch(err => {
         if (err.code !== 11000) return Promise.reject(new Error(`Writing block error ${err}`))
@@ -162,17 +163,16 @@ export class Block extends BcThing {
       .catch(err => Promise.reject(new Error(`Error inserting Events ${err}`)))
 
     await Promise.all(
-      tokenAddresses.map(ta => db.TokenAddr.updateOne(
+      tokenAddresses.map(ta => db.TokensAddrs.updateOne(
         { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
       .then(res => { result.tokenAddresses = res })
       .catch(err => Promise.reject(new Error(`Error saving token Addresses ${err}`)))
 
-    data.result = result
-    return data
+    return { result, data }
   }
 
-  getDbBlock (blockNumber) {
-    return getBlockFromDb(blockNumber, this.Blocks.Blocks)
+  getDbBlock (hashOrNumber) {
+    return getBlockFromDb(hashOrNumber, this.collections.Blocks)
   }
   // UNCOMPLETE
   async deleteBlock (number, blockData) {
@@ -184,7 +184,7 @@ export class Block extends BcThing {
       blockQuery = { hash }
       txQuery = { blockHash: hash }
     }
-    let db = this.Blocks
+    let db = this.collections
     let [txs, block] = await Promise.all([
       db.Txs.remove(txQuery),
       db.Blocks.remove(blockQuery)])
@@ -200,7 +200,7 @@ export class Block extends BcThing {
 
   addAddress (address, type) {
     if (!this.isAddress(address)) return
-    const Addr = new Address(address, this.web3, this.Blocks.Addr)
+    const Addr = new Address(address, this.web3, this.collections.Addrs)
     this.addresses[address] = Addr
   }
 
