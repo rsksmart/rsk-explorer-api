@@ -2,7 +2,8 @@ export default {
   Blocks: [
     {
       key: { number: -1 },
-      unique: true
+      unique: true,
+      name: 'blockNumber'
     },
     {
       key: { hash: 1 },
@@ -110,6 +111,14 @@ export default {
       key: {
         address: 1,
         contract: 1
+      },
+      unique: true
+    }
+  ],
+  OrphanBlocks: [
+    {
+      key: {
+        hash: 1
       },
       unique: true
     }

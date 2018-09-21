@@ -41,7 +41,8 @@ export default {
       Addrs: 'addresses',
       Status: 'status',
       Events: 'events',
-      TokensAddrs: 'tokensAddresses'
+      TokensAddrs: 'tokensAddresses',
+      OrphanBlocks: 'orphanBlocks'
     }
   }
 }
