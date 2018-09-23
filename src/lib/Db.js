@@ -28,21 +28,41 @@ export class Db {
     return db
   }
 
-  async createCollection (collectionName, indexes) {
-    const db = await this.db()
-    if (!collectionName) return Promise.reject(new Error('Invalid collection name'))
-    let collection = db.collection(collectionName)
-    if (!indexes || !indexes.length) return Promise.resolve(collection)
-    return collection.createIndexes(indexes).then(doc => {
-      return db.admin().validateCollection(collectionName).then(() => collection)
-    })
+  setLogger (log) {
+    this.log = log
   }
 
-  createCollections (collections, config = {}) {
+  async createCollection (collectionName, indexes, options) {
+    try {
+      const db = await this.db()
+      if (!collectionName) throw new Error('Invalid collection name')
+      let collection = db.collection(collectionName)
+
+      if (options.dropIndexes) {
+        this.log.info(`Removing indexes from ${collectionName}`)
+        await collection.dropIndexes()
+      }
+      if (indexes && indexes.length) {
+        this.log.info(`Creating indexes to ${collectionName}`)
+        await collection.createIndexes(indexes)
+      }
+      if (options.validate) {
+        this.log.info(`Validating collection: ${collectionName}`)
+        await db.admin().validateCollection(collectionName)
+      }
+      return collection
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  createCollections (collections, options) {
     let queue = []
+    let names = options.names || {}
     for (let c in collections) {
-      let name = config[c] || c
-      queue.push(this.createCollection(name, collections[c])
+      let name = names[c] || c
+      let indexes = collections[c]
+      queue.push(this.createCollection(name, indexes, options)
         .then(collection => {
           this.log.info(`Created collection ${name}`)
           return collection

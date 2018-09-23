@@ -1,4 +1,4 @@
-import { dataSource, dataBase } from '../../lib/dataSource.js'
+import { dataBase } from '../../lib/dataSource.js'
 import conf from '../../lib/config'
 import blocksCollections from '../../lib/collections'
 import { SaveBlocks } from './Blocks'
@@ -6,8 +6,9 @@ import Logger from '../../lib/Logger'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
+dataBase.setLogger(log)
 
-dataSource.then(db => {
+dataBase.db().then(db => {
   config.Logger = log
   createBlocks(config, db)
     .then((blocks) => {
@@ -18,7 +19,8 @@ dataSource.then(db => {
 
 async function createBlocks (config, db) {
   try {
-    const dbCollections = await dataBase.createCollections(blocksCollections, config.collections)
+    let options = { names: config.collections, validate: true }
+    const dbCollections = await dataBase.createCollections(blocksCollections, options)
     let collections = {}
     Object.keys(blocksCollections).forEach((k, i) => {
       collections[k] = dbCollections[i]
