@@ -58,8 +58,7 @@ export const isAddress = (address) => {
 }
 
 export const bigNumberDoc = bigNumber => {
-  const bn = Object.assign({}, bigNumber)
-  return Object.assign(bn, { type: BIG_NUMBER, value: bigNumber.toString() })
+  return { type: BIG_NUMBER, value: '0x' + bigNumber.toString(16) }
 }
 
 export const isBigNumber = value => {
@@ -70,13 +69,22 @@ export const isBigNumber = value => {
     (value.lte && value.toNumber))
 }
 
-const serializeBigNumber = value => {
+export const serializeBigNumber = value => {
   return (isBigNumber(value)) ? bigNumberDoc(value) : value
+}
+
+export const isSerializedBigNumber = value => {
+  return value.type && value.value && value.type === BIG_NUMBER
+}
+
+export const unSerializeBigNumber = value => {
+  return (isSerializedBigNumber(value)) ? new BigNumber(value.value) : value
 }
 
 export const bigNumberToSring = bn => {
   if (bn.type && bn.type === BIG_NUMBER) return bn.value
   if (isBigNumber(bn)) return bn.toString()
+  return bn
 }
 
 const isObj = (value) => {
@@ -125,6 +133,13 @@ const blockTotalDiff = block => bigNumberToSring(block.totalDifficulty)
 
 // COMPLETe
 export const getBestBlock = blocks => {
+  blocks.sort((a, b) => {
+    let aDiff = blockTotalDiff(a)
+    let bDiff = blockTotalDiff(b)
+    if (aDiff > bDiff) return -1
+    if (aDiff < bDiff) return 1
+    return 0
+  })
   return blocks[0]
 }
 export const checkBlocksCongruence = async (blocksCollection) => {
