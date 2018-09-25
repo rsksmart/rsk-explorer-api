@@ -1,6 +1,6 @@
 import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
-import web3Connect from '../lib/web3Connect'
+import web3 from '../lib/web3Connect'
 import Address from './classes/Address'
 import Logger from '../lib/Logger'
 import { errors } from '../lib/types'
@@ -8,7 +8,6 @@ import { serialize } from '../lib/utils'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('UserRequests', config.log)
-const web3 = web3Connect(config.node, config.port)
 
 dataSource.then(db => {
   const addressCollection = db.collection(config.collections.Addrs)

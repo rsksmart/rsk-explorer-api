@@ -1,4 +1,4 @@
-import web3Connect from '../../lib/web3Connect'
+import web3 from '../../lib/web3Connect'
 import { Block, getBlockFromDb } from '../classes/Block'
 import { BlocksStatus } from '../classes/BlocksStatus'
 import { RequestingBlocks } from '../classes/RequestingBlocks'
@@ -9,7 +9,7 @@ export class SaveBlocks {
     this.port = options.port
     this.collections = collections
     this.Blocks = collections.Blocks
-    this.web3 = web3Connect(options.node, options.port)
+    this.web3 = web3
     this.requestingBlocks = RequestingBlocks
     this.blocksQueueSize = options.blocksQueueSize || 100 // max blocks per queue
     this.blocksQueue = {}
@@ -145,8 +145,8 @@ export class SaveBlocks {
     return getBlockFromDb(hashOrNumber, this.Blocks)
   }
 
-  newBlock (hashOrNumber, options) {
-    return new Block(hashOrNumber, this, options)
+  newBlock (hashOrNumber) {
+    return new Block(hashOrNumber, this)
   }
 
   async dbBlocksStatus () {
