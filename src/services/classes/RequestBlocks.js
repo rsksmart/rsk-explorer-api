@@ -51,7 +51,7 @@ export class RequestBlocks extends BlocksBase {
     let free = this.queueSize - this.requested.size
     let total = this.requested.size + this.pending.size
     if (total === 0) this.emit(et.QUEUE_DONE)
-    while (free > 0) {
+    while (free > -1) {
       let key = i.next().value
       if (!key) return
       this.pending.delete(key)
@@ -63,10 +63,12 @@ export class RequestBlocks extends BlocksBase {
   requestBlock (key) {
     this.requested.add(key)
     this.emit(et.BLOCK_REQUESTED, { key })
-    this.getBlock(key)
-      .then(res =>
-        this.endRequest(key, res))
+    return this.getBlock(key).then(res => {
+      return this.endRequest(key, res)
+    }
+    )
       .catch(error => {
+        this.log.error(error)
         this.emit(et.BLOCK_ERROR, { key, error })
       })
   }
@@ -76,12 +78,14 @@ export class RequestBlocks extends BlocksBase {
   }
 
   endRequest (key, res) {
-    this.requested.delete(key)
-    this.pending.delete(key)
-    let block = res.block.data.block
-    this.emit(et.NEW_BLOCK, { key, block })
-    this.processPending()
-    return res.block
+    if (res) {
+      this.requested.delete(key)
+      this.pending.delete(key)
+      let block = res.block.data.block
+      this.emit(et.NEW_BLOCK, { key, block })
+      this.processPending()
+      return res.block
+    }
   }
 
   isRequested (key) {
@@ -99,7 +103,7 @@ export class RequestBlocks extends BlocksBase {
 
 export const getBlock = async (web3, collections, hashOrNumber, Logger) => {
   if (isBlockHash(hashOrNumber)) {
-    let block = getBlockFromDb(hashOrNumber, collections.Blocks)
+    let block = await getBlockFromDb(hashOrNumber, collections.Blocks)
     if (block) return { block, key: hashOrNumber }
   }
   try {

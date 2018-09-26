@@ -8,7 +8,6 @@ export class SaveBlocks extends BlocksBase {
     super(db, options)
     this.Blocks = this.collections.Blocks
     this.Requester = BlocksRequester(db, options)
-    this.tipSize = options.bcTipSize || 12
   }
 
   async start () {
@@ -157,14 +156,14 @@ export class SaveBlocks extends BlocksBase {
   listen () {
     this.log.info('Listen to blocks...')
     this.web3.reset(true)
-    let filter = this.web3.eth.filter('latest')
+    const filter = this.web3.eth.filter('latest')
     filter.watch((error, blockHash) => {
       if (error) {
         this.log.error('Filter Watch Error: ' + error)
       } else if (!blockHash) {
         this.log.warn('Warning: null block hash')
       } else {
-        this.log.debug('New Block:', blockHash)
+        this.log.debug('New Block reported:', blockHash)
         this.requestBlock(blockHash, true)
       }
     })

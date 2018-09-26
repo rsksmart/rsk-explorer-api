@@ -28,12 +28,14 @@ export const BlocksRequester = (db, options) => {
     let isHashKey = isBlockHash(key)
     if (block) {
       let show = (isHashKey) ? block.number : block.hash
-      log.debug(et.NEW_BLOCK, `New Block ${key} - ${show}`)
+      log.debug(et.NEW_BLOCK, `New Block DATA ${key} - ${show}`)
       let parent = block.parentHash
 
       getBlockFromDb(parent, blocksCollection).then(parentBlock => {
-        if (!parentBlock) Requester.request(parent, true)
-        log.debug(`Getting parent of block ${block.number} - ${parent}`)
+        if (!parentBlock) {
+          log.debug(`Getting parent of block ${block.number} - ${parent}`)
+          Requester.request(parent, true)
+        }
       })
 
       // Requester.request(parent, true)
