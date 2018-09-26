@@ -1,4 +1,4 @@
-import { isAddress, serialize } from '../../lib/utils'
+import { isAddress, serialize, isBlockHash } from '../../lib/utils'
 
 export class BcThing {
   constructor (web3, collections) {
@@ -20,6 +20,9 @@ export class BcThing {
   }
   save () {
     return _methodNotImplemented('save')
+  }
+  isBlockHash (hashOrNumber) {
+    return isBlockHash(hashOrNumber)
   }
 }
 

@@ -19,13 +19,10 @@ dataBase.db().then(db => {
 
 async function createBlocks (config, db) {
   try {
-    let options = { names: config.collections, validate: true }
-    const dbCollections = await dataBase.createCollections(blocksCollections, options)
-    let collections = {}
-    Object.keys(blocksCollections).forEach((k, i) => {
-      collections[k] = dbCollections[i]
-    })
-    return new SaveBlocks(config, collections)
+    let names = config.collections
+    let options = { names, validate: true }
+    await dataBase.createCollections(blocksCollections, options)
+    return new SaveBlocks(db, config)
   } catch (err) {
     log.error('Error creating blocks')
     log.error(err)

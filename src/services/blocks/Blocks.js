@@ -1,33 +1,25 @@
-import web3 from '../../lib/web3Connect'
-import { Block, getBlockFromDb } from '../classes/Block'
-import { BlocksStatus } from '../classes/BlocksStatus'
-import { RequestingBlocks } from '../classes/RequestingBlocks'
+import { BlocksBase } from '../../lib/BlocksBase'
+import { getBlockFromDb } from '../classes/Block'
+import { getBlock } from '../classes/RequestBlocks'
+import { BlocksRequester } from './blocksRequester'
 
-export class SaveBlocks {
-  constructor (options, collections) {
-    this.node = options.node
-    this.port = options.port
-    this.collections = collections
-    this.Blocks = collections.Blocks
-    this.web3 = web3
-    this.requestingBlocks = RequestingBlocks
-    this.blocksQueueSize = options.blocksQueueSize || 100 // max blocks per queue
-    this.blocksQueue = {}
-    this.segments = []
-    this.log = options.Logger || console
-    this.Status = new BlocksStatus(collections.Status, this)
+export class SaveBlocks extends BlocksBase {
+  constructor (db, options) {
+    super(db, options)
+    this.Blocks = this.collections.Blocks
+    this.Requester = BlocksRequester(db, options)
   }
 
   async start () {
     if (this.web3.isConnected()) {
-      Promise.all([this.requestBlock(0), this.requestBlock('latest')])
-        .then(() => this.isDbOutDated().then(() => this.getBlocks()))
+      Promise.all([this.getBlock(0), this.getLastBlock()])
+        .then(() => this.checkDb().then(res => this.getBlocks(res)))
 
       // node is syncing
       this.web3.eth.isSyncing((err, sync) => {
         this.log.debug('Node is syncing')
         if (!err) {
-          this.Status.update({ sync }).then(() => {
+          this.updateStatus({ sync }).then(() => {
             if (sync === true) {
               this.web3.reset(true)
             } else if (sync) {
@@ -47,7 +39,7 @@ export class SaveBlocks {
       }
     } else {
       this.log.warn('Web3 is not connected!')
-      this.Status.update().then(() => {
+      this.updateStatus().then(() => {
         this.start()
       })
     }
@@ -64,15 +56,6 @@ export class SaveBlocks {
       missingSegments = await this.getMissingSegments()
     }
     return { lastBlock, blocks, missingSegments }
-  }
-
-  async isDbOutDated () {
-    let dbS = await this.checkDb()
-    if (!this.segments.length) {
-      this.segments = dbS.missingSegments
-    }
-    return this.Status.update(dbS)
-      .then(() => (dbS.lastBlock > dbS.blocks) ? dbS.lastBlock : null)
   }
 
   async getMissingSegments (fromBlock = 0, toBlock = null) {
@@ -111,42 +94,44 @@ export class SaveBlocks {
     if (block && block.hash === hashOrNumber) {
       return Promise.resolve(block)
     } else {
-      return this.requestBlock(hashOrNumber)
-        .then(block => {
-          this.log.debug(`Getting parent of block ${block.number}`)
-          return this.getBlock(block.parentHash)
-        }).catch(err => {
-          this.log.error(err)
-          this.endBlockRequest(hashOrNumber)
-        })
+      return getBlock(this.web3, this.collections, hashOrNumber, this.log)
     }
   }
 
-  getBlocks () {
-    if (this.segments.length) {
-      let seg = this.segments[0]
-      let size = this.blocksQueueSize
-      let queue = []
-      for (let i = 1; i <= size; i++) {
-        let block = seg[1] + i
-        if (block < seg[0]) {
-          queue.push(this.requestBlock(block))
+  getLastBlock () {
+    return new Promise((resolve, reject) => {
+      this.web3.eth.getBlock('latest', (err, block) => {
+        if (err) return reject(err)
+        else {
+          let number = block.number
+          resolve(this.getBlock(number)
+            .then(res => {
+              let block = res.block.data.block
+              return block
+            }))
         }
-      }
-      Promise.all(queue).then(res => {
-        if (seg[1] >= seg[0]) this.segments.splice(0, 1)
-        else this.segments[0] = [seg[0], seg[1] + size]
-        return this.getBlocks()
+      })
+    })
+  }
+
+  getBlocks (check) {
+    let segments = check.missingSegments
+    if (segments) {
+      segments.forEach(segment => {
+        let number = segment[0]
+        let limit = segment[1]
+        let values = []
+        while (number >= limit) {
+          values.push(number)
+          number--
+        }
+        this.bulkRequest(values)
       })
     }
   }
 
   getBlockFromDb (hashOrNumber) {
     return getBlockFromDb(hashOrNumber, this.Blocks)
-  }
-
-  newBlock (hashOrNumber) {
-    return new Block(hashOrNumber, this)
   }
 
   async dbBlocksStatus () {
@@ -156,28 +141,16 @@ export class SaveBlocks {
     return { blocks, lastBlock }
   }
 
-  async requestBlock (hashOrNumber) {
-    // Review ----------------------
-    if (this.requestingBlocks.isRequested(hashOrNumber)) {
-      return Promise.resolve(hashOrNumber)
-    }
-    try {
-      this.log.debug(`Requesting block ${hashOrNumber}`)
-      let block = await this.newBlock(hashOrNumber)
-      this.requestingBlocks.add(hashOrNumber, true)
-      this.Status.update()
-      let res = await block.save()
-      this.endBlockRequest(hashOrNumber)
-      return res.data.block
-    } catch (err) {
-      return Promise.reject(err)
-    }
+  bulkRequest (keys) {
+    return this.Requester.bulkRequest(keys)
   }
 
-  endBlockRequest (hashOrNumber) {
-    this.requestingBlocks.delete(hashOrNumber)
-    this.Status.update()
-    return hashOrNumber
+  requestBlock (hashOrNumber, prioritize) {
+    this.Requester.request(hashOrNumber, prioritize)
+  }
+
+  updateStatus (state) {
+    return this.Requester.updateStatus(state)
   }
 
   listen () {
@@ -191,7 +164,7 @@ export class SaveBlocks {
         this.log.warn('Warning: null block hash')
       } else {
         this.log.debug('New Block:', blockHash)
-        this.getBlock(blockHash)
+        this.requestBlock(blockHash, true)
       }
     })
   }
@@ -203,12 +176,8 @@ export class SaveBlocks {
   }
 }
 
-export function Blocks (db, config, blocksCollections) {
-  let collections = {}
-  Object.keys(blocksCollections).forEach((k, i) => {
-    collections[k] = db.collection(config.collections[k])
-  })
-  return new SaveBlocks(config, collections)
+export function Blocks (db, config) {
+  return new SaveBlocks(db, config)
 }
 
 export default SaveBlocks

@@ -9,7 +9,7 @@ export class Block extends BcThing {
     super(options.web3, options.collections)
     this.Blocks = this.collections.Blocks
     this.fetched = false
-    this.log = options.log || console
+    this.log = options.Logger || console
     this.hashOrNumber = hashOrNumber
     this.addresses = {}
     this.contracts = {}
@@ -144,7 +144,6 @@ export class Block extends BcThing {
       let block, txs, events, tokenAddresses
       ({ block, txs, events, tokenAddresses } = data)
       let result = {}
-
       // catch this exeption
       result.block = await this.saveOrReplaceBlock(block)
       if (!result.block) {
@@ -183,11 +182,12 @@ export class Block extends BcThing {
         if (error.code === 11000) { // block exists
           let oldBlock = await this.getBlockFromDb(block.number, true)
           if (!oldBlock || !oldBlock.block) throw error
-          if (oldBlock.block.hash === block.hash) return Promise.resolve()
+          if (oldBlock.block.hash === block.hash) return
           let bestBlock = getBestBlock([block, oldBlock.block])
           if (bestBlock.hash !== block.hash) {
             // same problem that dupplicated
-            throw new Error(`The stored block ${oldBlock.hash} is better than ${block.hash}`)
+            this.log.debug(`The stored block ${oldBlock.block.hash} is better than ${block.hash}`)
+            return
           }
           await this.replaceBlock(block, oldBlock)
         } else {
@@ -234,18 +234,18 @@ export class Block extends BcThing {
       if (!blockHash) throw new Error('Invalid block hash')
       let hash = blockHash
       let db = this.collections
-      let result = await Promise.all([
-        db.Blocks.deleteOne({ hash }),
-        db.Txs.deleteMany({ blockHash }),
-        db.Events.deleteMany({ blockHash })
-      ])
+      let result = {}
+      result.block = await db.Blocks.deleteOne({ hash })
+      result.txs = await db.Txs.deleteMany({ blockHash })
+      result.events = await db.Events.deleteMany({ blockHash })
       return result
     } catch (err) {
       return Promise.reject(err)
     }
   }
-
+  //// -----------------------
   async replaceBlock (newBlock, oldBlock) {
+    console.log('REPLACE')
     try {
       let block, txs, events
       ({ block, txs, events } = oldBlock)
@@ -254,7 +254,10 @@ export class Block extends BcThing {
       block._events = events
       block.transactions = txs
       await this.saveOrphanBlock(block)
-      await this.deleteBlockDataFromDb(blockHash)
+      let del = await this.deleteBlockDataFromDb(blockHash)
+      // temp
+      console.log(del.result)
+      // if (del.result.ok !== 1) this.log.error(del)
       newBlock._replacedBlockHash = blockHash
       let insert = await this.insertBlock(newBlock)
       if (insert.error) throw insert.error

@@ -26,6 +26,14 @@ export const contractsTypes = {
   ERC20: 'ERC20'
 }
 
+export const events = {
+  'BLOCK_QUEUED': 'blockQueued',
+  'BLOCK_REQUESTED': 'blockRequested',
+  'NEW_BLOCK': 'newBlock',
+  'BLOCK_ERROR': 'blockError',
+  'QUEUE_DONE': 'queueDone'
+}
+
 export const BIG_NUMBER = 'BigNumber'
 
 export default { txTypes, errors, addrTypes, contractsTypes }
