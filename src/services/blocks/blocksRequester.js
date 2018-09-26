@@ -2,11 +2,13 @@ import { RequestBlocks } from '../classes/RequestBlocks'
 import { events as et } from '../../lib/types'
 import { isBlockHash } from '../../lib/utils'
 import { BlocksStatus } from '../classes/BlocksStatus'
+import { getBlockFromDb } from '../classes/Block'
 
 export const BlocksRequester = (db, options) => {
   let Requester = new RequestBlocks(db, options)
   let log = options.Logger || console
   const Status = new BlocksStatus(db, options)
+  const blocksCollection = Requester.collections.Blocks
 
   Requester.updateStatus = function (state) {
     state = state || {}
@@ -27,12 +29,14 @@ export const BlocksRequester = (db, options) => {
     if (block) {
       let show = (isHashKey) ? block.number : block.hash
       log.debug(et.NEW_BLOCK, `New Block ${key} - ${show}`)
-      // get block parent only when request by hash
-      if (isHashKey) {
-        let parent = block.parentHash
+      let parent = block.parentHash
+
+      getBlockFromDb(parent, blocksCollection).then(parentBlock => {
+        if (!parentBlock) Requester.request(parent, true)
         log.debug(`Getting parent of block ${block.number} - ${parent}`)
-        Requester.request(parent, true)
-      }
+      })
+
+      // Requester.request(parent, true)
     }
     Requester.updateStatus()
   })
