@@ -113,6 +113,7 @@ Required values
   
   **validateCollections** :[Boolean] Validate collectios at blocks service start
   **blocksQueueSize**:[Number]
+  **bcTipSize**:[Number] Block chain tip size
 
 ### api
 

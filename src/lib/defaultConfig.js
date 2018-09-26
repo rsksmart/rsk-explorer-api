@@ -36,6 +36,7 @@ export default {
   blocks: {
     blocksQueueSize: 100,
     validateCollections: true,
+    bcTipSize: 12,
     collections: {
       Blocks: 'blocks',
       Txs: 'transactions',

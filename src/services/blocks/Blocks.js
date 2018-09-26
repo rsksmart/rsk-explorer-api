@@ -8,6 +8,7 @@ export class SaveBlocks extends BlocksBase {
     super(db, options)
     this.Blocks = this.collections.Blocks
     this.Requester = BlocksRequester(db, options)
+    this.tipSize = options.bcTipSize || 12
   }
 
   async start () {
