@@ -5,7 +5,7 @@ const keys = Object.keys(defaultConf)
 for (let key of keys) {
   config[key] = config[key] || defaultConf[key]
   for (let p in defaultConf[key]) {
-    if (!config[key][p]) config[key][p] = defaultConf[key][p]
+    if (undefined === config[key][p]) config[key][p] = defaultConf[key][p]
   }
 }
 

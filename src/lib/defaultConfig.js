@@ -35,6 +35,7 @@ export default {
   },
   blocks: {
     blocksQueueSize: 100,
+    validateCollections: true,
     collections: {
       Blocks: 'blocks',
       Txs: 'transactions',

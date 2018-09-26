@@ -20,7 +20,8 @@ dataBase.db().then(db => {
 async function createBlocks (config, db) {
   try {
     let names = config.collections
-    let options = { names, validate: true }
+    let validate = config.validateCollections
+    let options = { names, validate }
     await dataBase.createCollections(blocksCollections, options)
     return new SaveBlocks(db, config)
   } catch (err) {

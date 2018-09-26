@@ -95,23 +95,26 @@ Required values
 
 ### Source
 
-  "node": "localhost",
-  "port": 4444
+  **node**: "localhost",
+  **port**: 4444
 
 ### db
 
-  "server": "localhost"
-  "port": 27017
-  "database": "explorerDB"
+  **server**": "localhost"
+  **port**": 27017
+  **database**: "explorerDB"
 
 **Optionals:**
 
-  "user": < user >
-  "password": < password >
+  **user**: < user >
+  **password**: < password >
 
 ### blocks
+  
+  **validateCollections** :[Boolean] Validate collectios at blocks service start
+  **blocksQueueSize**:[Number]
 
 ### api
 
-- allowUserEvents [boolean]: enable/disable userEventsApi
+  **allowUserEvents** [Boolean]: enable/disable userEventsApi
 
