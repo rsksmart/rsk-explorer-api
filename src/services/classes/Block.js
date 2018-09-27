@@ -229,22 +229,6 @@ export class Block extends BcThing {
     return this.collections.Txs.find({ blockHash }).toArray()
   }
 
-  async deleteBlockDataFromDb (blockHash, blockNumber) {
-    try {
-      if (!blockHash) throw new Error('Invalid block hash')
-      let hash = blockHash
-      let db = this.collections
-      let result = {}
-      let query = { $or: [{ blockHash }, { blockNumber }] }
-      result.block = await db.Blocks.deleteOne({ hash })
-      result.txs = await db.Txs.deleteMany(query)
-      result.events = await db.Events.deleteMany(query)
-      return result
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
   async replaceBlock (newBlock, oldBlock) {
     try {
       let block, txs, events
@@ -260,6 +244,10 @@ export class Block extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+  
+  deleteBlockDataFromDb (blockHash, blockNumber) {
+    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections)
   }
 
   saveOrphanBlock (blockData) {
@@ -345,6 +333,21 @@ export const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = blockQuery(blockHashOrNumber)
   if (query) return collection.findOne(query)
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
+}
+
+export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
+  try {
+    if (!blockHash) throw new Error('Invalid block hash')
+    let hash = blockHash
+    let result = {}
+    let query = { $or: [{ blockHash }, { blockNumber }] }
+    result.block = await db.Blocks.deleteOne({ hash })
+    result.txs = await db.Txs.deleteMany(query)
+    result.events = await db.Events.deleteMany(query)
+    return result
+  } catch (err) {
+    return Promise.reject(err)
+  }
 }
 
 export default Block
