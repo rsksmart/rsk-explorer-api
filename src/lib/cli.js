@@ -8,3 +8,7 @@ export const error = l => console.log(red, l, reset)
 export const warn = l => console.log(orange, l, reset)
 export const info = l => console.log(blue, l, reset)
 export const ok = l => console.log(green, l, reset)
+
+export const ansiCode = number => `\x1b[${parseInt(number)}m`
+
+export const randomColor = () => ansiCode(Math.floor(Math.random() * (40 - 30 + 1)) + 30)
