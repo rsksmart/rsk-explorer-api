@@ -1,21 +1,42 @@
 import { RequestBlocks } from '../classes/RequestBlocks'
-import { events as et } from '../../lib/types'
+import { events as et, actions as a } from '../../lib/types'
 import { isBlockHash } from '../../lib/utils'
-import { BlocksStatus } from '../classes/BlocksStatus'
 import { getBlockFromDb } from '../classes/Block'
+import { dataSource } from '../../lib/dataSource'
+import Logger from '../../lib/Logger'
+import config from '../../lib/config'
 
-export const BlocksRequester = (db, options) => {
+const options = Object.assign({}, config.blocks)
+const log = Logger('Blocks', options.log)
+options.Logger = log
+
+dataSource.then(db => {
   let Requester = new RequestBlocks(db, options)
-  let log = options.Logger || console
-  const Status = new BlocksStatus(db, options)
   const blocksCollection = Requester.collections.Blocks
 
   Requester.updateStatus = function (state) {
     state = state || {}
     state.requestingBlocks = this.getRequested()
     state.pendingBlocks = this.getPending()
-    return Status.update(state)
+    let action = a.STATUS_UPDATE
+    process.send({ action, args: [state] })
   }
+  process.on('message', msg => {
+    let action = msg.action
+    let args = msg.args
+    if (action) {
+      switch (action) {
+
+        case a.BLOCK_REQUEST:
+          Requester.request(...args)
+          break
+
+        case a.BULK_BLOCKS_REQUEST:
+          Requester.bulkRequest(...args)
+          break
+      }
+    }
+  })
 
   Requester.events.on(et.QUEUE_DONE, data => {
     Requester.updateStatus()
@@ -48,6 +69,4 @@ export const BlocksRequester = (db, options) => {
     }
     Requester.updateStatus()
   })
-
-  return Requester
-}
+})

@@ -1,48 +1,16 @@
 import { BlocksBase } from '../../lib/BlocksBase'
-import { getBlockFromDb } from '../classes/Block'
-import { getBlock } from '../classes/RequestBlocks'
-import { BlocksRequester } from './blocksRequester'
+import { getBlockFromDb } from './Block'
+import { getBlock } from './RequestBlocks'
 
-export class SaveBlocks extends BlocksBase {
+export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
     super(db, options)
     this.Blocks = this.collections.Blocks
-    this.Requester = BlocksRequester(db, options)
   }
 
-  async start () {
-    if (this.web3.isConnected()) {
-      Promise.all([this.getBlock(0), this.getLastBlock()])
-        .then(() => this.checkDb().then(res => this.getBlocks(res)))
-
-      // node is syncing
-      this.web3.eth.isSyncing((err, sync) => {
-        this.log.debug('Node is syncing')
-        if (!err) {
-          this.updateStatus({ sync }).then(() => {
-            if (sync === true) {
-              this.web3.reset(true)
-            } else if (sync) {
-              let number = sync.currentBlock
-              this.requestBlock(number)
-            } else {
-              this.listen()
-            }
-          })
-        } else {
-          this.log.error('Syncing error', err)
-        }
-      })
-
-      if (!this.web3.eth.syncing) {
-        this.listen()
-      }
-    } else {
-      this.log.warn('Web3 is not connected!')
-      this.updateStatus().then(() => {
-        this.start()
-      })
-    }
+  start () {
+    Promise.all([this.getBlock(0), this.getLastBlock()])
+      .then(() => this.checkDb().then(res => this.getBlocks(res)))
   }
 
   async checkDb () {
@@ -88,7 +56,17 @@ export class SaveBlocks extends BlocksBase {
       return (v < mv && a[i - 1] - v > 1)
     })])
   }
-
+  getLastBlock () {
+    return new Promise((resolve, reject) => {
+      this.web3.eth.getBlock('latest', (err, block) => {
+        if (err) return reject(err)
+        else {
+          let number = block.number
+          resolve(this.getBlock(number))
+        }
+      })
+    })
+  }
   async getBlock (hashOrNumber) {
     let block = await this.getBlockFromDb(hashOrNumber)
     if (block && block.hash === hashOrNumber) {
@@ -102,16 +80,8 @@ export class SaveBlocks extends BlocksBase {
     }
   }
 
-  getLastBlock () {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBlock('latest', (err, block) => {
-        if (err) return reject(err)
-        else {
-          let number = block.number
-          resolve(this.getBlock(number))
-        }
-      })
-    })
+  getBlockFromDb (hashOrNumber) {
+    return getBlockFromDb(hashOrNumber, this.Blocks)
   }
 
   getBlocks (check) {
@@ -125,13 +95,9 @@ export class SaveBlocks extends BlocksBase {
           values.push(number)
           number--
         }
-        this.bulkRequest(values)
+        process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
       })
     }
-  }
-
-  getBlockFromDb (hashOrNumber) {
-    return getBlockFromDb(hashOrNumber, this.Blocks)
   }
 
   async dbBlocksStatus () {
@@ -141,43 +107,45 @@ export class SaveBlocks extends BlocksBase {
     return { blocks, lastBlock }
   }
 
-  bulkRequest (keys) {
-    return this.Requester.bulkRequest(keys)
-  }
-
-  requestBlock (hashOrNumber, prioritize) {
-    this.Requester.request(hashOrNumber, prioritize)
-  }
-
-  updateStatus (state) {
-    return this.Requester.updateStatus(state)
-  }
-
-  listen () {
-    this.log.info('Listen to blocks...')
-    this.web3.reset(true)
-    const filter = this.web3.eth.filter('latest')
-    filter.watch((error, blockHash) => {
-      if (error) {
-        this.log.error('Filter Watch Error: ' + error)
-      } else if (!blockHash) {
-        this.log.warn('Warning: null block hash')
-      } else {
-        this.log.debug('New Block reported:', blockHash)
-        this.requestBlock(blockHash, true)
-      }
-    })
-  }
   getHighDbBlock () {
     return this.Blocks.findOne({}, { sort: { number: -1 } })
   }
+
   countDbBlocks () {
     return this.Blocks.countDocuments({})
   }
 }
 
-export function Blocks (db, config) {
-  return new SaveBlocks(db, config)
+export const checkBlocksCongruence = async (blocksCollection) => {
+  try {
+    let blocks = {}
+    await blocksCollection.find({})
+      .project({ _id: 0, number: 1, hash: 1, parentHash: 1 })
+      .sort({ number: -1 })
+      .forEach(block => {
+        blocks[block.number] = block
+      })
+    let missing = []
+    let invalid = []
+    for (let number in blocks) {
+      if (number > 0) {
+        let block = blocks[number]
+        let parentNumber = number - 1
+        let parent = blocks[parentNumber]
+        if (!parent) {
+          missing.push(parentNumber)
+        } else {
+          if (parent.hash !== block.parentHash) {
+            parent.validHash = block.parentHash
+            invalid.push(parent)
+          }
+        }
+      }
+    }
+    return { missing, invalid }
+  } catch (err) {
+    return Promise.reject(err)
+  }
 }
 
-export default SaveBlocks
+export default CheckBlocks

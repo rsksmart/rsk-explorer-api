@@ -1,29 +1,68 @@
+import path from 'path'
+import { fork } from 'child_process'
 import { dataBase } from '../../lib/dataSource.js'
 import conf from '../../lib/config'
 import blocksCollections from '../../lib/collections'
-import { SaveBlocks } from './Blocks'
 import Logger from '../../lib/Logger'
+import { BlocksStatus } from '../classes/BlocksStatus'
+import { actions } from '../../lib/types'
+import { BlocksRequester } from './blocksRequester'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
+config.Logger = log
 dataBase.setLogger(log)
 
+function startService (name, parseMessage) {
+  let service = fork(path.resolve(__dirname, `${serviceName(name)}.js`))
+  service.on('message', msg => parseMessage(msg, name))
+  return service
+}
+
 dataBase.db().then(db => {
-  config.Logger = log
-  createBlocks(config, db)
-    .then((blocks) => {
-      log.info(`Starting blocks service`)
-      blocks.start()
-    })
+  createBlocksCollections(config, db).then(() => {
+    const Status = new BlocksStatus(db, config)
+    // const Requester = BlocksRequester(db, config, Status)
+    const listenToMessage = (msg) => {
+      let action, args, event, data
+      ({ action, args, event, data } = msg)
+      if (event) {
+        readEvent(event, data)
+      }
+
+      if (action) {
+        switch (action) {
+          case actions.STATUS_UPDATE:
+            Status.update(...args)
+            break
+
+          case actions.BLOCK_REQUEST:
+          case actions.BULK_BLOCKS_REQUEST:
+            Requester.send({ action, args })
+            break
+        }
+      }
+    }
+    const Listener = startService('Listener', listenToMessage)
+    const Checker = startService('Checker', listenToMessage)
+    const Requester = startService('Requester', listenToMessage)
+  })
 })
 
-async function createBlocks (config, db) {
+// WIP
+const readEvent = (event, data) => {
+  console.log(event, data)
+}
+
+const serviceName = name => `blocks${name}`
+
+
+async function createBlocksCollections (config, db) {
   try {
     let names = config.collections
     let validate = config.validateCollections
     let options = { names, validate }
     await dataBase.createCollections(blocksCollections, options)
-    return new SaveBlocks(db, config)
   } catch (err) {
     log.error('Error creating blocks')
     log.error(err)

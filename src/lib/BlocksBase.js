@@ -1,5 +1,6 @@
 import web3 from './web3Connect'
 import { getDbBlocksCollections } from './blocksCollections'
+import { events, actions } from './types'
 
 export class BlocksBase {
   constructor (db, options) {
@@ -8,5 +9,7 @@ export class BlocksBase {
     this.collections = getDbBlocksCollections(db)
     this.web3 = web3
     this.log = options.Logger || console
+    this.et = events
+    this.actions = actions
   }
 }
