@@ -40,6 +40,10 @@ dataBase.db().then(db => {
           case actions.BULK_BLOCKS_REQUEST:
             Requester.send({ action, args })
             break
+
+          case actions.UPDATE_TIP_BLOCK:
+            Checker.send({ action, args })
+            break
         }
       }
     }

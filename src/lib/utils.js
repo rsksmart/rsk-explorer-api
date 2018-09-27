@@ -142,34 +142,3 @@ export const getBestBlock = blocks => {
   })
   return blocks[0]
 }
-export const checkBlocksCongruence = async (blocksCollection) => {
-  try {
-    let blocks = {}
-    await blocksCollection.find({})
-      .project({ _id: 0, number: 1, hash: 1, parentHash: 1 })
-      .sort({ number: -1 })
-      .forEach(block => {
-        blocks[block.number] = block
-      })
-    let missing = []
-    let invalid = []
-    for (let number in blocks) {
-      if (number > 0) {
-        let block = blocks[number]
-        let parentNumber = number - 1
-        let parent = blocks[parentNumber]
-        if (!parent) {
-          missing.push(parentNumber)
-        } else {
-          if (parent.hash !== block.parentHash) {
-            parent.validHash = block.parentHash
-            invalid.push(parent)
-          }
-        }
-      }
-    }
-    return { missing, invalid }
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}

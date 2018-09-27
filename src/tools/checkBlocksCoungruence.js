@@ -2,7 +2,7 @@ import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
 import fs from 'fs'
 import util from 'util'
-import { checkBlocksCongruence } from '../lib/utils'
+import { checkBlocksCongruence } from '../services/classes/CheckBlocks'
 const config = Object.assign({}, conf.blocks)
 const writeFile = util.promisify(fs.writeFile)
 const outFile = '/tmp/blocksLog.json'

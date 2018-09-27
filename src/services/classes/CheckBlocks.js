@@ -6,14 +6,17 @@ export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
     super(db, options)
     this.Blocks = this.collections.Blocks
+    this.tipBlock = null
+    this.tipCount = 0
+    this.tipSize = options.bcTipSize
   }
 
   start () {
     Promise.all([this.getBlock(0), this.getLastBlock()])
-      .then(() => this.checkDb().then(res => this.getBlocks(res)))
+      .then(() => this.checkDb(true).then(res => this.getBlocks(res)))
   }
 
-  async checkDb () {
+  async checkDb (orphans) {
     let lastBlock = await this.getHighDbBlock()
     lastBlock = lastBlock.number
 
@@ -23,7 +26,17 @@ export class CheckBlocks extends BlocksBase {
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments()
     }
-    return { lastBlock, blocks, missingSegments }
+    let res = { lastBlock, blocks, missingSegments }
+    if (orphans) {
+      let orphans = await this.getOrphans()
+      res = Object.assign(res, orphans)
+    }
+    return res
+  }
+
+  async getOrphans (lastBlock) {
+    let blocks = await checkBlocksCongruence(this.Blocks, lastBlock)
+    return blocks
   }
 
   async getMissingSegments (fromBlock = 0, toBlock = null) {
@@ -86,17 +99,25 @@ export class CheckBlocks extends BlocksBase {
 
   getBlocks (check) {
     let segments = check.missingSegments
+    let invalid = check.invalid
+    let values = []
     if (segments) {
       segments.forEach(segment => {
         let number = segment[0]
         let limit = segment[1]
-        let values = []
         while (number >= limit) {
           values.push(number)
           number--
         }
-        process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
       })
+    }
+    if (invalid) {
+      invalid.forEach(block => {
+        values.push(block.validHash)
+      })
+    }
+    if (values.length) {
+      process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
     }
   }
 
@@ -114,12 +135,37 @@ export class CheckBlocks extends BlocksBase {
   countDbBlocks () {
     return this.Blocks.countDocuments({})
   }
+  setTipBlock (number) {
+    this.tipBlock = number || null
+  }
+  setTipCount (number) {
+    this.tipCount = (number) ? this.tipCount + number : 0
+  }
+
+  updateTipBlock (block) {
+    if (!block || !block.number) return
+    let number = block.number
+    let tipBlock = this.tipBlock
+    if (!tipBlock) this.setTipBlock(number)
+    if (number > tipBlock) {
+      this.setTipBlock(number)
+      this.setTipCount(number)
+      if (this.tipCount > this.tipSize) {
+        let lastBlock = this.tipCount - this.tipSize
+        this.setTipCount()
+        this.log.debug(`Checking parents from block ${lastBlock}`)
+        this.getOrphans(lastBlock)
+          .then(blocks => this.getBlocks(blocks))
+      }
+    }
+  }
 }
 
-export const checkBlocksCongruence = async (blocksCollection) => {
+export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     let blocks = {}
-    await blocksCollection.find({})
+    let query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
+    await blocksCollection.find(query)
       .project({ _id: 0, number: 1, hash: 1, parentHash: 1 })
       .sort({ number: -1 })
       .forEach(block => {

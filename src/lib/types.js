@@ -30,7 +30,6 @@ export const events = {
   'BLOCK_QUEUED': 'blockQueued',
   'BLOCK_REQUESTED': 'blockRequested',
   'NEW_BLOCK': 'newBlock',
-  'BLOCK_SAVED': 'blockSaved',
   'BLOCK_ERROR': 'blockError',
   'QUEUE_DONE': 'queueDone'
 }
@@ -40,7 +39,8 @@ export const actions = {
   'BLOCK_REQUEST': 'requestBlock',
   'STATUS_UPDATE': 'updateStatus',
   'CHECK_DB': 'checkDB',
-  'CHECK_TIP': 'checkBcTip'
+  'CHECK_TIP': 'checkBcTip',
+  'UPDATE_TIP_BLOCK': 'updateTipBlock'
 }
 
 export const BIG_NUMBER = 'BigNumber'

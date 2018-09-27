@@ -20,6 +20,10 @@ dataSource.then(db => {
           console.log('checkDB', args)
           Checker.checkDb(...args)
           break
+
+        case actions.UPDATE_TIP_BLOCK:
+          Checker.updateTipBlock(...args)
+          break
       }
     }
   })

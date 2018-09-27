@@ -1,7 +1,7 @@
 
 import { EventEmitter } from 'events'
 import { BlocksBase } from '../../lib/BlocksBase'
-import { events as et } from '../../lib/types'
+import { events as et, actions as a } from '../../lib/types'
 import { getBlockFromDb, Block } from './Block'
 import { isBlockHash } from '../../lib/utils'
 
@@ -82,6 +82,7 @@ export class RequestBlocks extends BlocksBase {
     if (res && res.block) {
       let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
+      process.send({ action: a.UPDATE_TIP_BLOCK, args: [block] })
       this.processPending()
       return res.block
     }

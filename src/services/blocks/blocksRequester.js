@@ -13,7 +13,6 @@ options.Logger = log
 dataSource.then(db => {
   let Requester = new RequestBlocks(db, options)
   const blocksCollection = Requester.collections.Blocks
-
   Requester.updateStatus = function (state) {
     state = state || {}
     state.requestingBlocks = this.getRequested()
