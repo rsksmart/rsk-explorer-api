@@ -144,7 +144,6 @@ export class Block extends BcThing {
       let block, txs, events, tokenAddresses
       ({ block, txs, events, tokenAddresses } = data)
       let result = {}
-      // catch this exeption
       result.block = await this.saveOrReplaceBlock(block)
       if (!result.block) {
         this.log.debug(`Block ${block.number} - ${block.hash} was not saved`)
@@ -172,39 +171,40 @@ export class Block extends BcThing {
     }
   }
 
-  /// REFACTOR
   async saveOrReplaceBlock (block) {
     try {
       if (!block || !block.hash) throw new Error('Block data is empty')
-      let res, error
-      ({ res, error } = await this.insertBlock(block))
-      if (error) {
-        if (error.code === 11000) { // block exists
-          let oldBlock = await this.getBlockFromDb(block.number, true)
-          if (!oldBlock || !oldBlock.block) throw error
-          if (oldBlock.block.hash === block.hash) return
-          let bestBlock = getBestBlock([block, oldBlock.block])
-          if (bestBlock.hash !== block.hash) {
-            // same problem that dupplicated
-            this.log.debug(`The stored block ${oldBlock.block.hash} is better than ${block.hash}`)
-            return
-          }
-          await this.replaceBlock(block, oldBlock)
-        } else {
-          throw error
-        }
-      } else {
-        return res
+      let res
+      let exists = await this.searchBlock(block)
+      if (exists.length > 1) {
+        throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`)
       }
+      if (exists.length) {
+        let oldBlock = exists[0]
+        if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`)
+        let bestBlock = getBestBlock([...exists, block])
+        if (bestBlock.hash !== block.hash) {
+          throw new Error(`The stored block ${bestBlock.hash} is better than ${block.hash}`)
+        }
+        let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
+        res = await this.replaceBlock(block, oldBlockData)
+      } else {
+        res = await this.insertBlock(block)
+      }
+      return res
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
+  searchBlock (block) {
+    let hash = block.hash
+    let number = block.number
+    return this.collections.Blocks.find({ $or: [{ hash }, { number }] }).toArray()
+  }
+
   insertBlock (block) {
     return this.collections.Blocks.insertOne(block)
-      .then(res => { return { res } })
-      .catch(error => { return { error } })
   }
 
   async getBlockFromDb (hashOrNumber, allData) {
@@ -229,39 +229,34 @@ export class Block extends BcThing {
     return this.collections.Txs.find({ blockHash }).toArray()
   }
 
-  async deleteBlockDataFromDb (blockHash) {
+  async deleteBlockDataFromDb (blockHash, blockNumber) {
     try {
       if (!blockHash) throw new Error('Invalid block hash')
       let hash = blockHash
       let db = this.collections
       let result = {}
+      let query = { $or: [{ blockHash }, { blockNumber }] }
       result.block = await db.Blocks.deleteOne({ hash })
-      result.txs = await db.Txs.deleteMany({ blockHash })
-      result.events = await db.Events.deleteMany({ blockHash })
+      result.txs = await db.Txs.deleteMany(query)
+      result.events = await db.Events.deleteMany(query)
       return result
     } catch (err) {
       return Promise.reject(err)
     }
   }
-  //// -----------------------
+
   async replaceBlock (newBlock, oldBlock) {
-    console.log('REPLACE')
     try {
       let block, txs, events
       ({ block, txs, events } = oldBlock)
-      let blockHash = block.hash
       block._replacedBy = newBlock.hash
       block._events = events
       block.transactions = txs
       await this.saveOrphanBlock(block)
-      let del = await this.deleteBlockDataFromDb(blockHash)
-      // temp
-      console.log(del.result)
-      // if (del.result.ok !== 1) this.log.error(del)
-      newBlock._replacedBlockHash = blockHash
-      let insert = await this.insertBlock(newBlock)
-      if (insert.error) throw insert.error
-      return insert.res
+      await this.deleteBlockDataFromDb(block.hash, block.number)
+      newBlock._replacedBlockHash = block.hash
+      let res = await this.insertBlock(newBlock)
+      return res
     } catch (err) {
       return Promise.reject(err)
     }

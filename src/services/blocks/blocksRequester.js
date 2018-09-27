@@ -17,9 +17,17 @@ export const BlocksRequester = (db, options) => {
     return Status.update(state)
   }
 
+  Requester.events.on(et.QUEUE_DONE, data => {
+    Requester.updateStatus()
+  })
+
   Requester.events.on(et.BLOCK_REQUESTED, data => {
     log.debug(et.BLOCK_REQUESTED, data)
     Requester.updateStatus()
+  })
+
+  Requester.events.on(et.BLOCK_ERROR, data => {
+    log.debug(et.BLOCK_ERROR, data)
   })
 
   Requester.events.on(et.NEW_BLOCK, data => {
@@ -37,8 +45,6 @@ export const BlocksRequester = (db, options) => {
           Requester.request(parent, true)
         }
       })
-
-      // Requester.request(parent, true)
     }
     Requester.updateStatus()
   })

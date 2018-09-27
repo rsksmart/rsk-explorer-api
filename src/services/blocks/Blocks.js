@@ -95,6 +95,10 @@ export class SaveBlocks extends BlocksBase {
       return Promise.resolve(block)
     } else {
       return getBlock(this.web3, this.collections, hashOrNumber, this.log)
+        .then(res => {
+          if (res.error) return
+          return res.block
+        })
     }
   }
 
@@ -104,11 +108,7 @@ export class SaveBlocks extends BlocksBase {
         if (err) return reject(err)
         else {
           let number = block.number
-          resolve(this.getBlock(number)
-            .then(res => {
-              let block = res.block.data.block
-              return block
-            }))
+          resolve(this.getBlock(number))
         }
       })
     })

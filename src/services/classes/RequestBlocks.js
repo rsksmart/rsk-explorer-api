@@ -63,13 +63,12 @@ export class RequestBlocks extends BlocksBase {
   requestBlock (key) {
     this.requested.add(key)
     this.emit(et.BLOCK_REQUESTED, { key })
-    return this.getBlock(key).then(res => {
-      return this.endRequest(key, res)
-    }
-    )
-      .catch(error => {
-        this.log.error(error)
-        this.emit(et.BLOCK_ERROR, { key, error })
+    return this.getBlock(key)
+      .then(res => {
+        if (res.error) {
+          this.emit(et.BLOCK_ERROR, res)
+        }
+        this.endRequest(key, res)
       })
   }
 
@@ -78,10 +77,10 @@ export class RequestBlocks extends BlocksBase {
   }
 
   endRequest (key, res) {
-    if (res) {
-      this.requested.delete(key)
-      this.pending.delete(key)
-      let block = res.block.data.block
+    this.requested.delete(key)
+    this.pending.delete(key)
+    if (res && res.block) {
+      let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
       this.processPending()
       return res.block
@@ -101,17 +100,20 @@ export class RequestBlocks extends BlocksBase {
   }
 }
 
-export const getBlock = async (web3, collections, hashOrNumber, Logger) => {
+export async function getBlock (web3, collections, hashOrNumber, Logger) {
   if (isBlockHash(hashOrNumber)) {
     let block = await getBlockFromDb(hashOrNumber, collections.Blocks)
     if (block) return { block, key: hashOrNumber }
   }
   try {
-    let B = new Block(hashOrNumber, { web3, collections, Logger })
-    let block = await B.save()
+    let Blck = new Block(hashOrNumber, { web3, collections, Logger })
+    let block = await Blck.save().then(res => {
+      if (!res || !res.block) return
+      return { block: res.block.data.block }
+    })
     return { block, key: hashOrNumber }
-  } catch (err) {
-    return Promise.reject(err)
+  } catch (error) {
+    return { error, key: hashOrNumber }
   }
 }
 
