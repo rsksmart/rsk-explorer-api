@@ -7,7 +7,7 @@ class Block extends _DataCollector.DataCollectorItem {
     this.publicActions = {
 
       getBlock: async params => {
-        const hashOrNumber = params.hashOrNumber || params.number;
+        const hashOrNumber = params.hashOrNumber || params.hash || params.number;
         if ((0, _utils.isBlockHash)(hashOrNumber)) {
           const block = await this.getOne({ hash: hashOrNumber });
           if (block && block.data) return this.getBlockNextPrev(block.data.number, params);

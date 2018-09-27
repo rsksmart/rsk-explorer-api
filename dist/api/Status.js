@@ -2,8 +2,8 @@
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const perPage = _config2.default.api.perPage;
-const statusCollection = _config2.default.blocks.statusCollection;
-const blocksCollection = _config2.default.blocks.blocksCollection;
+const statusCollection = _config2.default.blocks.collections.Status;
+const blocksCollection = _config2.default.blocks.collections.Blocks;
 
 class Status extends _DataCollector.DataCollector {
   constructor(db) {

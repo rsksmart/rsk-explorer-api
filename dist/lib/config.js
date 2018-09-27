@@ -5,7 +5,7 @@ const keys = Object.keys(_defaultConfig2.default);
 for (let key of keys) {
   _config2.default[key] = _config2.default[key] || _defaultConfig2.default[key];
   for (let p in _defaultConfig2.default[key]) {
-    if (!_config2.default[key][p]) _config2.default[key][p] = _defaultConfig2.default[key][p];
+    if (undefined === _config2.default[key][p]) _config2.default[key][p] = _defaultConfig2.default[key][p];
   }
 }
 

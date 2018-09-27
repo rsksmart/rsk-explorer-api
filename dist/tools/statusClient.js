@@ -1,27 +1,18 @@
 'use strict';var _socket = require('socket.io-client');var _socket2 = _interopRequireDefault(_socket);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
+var _cli = require('../lib/cli');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const url = process.env.URL || `ws://localhost:${_config2.default.server.port}`;
 
-const reset = '\x1b[0m';
-const red = '\x1b[31m';
-const blue = '\x1b[36m';
-const green = '\x1b[32m';
-const orange = '\x1b[33m';
-
-const error = l => console.log(red, l, reset);
-const warn = l => console.log(orange, l, reset);
-const info = l => console.log(blue, l, reset);
-const ok = l => console.log(green, l, reset);
 
 const socket = _socket2.default.connect(url, { reconnect: true });
-info(`Waiting for: ${url}`);
+(0, _cli.info)(`Waiting for: ${url}`);
 
 socket.on('connect', socket => {
-  ok('Connected! ✌');
+  (0, _cli.ok)('Connected! ✌');
 });
 
 socket.on('disconnect', socket => {
-  warn('Disconnected ☹');
+  (0, _cli.warn)('Disconnected ☹');
 });
 
 socket.on('data', data => {
@@ -31,17 +22,17 @@ socket.on('data', data => {
     delete status.missingSegments;
     console.clear();
     console.log();
-    info(url);
+    (0, _cli.info)(url);
     console.log();
-    console.log(`   Api  ${socket.connected ? green : red} ● ${reset}`);
-    console.log(`   Node ${!status.nodeDown ? green : red} ● ${reset}`);
-    console.log(`   Db   ${status.dbMissingBlocks > 0 ? red : status.requestingBlocks > 5 ? orange : green} ● ${reset}`);
+    console.log(`   Api  ${socket.connected ? _cli.green : _cli.red} ● ${_cli.reset}`);
+    console.log(`   Node ${!status.nodeDown ? _cli.green : _cli.red} ● ${_cli.reset}`);
+    console.log(`   Db   ${status.dbMissingBlocks > 0 ? _cli.red : status.requestingBlocks > 5 ? _cli.orange : _cli.green} ● ${_cli.reset}`);
     console.log();
     console.dir(status, { colors: true });
-    if (status.nodeDown) error('The node is down... ☹ ');
+    if (status.nodeDown) (0, _cli.error)('The node is down... ☹ ');
   }
 });
 
 socket.on('error', err => {
-  error(err);
+  (0, _cli.error)(err);
 });

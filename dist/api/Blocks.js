@@ -7,25 +7,20 @@ var _Event = require('./Event');
 var _TokenAccount = require('./TokenAccount');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const perPage = _config2.default.api.perPage;
 const lastLimit = _config2.default.api.lastBlocks || 10;
-const c = _config2.default.blocks;
-const blocksCollection = c.blocksCollection;
-const txCollection = c.txCollection;
-const addrCollection = c.addrCollection;
-const eventsCollection = c.eventsCollection;
-const tokensAccountsCollection = c.tokenAddrCollection;
+const colls = _config2.default.blocks.collections;
 class Blocks extends _DataCollector.DataCollector {
   constructor(db) {
-    let collectionName = blocksCollection;
+    let collectionName = colls.Blocks;
     super(db, { perPage, collectionName });
     this.lastLimit = lastLimit;
     this.latest = 0;
     this.lastBlocks = [];
     this.lastTransactions = [];
-    this.addItem(blocksCollection, 'Block', _Block.Block, true);
-    this.addItem(txCollection, 'Tx', _Tx.Tx, true);
-    this.addItem(addrCollection, 'Address', _Address.Address, true);
-    this.addItem(eventsCollection, 'Event', _Event.Event, true);
-    this.addItem(tokensAccountsCollection, 'TokenAccount', _TokenAccount.TokenAccount, true);
+    this.addItem(colls.Blocks, 'Block', _Block.Block, true);
+    this.addItem(colls.Txs, 'Tx', _Tx.Tx, true);
+    this.addItem(colls.Addrs, 'Address', _Address.Address, true);
+    this.addItem(colls.Events, 'Event', _Event.Event, true);
+    this.addItem(colls.TokensAddrs, 'TokenAccount', _TokenAccount.TokenAccount, true);
   }
   tick() {
     this.setLastBlocks();

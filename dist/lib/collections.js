@@ -1,8 +1,9 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.default = {
-  blocksCollection: [
+  Blocks: [
   {
     key: { number: -1 },
-    unique: true },
+    unique: true,
+    name: 'blockNumber' },
 
   {
     key: { hash: 1 },
@@ -29,7 +30,7 @@
     name: 'blockReceivedTime' }],
 
 
-  txCollection: [
+  Txs: [
   {
     key: { hash: 1 },
     unique: true },
@@ -42,8 +43,8 @@
     name: 'blockTrasaction' },
 
   {
-    key: { blockNumber: 1 },
-    name: 'blockIndex' },
+    key: { blockNumber: -1 },
+    name: 'txBlockIndex' },
 
   {
     key: { from: 1 },
@@ -55,7 +56,7 @@
 
   {
     key: { value: 1 },
-    name: 'valueIndex' },
+    name: 'txValueIndex' },
 
   {
     key: { timestamp: 1 },
@@ -66,7 +67,7 @@
     name: 'txTypeIndex' }],
 
 
-  addrCollection: [
+  Addrs: [
   {
     key: { address: 1 },
     unique: true },
@@ -84,7 +85,7 @@
     name: 'addressNameIndex' }],
 
 
-  statusCollection: [
+  Status: [
   {
     key: { timestamp: -1 },
     partialFilterExpression: {
@@ -93,7 +94,7 @@
     unique: true }],
 
 
-  eventsCollection: [
+  Events: [
   {
     key: { address: 1 } },
 
@@ -105,10 +106,18 @@
     name: 'eventTsIndex' }],
 
 
-  tokenAddrCollection: [
+  TokensAddrs: [
   {
     key: {
       address: 1,
       contract: 1 },
+
+    unique: true }],
+
+
+  OrphanBlocks: [
+  {
+    key: {
+      hash: 1 },
 
     unique: true }] };

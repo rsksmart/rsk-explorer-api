@@ -8,10 +8,9 @@ var _utils = require('../lib/utils');function _interopRequireDefault(obj) {retur
 
 const config = Object.assign({}, _config2.default.blocks);
 const log = (0, _Logger2.default)('UserRequests', config.log);
-const web3 = (0, _web3Connect2.default)(config.node, config.port);
 
 _dataSource2.default.then(db => {
-  const addressCollection = db.collection(config.addrCollection);
+  const addressCollection = db.collection(config.collections.Addrs);
   const cache = new RequestCache();
   process.on('message', msg => {
     let action, params, block;
@@ -26,7 +25,7 @@ _dataSource2.default.then(db => {
               msg.data = cached;
               sendMessage(msg);
             } else {
-              const Addr = new _Address2.default(address, web3, addressCollection);
+              const Addr = new _Address2.default(address, _web3Connect2.default, addressCollection);
               Addr.fetch().then(result => {
                 msg.result = result;
                 cache.set(action, address, result, block);

@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BIG_NUMBER = exports.contractsTypes = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BIG_NUMBER = exports.actions = exports.events = exports.contractsTypes = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
 
 const txTypes = exports.txTypes = {
   default: 'normal',
@@ -24,6 +24,23 @@ const addrTypes = exports.addrTypes = {
 
 const contractsTypes = exports.contractsTypes = {
   ERC20: 'ERC20' };
+
+
+const events = exports.events = {
+  'BLOCK_QUEUED': 'blockQueued',
+  'BLOCK_REQUESTED': 'blockRequested',
+  'NEW_BLOCK': 'newBlock',
+  'BLOCK_ERROR': 'blockError',
+  'QUEUE_DONE': 'queueDone' };
+
+
+const actions = exports.actions = {
+  'BULK_BLOCKS_REQUEST': 'bulkRequest',
+  'BLOCK_REQUEST': 'requestBlock',
+  'STATUS_UPDATE': 'updateStatus',
+  'CHECK_DB': 'checkDB',
+  'CHECK_TIP': 'checkBcTip',
+  'UPDATE_TIP_BLOCK': 'updateTipBlock' };
 
 
 const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';exports.default =

@@ -35,9 +35,13 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
 
   blocks: {
     blocksQueueSize: 100,
-    blocksCollection: 'blocks',
-    txCollection: 'transactions',
-    addrCollection: 'addresses',
-    statusCollection: 'status',
-    eventsCollection: 'events',
-    tokenAddrCollection: 'tokensAddresses' } };
+    validateCollections: true,
+    bcTipSize: 12,
+    collections: {
+      Blocks: 'blocks',
+      Txs: 'transactions',
+      Addrs: 'addresses',
+      Status: 'status',
+      Events: 'events',
+      TokensAddrs: 'tokensAddresses',
+      OrphanBlocks: 'orphanBlocks' } } };

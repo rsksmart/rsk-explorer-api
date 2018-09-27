@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.isBlockHash = exports.serialize = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
 var _bignumber = require('bignumber.js');
 var _types = require('./types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
@@ -58,8 +58,7 @@ const isAddress = exports.isAddress = address => {
 };
 
 const bigNumberDoc = exports.bigNumberDoc = bigNumber => {
-  const bn = Object.assign({}, bigNumber);
-  return Object.assign(bn, { type: _types.BIG_NUMBER, value: bigNumber.toString() });
+  return { type: _types.BIG_NUMBER, value: '0x' + bigNumber.toString(16) };
 };
 
 const isBigNumber = exports.isBigNumber = value => {
@@ -70,8 +69,22 @@ const isBigNumber = exports.isBigNumber = value => {
   value.lte && value.toNumber);
 };
 
-const serializeBigNumber = value => {
+const serializeBigNumber = exports.serializeBigNumber = value => {
   return isBigNumber(value) ? bigNumberDoc(value) : value;
+};
+
+const isSerializedBigNumber = exports.isSerializedBigNumber = value => {
+  return value.type && value.value && value.type === _types.BIG_NUMBER;
+};
+
+const unSerializeBigNumber = exports.unSerializeBigNumber = value => {
+  return isSerializedBigNumber(value) ? new _bignumber.BigNumber(value.value) : value;
+};
+
+const bigNumberToSring = exports.bigNumberToSring = bn => {
+  if (bn.type && bn.type === _types.BIG_NUMBER) return bn.value;
+  if (isBigNumber(bn)) return bn.toString();
+  return bn;
 };
 
 const isObj = value => {
@@ -103,5 +116,29 @@ const serialize = exports.serialize = obj => {
 
 const isBlockHash = exports.isBlockHash = value => {
   value = String(value).toLowerCase();
-  return (/^(0x)?[0-9a-f]{64}$/.test(value));
+  if (/^(0x)[0-9a-f]{64}$/.test(value)) return value;
+  if (/^[0-9a-f]{64}$/.test(value)) return '0x' + value;
+  return null;
+};
+
+const blockQuery = exports.blockQuery = blockHashOrNumber => {
+  const hash = isBlockHash(blockHashOrNumber);
+  const number = parseInt(blockHashOrNumber);
+  if (hash) return { hash };
+  if (number || number === 0) return { number };
+  return null;
+};
+
+const blockTotalDiff = block => bigNumberToSring(block.totalDifficulty);
+
+// COMPLETe
+const getBestBlock = exports.getBestBlock = blocks => {
+  blocks.sort((a, b) => {
+    let aDiff = blockTotalDiff(a);
+    let bDiff = blockTotalDiff(b);
+    if (aDiff > bDiff) return -1;
+    if (aDiff < bDiff) return 1;
+    return 0;
+  });
+  return blocks[0];
 };
