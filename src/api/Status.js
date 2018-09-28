@@ -8,6 +8,7 @@ const blocksCollection = config.blocks.collections.Blocks
 export class Status extends DataCollector {
   constructor (db) {
     super(db, { perPage, statusCollection })
+    this.tickDelay = 5000
     this.state = {}
     this.addItem(statusCollection, 'Status', null, true)
     this.addItem(blocksCollection, 'Blocks', null, true)
