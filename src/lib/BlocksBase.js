@@ -13,3 +13,5 @@ export class BlocksBase {
     this.actions = actions
   }
 }
+
+export default BlocksBase
