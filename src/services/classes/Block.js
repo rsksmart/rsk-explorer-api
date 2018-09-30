@@ -3,7 +3,7 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser'
-import { blockQuery, getBestBlock } from '../../lib/utils'
+import { blockQuery } from '../../lib/utils'
 export class Block extends BcThing {
   constructor (hashOrNumber, options) {
     super(options.web3, options.collections)
@@ -28,6 +28,7 @@ export class Block extends BcThing {
     if (this.fetched && !forceFetch) {
       return Promise.resolve(this.getData())
     }
+
     if (!this.web3.isConnected()) {
       return Promise.reject(new Error('web3 is not connected'))
     }
@@ -182,10 +183,6 @@ export class Block extends BcThing {
       if (exists.length) {
         let oldBlock = exists[0]
         if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`)
-        let bestBlock = getBestBlock([...exists, block])
-        if (bestBlock.hash !== block.hash) {
-          throw new Error(`The stored block ${bestBlock.hash} is better than ${block.hash}`)
-        }
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
         res = await this.replaceBlock(block, oldBlockData)
       } else {
@@ -209,15 +206,18 @@ export class Block extends BcThing {
 
   async getBlockFromDb (hashOrNumber, allData) {
     let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks)
-    if (allData) {
-      if (!block) return
-      block = { block }
-      let blockHash = block.hash
-      await Promise.all([
-        this.getBlockTransactionsFromDb(blockHash).then(txs => { block.txs = txs }),
-        this.getBlockEventsFromDb(blockHash).then(events => { block.events = events })
-      ])
-    }
+    if (allData) block = await this.getBlockDataFromDb(block)
+    return block
+  }
+
+  async getBlockDataFromDb (block) {
+    if (!block) return
+    block = { block }
+    let blockHash = block.hash
+    await Promise.all([
+      this.getBlockTransactionsFromDb(blockHash).then(txs => { block.txs = txs }),
+      this.getBlockEventsFromDb(blockHash).then(events => { block.events = events })
+    ])
     return block
   }
 
@@ -245,7 +245,7 @@ export class Block extends BcThing {
       return Promise.reject(err)
     }
   }
-  
+
   deleteBlockDataFromDb (blockHash, blockNumber) {
     return deleteBlockDataFromDb(blockHash, blockNumber, this.collections)
   }
