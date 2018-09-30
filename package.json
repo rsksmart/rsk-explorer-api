@@ -12,7 +12,7 @@
     "md": "mkdir dist",
     "status": "./node_modules/.bin/nodemon src/tools/statusClient.js --exec babel-node",
     "lint": "./node_modules/.bin/eslint src/**/*",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "./node_modules/.bin/mocha"
   },
   "repository": {
     "type": "git",
@@ -36,12 +36,15 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
+    "chai": "^4.2.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.13.0",
+    "eslint-plugin-mocha": "^5.2.0",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
+    "mocha": "^5.2.0",
     "nodemon": "^1.18.2"
   }
 }
