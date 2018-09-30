@@ -10,6 +10,7 @@ export default {
     port: 3003
   },
   source: {
+    protocol: 'http',
     node: 'localhost',
     port: 4444
   },

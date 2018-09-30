@@ -1,5 +1,6 @@
 {
   "source": {
+    "protocol": "http",
     "node": "localhost",
     "port": 4444
   },
