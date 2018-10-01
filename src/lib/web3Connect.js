@@ -1,16 +1,13 @@
 import Web3 from 'web3'
-import config from '../lib/config'
-const node = config.source.node
-const port = config.source.port
+import config from './config'
+const url = config.source.url
 
-export const web3Connect = (node, port) => {
+export const web3Connect = (url) => {
   return new Web3(
-    new Web3.providers.HttpProvider(
-      'http://' + node + ':' + port
-    )
+    new Web3.providers.HttpProvider(url)
   )
 }
 
-export const web3 = web3Connect(node, port)
+export const web3 = web3Connect(url)
 
 export default web3
