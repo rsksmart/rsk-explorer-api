@@ -9,9 +9,9 @@ dataBase.setLogger(log)
 
 dataBase.db().then(db => {
   config.Logger = log
-  const blocks = new ListenBlocks(db, config)
-  log.info(`Starting blocks service`)
-  blocks.start()
+  const listener = new ListenBlocks(db, config)
+  log.info(`Starting blocks listener`)
+  listener.start()
 })
 
 process.on('unhandledRejection', err => {

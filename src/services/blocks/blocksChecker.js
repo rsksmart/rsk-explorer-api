@@ -17,7 +17,6 @@ dataSource.then(db => {
     if (action) {
       switch (action) {
         case actions.CHECK_DB:
-          console.log('checkDB', args)
           Checker.checkDb(...args)
           break
 

@@ -173,7 +173,6 @@ export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
       })
     let missing = []
     let invalid = []
-    console.log(Object.keys(blocks).length)
     for (let number in blocks) {
       if (number > 0) {
         let block = blocks[number]
