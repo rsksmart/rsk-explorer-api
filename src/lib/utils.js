@@ -1,8 +1,5 @@
-import Web3 from 'web3'
 import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
-
-const web3 = new Web3()
 
 export const filterParams = (params, perPageMax = 50) => {
   params = params || {}
@@ -53,8 +50,12 @@ const retFiltered = (filtered) => {
   return (filtered && Object.keys(filtered).length > 0) ? filtered : null
 }
 
-export const isAddress = (address) => {
-  return web3.isAddress(address)
+export const isAddress = address => {
+  return /^(0x)?[0-9a-f]{40}$/i.test(address)
+}
+
+export const isValidAddress = address => {
+  throw new Error('Not impemented')
 }
 
 export const bigNumberDoc = bigNumber => {
@@ -114,12 +115,14 @@ export const serialize = (obj) => {
   return serialized
 }
 
-export const isBlockHash = (value) => {
+export const checkBlockHash = value => {
   value = String(value).toLowerCase()
   if (/^(0x)[0-9a-f]{64}$/.test(value)) return value
   if (/^[0-9a-f]{64}$/.test(value)) return '0x' + value
   return null
 }
+
+export const isBlockHash = value => checkBlockHash(value) !== null
 
 export const blockQuery = (blockHashOrNumber) => {
   const hash = isBlockHash(blockHashOrNumber)
