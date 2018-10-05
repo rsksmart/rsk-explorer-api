@@ -43,6 +43,14 @@ export const actions = {
   'UPDATE_TIP_BLOCK': 'updateTipBlock'
 }
 
+export const modules = {
+  blocks: 'Block',
+  txs: 'Tx',
+  addresses: 'Address',
+  events: 'Event',
+  tokens: 'Token'
+}
+
 export const BIG_NUMBER = 'BigNumber'
 
 export default { txTypes, errors, addrTypes, contractsTypes }

@@ -7,27 +7,27 @@ import { Event } from './Event'
 import { TokenAccount } from './TokenAccount'
 const perPage = config.api.perPage
 const lastLimit = config.api.lastBlocks || 10
-const colls = config.blocks.collections
+const collections = config.blocks.collections
 class Blocks extends DataCollector {
   constructor (db) {
-    let collectionName = colls.Blocks
+    let collectionName = collections.Blocks
     super(db, { perPage, collectionName })
     this.lastLimit = lastLimit
     this.latest = 0
     this.lastBlocks = []
     this.lastTransactions = []
-    this.addItem(colls.Blocks, 'Block', Block, true)
-    this.addItem(colls.Txs, 'Tx', Tx, true)
-    this.addItem(colls.Addrs, 'Address', Address, true)
-    this.addItem(colls.Events, 'Event', Event, true)
-    this.addItem(colls.TokensAddrs, 'TokenAccount', TokenAccount, true)
+    this.addItem(collections.Blocks, 'Block', Block, true)
+    this.addItem(collections.Txs, 'Tx', Tx, true)
+    this.addItem(collections.Addrs, 'Address', Address, true)
+    this.addItem(collections.Events, 'Event', Event, true)
+    this.addItem(collections.TokensAddrs, 'Token', TokenAccount, true)
   }
   tick () {
     this.setLastBlocks()
   }
 
-  run (action, params, item = '*') {
-    return this.itemPublicAction(action, params, item)
+  run (module, action, params) {
+    return this.itemPublicAction(module, action, params)
   }
   setLastBlocks () {
     this.collection

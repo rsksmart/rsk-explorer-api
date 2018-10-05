@@ -1,7 +1,9 @@
 export default {
-  getAddress: {
-    fields: ['balance'],
-    action: 'updateAddress',
-    runIfEmpty: true
+  Address: {
+    getAddress: {
+      fields: ['balance'],
+      action: 'updateAddress',
+      runIfEmpty: true
+    }
   }
 }

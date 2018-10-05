@@ -1,13 +1,13 @@
 import path from 'path'
 import { fork } from 'child_process'
 import config from '../lib/config'
-import { errors, formatRes } from './apiLib'
+import { errors, formatRes, getModule } from './apiLib'
 
 function UserEventsSocket () {
   return fork(path.resolve(__dirname, '../services/userEvents.js'))
 }
 
-export const UserEventsApi = (io, blocks, log) => {
+export const UserEventsApi = (io, Blocks, log) => {
   if (!config.api.allowUserEvents) return
   log = log || console
   const userEvents = UserEventsSocket()
@@ -17,9 +17,13 @@ export const UserEventsApi = (io, blocks, log) => {
     if (socket) {
       const payload = msg.payload
       const action = payload.action
-      processMsg(action, msg, blocks)
+      const module = msg.module
+      processMsg(msg, Blocks)
         .then(res => {
-          socket.emit('data', formatRes(action, res.data, payload, res.error))
+          let result = res.data
+          let req = payload
+          let error = res.error
+          socket.emit('data', formatRes({ module, action, result, req, error }))
         }).catch(err => {
           log.error(err)
         })
@@ -30,13 +34,15 @@ export const UserEventsApi = (io, blocks, log) => {
   return userEvents
 }
 
-async function processMsg (action, msg, blocks) {
+async function processMsg (msg, Blocks) {
   let data, error
   if (!msg.error) {
     if (msg.data) {
       data = msg
     } else {
-      data = await blocks.run(action, msg.params).then(result => {
+      let { module, action, params } = msg.payload
+      module = getModule(module)
+      data = await Blocks.run(module, action, params).then(result => {
         return result
       })
     }

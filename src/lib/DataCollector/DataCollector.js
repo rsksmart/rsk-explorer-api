@@ -8,7 +8,7 @@ const emitter = new Emitter()
 
 export class DataCollector {
   constructor (db, options) {
-    if (!(db instanceof Db)) { throw (new Error('Db is not mongodb Db')) }
+    if (!(db instanceof Db)) { throw new Error('Db is not mongodb Db') }
     this.db = db
     this.options = options
     this.collection = null
@@ -49,26 +49,19 @@ export class DataCollector {
 
   run () { }
 
-  itemPublicAction (action, params, item) {
+  itemPublicAction (moduleName, action, params) {
     return new Promise((resolve, reject) => {
-      if (!action) reject(new Error('Missing action'))
-      if (!params) reject(new Error('No params provided'))
-      if (item === '*') {
-        // find item
-        item = null
-        item = this.searchItemByAction(action)
-      } else {
-        item = item || this.getItem(params)
-      }
-      if (action && item) {
-        let method = item.publicActions[action]
+      if (!action || !params) reject(new Error(`Mising arguments action:${action}`))
+      let module = this[moduleName] || this.getItem(params)
+      if (action && module) {
+        let method = module.publicActions[action]
         if (method) {
           resolve(method(this.filterParams(params)))
         } else {
-          return reject(new Error('Unknown method ' + action))
+          return reject(new Error(`Unknown method ${action}`))
         }
       }
-      return reject(new Error('Unknown action or bad params requested, action:' + action))
+      return reject(new Error(`Unknown action or bad params requested, module: ${module} action: ${action}`))
     })
   }
 

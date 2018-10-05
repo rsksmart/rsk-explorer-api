@@ -7,11 +7,17 @@ import { filterParams } from '../lib/utils'
 import http from 'http'
 import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
-import { errors, formatError, formatRes, publicSettings } from './apiLib'
+import {
+  errors,
+  formatError,
+  formatRes,
+  publicSettings,
+  getDelayedFields,
+  getModule
+} from './apiLib'
 
 const port = config.server.port || '3000'
 const log = Logger('explorer-api', config.api.log)
-const delayedFields = config.api.delayedFields || {}
 
 dataSource.then(db => {
   log.info('Database connected')
@@ -33,6 +39,7 @@ dataSource.then(db => {
     res.end()
   })
   httpServer.listen(port)
+
   const io = new IO(httpServer)
 
   const userEvents = UserEventsApi(io, blocks, log)
@@ -41,17 +48,17 @@ dataSource.then(db => {
   })
 
   blocks.events.on('newBlocks', result => {
-    io.emit('data', formatRes('newBlocks', result))
+    io.emit('data', formatRes({ module: null, action: 'newBlocks', result }))
   })
 
   status.events.on('newStatus', result => {
-    io.emit('data', formatRes('dbStatus', result))
+    io.emit('data', formatRes({ module: null, action: 'dbStatus', result }))
   })
 
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
-    socket.emit('data', formatRes('newBlocks', blocks.getLastBlocks()))
-    socket.emit('data', formatRes('dbStatus', status.getState()))
+    socket.emit('data', formatRes({ module: null, action: 'newBlocks', result: blocks.getLastBlocks() }))
+    socket.emit('data', formatRes({ module: null, action: 'dbStatus', result: status.getState() }))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
@@ -62,15 +69,17 @@ dataSource.then(db => {
       if (payload) {
         const action = payload.action
         const params = filterParams(payload.params)
-        const delayed = delayedFields[action]
+        const module = getModule(payload.module)
+        const delayed = getDelayedFields(module, action)
         blocks
-          .run(action, params)
+          .run(module, action, params)
           .then(result => {
             if (delayed && userEvents) {
               const registry = !result.data && delayed.runIfEmpty
               if (payload.getDelayed) {
                 userEvents.send({
                   action: delayed.action,
+                  module: delayed.module,
                   params,
                   socketId: socket.id,
                   payload,
@@ -79,14 +88,12 @@ dataSource.then(db => {
               }
               result.delayed = { fields: delayed.fields, registry }
             }
-
-            socket.emit('data', formatRes(action, result, payload))
+            socket.emit('data', formatRes({ module, action, result, req: payload }))
           })
           .catch(err => {
-            log.debug('Action: ' + action + ' ERROR: ' + err)
-            socket.emit(
-              'error',
-              formatRes(action, null, payload, errors.INVALID_REQUEST)
+            log.debug(`Action: ${action}: ERROR: ${err}`)
+            socket.emit('error',
+              formatRes({ module, action, result: null, req: payload, error: errors.INVALID_REQUEST })
             )
           })
       } else {
