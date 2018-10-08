@@ -5,11 +5,12 @@ export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
     this.sort = { address: 1 }
-    this.Tx = this.parent.getItem({ key: 'Tx' })
-    this.getBalanceFromTxs = GetTxBalance(this.parent.getItem({ key: 'Tx' }))
+    const Tx = this.parent.getItem({ key: 'Tx' })
+    this.Tx = Tx
+    this.getBalanceFromTxs = GetTxBalance(Tx)
     this.publicActions = {
       getAddress: async params => {
-        const address = params.address
+        const { address } = params
         const addressData = await this.getOne({ address })
         if (addressData.data) {
           const txBalance = await this.getBalanceFromTxs(address)

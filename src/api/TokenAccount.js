@@ -12,14 +12,12 @@ export class TokenAccount extends DataCollectorItem {
       },
 
       getContractAccount: params => {
-        const address = params.address
-        const contract = params.contract
+        const { address, contract } = params
         return this.getOne({ address, contract })
       },
 
       getTokenAccount: async params => {
-        const address = params.address
-        const contract = params.contract
+        const { address, contract } = params
         const account = await this.getOne({ address, contract })
         return this.parent.addAddressData(contract, account, '_contractData')
       }
