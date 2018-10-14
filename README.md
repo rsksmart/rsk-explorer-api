@@ -6,7 +6,13 @@
 
 ### api
 
+
 ### blocks service
+  Imports blockchain data from rsk node to db.
+
+### user events service
+  (Optional)
+ Allows to update fields on the fly and send async response to clients.
 
 
 ## Requisites
