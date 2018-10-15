@@ -1,6 +1,6 @@
 import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
-import web3 from '../lib/web3Connect'
+import nod3 from '../lib/nod3Connect'
 import Address from './classes/Address'
 import Logger from '../lib/Logger'
 import { errors } from '../lib/types'
@@ -24,7 +24,7 @@ dataSource.then(db => {
               msg.data = cached
               sendMessage(msg)
             } else {
-              const Addr = new Address(address, web3, addressCollection)
+              const Addr = new Address(address, nod3, addressCollection)
               Addr.fetch().then(result => {
                 msg.result = result
                 cache.set(block, [module, action, address], result)

@@ -1,8 +1,8 @@
 import { isAddress, serialize, isBlockHash } from '../../lib/utils'
 
 export class BcThing {
-  constructor (web3, collections) {
-    this.web3 = web3
+  constructor (nod3, collections) {
+    this.nod3 = nod3
     this.collections = collections
     this.data = {}
   }

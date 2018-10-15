@@ -8,8 +8,8 @@ export class BlocksStatus extends BlocksBase {
     this.state = {}
   }
 
-  update (newState) {
-    let connected = this.web3.isConnected()
+  async update (newState) {
+    let connected = await this.nod3.isConnected()
     newState = newState || {}
     newState.nodeDown = !connected
 

@@ -6,7 +6,6 @@ import blocksCollections from '../../lib/collections'
 import Logger from '../../lib/Logger'
 import { BlocksStatus } from '../classes/BlocksStatus'
 import { actions } from '../../lib/types'
-import { BlocksRequester } from './blocksRequester'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
@@ -16,6 +15,7 @@ dataBase.setLogger(log)
 function startService (name, parseMessage) {
   let service = fork(path.resolve(__dirname, `${serviceName(name)}.js`))
   service.on('message', msg => parseMessage(msg, name))
+  service.on('error', err => { console.error('Service error', err) })
   return service
 }
 
@@ -60,7 +60,6 @@ const readEvent = (event, data) => {
 
 const serviceName = name => `blocks${name}`
 
-
 async function createBlocksCollections (config, db) {
   try {
     let names = config.collections
@@ -77,4 +76,8 @@ async function createBlocksCollections (config, db) {
 process.on('unhandledRejection', err => {
   console.error(err)
   process.exit(1)
+})
+
+process.on('uncaughtException', err => {
+  console.error(err)
 })

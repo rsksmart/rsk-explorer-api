@@ -8,7 +8,7 @@ export class CheckBlocks extends BlocksBase {
     this.Blocks = this.collections.Blocks
     this.tipBlock = null
     this.tipCount = 0
-    this.tipSize = options.bcTipSize
+    this.tipSize = options.bcTipSize || 12
   }
 
   start () {
@@ -70,22 +70,15 @@ export class CheckBlocks extends BlocksBase {
     })])
   }
   getLastBlock () {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBlock('latest', (err, block) => {
-        if (err) return reject(err)
-        else {
-          let number = block.number
-          resolve(this.getBlock(number))
-        }
-      })
-    })
+    return this.nod3.eth.getBlock('latest', false)
   }
+  
   async getBlock (hashOrNumber) {
     let block = await this.getBlockFromDb(hashOrNumber)
     if (block && block.hash === hashOrNumber) {
       return Promise.resolve(block)
     } else {
-      return getBlock(this.web3, this.collections, hashOrNumber, this.log)
+      return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
         .then(res => {
           if (res.error) return
           return res.block

@@ -6,7 +6,7 @@ import ContractParser from '../../lib/ContractParser'
 import { blockQuery } from '../../lib/utils'
 export class Block extends BcThing {
   constructor (hashOrNumber, options) {
-    super(options.web3, options.collections)
+    super(options.nod3, options.collections)
     this.Blocks = this.collections.Blocks
     this.fetched = false
     this.log = options.Logger || console
@@ -14,7 +14,7 @@ export class Block extends BcThing {
     this.addresses = {}
     this.contracts = {}
     this.tokenAddresses = {}
-    this.contractParser = new ContractParser(this.web3)
+    this.contractParser = new ContractParser()
     this.data = {
       block: null,
       txs: [],
@@ -29,8 +29,9 @@ export class Block extends BcThing {
       return Promise.resolve(this.getData())
     }
 
-    if (!this.web3.isConnected()) {
-      return Promise.reject(new Error('web3 is not connected'))
+    let connected = await this.nod3.isConnected()
+    if (!connected) {
+      return Promise.reject(new Error('nod3 is not connected'))
     }
     try {
       let blockData = await this.getBlock(this.hashOrNumber)
@@ -55,18 +56,14 @@ export class Block extends BcThing {
     }
   }
 
-  getBlock (number, txArr = false) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBlock(number, txArr, (err, blockData) => {
-        if (err !== null) return reject(err)
-        if (blockData) {
-          blockData._received = Date.now()
-          resolve(blockData)
-        } else {
-          return reject(new Error(`BlockData of block ${number} is empty`))
-        }
-      })
-    })
+  async getBlock (number, txArr = false) {
+    try {
+      let blockData = await this.nod3.eth.getBlock(number, txArr)
+      if (blockData) blockData._received = Date.now()
+      return blockData
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   async getTx (txHash, index, tx) {
@@ -85,35 +82,15 @@ export class Block extends BcThing {
   }
 
   getTransactionByHash (txHash) {
-    return new Promise((resolve, reject) => {
-      // eth.getTransaction returns null in rskj/BAMBOO-f02dca7
-      this.web3.eth.getTransaction(txHash, (err, tx) => {
-        if (err !== null) return reject(err)
-        else {
-          if (!tx) return reject(new Error(`The Tx: ${txHash}, returns null value`))
-          else resolve(tx)
-        }
-      })
-    })
+    return this.nod3.eth.getTransactionByHash(txHash)
   }
+
   getTransactionByIndex (index) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getTransactionFromBlock(this.hashOrNumber, index, (err, tx) => {
-        if (err !== null) return reject(err)
-        else {
-          if (!tx) return reject(new Error(`The Tx: ${this.hashOrNumber}/${index}, returns null value`))
-          else resolve(tx)
-        }
-      })
-    })
+    return this.nod3.eth.getTransactionByIndex(this.hashOrNumber, index)
   }
+
   getTxReceipt (txHash) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getTransactionReceipt(txHash, (err, receipt) => {
-        if (err !== null) return reject(err)
-        resolve(receipt)
-      })
-    })
+    return this.nod3.eth.getTransactionReceipt(txHash)
   }
 
   parseTxLogs (logs) {
@@ -190,7 +167,8 @@ export class Block extends BcThing {
       }
       return res
     } catch (err) {
-      return Promise.reject(err)
+      this.log.debug(err)
+      return null
     }
   }
 
@@ -231,8 +209,8 @@ export class Block extends BcThing {
 
   async replaceBlock (newBlock, oldBlock) {
     try {
-      let block, txs, events
-      ({ block, txs, events } = oldBlock)
+      console.log('oldBlock', oldBlock)
+      let { block, txs, events } = oldBlock
       block._replacedBy = newBlock.hash
       block._events = events
       block.transactions = txs
@@ -258,7 +236,7 @@ export class Block extends BcThing {
 
   addAddress (address, type) {
     if (!this.isAddress(address)) return
-    const Addr = new Address(address, this.web3, this.collections.Addrs)
+    const Addr = new Address(address, this.nod3, this.collections.Addrs)
     this.addresses[address] = Addr
   }
 
@@ -277,7 +255,7 @@ export class Block extends BcThing {
   }
 
   newContract (address, data) {
-    let contract = new Contract(address, data, this.web3, this.contractParser)
+    let contract = new Contract(address, data, this.nod3, this.contractParser)
     this.contracts[address] = contract
     return contract
   }

@@ -25,7 +25,6 @@ dataSource.then(db => {
     let args = msg.args
     if (action) {
       switch (action) {
-
         case a.BLOCK_REQUEST:
           Requester.request(...args)
           break

@@ -73,7 +73,7 @@ export class RequestBlocks extends BlocksBase {
   }
 
   getBlock (hashOrNumber) {
-    return getBlock(this.web3, this.collections, hashOrNumber, this.log)
+    return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
   }
 
   endRequest (key, res) {
@@ -83,9 +83,9 @@ export class RequestBlocks extends BlocksBase {
       let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
       process.send({ action: a.UPDATE_TIP_BLOCK, args: [block] })
-      this.processPending()
       return res.block
     }
+    this.processPending()
   }
 
   isRequested (key) {
@@ -101,13 +101,13 @@ export class RequestBlocks extends BlocksBase {
   }
 }
 
-export async function getBlock (web3, collections, hashOrNumber, Logger) {
+export async function getBlock (nod3, collections, hashOrNumber, Logger) {
   if (isBlockHash(hashOrNumber)) {
     let block = await getBlockFromDb(hashOrNumber, collections.Blocks)
     if (block) return { block, key: hashOrNumber }
   }
   try {
-    let Blck = new Block(hashOrNumber, { web3, collections, Logger })
+    let Blck = new Block(hashOrNumber, { nod3, collections, Logger })
     let block = await Blck.save().then(res => {
       if (!res || !res.block) return
       return { block: res.block.data.block }

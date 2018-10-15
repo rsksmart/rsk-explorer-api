@@ -4,10 +4,10 @@ import { contractsTypes as types } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 
 class Contract extends BcThing {
-  constructor (address, creationData, web3, parser) {
-    super(web3)
+  constructor (address, creationData, nod3, parser) {
+    super(nod3)
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
-    parser = parser || new ContractParser(web3)
+    parser = parser || new ContractParser()
     this.parser = parser
     this.address = address
     this.creationData = creationData
