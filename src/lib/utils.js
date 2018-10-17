@@ -59,7 +59,7 @@ export const isValidAddress = address => {
 }
 
 export const bigNumberDoc = bigNumber => {
-  return { type: BIG_NUMBER, value: '0x' + bigNumber.toString(16) }
+  return '0x' + bigNumber.toString(16)
 }
 
 export const isBigNumber = value => {
