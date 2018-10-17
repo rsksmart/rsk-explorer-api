@@ -161,6 +161,7 @@ export class Block extends BcThing {
         let oldBlock = exists[0]
         if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`)
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
+        if (!oldBlockData) this.log.warn(`Missing block data for: ${block}`)
         res = await this.replaceBlock(block, oldBlockData)
       } else {
         res = await this.insertBlock(block)
@@ -183,20 +184,28 @@ export class Block extends BcThing {
   }
 
   async getBlockFromDb (hashOrNumber, allData) {
-    let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks)
-    if (allData) block = await this.getBlockDataFromDb(block)
-    return block
+    try {
+      let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks)
+      if (block && allData) block = await this.getBlockDataFromDb(block)
+      return block
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   async getBlockDataFromDb (block) {
-    if (!block) return
-    block = { block }
-    let blockHash = block.hash
-    await Promise.all([
-      this.getBlockTransactionsFromDb(blockHash).then(txs => { block.txs = txs }),
-      this.getBlockEventsFromDb(blockHash).then(events => { block.events = events })
-    ])
-    return block
+    try {
+      if (!block || !block.hash) throw new Error(`Invalid block: ${block}`)
+      let blockHash = block.hash
+      block = { block }
+      await Promise.all([
+        this.getBlockTransactionsFromDb(blockHash).then(txs => { block.txs = txs }),
+        this.getBlockEventsFromDb(blockHash).then(events => { block.events = events })
+      ])
+      return block
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   getBlockEventsFromDb (blockHash) {
@@ -209,7 +218,6 @@ export class Block extends BcThing {
 
   async replaceBlock (newBlock, oldBlock) {
     try {
-      console.log('oldBlock', oldBlock)
       let { block, txs, events } = oldBlock
       block._replacedBy = newBlock.hash
       block._events = events
@@ -315,11 +323,12 @@ export const getBlockFromDb = async (blockHashOrNumber, collection) => {
 
 export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
   try {
-    if (!blockHash) throw new Error('Invalid block hash')
+    if (!blockHash) throw new Error(`Empty block hash`)
     let hash = blockHash
     let result = {}
     let query = { $or: [{ blockHash }, { blockNumber }] }
     result.block = await db.Blocks.deleteOne({ hash })
+    result.block = await db.Blocks.deleteOne({ number: blockNumber })
     result.txs = await db.Txs.deleteMany(query)
     result.events = await db.Events.deleteMany(query)
     return result

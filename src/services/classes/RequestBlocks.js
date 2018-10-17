@@ -109,8 +109,8 @@ export async function getBlock (nod3, collections, hashOrNumber, Logger) {
   try {
     let Blck = new Block(hashOrNumber, { nod3, collections, Logger })
     let block = await Blck.save().then(res => {
-      if (!res || !res.block) return
-      return { block: res.block.data.block }
+      if (!res || !res.data) return
+      return { block: res.data.block }
     })
     return { block, key: hashOrNumber }
   } catch (error) {

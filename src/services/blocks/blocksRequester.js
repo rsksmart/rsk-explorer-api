@@ -50,7 +50,8 @@ dataSource.then(db => {
   })
 
   Requester.events.on(et.NEW_BLOCK, data => {
-    let block = data.block
+    let block = data.block.block
+    if (!block) return
     let key = data.key
     let isHashKey = isBlockHash(key)
     if (block) {
