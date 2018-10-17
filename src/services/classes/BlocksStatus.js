@@ -18,13 +18,15 @@ export class BlocksStatus extends BlocksBase {
     let changed = Object.keys(newState).find(k => newState[k] !== state[k])
     this.state = Object.assign(state, newState)
     if (changed) {
-      newState.timestamp = Date.now()
+      let timestamp = Date.now()
+      newState = Object.assign(newState, { timestamp })
       return this.Status.insertOne(newState)
         .then(res => {
           return newState
         })
         .catch((err) => {
-          this.log.error(err)
+          console.log(err)
+          // this.log.error(err)
         })
     } else {
       return Promise.resolve(this.state)

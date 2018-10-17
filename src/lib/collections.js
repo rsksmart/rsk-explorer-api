@@ -90,8 +90,7 @@ export default {
       key: { timestamp: -1 },
       partialFilterExpression: {
         timestamp: { $exists: true }
-      },
-      unique: true
+      }
     }
   ],
   Events: [
