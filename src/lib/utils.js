@@ -125,7 +125,7 @@ export const checkBlockHash = value => {
 export const isBlockHash = value => checkBlockHash(value) !== null
 
 export const blockQuery = (blockHashOrNumber) => {
-  const hash = isBlockHash(blockHashOrNumber)
+  const hash = (isBlockHash(blockHashOrNumber)) ? blockHashOrNumber : null
   const number = parseInt(blockHashOrNumber)
   if (hash) return { hash }
   if (number || number === 0) return { number }
