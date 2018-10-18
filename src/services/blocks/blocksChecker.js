@@ -6,7 +6,7 @@ import Logger from '../../lib/Logger'
 
 const options = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', options.log)
-options.log = log
+options.Logger = log
 
 dataSource.then(db => {
   const Checker = new CheckBlocks(db, options)

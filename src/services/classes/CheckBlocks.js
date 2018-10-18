@@ -72,7 +72,7 @@ export class CheckBlocks extends BlocksBase {
   getLastBlock () {
     return this.nod3.eth.getBlock('latest', false)
   }
-  
+
   async getBlock (hashOrNumber) {
     let block = await this.getBlockFromDb(hashOrNumber)
     if (block && block.hash === hashOrNumber) {

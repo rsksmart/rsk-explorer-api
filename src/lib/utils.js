@@ -134,7 +134,6 @@ export const blockQuery = (blockHashOrNumber) => {
 
 const blockTotalDiff = block => bigNumberToSring(block.totalDifficulty)
 
-// COMPLETe
 export const getBestBlock = blocks => {
   blocks.sort((a, b) => {
     let aDiff = blockTotalDiff(a)
