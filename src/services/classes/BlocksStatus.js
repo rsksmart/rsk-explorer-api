@@ -6,6 +6,8 @@ export class BlocksStatus extends BlocksBase {
     this.Blocks = this.collections.Blocks
     this.requested = options.requested
     this.state = {}
+    this.updateTime = 0
+    this.delayDbUpdate = 500
   }
 
   async update (newState) {
@@ -17,8 +19,10 @@ export class BlocksStatus extends BlocksBase {
     let state = Object.assign({}, this.state)
     let changed = Object.keys(newState).find(k => newState[k] !== state[k])
     this.state = Object.assign(state, newState)
-    if (changed) {
-      let timestamp = Date.now()
+    let timestamp = Date.now()
+    let elapsedTime = timestamp - this.updateTime
+    this.updateTime = timestamp
+    if (changed && elapsedTime > this.delayDbUpdate) {
       newState = Object.assign(newState, { timestamp })
       return this.Status.insertOne(newState)
         .then(res => {
