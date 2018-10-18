@@ -32,6 +32,19 @@ export class Status extends DataCollector {
       })
   }
   async updateState () {
+    let status = await this.getStatus()
+    let state = this.state
+    let changed = Object.keys(status).find(k => status[k] !== state[k])
+    if (changed) {
+      let prevState = Object.assign({}, this.state)
+      delete prevState.prevState
+      status.prevState = prevState
+      this.state = status
+      return status
+    }
+  }
+
+  async getStatus () {
     const [blocksStatus, last, high, dbBlocks] =
       await Promise.all([
         this.getBlocksServiceStatus(),
@@ -44,16 +57,12 @@ export class Status extends DataCollector {
       dbLastBlockReceivedTime: last._received,
       dbHighBlock: high.number,
       dbBlocks,
-      dbMissingBlocks: high.number + 1 - dbBlocks
+      dbMissingBlocks: high.number + 1 - dbBlocks,
+      dbTime: Date.now()
     })
-    let state = this.state
-    let changed = Object.keys(status).find(k => status[k] !== state[k])
-    if (changed) {
-      status.dbTime = Date.now()
-      this.state = status
-      return status
-    }
+    return status
   }
+
   getHighestBlock () {
     return this.Blocks.db.findOne({}, { sort: { number: -1 }, limit: 1 })
   }
