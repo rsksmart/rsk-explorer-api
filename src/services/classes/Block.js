@@ -161,7 +161,7 @@ export class Block extends BcThing {
         let oldBlock = exists[0]
         if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`)
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
-        if (!oldBlockData) this.log.warn(`Missing block data for: ${block}`)
+        if (!oldBlockData) throw new Error(`Missing block data for: ${block}`)
         res = await this.replaceBlock(block, oldBlockData)
       } else {
         res = await this.insertBlock(block)

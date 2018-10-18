@@ -72,8 +72,20 @@ export class RequestBlocks extends BlocksBase {
       })
   }
 
-  getBlock (hashOrNumber) {
-    return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
+  async getBlock (hashOrNumber) {
+    try {
+      let hash = (isBlockHash(hashOrNumber)) ? hashOrNumber : null
+      if (!hash) {
+        this.log.debug(`Searching for best block for: ${hashOrNumber}`)
+        let blocks = await this.nod3.rsk.getBlocksByNumber(hashOrNumber)
+        hash = blocks.find(b => b.inMainChain === true)
+      }
+      hash = hash.hash || hashOrNumber
+      let block = await getBlock(this.nod3, this.collections, hash, this.log)
+      return block
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   endRequest (key, res) {
