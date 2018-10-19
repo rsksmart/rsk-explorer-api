@@ -22,7 +22,7 @@ export class ListenBlocks extends BlocksBase {
       syncing.watch(sync => {
         let number = sync.currentBlock
         if (number) {
-          this.log.debug('New Block reported:', number)
+          this.log.debug('[syncing] New Block reported:', number)
           this.requestBlock(number)
         }
       }, err => {

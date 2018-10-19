@@ -35,6 +35,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async getOrphans (lastBlock) {
+    this.log.debug(`Checkig orphan blocks fom ${lastBlock}`)
     let blocks = await checkBlocksCongruence(this.Blocks, lastBlock)
     return blocks
   }
@@ -110,6 +111,7 @@ export class CheckBlocks extends BlocksBase {
       })
     }
     if (values.length) {
+      this.log.warn(`Getting ${values.length} bad blocks`)
       process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
     }
   }
