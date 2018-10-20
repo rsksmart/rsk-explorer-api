@@ -105,8 +105,8 @@ export class Block extends BcThing {
     return this.parseTxLogs(tx.receipt.logs)
       .then(topics => topics.filter(t => t.event)
         .map(event => {
-          let id = `${event.blockNumber}-${event.transactionIndex}-${event.logIndex}`
-          event._id = id
+          let eventId = `${event.transactionHash}-${event.logIndex}`
+          event.eventId = eventId
           event.timestamp = timestamp
           return event
         })
