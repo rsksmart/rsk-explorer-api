@@ -67,18 +67,22 @@ export class Block extends BcThing {
   }
 
   async getTx (txHash, index, tx) {
-    // if (!tx) tx = await this.getTransactionByHash(txHash)
-    if (!tx) tx = await this.getTransactionByIndex(index)
-    let receipt = await this.getTxReceipt(txHash)
-    tx.receipt = receipt
-    if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
-    this.addAddress(receipt.contractAddress)
-    tx.timestamp = this.data.block.timestamp
-    this.addContract(tx)
-    this.addAddress(tx.to)
-    this.addAddress(tx.from)
-    tx = txFormat(tx)
-    return tx
+    try {
+      // if (!tx) tx = await this.getTransactionByHash(txHash)
+      if (!tx) tx = await this.getTransactionByIndex(index)
+      let receipt = await this.getTxReceipt(txHash)
+      tx.receipt = receipt
+      if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
+      this.addAddress(receipt.contractAddress)
+      tx.timestamp = this.data.block.timestamp
+      this.addContract(tx)
+      this.addAddress(tx.to)
+      this.addAddress(tx.from)
+      tx = txFormat(tx)
+      return tx
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   getTransactionByHash (txHash) {
