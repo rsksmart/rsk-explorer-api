@@ -32,35 +32,44 @@ export class Status extends DataCollector {
       })
   }
   async updateState () {
-    let status = await this.getStatus()
-    let state = this.state
-    let changed = Object.keys(status).find(k => status[k] !== state[k])
-    if (changed) {
-      let prevState = Object.assign({}, this.state)
-      delete prevState.prevState
-      status.prevState = prevState
-      this.state = status
-      return status
+    try {
+      let status = await this.getStatus()
+      status = status || {}
+      let state = this.state
+      let changed = Object.keys(status).find(k => status[k] !== state[k])
+      if (changed) {
+        let prevState = Object.assign({}, this.state)
+        delete prevState.prevState
+        status.prevState = prevState
+        this.state = status
+        return status
+      }
+    } catch (err) {
+      console.log(err)
     }
   }
 
   async getStatus () {
-    const [blocksStatus, last, high, dbBlocks] =
-      await Promise.all([
-        this.getBlocksServiceStatus(),
-        this.getLastblockReceived(),
-        this.getHighestBlock(),
-        this.getTotalBlocks()
-      ])
-    const status = Object.assign(blocksStatus, {
-      dbLastBlockReceived: last.number,
-      dbLastBlockReceivedTime: last._received,
-      dbHighBlock: high.number,
-      dbBlocks,
-      dbMissingBlocks: high.number + 1 - dbBlocks,
-      dbTime: Date.now()
-    })
-    return status
+    try {
+      const [blocksStatus, last, high, dbBlocks] =
+        await Promise.all([
+          this.getBlocksServiceStatus(),
+          this.getLastblockReceived(),
+          this.getHighestBlock(),
+          this.getTotalBlocks()
+        ])
+      const status = Object.assign(blocksStatus, {
+        dbLastBlockReceived: last.number,
+        dbLastBlockReceivedTime: last._received,
+        dbHighBlock: high.number,
+        dbBlocks,
+        dbMissingBlocks: high.number + 1 - dbBlocks,
+        dbTime: Date.now()
+      })
+      return status
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   getHighestBlock () {
