@@ -22,21 +22,26 @@ class Contract extends BcThing {
   }
 
   async fetch () {
-    // new contracts
-    if (this.creationData) {
-      let tokenData = await this.getTokenData()
-      if (tokenData) this.data = Object.assign(this.data, tokenData)
-      let txInputData = this.creationData.tx.input
-      let { interfaces, methods } = this.parser.getContractInfo(txInputData)
-      if (interfaces.length) this.data.contractInterfaces = interfaces
-      if (methods) this.data.contractMethods = methods
-    } else {
-      // saved contracts
-      let totalSupply = await this.call('totalSupply')
-      if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
+    try {
+      // new contracts
+      if (this.creationData) {
+        let tokenData = await this.getTokenData()
+        if (tokenData) this.data = Object.assign(this.data, tokenData)
+        let txInputData = this.creationData.tx.input
+        let { interfaces, methods } = this.parser.getContractInfo(txInputData)
+        if (interfaces.length) this.data.contractInterfaces = interfaces
+        if (methods) this.data.contractMethods = methods
+      } else {
+        // saved contracts
+        let totalSupply = await this.call('totalSupply')
+        if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
+      }
+      this.data.addresses = await this.fetchAddresses()
+      let data = this.getData()
+      return data
+    } catch (err) {
+      return Promise.reject(err)
     }
-    this.data.addresses = await this.fetchAddresses()
-    return this.getData()
   }
 
   makeContract () {

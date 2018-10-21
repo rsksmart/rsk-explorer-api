@@ -36,12 +36,10 @@ class ContractParser {
 
     return logs.map(log => {
       let decoder = decoders.find(decoder => {
+        if (!log.topics.length) return false
         return (decoder.signature() === log.topics[0].slice(2))
       })
-      if (decoder) {
-        log = decoder.decode(log)
-      }
-      return log
+      return (decoder) ? decoder.decode(log) : log
     }).map(log => {
       let abis = abi.find(def => {
         return (def.type === 'event' && log.event === def.name)
@@ -63,10 +61,8 @@ class ContractParser {
   }
   call (method, contract, params) {
     return new Promise((resolve, reject) => {
-      contract[method].call(params, (err, res) => {
+      contract[method](params, (err, res) => {
         if (err !== null) {
-          console.log(`[${contract.address}] -  Method call ERROR: ${method} / ${err}`)
-          resolve(null)
           return reject(err)
         } else {
           resolve(res)
@@ -80,7 +76,8 @@ class ContractParser {
     let [name, symbol, decimals, totalSupply] = await Promise.all(
       methods.map(m =>
         this.call(m, contract)
-          .catch(err => console.log(`Error executing ${m}  Error: ${err}`)))
+          .then(res => res)
+          .catch(err => console.log(`[${contract.address}] Error executing ${m}  Error: ${err}`)))
     )
     return { name, symbol, decimals, totalSupply }
   }

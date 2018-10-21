@@ -19,13 +19,16 @@ export class TokenAddress extends BcThing {
     }
   }
   async fetch () {
-    this.data.balance = await this.getBalance()
-    return this.getData()
+    try {
+      let balance = await this.getBalance()
+      this.data.balance = balance
+      return this.getData()
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
-  async getBalance () {
-    let address = this.address
-    let balance = await this.Contract.call('balanceOf', address)
-    return balance
+  getBalance () {
+    return this.Contract.call('balanceOf', this.address)
   }
 }
 
