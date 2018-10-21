@@ -6,10 +6,15 @@ export class Event extends DataCollectorItem {
     this.publicActions = {
 
       getEvent: async params => {
-        const _id = params.id
-        const data = await this.getOne({ _id })
-        const address = data.data.address
-        return this.parent.addAddressData(address, data)
+        try {
+          const eventId = params.eventId
+          const data = await this.getOne({ eventId })
+          if (!data) throw new Error(`Event ${eventId} does not exist`)
+          const address = data.data.address
+          return this.parent.addAddressData(address, data)
+        } catch (err) {
+          return Promise.resolve(err)
+        }
       },
 
       getEventsByAddress: async params => {
