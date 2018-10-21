@@ -5,6 +5,7 @@ const arr = ['one', 'two', 'three']
 const success = [
   ['one', 'two', 'three'],
   ['one', 'two', 'three', 'apple'],
+  ['apple', 'one', 'banana', 'two'],
   ['three']
 ]
 const fail = [

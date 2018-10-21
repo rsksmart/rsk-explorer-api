@@ -2,6 +2,7 @@ import { BcThing } from './BcThing'
 import ContractParser from '../../lib/ContractParser/ContractParser'
 import { contractsTypes as types } from '../../lib/types'
 import TokenAddress from './TokenAddress'
+import { hasValue } from '../../lib/utils'
 
 class Contract extends BcThing {
   constructor (address, creationData, nod3, parser) {
@@ -25,16 +26,18 @@ class Contract extends BcThing {
     try {
       // new contracts
       if (this.creationData) {
-        let tokenData = await this.getTokenData()
-        if (tokenData) this.data = Object.assign(this.data, tokenData)
         let txInputData = this.creationData.tx.input
         let { interfaces, methods } = this.parser.getContractInfo(txInputData)
         if (interfaces.length) this.data.contractInterfaces = interfaces
         if (methods) this.data.contractMethods = methods
+        if (this.isToken(interfaces)) {
+          let tokenData = await this.getTokenData()
+          if (tokenData) this.data = Object.assign(this.data, tokenData)
+        }
       } else {
         // saved contracts
-        let totalSupply = await this.call('totalSupply')
-        if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
+        // let totalSupply = await this.call('totalSupply')
+        // if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
       }
       this.data.addresses = await this.fetchAddresses()
       let data = this.getData()
@@ -70,6 +73,9 @@ class Contract extends BcThing {
     return this.parser.call(method, contract, params)
   }
 
+  isToken (interfaces) {
+    return hasValue(interfaces, [types.ERC20, types.ERC667])
+  }
   async fetchAddresses () {
     let data = []
     for (let a in this.addresses) {

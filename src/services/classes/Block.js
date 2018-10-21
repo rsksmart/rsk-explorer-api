@@ -68,8 +68,8 @@ export class Block extends BcThing {
 
   async getTx (txHash, index, tx) {
     try {
-      // if (!tx) tx = await this.getTransactionByHash(txHash)
-      if (!tx) tx = await this.getTransactionByIndex(index)
+      if (!tx) tx = await this.getTransactionByHash(txHash)
+      // if (!tx) tx = await this.getTransactionByIndex(index)
       let receipt = await this.getTxReceipt(txHash)
       if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `)
       tx.receipt = receipt

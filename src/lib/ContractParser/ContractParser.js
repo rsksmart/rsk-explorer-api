@@ -63,6 +63,7 @@ class ContractParser {
     return new Promise((resolve, reject) => {
       contract[method](params, (err, res) => {
         if (err !== null) {
+          resolve(null)
           return reject(err)
         } else {
           resolve(res)
@@ -127,7 +128,6 @@ class ContractParser {
     return this.hasErc20methods(methods) &&
       hasValues(methods, ['transferAndCall'])
   }
-
 }
 
 export default ContractParser

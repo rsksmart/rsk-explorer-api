@@ -145,5 +145,6 @@ export const getBestBlock = blocks => {
   return blocks[0]
 }
 
-export const hasValue = (arr, search) => search.map(t => arr.indexOf(t)).filter(i => i > 0).length > 0
+export const arrayIntersection = (a, b) => a.filter(v => b.indexOf(v) !== -1)
+export const hasValue = (arr, search) => arrayIntersection(arr, search).length > 0
 export const hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length
