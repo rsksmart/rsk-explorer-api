@@ -5,8 +5,7 @@ var _config = require('../../lib/config');var _config2 = _interopRequireDefault(
 var _collections = require('../../lib/collections');var _collections2 = _interopRequireDefault(_collections);
 var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
 var _BlocksStatus = require('../classes/BlocksStatus');
-var _types = require('../../lib/types');
-var _blocksRequester = require('./blocksRequester');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _types = require('../../lib/types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const config = Object.assign({}, _config2.default.blocks);
 const log = (0, _Logger2.default)('Blocks', config.log);
@@ -16,6 +15,7 @@ _dataSource.dataBase.setLogger(log);
 function startService(name, parseMessage) {
   let service = (0, _child_process.fork)(_path2.default.resolve(__dirname, `${serviceName(name)}.js`));
   service.on('message', msg => parseMessage(msg, name));
+  service.on('error', err => {console.error('Service error', err);});
   return service;
 }
 
@@ -60,7 +60,6 @@ const readEvent = (event, data) => {
 
 const serviceName = name => `blocks${name}`;
 
-
 async function createBlocksCollections(config, db) {
   try {
     let names = config.collections;
@@ -77,4 +76,8 @@ async function createBlocksCollections(config, db) {
 process.on('unhandledRejection', err => {
   console.error(err);
   process.exit(1);
+});
+
+process.on('uncaughtException', err => {
+  console.error(err);
 });

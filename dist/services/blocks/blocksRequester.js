@@ -25,7 +25,6 @@ _dataSource.dataSource.then(db => {
     let args = msg.args;
     if (action) {
       switch (action) {
-
         case _types.actions.BLOCK_REQUEST:
           Requester.request(...args);
           break;
@@ -52,6 +51,7 @@ _dataSource.dataSource.then(db => {
 
   Requester.events.on(_types.events.NEW_BLOCK, data => {
     let block = data.block;
+    if (!block) return;
     let key = data.key;
     let isHashKey = (0, _utils.isBlockHash)(key);
     if (block) {

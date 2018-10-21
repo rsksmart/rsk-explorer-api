@@ -10,6 +10,7 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     port: 3003 },
 
   source: {
+    protocol: 'http',
     node: 'localhost',
     port: 4444 },
 
@@ -37,6 +38,7 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     blocksQueueSize: 100,
     validateCollections: true,
     bcTipSize: 12,
+    batchRequestSize: 20,
     collections: {
       Blocks: 'blocks',
       Txs: 'transactions',

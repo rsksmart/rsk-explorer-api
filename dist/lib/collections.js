@@ -89,9 +89,8 @@
   {
     key: { timestamp: -1 },
     partialFilterExpression: {
-      timestamp: { $exists: true } },
+      timestamp: { $exists: true } } }],
 
-    unique: true }],
 
 
   Events: [

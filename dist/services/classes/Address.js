@@ -1,7 +1,7 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Address = undefined;var _BcThing = require('./BcThing');
 class Address extends _BcThing.BcThing {
-  constructor(address, web3, db, block = 'latest') {
-    super(web3);
+  constructor(address, nod3, db, block = 'latest') {
+    super(nod3);
     if (!this.isAddress(address)) throw new Error(`Invalid address: ${address}`);
     this.address = address;
     this.db = db;
@@ -29,29 +29,21 @@ class Address extends _BcThing.BcThing {
     if (prop === 'address') return;
     this.data[prop] = value;
   }
+
   getBalance() {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBalance(this.address, this.block, (err, balance) => {
-        if (err !== null) return reject(err);else
-        resolve(balance);
-      });
-    });
+    return this.nod3.eth.getBalance(this.address, this.block);
   }
 
   getCode() {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getCode(this.address, this.block, (err, code) => {
-        if (err !== null) return reject(err);else
-        return resolve(code);
-      });
-    });
+    return this.nod3.eth.getCode(this.address, this.block);
   }
+
   async fetch() {
     let balance = await this.getBalance().
     catch(err => {
       return new Error(`Address: error getting balance of ${this.address} ${err}`);
     });
-    balance = balance || null;
+    balance = balance || 0;
     this.data.balance = balance;
 
     let code = null;

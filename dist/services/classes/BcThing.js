@@ -1,8 +1,8 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports._methodNotImplemented = exports.BcThing = undefined;var _utils = require('../../lib/utils');
 
 class BcThing {
-  constructor(web3, collections) {
-    this.web3 = web3;
+  constructor(nod3, collections) {
+    this.nod3 = nod3;
     this.collections = collections;
     this.data = {};
   }

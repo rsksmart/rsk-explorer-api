@@ -8,6 +8,7 @@ const blocksCollection = _config2.default.blocks.collections.Blocks;
 class Status extends _DataCollector.DataCollector {
   constructor(db) {
     super(db, { perPage, statusCollection });
+    this.tickDelay = 5000;
     this.state = {};
     this.addItem(statusCollection, 'Status', null, true);
     this.addItem(blocksCollection, 'Blocks', null, true);
@@ -31,28 +32,46 @@ class Status extends _DataCollector.DataCollector {
     });
   }
   async updateState() {
-    const [blocksStatus, last, high, dbBlocks] =
-    await Promise.all([
-    this.getBlocksServiceStatus(),
-    this.getLastblockReceived(),
-    this.getHighestBlock(),
-    this.getTotalBlocks()]);
-
-    const status = Object.assign(blocksStatus, {
-      dbLastBlockReceived: last.number,
-      dbLastBlockReceivedTime: last._received,
-      dbHighBlock: high.number,
-      dbBlocks,
-      dbMissingBlocks: high.number + 1 - dbBlocks });
-
-    let state = this.state;
-    let changed = Object.keys(status).find(k => status[k] !== state[k]);
-    if (changed) {
-      status.dbTime = Date.now();
-      this.state = status;
-      return status;
+    try {
+      let status = await this.getStatus();
+      status = status || {};
+      let state = this.state;
+      let changed = Object.keys(status).find(k => status[k] !== state[k]);
+      if (changed) {
+        let prevState = Object.assign({}, this.state);
+        delete prevState.prevState;
+        status.prevState = prevState;
+        this.state = status;
+        return status;
+      }
+    } catch (err) {
+      console.log(err);
     }
   }
+
+  async getStatus() {
+    try {
+      const [blocksStatus, last, high, dbBlocks] =
+      await Promise.all([
+      this.getBlocksServiceStatus(),
+      this.getLastblockReceived(),
+      this.getHighestBlock(),
+      this.getTotalBlocks()]);
+
+      const status = Object.assign(blocksStatus, {
+        dbLastBlockReceived: last.number,
+        dbLastBlockReceivedTime: last._received,
+        dbHighBlock: high.number,
+        dbBlocks,
+        dbMissingBlocks: high.number + 1 - dbBlocks,
+        dbTime: Date.now() });
+
+      return status;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
   getHighestBlock() {
     return this.Blocks.db.findOne({}, { sort: { number: -1 }, limit: 1 });
   }

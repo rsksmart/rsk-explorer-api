@@ -1,25 +1,55 @@
-'use strict';var _Block = require('../services/classes/Block');var _Block2 = _interopRequireDefault(_Block);
-var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _collections = require('../lib/collections');var _collections2 = _interopRequireDefault(_collections);
-var _Blocks = require('../services/blocks/Blocks');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const config = Object.assign({}, _config2.default.blocks);
+'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
+var _Block = require('../services/classes/Block');var _Block2 = _interopRequireDefault(_Block);
+var _BlocksBase = require('../lib/BlocksBase');var _BlocksBase2 = _interopRequireDefault(_BlocksBase);
+var _cli = require('../lib/cli');
+var _util = require('util');var _util2 = _interopRequireDefault(_util);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+
 const hashOrNumber = process.argv[2] || 'latest';
 const opt = process.argv[3];
 const save = opt === '--save';
-console.log(`Getting block ${hashOrNumber}`);
+const json = opt === '--json';
+if (!hashOrNumber) help();
 _dataSource2.default.then(db => {
-  const blocks = (0, _Blocks.Blocks)(db, config, _collections2.default);
-  console.time('block');
-  let block = new _Block2.default(hashOrNumber, blocks);
-  block.fetch().then(blockdata => {
-    console.dir(blockdata, { colors: true });
-    console.timeEnd('block');
-    if (save) {
-      console.log('saving block');
-      block.save().
-      then(res => console.log('Block saved')).
-      catch(err => console.log(`Error saving block: ${err}`));
+  if (!json) (0, _cli.info)(`Getting block ${hashOrNumber}`);
+  getBlock(db, hashOrNumber).then(block => {
+    if (json) console.log(JSON.stringify(block));else
+    {
+      console.log(_util2.default.inspect(block, { showHidden: false, depth: null, colors: true }));
+      console.log('');
+      (0, _cli.info)(` Get time: ${block.time}ms`);
+      if (save) (0, _cli.info)(` Save time: ${block.saved}ms`);
     }
+    process.exit(0);
   });
 });
+
+async function getBlock(db, hashOrNumber) {
+  try {
+    let time = getTime();
+    let saved = null;
+    let block = new _Block2.default(hashOrNumber, new _BlocksBase2.default(db));
+    await block.fetch();
+    let blockData = block.getData(true);
+    time = getTime(time);
+    if (save) {
+      saved = getTime();
+      console.log('Saving Block');
+      await block.save();
+      saved = getTime(saved);
+      console.log('Block Saved');
+    }
+    return { time, saved, block: blockData };
+  } catch (err) {
+    console.log(err);
+    process.exit(9);
+  }
+}
+
+function help() {
+  (0, _cli.info)(`Usage: ${process.argv[1]} ${process.argv[1]} number|hash|latest [--json | --save ]`);
+  process.exit(0);
+}
+
+function getTime(t) {
+  return Date.now() - (t || 0);
+}

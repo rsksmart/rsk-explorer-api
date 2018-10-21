@@ -9,9 +9,15 @@ var _UserEventsApi = require('./UserEventsApi');var _UserEventsApi2 = _interopRe
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
 var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
+
+
+
+
+
+
+
 const port = _config2.default.server.port || '3000';
 const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
-const delayedFields = _config2.default.api.delayedFields || {};
 
 _dataSource2.default.then(db => {
   log.info('Database connected');
@@ -33,6 +39,7 @@ _dataSource2.default.then(db => {
     res.end();
   });
   httpServer.listen(port);
+
   const io = new _socket2.default(httpServer);
 
   const userEvents = (0, _UserEventsApi2.default)(io, blocks, log);
@@ -41,17 +48,17 @@ _dataSource2.default.then(db => {
   });
 
   blocks.events.on('newBlocks', result => {
-    io.emit('data', (0, _apiLib.formatRes)('newBlocks', result));
+    io.emit('data', (0, _apiLib.formatRes)({ module: null, action: 'newBlocks', result }));
   });
 
   status.events.on('newStatus', result => {
-    io.emit('data', (0, _apiLib.formatRes)('dbStatus', result));
+    io.emit('data', (0, _apiLib.formatRes)({ module: null, action: 'dbStatus', result }));
   });
 
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: (0, _apiLib.publicSettings)() });
-    socket.emit('data', (0, _apiLib.formatRes)('newBlocks', blocks.getLastBlocks()));
-    socket.emit('data', (0, _apiLib.formatRes)('dbStatus', status.getState()));
+    socket.emit('data', (0, _apiLib.formatRes)({ module: null, action: 'newBlocks', result: blocks.getLastBlocks() }));
+    socket.emit('data', (0, _apiLib.formatRes)({ module: null, action: 'dbStatus', result: status.getState() }));
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
@@ -62,15 +69,17 @@ _dataSource2.default.then(db => {
       if (payload) {
         const action = payload.action;
         const params = (0, _utils.filterParams)(payload.params);
-        const delayed = delayedFields[action];
+        const module = (0, _apiLib.getModule)(payload.module);
+        const delayed = (0, _apiLib.getDelayedFields)(module, action);
         blocks.
-        run(action, params).
+        run(module, action, params).
         then(result => {
           if (delayed && userEvents) {
             const registry = !result.data && delayed.runIfEmpty;
             if (payload.getDelayed) {
               userEvents.send({
                 action: delayed.action,
+                module: delayed.module,
                 params,
                 socketId: socket.id,
                 payload,
@@ -79,14 +88,12 @@ _dataSource2.default.then(db => {
             }
             result.delayed = { fields: delayed.fields, registry };
           }
-
-          socket.emit('data', (0, _apiLib.formatRes)(action, result, payload));
+          socket.emit('data', (0, _apiLib.formatRes)({ module, action, result, req: payload }));
         }).
         catch(err => {
-          log.debug('Action: ' + action + ' ERROR: ' + err);
-          socket.emit(
-          'error',
-          (0, _apiLib.formatRes)(action, null, payload, _apiLib.errors.INVALID_REQUEST));
+          log.debug(`Action: ${action}: ERROR: ${err}`);
+          socket.emit('error',
+          (0, _apiLib.formatRes)({ module, action, result: null, req: payload, error: _apiLib.errors.INVALID_REQUEST }));
 
         });
       } else {

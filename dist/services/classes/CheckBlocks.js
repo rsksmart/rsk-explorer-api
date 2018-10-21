@@ -8,7 +8,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     this.Blocks = this.collections.Blocks;
     this.tipBlock = null;
     this.tipCount = 0;
-    this.tipSize = options.bcTipSize;
+    this.tipSize = options.bcTipSize || 12;
   }
 
   start() {
@@ -28,13 +28,14 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     }
     let res = { lastBlock, blocks, missingSegments };
     if (orphans) {
-      let orphans = await this.getOrphans();
+      let orphans = await this.getOrphans(lastBlock);
       res = Object.assign(res, orphans);
     }
     return res;
   }
 
   async getOrphans(lastBlock) {
+    this.log.debug(`Checkig orphan blocks from ${lastBlock}`);
     let blocks = await checkBlocksCongruence(this.Blocks, lastBlock);
     return blocks;
   }
@@ -70,27 +71,11 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     })]);
   }
   getLastBlock() {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBlock('latest', (err, block) => {
-        if (err) return reject(err);else
-        {
-          let number = block.number;
-          resolve(this.getBlock(number));
-        }
-      });
-    });
+    return this.nod3.eth.getBlock('latest', false);
   }
+
   async getBlock(hashOrNumber) {
-    let block = await this.getBlockFromDb(hashOrNumber);
-    if (block && block.hash === hashOrNumber) {
-      return Promise.resolve(block);
-    } else {
-      return (0, _RequestBlocks.getBlock)(this.web3, this.collections, hashOrNumber, this.log).
-      then(res => {
-        if (res.error) return;
-        return res.block;
-      });
-    }
+    return (0, _RequestBlocks.getBlock)(this.nod3, this.collections, hashOrNumber, this.log);
   }
 
   getBlockFromDb(hashOrNumber) {
@@ -117,6 +102,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
       });
     }
     if (values.length) {
+      this.log.warn(`Getting ${values.length} bad blocks`);
       process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] });
     }
   }
@@ -136,27 +122,23 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     return this.Blocks.countDocuments({});
   }
   setTipBlock(number) {
-    this.tipBlock = number || null;
-  }
-  setTipCount(number) {
-    this.tipCount = number ? this.tipCount + number : 0;
+    let tipBlock = this.tipBlock;
+    let tip = number > tipBlock ? number : tipBlock;
+    this.tipCount += tip - tipBlock;
+    this.tipBlock = tip;
   }
 
   updateTipBlock(block) {
     if (!block || !block.number) return;
     let number = block.number;
-    let tipBlock = this.tipBlock;
-    if (!tipBlock) this.setTipBlock(number);
-    if (number > tipBlock) {
-      this.setTipBlock(number);
-      this.setTipCount(number);
-      if (this.tipCount > this.tipSize) {
-        let lastBlock = this.tipCount - this.tipSize;
-        this.setTipCount();
-        this.log.debug(`Checking parents from block ${lastBlock}`);
-        this.getOrphans(lastBlock).
-        then(blocks => this.getBlocks(blocks));
-      }
+    this.setTipBlock(number);
+    if (this.tipCount >= this.tipSize) {
+      // let lastBlock = this.tipBlock - this.tipSize
+      let lastBlock = this.tipBlock;
+      this.tipCount = 0;
+      this.log.debug(`Checking parents from block ${lastBlock}`);
+      this.getOrphans(lastBlock).
+      then(blocks => this.getBlocks(blocks));
     }
   }}exports.CheckBlocks = CheckBlocks;
 
@@ -173,7 +155,6 @@ const checkBlocksCongruence = exports.checkBlocksCongruence = async (blocksColle
     });
     let missing = [];
     let invalid = [];
-    console.log(Object.keys(blocks).length);
     for (let number in blocks) {
       if (number > 0) {
         let block = blocks[number];

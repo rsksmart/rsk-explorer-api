@@ -6,7 +6,7 @@ var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(
 
 const options = Object.assign({}, _config2.default.blocks);
 const log = (0, _Logger2.default)('Blocks', options.log);
-options.log = log;
+options.Logger = log;
 
 _dataSource.dataSource.then(db => {
   const Checker = new _CheckBlocks.CheckBlocks(db, options);
@@ -17,7 +17,6 @@ _dataSource.dataSource.then(db => {
     if (action) {
       switch (action) {
         case _types.actions.CHECK_DB:
-          console.log('checkDB', args);
           Checker.checkDb(...args);
           break;
 

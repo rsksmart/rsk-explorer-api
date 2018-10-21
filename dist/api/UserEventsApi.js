@@ -7,7 +7,7 @@ function UserEventsSocket() {
   return (0, _child_process.fork)(_path2.default.resolve(__dirname, '../services/userEvents.js'));
 }
 
-const UserEventsApi = exports.UserEventsApi = (io, blocks, log) => {
+const UserEventsApi = exports.UserEventsApi = (io, Blocks, log) => {
   if (!_config2.default.api.allowUserEvents) return;
   log = log || console;
   const userEvents = UserEventsSocket();
@@ -17,9 +17,13 @@ const UserEventsApi = exports.UserEventsApi = (io, blocks, log) => {
     if (socket) {
       const payload = msg.payload;
       const action = payload.action;
-      processMsg(action, msg, blocks).
+      const module = msg.module;
+      processMsg(msg, Blocks).
       then(res => {
-        socket.emit('data', (0, _apiLib.formatRes)(action, res.data, payload, res.error));
+        let result = res.data;
+        let req = payload;
+        let error = res.error;
+        socket.emit('data', (0, _apiLib.formatRes)({ module, action, result, req, error }));
       }).catch(err => {
         log.error(err);
       });
@@ -30,13 +34,15 @@ const UserEventsApi = exports.UserEventsApi = (io, blocks, log) => {
   return userEvents;
 };
 
-async function processMsg(action, msg, blocks) {
+async function processMsg(msg, Blocks) {
   let data, error;
   if (!msg.error) {
     if (msg.data) {
       data = msg;
     } else {
-      data = await blocks.run(action, msg.params).then(result => {
+      let { module, action, params } = msg.payload;
+      module = (0, _apiLib.getModule)(module);
+      data = await Blocks.run(module, action, params).then(result => {
         return result;
       });
     }

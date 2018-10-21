@@ -1,8 +1,5 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _web = require('web3');var _web2 = _interopRequireDefault(_web);
-var _bignumber = require('bignumber.js');
-var _types = require('./types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
-const web3 = new _web2.default();
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.hasValues = exports.hasValue = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
+var _types = require('./types');
 
 const filterParams = exports.filterParams = (params, perPageMax = 50) => {
   params = params || {};
@@ -54,11 +51,15 @@ const retFiltered = filtered => {
 };
 
 const isAddress = exports.isAddress = address => {
-  return web3.isAddress(address);
+  return (/^(0x)?[0-9a-f]{40}$/i.test(address));
+};
+
+const isValidAddress = exports.isValidAddress = address => {
+  throw new Error('Not impemented');
 };
 
 const bigNumberDoc = exports.bigNumberDoc = bigNumber => {
-  return { type: _types.BIG_NUMBER, value: '0x' + bigNumber.toString(16) };
+  return '0x' + bigNumber.toString(16);
 };
 
 const isBigNumber = exports.isBigNumber = value => {
@@ -114,15 +115,17 @@ const serialize = exports.serialize = obj => {
   return serialized;
 };
 
-const isBlockHash = exports.isBlockHash = value => {
+const checkBlockHash = exports.checkBlockHash = value => {
   value = String(value).toLowerCase();
   if (/^(0x)[0-9a-f]{64}$/.test(value)) return value;
   if (/^[0-9a-f]{64}$/.test(value)) return '0x' + value;
   return null;
 };
 
+const isBlockHash = exports.isBlockHash = value => checkBlockHash(value) !== null;
+
 const blockQuery = exports.blockQuery = blockHashOrNumber => {
-  const hash = isBlockHash(blockHashOrNumber);
+  const hash = isBlockHash(blockHashOrNumber) ? blockHashOrNumber : null;
   const number = parseInt(blockHashOrNumber);
   if (hash) return { hash };
   if (number || number === 0) return { number };
@@ -131,7 +134,6 @@ const blockQuery = exports.blockQuery = blockHashOrNumber => {
 
 const blockTotalDiff = block => bigNumberToSring(block.totalDifficulty);
 
-// COMPLETe
 const getBestBlock = exports.getBestBlock = blocks => {
   blocks.sort((a, b) => {
     let aDiff = blockTotalDiff(a);
@@ -142,3 +144,7 @@ const getBestBlock = exports.getBestBlock = blocks => {
   });
   return blocks[0];
 };
+
+const arrayIntersection = exports.arrayIntersection = (a, b) => a.filter(v => b.indexOf(v) !== -1);
+const hasValue = exports.hasValue = (arr, search) => arrayIntersection(arr, search).length > 0;
+const hasValues = exports.hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length;

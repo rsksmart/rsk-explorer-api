@@ -59,18 +59,8 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-Blocks = Blocks;var _BlocksBase = require('../../lib/BlocksBase');class ListenBlocks extends _BlocksBase.BlocksBase {constructor(db, options) {super(db, options);this.Blocks = this.collections.Blocks;}async start() {if (this.web3.isConnected()) {// node is syncing
-      this.web3.eth.isSyncing((err, sync) => {this.log.debug('Node is syncing');if (!err) {this.updateStatus({ sync });if (sync === true) {this.web3.reset(true);} else if (sync) {let number = sync.currentBlock;this.requestBlock(number);} else {this.listen();}} else {this.log.error('Syncing error', err);}});if (!this.web3.eth.syncing) {this.listen();}} else {this.log.warn('Web3 is not connected!');this.updateStatus();this.start();}}bulkRequest(args) {let action = this.actions.BULK_BLOCKS_REQUEST;process.send({ action, args: [args] });}requestBlock(key, prioritize) {let action = this.actions.BLOCK_REQUEST;process.send({ action, args: [key, prioritize] });}updateStatus(state) {let action = this.actions.STATUS_UPDATE;process.send({ action, args: [state] });}listen() {this.log.info('Listen to blocks...');this.web3.reset(true);const filter = this.web3.eth.filter('latest');filter.watch((error, blockHash) => {if (error) {this.log.error('Filter Watch Error: ' + error);} else if (!blockHash) {this.log.warn('Warning: null block hash');} else {this.log.debug('New Block reported:', blockHash);this.requestBlock(blockHash, true);}});}}exports.ListenBlocks = ListenBlocks;function Blocks(db, config) {return new ListenBlocks(db, config);
-}exports.default =
-
+Blocks = Blocks;var _BlocksBase = require('../../lib/BlocksBase');class ListenBlocks extends _BlocksBase.BlocksBase {constructor(db, options) {super(db, options);this.Blocks = this.collections.Blocks;}async start() {try {let connected = await this.nod3.isConnected();if (!connected) {this.log.debug('nod3 is not connected');return this.start();} // remove all filters, node inclusive
+      await this.nod3.subscribe.clear().catch(err => {this.log.debug(err);}); // syncing filter
+      let syncing = await this.nod3.subscribe.method('eth.syncing');syncing.watch(sync => {let number = sync.currentBlock;if (number) {this.log.debug('[syncing] New Block reported:', number);this.requestBlock(number);}}, err => {this.log.debug(`Sync err: ${err}`);}); // new Block filter
+      this.log.debug('Listen to blocks');let newBlock = await this.nod3.subscribe.filter('newBlock');newBlock.watch(blockHash => {this.log.debug('New Block reported:', blockHash);this.requestBlock(blockHash, true);}, err => {this.log.debug(`NewBlock error: ${err}`);});} catch (err) {this.log.debug(err);}}bulkRequest(args) {let action = this.actions.BULK_BLOCKS_REQUEST;process.send({ action, args: [args] });}requestBlock(key, prioritize) {let action = this.actions.BLOCK_REQUEST;process.send({ action, args: [key, prioritize] });}updateStatus(state) {let action = this.actions.STATUS_UPDATE;process.send({ action, args: [state] });}}exports.ListenBlocks = ListenBlocks;function Blocks(db, config) {return new ListenBlocks(db, config);}exports.default =
 ListenBlocks;

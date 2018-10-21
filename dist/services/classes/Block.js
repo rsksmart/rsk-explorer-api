@@ -2,11 +2,11 @@
 var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
 var _txFormat = require('../../lib/txFormat');var _txFormat2 = _interopRequireDefault(_txFormat);
 var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);
-var _ContractParser = require('../../lib/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
+var _ContractParser = require('../../lib/ContractParser/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
 var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class Block extends _BcThing.BcThing {
   constructor(hashOrNumber, options) {
-    super(options.web3, options.collections);
+    super(options.nod3, options.collections);
     this.Blocks = this.collections.Blocks;
     this.fetched = false;
     this.log = options.Logger || console;
@@ -14,7 +14,7 @@ class Block extends _BcThing.BcThing {
     this.addresses = {};
     this.contracts = {};
     this.tokenAddresses = {};
-    this.contractParser = new _ContractParser2.default(this.web3);
+    this.contractParser = new _ContractParser2.default();
     this.data = {
       block: null,
       txs: [],
@@ -28,8 +28,10 @@ class Block extends _BcThing.BcThing {
     if (this.fetched && !forceFetch) {
       return Promise.resolve(this.getData());
     }
-    if (!this.web3.isConnected()) {
-      return Promise.reject(new Error('web3 is not connected'));
+
+    let connected = await this.nod3.isConnected();
+    if (!connected) {
+      return Promise.reject(new Error('nod3 is not connected'));
     }
     try {
       let blockData = await this.getBlock(this.hashOrNumber);
@@ -54,65 +56,46 @@ class Block extends _BcThing.BcThing {
     }
   }
 
-  getBlock(number, txArr = false) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getBlock(number, txArr, (err, blockData) => {
-        if (err !== null) return reject(err);
-        if (blockData) {
-          blockData._received = Date.now();
-          resolve(blockData);
-        } else {
-          return reject(new Error(`BlockData of block ${number} is empty`));
-        }
-      });
-    });
+  async getBlock(number, txArr = false) {
+    try {
+      let blockData = await this.nod3.eth.getBlock(number, txArr);
+      if (blockData) blockData._received = Date.now();
+      return blockData;
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   async getTx(txHash, index, tx) {
-    // if (!tx) tx = await this.getTransactionByHash(txHash)
-    if (!tx) tx = await this.getTransactionByIndex(index);
-    let receipt = await this.getTxReceipt(txHash);
-    tx.receipt = receipt;
-    if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex;
-    this.addAddress(receipt.contractAddress);
-    tx.timestamp = this.data.block.timestamp;
-    this.addContract(tx);
-    this.addAddress(tx.to);
-    this.addAddress(tx.from);
-    tx = (0, _txFormat2.default)(tx);
-    return tx;
+    try {
+      if (!tx) tx = await this.getTransactionByHash(txHash);
+      // if (!tx) tx = await this.getTransactionByIndex(index)
+      let receipt = await this.getTxReceipt(txHash);
+      if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `);
+      tx.receipt = receipt;
+      if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex;
+      this.addAddress(receipt.contractAddress);
+      tx.timestamp = this.data.block.timestamp;
+      this.addContract(tx);
+      this.addAddress(tx.to);
+      this.addAddress(tx.from);
+      tx = (0, _txFormat2.default)(tx);
+      return tx;
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   getTransactionByHash(txHash) {
-    return new Promise((resolve, reject) => {
-      // eth.getTransaction returns null in rskj/BAMBOO-f02dca7
-      this.web3.eth.getTransaction(txHash, (err, tx) => {
-        if (err !== null) return reject(err);else
-        {
-          if (!tx) return reject(new Error(`The Tx: ${txHash}, returns null value`));else
-          resolve(tx);
-        }
-      });
-    });
+    return this.nod3.eth.getTransactionByHash(txHash);
   }
+
   getTransactionByIndex(index) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getTransactionFromBlock(this.hashOrNumber, index, (err, tx) => {
-        if (err !== null) return reject(err);else
-        {
-          if (!tx) return reject(new Error(`The Tx: ${this.hashOrNumber}/${index}, returns null value`));else
-          resolve(tx);
-        }
-      });
-    });
+    return this.nod3.eth.getTransactionByIndex(this.hashOrNumber, index);
   }
+
   getTxReceipt(txHash) {
-    return new Promise((resolve, reject) => {
-      this.web3.eth.getTransactionReceipt(txHash, (err, receipt) => {
-        if (err !== null) return reject(err);
-        resolve(receipt);
-      });
-    });
+    return this.nod3.eth.getTransactionReceipt(txHash);
   }
 
   parseTxLogs(logs) {
@@ -127,8 +110,8 @@ class Block extends _BcThing.BcThing {
     return this.parseTxLogs(tx.receipt.logs).
     then(topics => topics.filter(t => t.event).
     map(event => {
-      let id = `${event.blockNumber}-${event.transactionIndex}-${event.logIndex}`;
-      event._id = id;
+      let eventId = `${event.transactionHash}-${event.logIndex}`;
+      event.eventId = eventId;
       event.timestamp = timestamp;
       return event;
     }));
@@ -149,6 +132,16 @@ class Block extends _BcThing.BcThing {
         this.log.debug(`Block ${block.number} - ${block.hash} was not saved`);
         return { result, data };
       }
+
+      // remove blocks by tx
+      await Promise.all([...txs.map(tx => {
+        return this.getTransactionFromDb(tx.hash).
+        then(oldTx => {
+          if (!oldTx) return Promise.resolve();
+          return this.getBlockFromDb(oldTx.blockHash, true).
+          then(oldBlock => this.replaceBlock(block, oldBlock));
+        });
+      })]);
 
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))]).
       then(res => {result.txs = res;});
@@ -182,18 +175,16 @@ class Block extends _BcThing.BcThing {
       if (exists.length) {
         let oldBlock = exists[0];
         if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`);
-        let bestBlock = (0, _utils.getBestBlock)([...exists, block]);
-        if (bestBlock.hash !== block.hash) {
-          throw new Error(`The stored block ${bestBlock.hash} is better than ${block.hash}`);
-        }
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true);
+        if (!oldBlockData) throw new Error(`Missing block data for: ${block}`);
         res = await this.replaceBlock(block, oldBlockData);
       } else {
         res = await this.insertBlock(block);
       }
       return res;
     } catch (err) {
-      return Promise.reject(err);
+      this.log.debug(err);
+      return null;
     }
   }
 
@@ -208,17 +199,28 @@ class Block extends _BcThing.BcThing {
   }
 
   async getBlockFromDb(hashOrNumber, allData) {
-    let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks);
-    if (allData) {
-      if (!block) return;
-      block = { block };
+    try {
+      let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks);
+      if (block && allData) block = await this.getBlockDataFromDb(block);
+      return block;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async getBlockDataFromDb(block) {
+    try {
+      if (!block || !block.hash) throw new Error(`Invalid block: ${block}`);
       let blockHash = block.hash;
+      block = { block };
       await Promise.all([
       this.getBlockTransactionsFromDb(blockHash).then(txs => {block.txs = txs;}),
       this.getBlockEventsFromDb(blockHash).then(events => {block.events = events;})]);
 
+      return block;
+    } catch (err) {
+      return Promise.reject(err);
     }
-    return block;
   }
 
   getBlockEventsFromDb(blockHash) {
@@ -229,10 +231,14 @@ class Block extends _BcThing.BcThing {
     return this.collections.Txs.find({ blockHash }).toArray();
   }
 
+  getTransactionFromDb(hash) {
+    return this.collections.Txs.findOne({ hash });
+  }
+
   async replaceBlock(newBlock, oldBlock) {
     try {
-      let block, txs, events;
-      ({ block, txs, events } = oldBlock);
+      if (!oldBlock || !newBlock) return;
+      let { block, txs, events } = oldBlock;
       block._replacedBy = newBlock.hash;
       block._events = events;
       block.transactions = txs;
@@ -258,7 +264,7 @@ class Block extends _BcThing.BcThing {
 
   addAddress(address, type) {
     if (!this.isAddress(address)) return;
-    const Addr = new _Address2.default(address, this.web3, this.collections.Addrs);
+    const Addr = new _Address2.default(address, this.nod3, this.collections.Addrs);
     this.addresses[address] = Addr;
   }
 
@@ -277,7 +283,7 @@ class Block extends _BcThing.BcThing {
   }
 
   newContract(address, data) {
-    let contract = new _Contract2.default(address, data, this.web3, this.contractParser);
+    let contract = new _Contract2.default(address, data, this.nod3, this.contractParser);
     this.contracts[address] = contract;
     return contract;
   }
@@ -337,13 +343,16 @@ const getBlockFromDb = exports.getBlockFromDb = async (blockHashOrNumber, collec
 
 const deleteBlockDataFromDb = exports.deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
   try {
-    if (!blockHash) throw new Error('Invalid block hash');
+    if (!blockHash) throw new Error(`Empty block hash`);
     let hash = blockHash;
     let result = {};
     let query = { $or: [{ blockHash }, { blockNumber }] };
     result.block = await db.Blocks.deleteOne({ hash });
+    result.block = await db.Blocks.deleteOne({ number: blockNumber });
     result.txs = await db.Txs.deleteMany(query);
     result.events = await db.Events.deleteMany(query);
+    result.addresses = await db.Addrs.deleteMany(
+    { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] });
     return result;
   } catch (err) {
     return Promise.reject(err);

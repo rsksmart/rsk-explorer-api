@@ -14,6 +14,9 @@ for (let key of keys) {
 _config2.default.blocks.node = _config2.default.blocks.node || _config2.default.source.node;
 _config2.default.blocks.port = _config2.default.blocks.port || _config2.default.source.port;
 
+let s = _config2.default.source;
+_config2.default.source.url = _config2.default.source.url || `${s.protocol}://${s.node}:${s.port}`;
+
 // defaults log files
 
 defaultLogs('api');

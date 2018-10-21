@@ -1,6 +1,6 @@
 'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _web3Connect = require('../lib/web3Connect');var _web3Connect2 = _interopRequireDefault(_web3Connect);
+var _nod3Connect = require('../lib/nod3Connect');var _nod3Connect2 = _interopRequireDefault(_nod3Connect);
 var _Address = require('./classes/Address');var _Address2 = _interopRequireDefault(_Address);
 var _Logger = require('../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
 var _types = require('../lib/types');
@@ -13,22 +13,21 @@ _dataSource2.default.then(db => {
   const addressCollection = db.collection(config.collections.Addrs);
   const cache = new RequestCache();
   process.on('message', msg => {
-    let action, params, block;
-    ({ action, params, block } = msg);
+    let { module, action, params, block } = msg;
     if (action && params && block) {
       switch (action) {
         case 'updateAddress':
           try {
             const address = params.address;
-            const cached = cache.isRequested(action, address, block);
+            const cached = cache.isRequested(block, [module, action, address]);
             if (cached) {
               msg.data = cached;
               sendMessage(msg);
             } else {
-              const Addr = new _Address2.default(address, _web3Connect2.default, addressCollection);
+              const Addr = new _Address2.default(address, _nod3Connect2.default, addressCollection);
               Addr.fetch().then(result => {
                 msg.result = result;
-                cache.set(action, address, result, block);
+                cache.set(block, [module, action, address], result);
                 const balance = result.balance ? result.balance.toString() : 0;
                 const dbBalance = Addr.dbData ? Addr.dbData.balance : null;
                 if (balance > 0 || dbBalance) {
@@ -64,16 +63,19 @@ _dataSource2.default.then(db => {
 const sendMessage = msg => {
   process.send((0, _utils.serialize)(msg));
 };
+
 class RequestCache {
   constructor() {
     this.requested = {};
     this.block = null;
   }
-  set(action, key, value, block) {
+  set(block, keys, value) {
     this.setBlock(block);
-    let actions = this.getAction(action);
-    actions[key] = value;
-    this.requested[action] = actions;
+    this.requested[this.makeKey(keys)] = value;
+  }
+  isRequested(block, keys) {
+    this.setBlock(block);
+    return this.requested[this.makeKey(keys)];
   }
   setBlock(block) {
     if (block !== this.block) {
@@ -81,10 +83,6 @@ class RequestCache {
       this.requested = {};
     }
   }
-  getAction(action) {
-    return this.requested[action] || {};
-  }
-  isRequested(action, key, block) {
-    this.setBlock(block);
-    return this.getAction(action)[key];
+  makeKey(args) {
+    return args.join('-');
   }}

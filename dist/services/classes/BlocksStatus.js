@@ -6,10 +6,12 @@ class BlocksStatus extends _BlocksBase.BlocksBase {
     this.Blocks = this.collections.Blocks;
     this.requested = options.requested;
     this.state = {};
+    this.updateTime = 0;
+    this.delayDbUpdate = 500;
   }
 
-  update(newState) {
-    let connected = this.web3.isConnected();
+  async update(newState) {
+    let connected = await this.nod3.isConnected();
     newState = newState || {};
     newState.nodeDown = !connected;
 
@@ -17,14 +19,18 @@ class BlocksStatus extends _BlocksBase.BlocksBase {
     let state = Object.assign({}, this.state);
     let changed = Object.keys(newState).find(k => newState[k] !== state[k]);
     this.state = Object.assign(state, newState);
-    if (changed) {
-      newState.timestamp = Date.now();
+    let timestamp = Date.now();
+    let elapsedTime = timestamp - this.updateTime;
+    this.updateTime = timestamp;
+    if (changed && elapsedTime > this.delayDbUpdate) {
+      newState = Object.assign(newState, { timestamp });
       return this.Status.insertOne(newState).
       then(res => {
         return newState;
       }).
       catch(err => {
-        this.log.error(err);
+        console.log(err);
+        // this.log.error(err)
       });
     } else {
       return Promise.resolve(this.state);
