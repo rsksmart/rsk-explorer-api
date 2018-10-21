@@ -65,7 +65,7 @@ class ContractParser {
     return new Promise((resolve, reject) => {
       contract[method].call(params, (err, res) => {
         if (err !== null) {
-          console.log(`Method call ERROR: ${method} / ${err}`)
+          console.log(`[${contract.address}] -  Method call ERROR: ${method} / ${err}`)
           resolve(null)
           return reject(err)
         } else {
