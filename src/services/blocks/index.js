@@ -12,8 +12,9 @@ const log = Logger('Blocks', config.log)
 config.Logger = log
 dataBase.setLogger(log)
 
-function startService (name, parseMessage) {
-  let service = fork(path.resolve(__dirname, `${serviceName(name)}.js`))
+function startService (name, parseMessage, script) {
+  script = script || `blocks${name}.js`
+  let service = fork(path.resolve(__dirname, script))
   service.on('message', msg => parseMessage(msg, name))
   service.on('error', err => { console.error('Service error', err) })
   return service
@@ -50,6 +51,7 @@ dataBase.db().then(db => {
     const Listener = startService('Listener', listenToMessage)
     const Checker = startService('Checker', listenToMessage)
     const Requester = startService('Requester', listenToMessage)
+    const TxPool = startService('TxPool', listenToMessage, '../txPool.js')
   })
 })
 
@@ -57,8 +59,6 @@ dataBase.db().then(db => {
 const readEvent = (event, data) => {
   console.log(event, data)
 }
-
-const serviceName = name => `blocks${name}`
 
 async function createBlocksCollections (config, db) {
   try {

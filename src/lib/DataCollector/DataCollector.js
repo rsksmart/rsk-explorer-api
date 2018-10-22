@@ -20,6 +20,7 @@ export class DataCollector {
     this.setCollection(options.collectionName)
     this.tickDelay = 1000
     this.serialize = serialize
+    this.log = options.logger || console
   }
   tick () { }
   stop () {

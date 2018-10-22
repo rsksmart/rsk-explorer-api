@@ -121,5 +121,12 @@ export default {
       },
       unique: true
     }
+  ],
+  TxPool: [
+    {
+      key: {
+        timestamp: -1
+      }
+    }
   ]
 }

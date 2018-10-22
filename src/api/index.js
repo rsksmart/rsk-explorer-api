@@ -2,6 +2,7 @@ import IO from 'socket.io'
 import dataSource from '../lib/dataSource'
 import Blocks from './Blocks'
 import Status from './Status'
+import TxPool from './TxPool'
 import Logger from '../lib/Logger'
 import { filterParams } from '../lib/utils'
 import http from 'http'
@@ -25,8 +26,10 @@ dataSource.then(db => {
   // data collectors
   const blocks = new Blocks(db)
   const status = new Status(db)
+  const txPool = new TxPool(db)
   blocks.start()
   status.start()
+  txPool.start()
 
   const httpServer = http.createServer((req, res) => {
     const url = req.url || null
@@ -42,29 +45,40 @@ dataSource.then(db => {
 
   const io = new IO(httpServer)
 
+  // start userEvents api
   const userEvents = UserEventsApi(io, blocks, log)
+
   io.httpServer.on('listening', () => {
     log.info('Server listen on port ' + port)
   })
 
+  // broadcast new blocks
   blocks.events.on('newBlocks', result => {
     io.emit('data', formatRes({ module: null, action: 'newBlocks', result }))
   })
 
+  // broadcast status
   status.events.on('newStatus', result => {
     io.emit('data', formatRes({ module: null, action: 'dbStatus', result }))
+  })
+
+  // broadcast txPool
+  txPool.events.on('newPool', result => {
+    io.emit('data', formatRes({ module: null, action: 'txPool', result }))
   })
 
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
     socket.emit('data', formatRes({ module: null, action: 'newBlocks', result: blocks.getLastBlocks() }))
     socket.emit('data', formatRes({ module: null, action: 'dbStatus', result: status.getState() }))
+    socket.emit('data', formatRes({ module: null, action: 'txPool', result: txPool.getState() }))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
       log.debug('Socket Error: ' + err)
     })
 
+    // data handler
     socket.on('data', payload => {
       if (payload) {
         const action = payload.action
