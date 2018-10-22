@@ -5,7 +5,7 @@ import util from 'util'
 import { checkBlocksCongruence } from '../services/classes/CheckBlocks'
 const config = Object.assign({}, conf.blocks)
 const writeFile = util.promisify(fs.writeFile)
-const outFile = '/tmp/blocksLog.json'
+const outFile = process.argv[2] || '/tmp/blocksLog.json'
 dataSource.then(async db => {
   try {
     const Blocks = db.collection(config.collections.Blocks)
