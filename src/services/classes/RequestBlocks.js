@@ -79,8 +79,10 @@ export class RequestBlocks extends BlocksBase {
         this.log.debug(`Searching for best block for: ${hashOrNumber}`)
         let blocks = await this.nod3.rsk.getBlocksByNumber(hashOrNumber)
         hash = blocks.find(b => b.inMainChain === true)
+        hash = hash.hash || null
+        this.log.debug(`${hashOrNumber}: ${hash}`)
       }
-      hash = hash.hash || hashOrNumber
+      hash = hash || hashOrNumber
       let block = await getBlock(this.nod3, this.collections, hash, this.log)
       return block
     } catch (err) {
@@ -119,10 +121,10 @@ export async function getBlock (nod3, collections, hashOrNumber, Logger) {
     if (block) return { block, key: hashOrNumber }
   }
   try {
-    let Blck = new Block(hashOrNumber, { nod3, collections, Logger })
-    let block = await Blck.save().then(res => {
+    let newBlock = new Block(hashOrNumber, { nod3, collections, Logger })
+    let block = await newBlock.save().then(res => {
       if (!res || !res.data) return
-      return { block: res.data.block }
+      return res.data.block
     })
     return { block, key: hashOrNumber }
   } catch (error) {

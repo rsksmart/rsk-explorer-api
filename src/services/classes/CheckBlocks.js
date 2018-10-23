@@ -75,16 +75,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async getBlock (hashOrNumber) {
-    let block = await this.getBlockFromDb(hashOrNumber)
-    if (block && block.hash === hashOrNumber) {
-      return Promise.resolve(block)
-    } else {
-      return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
-        .then(res => {
-          if (res.error) return
-          return res.block
-        })
-    }
+    return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
   }
 
   getBlockFromDb (hashOrNumber) {
@@ -131,27 +122,23 @@ export class CheckBlocks extends BlocksBase {
     return this.Blocks.countDocuments({})
   }
   setTipBlock (number) {
-    this.tipBlock = number || null
-  }
-  setTipCount (number) {
-    this.tipCount = (number) ? this.tipCount + number : 0
+    let tipBlock = this.tipBlock
+    let tip = (number > tipBlock) ? number : tipBlock
+    this.tipCount += tip - tipBlock
+    this.tipBlock = tip
   }
 
   updateTipBlock (block) {
     if (!block || !block.number) return
     let number = block.number
-    let tipBlock = this.tipBlock
-    if (!tipBlock) this.setTipBlock(number)
-    if (number > tipBlock) {
-      this.setTipBlock(number)
-      this.setTipCount(number)
-      if (this.tipCount > this.tipSize) {
-        let lastBlock = this.tipCount - this.tipSize
-        this.setTipCount()
-        this.log.debug(`Checking parents from block ${lastBlock}`)
-        this.getOrphans(lastBlock)
-          .then(blocks => this.getBlocks(blocks))
-      }
+    this.setTipBlock(number)
+    if (this.tipCount >= this.tipSize) {
+      // let lastBlock = this.tipBlock - this.tipSize
+      let lastBlock = this.tipBlock
+      this.tipCount = 0
+      this.log.debug(`Checking parents from block ${lastBlock}`)
+      this.getOrphans(lastBlock)
+        .then(blocks => this.getBlocks(blocks))
     }
   }
 }
