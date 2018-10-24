@@ -128,6 +128,16 @@ export class Block extends BcThing {
         return { result, data }
       }
 
+      // remove blocks by tx
+      await Promise.all([...txs.map(tx => {
+        return this.getTransactionFromDb(tx.hash)
+          .then(oldTx => {
+            if (!oldTx) return
+            return this.getBlockFromDb(oldTx.blockHash, true)
+              .then(oldBlock => this.replaceBlock(block, oldBlock))
+          })
+      })])
+
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))])
         .then(res => { result.txs = res })
 
@@ -216,8 +226,13 @@ export class Block extends BcThing {
     return this.collections.Txs.find({ blockHash }).toArray()
   }
 
+  getTransactionFromDb (hash) {
+    return this.collections.Txs.findOne({ hash })
+  }
+
   async replaceBlock (newBlock, oldBlock) {
     try {
+      if (!oldBlock || !newBlock) return
       let { block, txs, events } = oldBlock
       block._replacedBy = newBlock.hash
       block._events = events
