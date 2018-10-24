@@ -1,11 +1,10 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import Abi from './Abi'
-import Web3 from 'web3'
-
+import { web3 } from '../lib/web3Connect'
 class ContractParser {
-  constructor (web3, abi) {
+  constructor (abi) {
     this.abi = abi || Abi
-    this.web3 = web3 || new Web3()
+    this.web3 = web3
     this.methods = this.getAbiMethods()
     this.methodsKeys = this.getMethodsKeys()
   }
@@ -64,6 +63,7 @@ class ContractParser {
     return new Promise((resolve, reject) => {
       contract[method].call(params, (err, res) => {
         if (err !== null) {
+          console.log(`Method call ERRROR: ${err}`)
           resolve(null)
           return reject(err)
         } else {
