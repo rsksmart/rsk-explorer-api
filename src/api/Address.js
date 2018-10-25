@@ -26,7 +26,7 @@ export class Address extends DataCollectorItem {
       getTokens: params => {
         return this.getPageData({
           type: addrTypes.CONTRACT,
-          contractType: contractsTypes.ERC20
+          contractInterfaces: { $in: Object.values(contractsTypes) }
         }, params)
       }
     }

@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import ContractParser from '../../lib/ContractParser'
+import ContractParser from '../../lib/ContractParser/ContractParser'
 import { contractsTypes as types } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 
@@ -26,8 +26,10 @@ class Contract extends BcThing {
     if (this.creationData) {
       let tokenData = await this.getTokenData()
       if (tokenData) this.data = Object.assign(this.data, tokenData)
-      let isErc20 = this.isErc20()
-      if (isErc20) this.data.contractType = types.ERC20
+      let txInputData = this.creationData.tx.input
+      let { interfaces, methods } = this.parser.getContractInfo(txInputData)
+      if (interfaces.length) this.data.contractInterfaces = interfaces
+      if (methods) this.data.contractMethods = methods
     } else {
       // saved contracts
       let totalSupply = await this.call('totalSupply')
@@ -43,12 +45,6 @@ class Contract extends BcThing {
 
   getTokenData () {
     return this.parser.getTokenData(this.contract)
-  }
-
-  isErc20 () {
-    if (this.creationData) {
-      return this.parser.hasErc20methods(this.creationData.tx.input)
-    }
   }
 
   addAddress (address) {

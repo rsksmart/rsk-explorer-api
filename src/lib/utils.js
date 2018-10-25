@@ -144,3 +144,5 @@ export const getBestBlock = blocks => {
   })
   return blocks[0]
 }
+
+export const hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length

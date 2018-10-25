@@ -1,6 +1,8 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import Abi from './Abi'
-import { web3 } from '../lib/web3Connect'
+import { web3 } from '../web3Connect'
+import { hasValues } from '../utils'
+import { contractsTypes } from '../types'
 class ContractParser {
   constructor (abi) {
     this.abi = abi || Abi
@@ -63,7 +65,7 @@ class ContractParser {
     return new Promise((resolve, reject) => {
       contract[method].call(params, (err, res) => {
         if (err !== null) {
-          console.log(`Method call ERRROR: ${err}`)
+          console.log(`Method call ERROR: ${method} / ${err}`)
           resolve(null)
           return reject(err)
         } else {
@@ -89,17 +91,46 @@ class ContractParser {
     return (key) ? txInputData.includes(key) : null
   }
 
-  hasErc20methods (txInputData) {
-    return ![
+  getMethods (txInputData) {
+    return Object.keys(this.methods)
+      .filter(method => this.hasMethod(txInputData, method) === true)
+  }
+
+  getContractInfo (txInputData) {
+    let methods = this.getMethods(txInputData)
+    let interfaces = this.getContractInterfaces(methods)
+    return { methods, interfaces }
+  }
+
+  getContractInterfaces (methods) {
+    let types = this.testContractTypes(methods)
+    return Object.keys(types)
+      .filter(k => types[k] === true)
+      .map(t => contractsTypes[t])
+  }
+
+  testContractTypes (methods) {
+    return {
+      ERC20: this.hasErc20methods(methods),
+      ERC667: this.hasErc667methods(methods)
+    }
+  }
+
+  hasErc20methods (methods) {
+    return hasValues(methods, [
       'totalSupply',
       'balanceOf',
       'allowance',
       'transfer',
       'approve',
-      'transferFrom']
-      .map(method => this.hasMethod(txInputData, method))
-      .filter(m => m !== true).length
+      'transferFrom'])
   }
+
+  hasErc667methods (methods) {
+    return this.hasErc20methods(methods) &&
+      hasValues(methods, ['transferAndCall'])
+  }
+
 }
 
 export default ContractParser

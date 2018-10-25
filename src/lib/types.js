@@ -23,7 +23,8 @@ export const addrTypes = {
 }
 
 export const contractsTypes = {
-  ERC20: 'ERC20'
+  ERC20: 'ERC20',
+  ERC667: 'ERC667'
 }
 
 export const events = {

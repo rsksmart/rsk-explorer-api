@@ -2,7 +2,7 @@ import { BcThing } from './BcThing'
 import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
-import ContractParser from '../../lib/ContractParser'
+import ContractParser from '../../lib/ContractParser/ContractParser'
 import { blockQuery } from '../../lib/utils'
 export class Block extends BcThing {
   constructor (hashOrNumber, options) {
