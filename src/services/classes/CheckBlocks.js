@@ -28,14 +28,14 @@ export class CheckBlocks extends BlocksBase {
     }
     let res = { lastBlock, blocks, missingSegments }
     if (orphans) {
-      let orphans = await this.getOrphans()
+      let orphans = await this.getOrphans(lastBlock)
       res = Object.assign(res, orphans)
     }
     return res
   }
 
   async getOrphans (lastBlock) {
-    this.log.debug(`Checkig orphan blocks fom ${lastBlock}`)
+    this.log.debug(`Checkig orphan blocks from ${lastBlock}`)
     let blocks = await checkBlocksCongruence(this.Blocks, lastBlock)
     return blocks
   }
