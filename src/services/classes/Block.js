@@ -132,7 +132,7 @@ export class Block extends BcThing {
       await Promise.all([...txs.map(tx => {
         return this.getTransactionFromDb(tx.hash)
           .then(oldTx => {
-            if (!oldTx) return
+            if (!oldTx) return Promise.resolve()
             return this.getBlockFromDb(oldTx.blockHash, true)
               .then(oldBlock => this.replaceBlock(block, oldBlock))
           })
@@ -346,6 +346,8 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
     result.block = await db.Blocks.deleteOne({ number: blockNumber })
     result.txs = await db.Txs.deleteMany(query)
     result.events = await db.Events.deleteMany(query)
+    result.addresses = await db.Addrs.deleteMany(
+      { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] })
     return result
   } catch (err) {
     return Promise.reject(err)
