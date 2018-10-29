@@ -43,7 +43,7 @@ export class Address extends BcThing {
       .catch(err => {
         return new Error(`Address: error getting balance of ${this.address} ${err}`)
       })
-    balance = balance || null
+    balance = balance || 0
     this.data.balance = balance
 
     let code = null
