@@ -15,7 +15,7 @@ config.blocks.node = config.blocks.node || config.source.node
 config.blocks.port = config.blocks.port || config.source.port
 
 let s = config.source
-config.source.url = `${s.protocol}://${s.node}:${s.port}`
+config.source.url = config.source.url || `${s.protocol}://${s.node}:${s.port}`
 
 // defaults log files
 
