@@ -16,10 +16,9 @@ export class CheckBlocks extends BlocksBase {
       .then(() => this.checkDb(true).then(res => this.getBlocks(res)))
   }
 
-  async checkDb (orphans) {
-    let lastBlock = await this.getHighDbBlock()
+  async checkDb (checkOrphans, lastBlock) {
+    if (!lastBlock) lastBlock = await this.getHighDbBlock()
     lastBlock = lastBlock.number
-
     let blocks = await this.countDbBlocks()
 
     let missingSegments = []
@@ -27,7 +26,7 @@ export class CheckBlocks extends BlocksBase {
       missingSegments = await this.getMissingSegments()
     }
     let res = { lastBlock, blocks, missingSegments }
-    if (orphans) {
+    if (checkOrphans) {
       let orphans = await this.getOrphans(lastBlock)
       res = Object.assign(res, orphans)
     }
@@ -35,7 +34,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async getOrphans (lastBlock) {
-    this.log.debug(`Checkig orphan blocks from ${lastBlock}`)
+    this.log.debug(`Checking orphan blocks from ${lastBlock}`)
     let blocks = await checkBlocksCongruence(this.Blocks, lastBlock)
     return blocks
   }
@@ -133,12 +132,11 @@ export class CheckBlocks extends BlocksBase {
     let number = block.number
     this.setTipBlock(number)
     if (this.tipCount >= this.tipSize) {
-      // let lastBlock = this.tipBlock - this.tipSize
       let lastBlock = this.tipBlock
       this.tipCount = 0
       this.log.debug(`Checking parents from block ${lastBlock}`)
-      this.getOrphans(lastBlock)
-        .then(blocks => this.getBlocks(blocks))
+      return this.checkDb(true, lastBlock)
+        .then(res => this.getBlocks(res))
     }
   }
 }
