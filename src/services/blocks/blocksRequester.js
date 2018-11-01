@@ -60,7 +60,7 @@ dataSource.then(db => {
       let parent = block.parentHash
 
       getBlockFromDb(parent, blocksCollection).then(parentBlock => {
-        if (!parentBlock) {
+        if (!parentBlock && block.number) {
           log.debug(`Getting parent of block ${block.number} - ${parent}`)
           Requester.request(parent, true)
         }
