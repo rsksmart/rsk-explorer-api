@@ -60,16 +60,17 @@ export class RequestBlocks extends BlocksBase {
     }
   }
 
-  requestBlock (key) {
-    this.requested.add(key)
-    this.emit(et.BLOCK_REQUESTED, { key })
-    return this.getBlock(key)
-      .then(res => {
-        if (res.error) {
-          this.emit(et.BLOCK_ERROR, res)
-        }
-        this.endRequest(key, res)
-      })
+  async requestBlock (key) {
+    try {
+      this.requested.add(key)
+      this.emit(et.BLOCK_REQUESTED, { key })
+      let block = await this.getBlock(key)
+      if (block.error) this.emit(et.BLOCK_ERROR, block)
+      this.endRequest(key)
+    } catch (err) {
+      this.log.error(err)
+      this.endRequest(key)
+    }
   }
 
   async getBlock (hashOrNumber) {

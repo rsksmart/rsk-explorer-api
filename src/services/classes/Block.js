@@ -52,7 +52,8 @@ export class Block extends BcThing {
       this.fetched = true
       return this.getData()
     } catch (err) {
-      this.log.error(err)
+      this.log.debug(err)
+      return Promise.reject(err)
     }
   }
 
