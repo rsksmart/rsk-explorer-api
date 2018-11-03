@@ -23,14 +23,12 @@ function startService (name, parseMessage, script) {
 dataBase.db().then(db => {
   createBlocksCollections(config, db).then(() => {
     const Status = new BlocksStatus(db, config)
-    // const Requester = BlocksRequester(db, config, Status)
-    const listenToMessage = (msg) => {
+    const listenToMessage = (msg, service) => {
       let action, args, event, data
       ({ action, args, event, data } = msg)
       if (event) {
         readEvent(event, data)
       }
-
       if (action) {
         switch (action) {
           case actions.STATUS_UPDATE:

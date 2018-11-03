@@ -1,7 +1,7 @@
 
 import { EventEmitter } from 'events'
 import { BlocksBase } from '../../lib/BlocksBase'
-import { events as et, actions as a } from '../../lib/types'
+import { events as et } from '../../lib/types'
 import { getBlockFromDb, Block } from './Block'
 import { isBlockHash } from '../../lib/utils'
 
@@ -36,7 +36,10 @@ export class RequestBlocks extends BlocksBase {
   }
 
   addToPending (key, prioritize) {
-    if (this.isRequested(key)) return
+    if (this.isRequested(key)) {
+      this.log.trace(`The key ${key} is already requested`)
+      return
+    }
     if (prioritize) {
       let pending = [...this.pending]
       pending.unshift(key)
@@ -66,7 +69,7 @@ export class RequestBlocks extends BlocksBase {
       this.emit(et.BLOCK_REQUESTED, { key })
       let block = await this.getBlock(key)
       if (block.error) this.emit(et.BLOCK_ERROR, block)
-      this.endRequest(key)
+      this.endRequest(key, block)
     } catch (err) {
       this.log.error(err)
       this.endRequest(key)
@@ -97,7 +100,6 @@ export class RequestBlocks extends BlocksBase {
     if (res && res.block) {
       let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
-      process.send({ action: a.UPDATE_TIP_BLOCK, args: [block] })
       return res.block
     }
     this.processPending()

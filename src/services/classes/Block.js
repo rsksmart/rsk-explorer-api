@@ -52,7 +52,7 @@ export class Block extends BcThing {
       this.fetched = true
       return this.getData()
     } catch (err) {
-      this.log.debug(err)
+      this.log.debug('Block fetch error', err)
       return Promise.reject(err)
     }
   }
@@ -161,6 +161,7 @@ export class Block extends BcThing {
         .then(res => { result.tokenAddresses = res })
       return { result, data }
     } catch (err) {
+      this.log.trace('Block save error', err)
       return Promise.reject(err)
     }
   }
@@ -175,7 +176,7 @@ export class Block extends BcThing {
       }
       if (exists.length) {
         let oldBlock = exists[0]
-        if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`)
+        if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`)
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
         if (!oldBlockData) throw new Error(`Missing block data for: ${block}`)
         res = await this.replaceBlock(block, oldBlockData)
@@ -184,7 +185,8 @@ export class Block extends BcThing {
       }
       return res
     } catch (err) {
-      this.log.debug(err)
+      this.log.debug(err.message)
+      this.log.trace(err)
       return null
     }
   }

@@ -13,6 +13,7 @@ options.Logger = log
 dataSource.then(db => {
   let Requester = new RequestBlocks(db, options)
   const blocksCollection = Requester.collections.Blocks
+
   Requester.updateStatus = function (state) {
     state = state || {}
     state.requestingBlocks = this.getRequested()
@@ -20,6 +21,7 @@ dataSource.then(db => {
     let action = a.STATUS_UPDATE
     process.send({ action, args: [state] })
   }
+
   process.on('message', msg => {
     let action = msg.action
     let args = msg.args
@@ -55,6 +57,7 @@ dataSource.then(db => {
     let key = data.key
     let isHashKey = isBlockHash(key)
     if (block) {
+      process.send({ action: a.UPDATE_TIP_BLOCK, args: [block] })
       let show = (isHashKey) ? block.number : block.hash
       log.debug(et.NEW_BLOCK, `New Block DATA ${key} - ${show}`)
       let parent = block.parentHash

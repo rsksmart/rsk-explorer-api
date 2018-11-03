@@ -102,6 +102,7 @@ export class CheckBlocks extends BlocksBase {
     }
     if (values.length) {
       this.log.warn(`Getting ${values.length} bad blocks`)
+      this.log.trace(values)
       process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
     }
   }
@@ -131,10 +132,11 @@ export class CheckBlocks extends BlocksBase {
     if (!block || !block.number) return
     let number = block.number
     this.setTipBlock(number)
+    this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`)
     if (this.tipCount >= this.tipSize) {
       let lastBlock = this.tipBlock
       this.tipCount = 0
-      this.log.debug(`Checking parents from block ${lastBlock}`)
+      this.log.info(`Checking db from block ${lastBlock}`)
       return this.checkDb(true, lastBlock)
         .then(res => this.getBlocks(res))
     }
