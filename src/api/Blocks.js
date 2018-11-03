@@ -72,7 +72,7 @@ class Blocks extends DataCollector {
 
   async addAddressData (address, data, key = '_addressData') {
     const account = await this.Address.run('getAddress', { address })
-    if (data && account) data.data[key] = account.data
+    if (data && data.data && account) data.data[key] = account.data
     return data || account
   }
 }
