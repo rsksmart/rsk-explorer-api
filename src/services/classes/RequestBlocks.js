@@ -12,7 +12,7 @@ export class RequestBlocks extends BlocksBase {
     super(db, options)
     this.queueSize = options.blocksQueueSize || 50
     this.pending = new Set()
-    this.requested = new Set()
+    this.requested = new Map()
     this.events = (options.noEvents) ? null : new Emitter()
   }
 
@@ -49,6 +49,7 @@ export class RequestBlocks extends BlocksBase {
     }
     return true
   }
+
   processPending () {
     let i = this.pending.values()
     let free = this.queueSize - this.requested.size
@@ -65,7 +66,7 @@ export class RequestBlocks extends BlocksBase {
 
   async requestBlock (key) {
     try {
-      this.requested.add(key)
+      this.requested.set(key, Date.now())
       this.emit(et.BLOCK_REQUESTED, { key })
       let block = await this.getBlock(key)
       if (block.error) this.emit(et.BLOCK_ERROR, block)
@@ -95,8 +96,10 @@ export class RequestBlocks extends BlocksBase {
   }
 
   endRequest (key, res) {
+    let time = Date.now() - this.requested.get(key)
     this.requested.delete(key)
     this.pending.delete(key)
+    this.log.trace(`Key ${key} time: ${time}`)
     if (res && res.block) {
       let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
