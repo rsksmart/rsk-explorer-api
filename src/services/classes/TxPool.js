@@ -58,8 +58,18 @@ export class TxPool extends BlocksBase {
     let res = []
     Object.values(prop)
       .forEach(nonce => Object.values(nonce)
-        .forEach(txs => txs.forEach(tx => res.push(tx))))
+        .forEach(txs => txs.forEach(tx => res.push(this.formatFields(tx)))))
     return res
+  }
+
+  formatFields (values) {
+    let fields = ['hash', 'from', 'to']
+    fields.forEach(f => { values[f] = this.add0x(values[f]) })
+    return values
+  }
+
+  add0x (value) {
+    return '0x' + value
   }
 
   async updatePool () {
