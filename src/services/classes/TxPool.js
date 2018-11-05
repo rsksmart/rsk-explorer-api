@@ -69,7 +69,8 @@ export class TxPool extends BlocksBase {
   }
 
   add0x (value) {
-    return '0x' + value
+    if (value && !/^0x/.test(value)) value = `0x${value}`
+    return value
   }
 
   async updatePool () {
