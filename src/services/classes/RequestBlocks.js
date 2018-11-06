@@ -14,6 +14,7 @@ export class RequestBlocks extends BlocksBase {
     this.pending = new Set()
     this.requested = new Map()
     this.events = (options.noEvents) ? null : new Emitter()
+    this.maxRequestTime = 1000
   }
 
   emit (event, data) {
@@ -109,7 +110,10 @@ export class RequestBlocks extends BlocksBase {
   }
 
   isRequested (key) {
-    return this.requested.has(key) || this.pending.has(key)
+    let isPending = this.pending.has(key)
+    let isRequested = this.requested.has(key)
+    if (isRequested) isRequested = ((Date.now() - this.requested.get(key)) > this.maxRequestTime)
+    return isRequested || isPending
   }
 
   getRequested () {
