@@ -47,7 +47,8 @@ export default {
       Events: 'events',
       TokensAddrs: 'tokensAddresses',
       OrphanBlocks: 'orphanBlocks',
-      TxPool: 'txPool'
+      TxPool: 'txPool',
+      PendingTxs: 'transactionsPending'
     }
   }
 }

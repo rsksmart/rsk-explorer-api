@@ -128,5 +128,13 @@ export default {
         timestamp: -1
       }
     }
+  ],
+  PendingTxs: [
+    {
+      key: {
+        hash: 1
+      },
+      unique: true
+    }
   ]
 }
