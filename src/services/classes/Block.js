@@ -144,17 +144,24 @@ export class Block extends BcThing {
           })
       })])
 
+      // insert txs
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))])
         .then(res => { result.txs = res })
 
+      // remove pending txs
+      await Promise.all([...txs.map(tx => db.PendingTxs.deleteOne({ hash: tx.hash }))])
+
+      // insert addresses
       await Promise.all(
         Object.values(this.addresses).map(a => a.save()))
         .then(res => { result.addresses = res })
 
+      // insert events
       await Promise.all(
         events.map(e => db.Events.insertOne(e)))
         .then(res => { result.events = res })
 
+      // insert tokenAddresses
       await Promise.all(
         tokenAddresses.map(ta => db.TokensAddrs.updateOne(
           { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
