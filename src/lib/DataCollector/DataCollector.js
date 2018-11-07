@@ -73,7 +73,7 @@ export class DataCollector {
     }
   }
 
-  addItem (collectionName, key, ItemClass, addToRoot) {
+  addItem (collectionName, key, ItemClass, addToRoot = true) {
     if (collectionName && key) {
       ItemClass = ItemClass || DataCollectorItem
       if (!this.items[key]) {
