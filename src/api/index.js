@@ -79,39 +79,37 @@ dataSource.then(db => {
     })
 
     // data handler
-    socket.on('data', payload => {
-      if (payload) {
+    socket.on('data', async payload => {
+      if (!payload) {
+        socket.emit('error', formatError(errors.INVALID_REQUEST))
+      } else {
         const action = payload.action
         const params = filterParams(payload.params)
         const module = getModule(payload.module)
         const delayed = getDelayedFields(module, action)
-        blocks
-          .run(module, action, params)
-          .then(result => {
-            if (delayed && userEvents) {
-              const registry = !result.data && delayed.runIfEmpty
-              if (payload.getDelayed) {
-                userEvents.send({
-                  action: delayed.action,
-                  module: delayed.module,
-                  params,
-                  socketId: socket.id,
-                  payload,
-                  block: blocks.getLastBlock().number
-                })
-              }
-              result.delayed = { fields: delayed.fields, registry }
+        try {
+          let result = await blocks.run(module, action, params)
+          if (delayed && userEvents) {
+            const registry = !result.data && delayed.runIfEmpty
+            if (payload.getDelayed) {
+              userEvents.send({
+                action: delayed.action,
+                module: delayed.module,
+                params,
+                socketId: socket.id,
+                payload,
+                block: blocks.getLastBlock().number
+              })
             }
-            socket.emit('data', formatRes({ module, action, result, req: payload }))
-          })
-          .catch(err => {
-            log.debug(`Action: ${action}: ERROR: ${err}`)
-            socket.emit('error',
-              formatRes({ module, action, result: null, req: payload, error: errors.INVALID_REQUEST })
-            )
-          })
-      } else {
-        socket.emit('error', formatError(errors.INVALID_REQUEST))
+            result.delayed = { fields: delayed.fields, registry }
+          }
+          socket.emit('data', formatRes({ module, action, result, req: payload }))
+        } catch (err) {
+          log.debug(`Action: ${action}: ERROR: ${err}`)
+          socket.emit('error',
+            formatRes({ module, action, result: null, req: payload, error: errors.INVALID_REQUEST })
+          )
+        }
       }
     })
   })
