@@ -5,6 +5,8 @@ export class Tx extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
     this.sort = { blockNumber: -1, transactionIndex: -1 }
+    const PendingTxs = this.parent.getItem({ key: 'TxPending' })
+    this.PendingTxs = PendingTxs.publicActions
     this.publicActions = {
 
       getTransactions: params => {
@@ -16,12 +18,13 @@ export class Tx extends DataCollectorItem {
         return this.getPageData(query, params)
       },
 
-      getTransaction: params => {
+      getTransaction: async params => {
         const hash = params.hash
         const blockNumber = params.block || params.blockNumber
         const transactionIndex = params.index || params.transactionIndex
         if (hash) {
-          return this.getOne({ hash })
+          let tx = await this.getOne({ hash })
+          return (tx.data) ? tx : this.PendingTxs.getPendingTransaction(params)
         } else if (undefined !== blockNumber && undefined !== transactionIndex) {
           return this.getOne({ blockNumber, transactionIndex })
         }

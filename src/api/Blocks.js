@@ -5,6 +5,7 @@ import { Tx } from './Tx'
 import { Address } from './Address'
 import { Event } from './Event'
 import { TokenAccount } from './TokenAccount'
+import { TxPending } from './TxPending'
 const perPage = config.api.perPage
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
@@ -16,11 +17,12 @@ class Blocks extends DataCollector {
     this.latest = 0
     this.lastBlocks = []
     this.lastTransactions = []
-    this.addItem(collections.Blocks, 'Block', Block, true)
-    this.addItem(collections.Txs, 'Tx', Tx, true)
-    this.addItem(collections.Addrs, 'Address', Address, true)
-    this.addItem(collections.Events, 'Event', Event, true)
-    this.addItem(collections.TokensAddrs, 'Token', TokenAccount, true)
+    this.addItem(collections.Blocks, 'Block', Block)
+    this.addItem(collections.PendingTxs, 'TxPending', TxPending)
+    this.addItem(collections.Txs, 'Tx', Tx)
+    this.addItem(collections.Addrs, 'Address', Address)
+    this.addItem(collections.Events, 'Event', Event)
+    this.addItem(collections.TokensAddrs, 'Token', TokenAccount)
   }
   tick () {
     this.setLastBlocks()
