@@ -6,6 +6,7 @@ export class TxPool extends BlocksBase {
     this.status = {}
     this.pool = {}
     this.TxPool = this.collections.TxPool
+    this.PendingTxs = this.collections.PendingTxs
   }
 
   async start () {
@@ -20,7 +21,7 @@ export class TxPool extends BlocksBase {
       status.watch(status => {
         this.updateStatus(status)
       }, err => {
-        this.log.debug(`Pool error: ${err}`)
+        this.log.debug(`Pool filter error: ${err}`)
       })
     } catch (err) {
       this.log.debug(`TxPool error: ${err}`)
@@ -40,25 +41,38 @@ export class TxPool extends BlocksBase {
   }
   async getPool () {
     try {
-      let pool = await this.nod3.txpool.content()
-      return this.formatPool(pool)
+      let res = await this.nod3.batchRequest([
+        ['txpool.content'],
+        ['eth.blockNumber']
+      ])
+      if (res.length !== 2) throw new Error(`Invalid request ${res}`)
+      return this.formatPool(res[0], res[1])
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
-  formatPool (pool) {
-    for (let p in pool) {
-      pool[p] = this.formatPoolProp(pool[p])
-    }
-    return pool
+  formatPool (pool, blockNumber) {
+    let keys = Object.keys(pool)
+    keys.forEach(k => { pool[k] = this.formatPoolProp(pool[k], k, blockNumber) })
+    let totals = keys
+      .reduce((o, v) => {
+        o[v] = pool[v].length
+        return o
+      }, {})
+
+    let txs = Object.values(pool).reduce((a, i) => a.concat(i), [])
+    return Object.assign(totals, { txs, blockNumber })
   }
 
-  formatPoolProp (prop) {
+  formatPoolProp (prop, status) {
     let res = []
     Object.values(prop)
       .forEach(nonce => Object.values(nonce)
-        .forEach(txs => txs.forEach(tx => res.push(this.formatFields(tx)))))
+        .forEach(txs => txs.forEach(tx => {
+          tx.status = String(status).toUpperCase()
+          res.push(this.formatFields(tx))
+        })))
     return res
   }
 
@@ -90,8 +104,20 @@ export class TxPool extends BlocksBase {
     try {
       this.log.debug(`Saving txPool to db`)
       await this.TxPool.insertOne(pool)
+      await this.savePendingTxs(pool.txs)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
+      return Promise.reject(err)
+    }
+  }
+
+  async savePendingTxs (txs) {
+    try {
+      txs = txs || []
+      await Promise.all(txs.map(tx => this.PendingTxs.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true })))
+    } catch (err) {
+      this.log.error(`Error saving pending transactions: ${err}`)
+      return Promise.reject(err)
     }
   }
 }
