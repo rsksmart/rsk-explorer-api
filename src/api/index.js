@@ -67,11 +67,17 @@ dataSource.then(db => {
     io.emit('data', formatRes({ module: null, action: 'txPool', result }))
   })
 
+  // broadcast txPool chart
+  txPool.events.on('poolChart', result => {
+    io.emit('data', formatRes({ module: null, action: 'txPoolChart', result }))
+  })
+
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
     socket.emit('data', formatRes({ module: null, action: 'newBlocks', result: blocks.getLastBlocks() }))
     socket.emit('data', formatRes({ module: null, action: 'dbStatus', result: status.getState() }))
     socket.emit('data', formatRes({ module: null, action: 'txPool', result: txPool.getState() }))
+    socket.emit('data', formatRes({ module: null, action: 'txPoolChart', result: txPool.getPoolChart() }))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
