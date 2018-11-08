@@ -17,7 +17,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async checkDb (checkOrphans, lastBlock) {
-    if (!lastBlock) lastBlock = await this.getHighDbBlock()
+    if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock()
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
 
@@ -82,24 +82,24 @@ export class CheckBlocks extends BlocksBase {
   }
 
   getBlocks (check) {
-    let segments = check.missingSegments
-    let invalid = check.invalid
+    let segments = check.missingSegments || []
+    let invalid = check.invalid || []
     let values = []
-    if (segments) {
-      segments.forEach(segment => {
+    segments.forEach(segment => {
+      if (Array.isArray(segment)) {
         let number = segment[0]
         let limit = segment[1]
         while (number >= limit) {
           values.push(number)
           number--
         }
-      })
-    }
-    if (invalid) {
-      invalid.forEach(block => {
-        values.push(block.validHash)
-      })
-    }
+      } else {
+        values.push(segment)
+      }
+    })
+    invalid.forEach(block => {
+      values.push(block.validHash)
+    })
     if (values.length) {
       this.log.warn(`Getting ${values.length} bad blocks`)
       this.log.trace(values)
@@ -136,7 +136,7 @@ export class CheckBlocks extends BlocksBase {
     if (this.tipCount >= this.tipSize) {
       let lastBlock = this.tipBlock
       this.tipCount = 0
-      this.log.info(`Checking db from block ${lastBlock}`)
+      this.log.info(`Checking db / LastBlock: ${lastBlock}`)
       return this.checkDb(true, lastBlock)
         .then(res => this.getBlocks(res))
     }
