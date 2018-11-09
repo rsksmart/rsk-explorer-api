@@ -4,7 +4,8 @@ var _Block = require('./Block');
 var _Tx = require('./Tx');
 var _Address = require('./Address');
 var _Event = require('./Event');
-var _TokenAccount = require('./TokenAccount');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _TokenAccount = require('./TokenAccount');
+var _TxPending = require('./TxPending');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const perPage = _config2.default.api.perPage;
 const lastLimit = _config2.default.api.lastBlocks || 10;
 const collections = _config2.default.blocks.collections;
@@ -16,11 +17,12 @@ class Blocks extends _DataCollector.DataCollector {
     this.latest = 0;
     this.lastBlocks = [];
     this.lastTransactions = [];
-    this.addItem(collections.Blocks, 'Block', _Block.Block, true);
-    this.addItem(collections.Txs, 'Tx', _Tx.Tx, true);
-    this.addItem(collections.Addrs, 'Address', _Address.Address, true);
-    this.addItem(collections.Events, 'Event', _Event.Event, true);
-    this.addItem(collections.TokensAddrs, 'Token', _TokenAccount.TokenAccount, true);
+    this.addItem(collections.Blocks, 'Block', _Block.Block);
+    this.addItem(collections.PendingTxs, 'TxPending', _TxPending.TxPending);
+    this.addItem(collections.Txs, 'Tx', _Tx.Tx);
+    this.addItem(collections.Addrs, 'Address', _Address.Address);
+    this.addItem(collections.Events, 'Event', _Event.Event);
+    this.addItem(collections.TokensAddrs, 'Token', _TokenAccount.TokenAccount);
   }
   tick() {
     this.setLastBlocks();
@@ -72,7 +74,7 @@ class Blocks extends _DataCollector.DataCollector {
 
   async addAddressData(address, data, key = '_addressData') {
     const account = await this.Address.run('getAddress', { address });
-    if (data && account) data.data[key] = account.data;
+    if (data && data.data && account) data.data[key] = account.data;
     return data || account;
   }}exports.default =
 

@@ -12,8 +12,9 @@ const log = (0, _Logger2.default)('Blocks', config.log);
 config.Logger = log;
 _dataSource.dataBase.setLogger(log);
 
-function startService(name, parseMessage) {
-  let service = (0, _child_process.fork)(_path2.default.resolve(__dirname, `${serviceName(name)}.js`));
+function startService(name, parseMessage, script) {
+  script = script || `blocks${name}.js`;
+  let service = (0, _child_process.fork)(_path2.default.resolve(__dirname, script));
   service.on('message', msg => parseMessage(msg, name));
   service.on('error', err => {console.error('Service error', err);});
   return service;
@@ -22,14 +23,12 @@ function startService(name, parseMessage) {
 _dataSource.dataBase.db().then(db => {
   createBlocksCollections(config, db).then(() => {
     const Status = new _BlocksStatus.BlocksStatus(db, config);
-    // const Requester = BlocksRequester(db, config, Status)
-    const listenToMessage = msg => {
+    const listenToMessage = (msg, service) => {
       let action, args, event, data;
       ({ action, args, event, data } = msg);
       if (event) {
         readEvent(event, data);
       }
-
       if (action) {
         switch (action) {
           case _types.actions.STATUS_UPDATE:
@@ -50,6 +49,7 @@ _dataSource.dataBase.db().then(db => {
     const Listener = startService('Listener', listenToMessage);
     const Checker = startService('Checker', listenToMessage);
     const Requester = startService('Requester', listenToMessage);
+    const TxPool = startService('TxPool', listenToMessage, '../txPool.js');
   });
 });
 
@@ -57,8 +57,6 @@ _dataSource.dataBase.db().then(db => {
 const readEvent = (event, data) => {
   console.log(event, data);
 };
-
-const serviceName = name => `blocks${name}`;
 
 async function createBlocksCollections(config, db) {
   try {

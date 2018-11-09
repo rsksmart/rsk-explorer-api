@@ -119,4 +119,19 @@
     key: {
       hash: 1 },
 
+    unique: true }],
+
+
+  TxPool: [
+  {
+    key: {
+      timestamp: -1 } }],
+
+
+
+  PendingTxs: [
+  {
+    key: {
+      hash: 1 },
+
     unique: true }] };

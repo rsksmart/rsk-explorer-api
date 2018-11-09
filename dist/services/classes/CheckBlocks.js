@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.checkBlocksCongruence = exports.CheckBlocks = undefined;var _BlocksBase = require('../../lib/BlocksBase');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.checkBlocksTransactions = exports.checkBlocksCongruence = exports.CheckBlocks = undefined;var _BlocksBase = require('../../lib/BlocksBase');
 var _Block = require('./Block');
 var _RequestBlocks = require('./RequestBlocks');
 
@@ -16,18 +16,22 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     then(() => this.checkDb(true).then(res => this.getBlocks(res)));
   }
 
-  async checkDb(orphans) {
-    let lastBlock = await this.getHighDbBlock();
+  async checkDb(checkOrphans, lastBlock) {
+    if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock();
     lastBlock = lastBlock.number;
-
     let blocks = await this.countDbBlocks();
 
+    /* let missingTxs = await this.getMissingTransactions()
+                                             await this.deleteBlockWithMissingTxs(missingTxs)
+                                             */
     let missingSegments = [];
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments();
     }
+
+    // let res = { lastBlock, blocks, missingSegments, missingTxs }
     let res = { lastBlock, blocks, missingSegments };
-    if (orphans) {
+    if (checkOrphans) {
       let orphans = await this.getOrphans(lastBlock);
       res = Object.assign(res, orphans);
     }
@@ -35,7 +39,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   async getOrphans(lastBlock) {
-    this.log.debug(`Checkig orphan blocks from ${lastBlock}`);
+    this.log.debug(`Checking orphan blocks from ${lastBlock}`);
     let blocks = await checkBlocksCongruence(this.Blocks, lastBlock);
     return blocks;
   }
@@ -62,6 +66,10 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     });
   }
 
+  getMissingTransactions() {
+    return checkBlocksTransactions(this.Blocks);
+  }
+
   getMissing(a) {
     if (a[a.length - 1] > 0) a.push(0);
     return a.filter((v, i) => {
@@ -83,26 +91,33 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   getBlocks(check) {
-    let segments = check.missingSegments;
-    let invalid = check.invalid;
+    let segments = check.missingSegments || [];
+    let invalid = check.invalid || [];
+    let missingTxs = check.missingTxs || [];
     let values = [];
-    if (segments) {
-      segments.forEach(segment => {
+    segments.forEach(segment => {
+      if (Array.isArray(segment)) {
         let number = segment[0];
         let limit = segment[1];
         while (number >= limit) {
           values.push(number);
           number--;
         }
-      });
-    }
-    if (invalid) {
-      invalid.forEach(block => {
-        values.push(block.validHash);
-      });
-    }
+      } else {
+        values.push(segment);
+      }
+    });
+    invalid.forEach(block => {
+      values.push(block.validHash);
+    });
+
+    missingTxs.forEach(block => {
+      values.push(block.number);
+    });
+
     if (values.length) {
       this.log.warn(`Getting ${values.length} bad blocks`);
+      this.log.trace(values);
       process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] });
     }
   }
@@ -132,13 +147,23 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     if (!block || !block.number) return;
     let number = block.number;
     this.setTipBlock(number);
+    this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`);
     if (this.tipCount >= this.tipSize) {
-      // let lastBlock = this.tipBlock - this.tipSize
       let lastBlock = this.tipBlock;
       this.tipCount = 0;
-      this.log.debug(`Checking parents from block ${lastBlock}`);
-      this.getOrphans(lastBlock).
-      then(blocks => this.getBlocks(blocks));
+      this.log.info(`Checking db / LastBlock: ${lastBlock}`);
+      return this.checkDb(true, lastBlock).
+      then(res => this.getBlocks(res));
+    }
+  }
+
+  async deleteBlockWithMissingTxs(blocks) {
+    try {
+      let res = await Promise.all([...blocks.map(block => this.Blocks.deleteOne({ hash: block.hash }))]);
+      return res;
+    } catch (err) {
+      this.log.error(`Error deleting blocks: ${blocks}`);
+      return Promise.reject(err);
     }
   }}exports.CheckBlocks = CheckBlocks;
 
@@ -171,6 +196,30 @@ const checkBlocksCongruence = exports.checkBlocksCongruence = async (blocksColle
       }
     }
     return { missing, invalid };
+  } catch (err) {
+    return Promise.reject(err);
+  }
+};
+
+const checkBlocksTransactions = exports.checkBlocksTransactions = async blocksCollection => {
+  try {
+    let missing = await blocksCollection.aggregate([
+    {
+      $unwind: '$transactions' },
+
+    {
+      $lookup: {
+        from: 'transactions',
+        localField: 'transactions',
+        foreignField: 'hash',
+        as: 'txs' } },
+
+
+    {
+      $match: { 'txs': { $eq: [] } } }]).
+
+    toArray();
+    return missing;
   } catch (err) {
     return Promise.reject(err);
   }

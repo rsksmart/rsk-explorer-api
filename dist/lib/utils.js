@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.hasValues = exports.hasValue = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.isHexString = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
 var _types = require('./types');
 
 const filterParams = exports.filterParams = (params, perPageMax = 50) => {
@@ -48,6 +48,11 @@ const sanitizeQuery = query => {
 
 const retFiltered = filtered => {
   return filtered && Object.keys(filtered).length > 0 ? filtered : null;
+};
+
+const isHexString = exports.isHexString = str => {
+  str = str.substring(0, 2) === '0x' ? str.substring(2) : str;
+  return (/^[0-9a-f]+$/i.test(str));
 };
 
 const isAddress = exports.isAddress = address => {
@@ -145,6 +150,24 @@ const getBestBlock = exports.getBestBlock = blocks => {
   return blocks[0];
 };
 
-const arrayIntersection = exports.arrayIntersection = (a, b) => a.filter(v => b.indexOf(v) !== -1);
+const arrayIntersection = exports.arrayIntersection = (a, b) => a.filter(v => b.includes(v));
+
+const arrayDifference = exports.arrayDifference = (a, b) => a.filter(x => !b.includes(x));
+
+const arraySymmetricDifference = exports.arraySymmetricDifference = (a, b) => arrayDifference(a, b).concat(b.filter(x => !a.includes(x)));
+
 const hasValue = exports.hasValue = (arr, search) => arrayIntersection(arr, search).length > 0;
+
 const hasValues = exports.hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length;
+
+const atob = exports.atob = str => Buffer.from(str, 'base64').toString('binary');
+
+const btoa = exports.btoa = str => Buffer.from(str, 'binary').toString('base64');
+
+const base64toHex = exports.base64toHex = base64 => {
+  let raw = atob(base64);
+  return '0x' + [...new Array(raw.length)].map((c, i) => {
+    let h = raw.charCodeAt(i).toString(16);
+    return h.length === 2 ? h : `0${h}`;
+  }).join('').toLowerCase();
+};

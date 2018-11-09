@@ -1,9 +1,10 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.Block = undefined;var _BcThing = require('./BcThing');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.missmatchBlockTransactions = exports.Block = undefined;var _BcThing = require('./BcThing');
 var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
 var _txFormat = require('../../lib/txFormat');var _txFormat2 = _interopRequireDefault(_txFormat);
 var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);
 var _ContractParser = require('../../lib/ContractParser/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
 var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+
 class Block extends _BcThing.BcThing {
   constructor(hashOrNumber, options) {
     super(options.nod3, options.collections);
@@ -52,7 +53,8 @@ class Block extends _BcThing.BcThing {
       this.fetched = true;
       return this.getData();
     } catch (err) {
-      this.log.error(err);
+      this.log.debug('Block fetch error', err);
+      return Promise.reject(err);
     }
   }
 
@@ -127,6 +129,12 @@ class Block extends _BcThing.BcThing {
       let block, txs, events, tokenAddresses;
       ({ block, txs, events, tokenAddresses } = data);
       let result = {};
+
+      // check transactions
+      let txsErr = missmatchBlockTransactions(block, txs);
+      if (txsErr.length) throw new Error(`Missing block transactions ${txsErr}`);
+
+      // save block
       result.block = await this.saveOrReplaceBlock(block);
       if (!result.block) {
         this.log.debug(`Block ${block.number} - ${block.hash} was not saved`);
@@ -143,23 +151,31 @@ class Block extends _BcThing.BcThing {
         });
       })]);
 
+      // insert txs
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))]).
       then(res => {result.txs = res;});
 
+      // remove pending txs
+      await Promise.all([...txs.map(tx => db.PendingTxs.deleteOne({ hash: tx.hash }))]);
+
+      // insert addresses
       await Promise.all(
       Object.values(this.addresses).map(a => a.save())).
       then(res => {result.addresses = res;});
 
+      // insert events
       await Promise.all(
       events.map(e => db.Events.insertOne(e))).
       then(res => {result.events = res;});
 
+      // insert tokenAddresses
       await Promise.all(
       tokenAddresses.map(ta => db.TokensAddrs.updateOne(
       { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))).
       then(res => {result.tokenAddresses = res;});
       return { result, data };
     } catch (err) {
+      this.log.trace(`Block save error [${this.hashOrNumber}]`, err);
       return Promise.reject(err);
     }
   }
@@ -174,7 +190,7 @@ class Block extends _BcThing.BcThing {
       }
       if (exists.length) {
         let oldBlock = exists[0];
-        if (oldBlock.hash === block.hash) throw new Error(`Block ${block.hash} exists in db`);
+        if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`);
         let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true);
         if (!oldBlockData) throw new Error(`Missing block data for: ${block}`);
         res = await this.replaceBlock(block, oldBlockData);
@@ -183,7 +199,8 @@ class Block extends _BcThing.BcThing {
       }
       return res;
     } catch (err) {
-      this.log.debug(err);
+      this.log.debug(err.message);
+      this.log.trace(err);
       return null;
     }
   }
@@ -334,6 +351,10 @@ class Block extends _BcThing.BcThing {
     return Promise.all(Object.values(items).map(i => i.fetch()));
   }}exports.Block = Block;
 
+
+const missmatchBlockTransactions = exports.missmatchBlockTransactions = (block, transactions) => {
+  return (0, _utils.arrayDifference)(block.transactions, transactions.map(tx => tx.hash));
+};
 
 const getBlockFromDb = exports.getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = (0, _utils.blockQuery)(blockHashOrNumber);

@@ -4,11 +4,12 @@ var _web3Connect = require('../web3Connect');
 var _utils = require('../utils');
 var _types = require('../types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class ContractParser {
-  constructor(abi) {
+  constructor(abi, options = {}) {
     this.abi = abi || _Abi2.default;
     this.web3 = _web3Connect.web3;
     this.methods = this.getAbiMethods();
     this.methodsKeys = this.getMethodsKeys();
+    this.log = options.logger || console;
   }
 
   setWeb3(web3) {
@@ -61,7 +62,7 @@ class ContractParser {
   }
   call(method, contract, params) {
     return new Promise((resolve, reject) => {
-      contract[method](params, (err, res) => {
+      contract[method].call(params, (err, res) => {
         if (err !== null) {
           resolve(null);
           return reject(err);
@@ -78,14 +79,14 @@ class ContractParser {
     methods.map(m =>
     this.call(m, contract).
     then(res => res).
-    catch(err => console.log(`[${contract.address}] Error executing ${m}  Error: ${err}`))));
+    catch(err => this.log.debug(`[${contract.address}] Error executing ${m}  Error: ${err}`))));
 
     return { name, symbol, decimals, totalSupply };
   }
 
   hasMethod(txInputData, method) {
     let key = this.methodsKeys[method];
-    if (!key) console.log(`Unknown method: ${method}`);
+    if (!key) this.log.debug(`Unknown method: ${method}`);
     return key ? txInputData.includes(key) : null;
   }
 

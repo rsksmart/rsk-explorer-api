@@ -46,4 +46,6 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
       Status: 'status',
       Events: 'events',
       TokensAddrs: 'tokensAddresses',
-      OrphanBlocks: 'orphanBlocks' } } };
+      OrphanBlocks: 'orphanBlocks',
+      TxPool: 'txPool',
+      PendingTxs: 'transactionsPending' } } };

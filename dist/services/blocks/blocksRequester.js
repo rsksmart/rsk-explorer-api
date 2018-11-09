@@ -13,6 +13,7 @@ options.Logger = log;
 _dataSource.dataSource.then(db => {
   let Requester = new _RequestBlocks.RequestBlocks(db, options);
   const blocksCollection = Requester.collections.Blocks;
+
   Requester.updateStatus = function (state) {
     state = state || {};
     state.requestingBlocks = this.getRequested();
@@ -20,6 +21,7 @@ _dataSource.dataSource.then(db => {
     let action = _types.actions.STATUS_UPDATE;
     process.send({ action, args: [state] });
   };
+
   process.on('message', msg => {
     let action = msg.action;
     let args = msg.args;
@@ -55,12 +57,13 @@ _dataSource.dataSource.then(db => {
     let key = data.key;
     let isHashKey = (0, _utils.isBlockHash)(key);
     if (block) {
+      process.send({ action: _types.actions.UPDATE_TIP_BLOCK, args: [block] });
       let show = isHashKey ? block.number : block.hash;
       log.debug(_types.events.NEW_BLOCK, `New Block DATA ${key} - ${show}`);
       let parent = block.parentHash;
 
       (0, _Block.getBlockFromDb)(parent, blocksCollection).then(parentBlock => {
-        if (!parentBlock) {
+        if (!parentBlock && block.number) {
           log.debug(`Getting parent of block ${block.number} - ${parent}`);
           Requester.request(parent, true);
         }

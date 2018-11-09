@@ -4,7 +4,7 @@ function (name, options) {
   options = options || {};
   const log = _bunyan2.default.createLogger({
     name,
-    level: 'debug' });
+    level: 'trace' });
 
 
   if (options.file) {

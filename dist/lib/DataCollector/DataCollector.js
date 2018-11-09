@@ -20,6 +20,7 @@ class DataCollector {
     this.setCollection(options.collectionName);
     this.tickDelay = 1000;
     this.serialize = _utils.serialize;
+    this.log = options.logger || console;
   }
   tick() {}
   stop() {
@@ -72,7 +73,7 @@ class DataCollector {
     }
   }
 
-  addItem(collectionName, key, ItemClass, addToRoot) {
+  addItem(collectionName, key, ItemClass, addToRoot = true) {
     if (collectionName && key) {
       ItemClass = ItemClass || _DataCollectorItem2.default;
       if (!this.items[key]) {
