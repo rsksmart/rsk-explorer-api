@@ -3,7 +3,8 @@ import Address from './Address'
 import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
 import ContractParser from '../../lib/ContractParser/ContractParser'
-import { blockQuery } from '../../lib/utils'
+import { blockQuery, arrayDifference } from '../../lib/utils'
+
 export class Block extends BcThing {
   constructor (hashOrNumber, options) {
     super(options.nod3, options.collections)
@@ -128,6 +129,12 @@ export class Block extends BcThing {
       let block, txs, events, tokenAddresses
       ({ block, txs, events, tokenAddresses } = data)
       let result = {}
+
+      // check transactions
+      let txsErr = missmatchBlockTransactions(block, txs)
+      if (txsErr.length) throw new Error(`Missing block transactions ${txsErr}`)
+
+      // save block
       result.block = await this.saveOrReplaceBlock(block)
       if (!result.block) {
         this.log.debug(`Block ${block.number} - ${block.hash} was not saved`)
@@ -168,7 +175,7 @@ export class Block extends BcThing {
         .then(res => { result.tokenAddresses = res })
       return { result, data }
     } catch (err) {
-      this.log.trace('Block save error', err)
+      this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
       return Promise.reject(err)
     }
   }
@@ -343,6 +350,10 @@ export class Block extends BcThing {
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
   }
+}
+
+export const missmatchBlockTransactions = (block, transactions) => {
+  return arrayDifference(block.transactions, transactions.map(tx => tx.hash))
 }
 
 export const getBlockFromDb = async (blockHashOrNumber, collection) => {
