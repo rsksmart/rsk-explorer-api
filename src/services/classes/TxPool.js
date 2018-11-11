@@ -1,4 +1,5 @@
 import { BlocksBase } from '../../lib/BlocksBase'
+import { isHexString, base64toHex } from '../../lib/utils'
 
 export class TxPool extends BlocksBase {
   constructor (db, options) {
@@ -76,14 +77,25 @@ export class TxPool extends BlocksBase {
     return res
   }
 
+  // fix rskj txpool bad responses
+  // see: https://github.com/rsksmart/rskj/issues/689
   formatFields (values) {
     let fields = ['hash', 'from', 'to']
     fields.forEach(f => { values[f] = this.add0x(values[f]) })
+
+    // see: https://github.com/rsksmart/rskj/issues/689
+    let input = values.input
+    if (input) {
+      input = (isHexString(input)) ? input : base64toHex(input)
+      values.input = input
+    }
+
     return values
   }
 
+  // see: https://github.com/rsksmart/rskj/issues/689
   add0x (value) {
-    if (value && !/^0x/.test(value)) value = `0x${value}`
+    if (value && isHexString(value) && !/^0x/.test(value)) value = `0x${value}`
     return value
   }
 
