@@ -21,11 +21,15 @@ export class CheckBlocks extends BlocksBase {
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
 
+    let missingTxs = await this.getMissingTransactions()
+    await this.deleteBlockWithMissingTxs(missingTxs)
+
     let missingSegments = []
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments()
     }
-    let res = { lastBlock, blocks, missingSegments }
+
+    let res = { lastBlock, blocks, missingSegments, missingTxs }
     if (checkOrphans) {
       let orphans = await this.getOrphans(lastBlock)
       res = Object.assign(res, orphans)
@@ -61,6 +65,10 @@ export class CheckBlocks extends BlocksBase {
       })
   }
 
+  getMissingTransactions () {
+    return checkBlocksTransactions(this.Blocks)
+  }
+
   getMissing (a) {
     if (a[a.length - 1] > 0) a.push(0)
     return a.filter((v, i) => {
@@ -84,6 +92,7 @@ export class CheckBlocks extends BlocksBase {
   getBlocks (check) {
     let segments = check.missingSegments || []
     let invalid = check.invalid || []
+    let missingTxs = check.missingTxs || []
     let values = []
     segments.forEach(segment => {
       if (Array.isArray(segment)) {
@@ -100,6 +109,11 @@ export class CheckBlocks extends BlocksBase {
     invalid.forEach(block => {
       values.push(block.validHash)
     })
+
+    missingTxs.forEach(block => {
+      values.push(block.number)
+    })
+
     if (values.length) {
       this.log.warn(`Getting ${values.length} bad blocks`)
       this.log.trace(values)
@@ -141,6 +155,16 @@ export class CheckBlocks extends BlocksBase {
         .then(res => this.getBlocks(res))
     }
   }
+
+  async deleteBlockWithMissingTxs (blocks) {
+    try {
+      let res = await Promise.all([...blocks.map(block => this.Blocks.deleteOne({ hash: block.hash }))])
+      return res
+    } catch (err) {
+      this.log.error(`Error deleting blocks: ${blocks}`)
+      return Promise.reject(err)
+    }
+  }
 }
 
 export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
@@ -171,6 +195,30 @@ export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
       }
     }
     return { missing, invalid }
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+export const checkBlocksTransactions = async blocksCollection => {
+  try {
+    let missing = await blocksCollection.aggregate([
+      {
+        $unwind: '$transactions'
+      },
+      {
+        $lookup: {
+          from: 'transactions',
+          localField: 'transactions',
+          foreignField: 'hash',
+          as: 'txs'
+        }
+      },
+      {
+        $match: { 'txs': { $eq: [] } }
+      }
+    ]).toArray()
+    return missing
   } catch (err) {
     return Promise.reject(err)
   }

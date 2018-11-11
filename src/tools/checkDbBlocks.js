@@ -2,7 +2,7 @@ import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
 import fs from 'fs'
 import util from 'util'
-import { checkBlocksCongruence } from '../services/classes/CheckBlocks'
+import { checkBlocksCongruence, checkBlocksTransactions } from '../services/classes/CheckBlocks'
 const config = Object.assign({}, conf.blocks)
 const writeFile = util.promisify(fs.writeFile)
 const outFile = process.argv[2] || '/tmp/blocksLog.json'
@@ -11,12 +11,17 @@ dataSource.then(async db => {
     const Blocks = db.collection(config.collections.Blocks)
     console.log('Getting blocks....')
     let res = await checkBlocksCongruence(Blocks)
+    res.missingTxs = await checkBlocksTransactions(Blocks)
+
     res.missingTotal = res.missing.length
     res.invalidTotal = res.invalid.length
+    res.missingTxsTotal = res.missingTxs.length
+
     console.log(`Missing Blocks:  ${res.missingTotal}`)
     console.log(`Invalid Blocks: ${res.invalidTotal}`)
-    await writeFile(outFile, JSON.stringify(res))
+    console.log(`Blocks with missing txs: ${res.missingTxsTotal}`)
 
+    await writeFile(outFile, JSON.stringify(res))
     console.log(`Log saved on: ${outFile}`)
     process.exit(0)
   } catch (err) {
