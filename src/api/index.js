@@ -87,7 +87,7 @@ dataSource.then(db => {
     // data handler
     socket.on('data', async payload => {
       if (!payload) {
-        socket.emit('error', formatError(errors.INVALID_REQUEST))
+        socket.emit('Error', formatError(errors.INVALID_REQUEST))
       } else {
         const action = payload.action
         const params = filterParams(payload.params)
@@ -112,7 +112,7 @@ dataSource.then(db => {
           socket.emit('data', formatRes({ module, action, result, req: payload }))
         } catch (err) {
           log.debug(`Action: ${action}: ERROR: ${err}`)
-          socket.emit('error',
+          socket.emit('Error',
             formatRes({ module, action, result: null, req: payload, error: errors.INVALID_REQUEST })
           )
         }
