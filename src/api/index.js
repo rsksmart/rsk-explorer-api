@@ -54,30 +54,30 @@ dataSource.then(db => {
 
   // broadcast new blocks
   blocks.events.on('newBlocks', result => {
-    io.emit('data', formatRes({ module: null, action: 'newBlocks', result }))
+    io.emit('data', formatRes({ action: 'newBlocks', result }))
   })
 
   // broadcast status
   status.events.on('newStatus', result => {
-    io.emit('data', formatRes({ module: null, action: 'dbStatus', result }))
+    io.emit('data', formatRes({ action: 'dbStatus', result }))
   })
 
   // broadcast txPool
   txPool.events.on('newPool', result => {
-    io.emit('data', formatRes({ module: null, action: 'txPool', result }))
+    io.emit('data', formatRes({ action: 'txPool', result }))
   })
 
   // broadcast txPool chart
   txPool.events.on('poolChart', result => {
-    io.emit('data', formatRes({ module: null, action: 'txPoolChart', result }))
+    io.emit('data', formatRes({ action: 'txPoolChart', result }))
   })
 
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
-    socket.emit('data', formatRes({ module: null, action: 'newBlocks', result: blocks.getLastBlocks() }))
-    socket.emit('data', formatRes({ module: null, action: 'dbStatus', result: status.getState() }))
-    socket.emit('data', formatRes({ module: null, action: 'txPool', result: txPool.getState() }))
-    socket.emit('data', formatRes({ module: null, action: 'txPoolChart', result: txPool.getPoolChart() }))
+    socket.emit('data', formatRes({ action: 'newBlocks', result: blocks.getLastBlocks() }))
+    socket.emit('data', formatRes({ action: 'dbStatus', result: status.getState() }))
+    socket.emit('data', formatRes({ action: 'txPool', result: txPool.getState() }))
+    socket.emit('data', formatRes({ action: 'txPoolChart', result: txPool.getPoolChart() }))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {

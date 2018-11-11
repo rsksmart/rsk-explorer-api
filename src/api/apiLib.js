@@ -4,6 +4,7 @@ const delayedFields = config.api.delayedFields || {}
 
 export const formatRes = (payload) => {
   let { module, action, result, req, error } = payload
+  module = (module) ? getModuleName(module) : null
   let data, pages, next, prev, delayed
   if (!result && !error) error = errors.EMPTY_RESULT
   if (error) {
@@ -37,5 +38,7 @@ export const getDelayedFields = (module, action) => {
 }
 
 export const getModule = module => modules[module] || module
+
+export const getModuleName = key => Object.keys(modules)[Object.values(modules).indexOf(key)] || key
 
 export { errors } from '../lib/types'
