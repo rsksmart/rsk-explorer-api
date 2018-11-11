@@ -50,6 +50,11 @@ const retFiltered = (filtered) => {
   return (filtered && Object.keys(filtered).length > 0) ? filtered : null
 }
 
+export const isHexString = str => {
+  str = (str.substring(0, 2) === '0x') ? str.substring(2) : str
+  return /^[0-9a-f]+$/i.test(str)
+}
+
 export const isAddress = address => {
   return /^(0x)?[0-9a-f]{40}$/i.test(address)
 }
@@ -145,6 +150,24 @@ export const getBestBlock = blocks => {
   return blocks[0]
 }
 
-export const arrayIntersection = (a, b) => a.filter(v => b.indexOf(v) !== -1)
+export const arrayIntersection = (a, b) => a.filter(v => b.includes(v))
+
+export const arrayDifference = (a, b) => a.filter(x => !b.includes(x))
+
+export const arraySymmetricDifference = (a, b) => arrayDifference(a, b).concat(b.filter(x => !a.includes(x)))
+
 export const hasValue = (arr, search) => arrayIntersection(arr, search).length > 0
+
 export const hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length
+
+export const atob = str => Buffer.from(str, 'base64').toString('binary')
+
+export const btoa = str => Buffer.from(str, 'binary').toString('base64')
+
+export const base64toHex = (base64) => {
+  let raw = atob(base64)
+  return '0x' + [...new Array(raw.length)].map((c, i) => {
+    let h = raw.charCodeAt(i).toString(16)
+    return (h.length === 2) ? h : `0${h}`
+  }).join('').toLowerCase()
+}
