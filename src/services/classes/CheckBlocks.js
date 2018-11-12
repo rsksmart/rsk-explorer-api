@@ -21,15 +21,16 @@ export class CheckBlocks extends BlocksBase {
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
 
-    let missingTxs = await this.getMissingTransactions()
+    /* let missingTxs = await this.getMissingTransactions()
     await this.deleteBlockWithMissingTxs(missingTxs)
-
+   */
     let missingSegments = []
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments()
     }
 
-    let res = { lastBlock, blocks, missingSegments, missingTxs }
+    // let res = { lastBlock, blocks, missingSegments, missingTxs }
+    let res = { lastBlock, blocks, missingSegments }
     if (checkOrphans) {
       let orphans = await this.getOrphans(lastBlock)
       res = Object.assign(res, orphans)
