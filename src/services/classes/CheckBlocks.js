@@ -11,9 +11,17 @@ export class CheckBlocks extends BlocksBase {
     this.tipSize = options.bcTipSize || 12
   }
 
-  start () {
-    Promise.all([this.getBlock(0), this.getLastBlock()])
-      .then(() => this.checkDb(true).then(res => this.getBlocks(res)))
+  async start () {
+    try {
+      await Promise.all([this.getBlock(0), this.getLastBlock()])
+      let missingTxs = await this.getMissingTransactions()
+      await this.deleteMissingTxsBlocks(missingTxs)
+      let res = await this.checkDb(true)
+      await this.getBlocks(res)
+    } catch (err) {
+      this.log.error(`[CheckBlocks.start] ${err}`)
+      return Promise.reject(err)
+    }
   }
 
   async checkDb (checkOrphans, lastBlock) {
@@ -21,9 +29,6 @@ export class CheckBlocks extends BlocksBase {
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
 
-    /* let missingTxs = await this.getMissingTransactions()
-    await this.deleteBlockWithMissingTxs(missingTxs)
-   */
     let missingSegments = []
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments()
@@ -157,7 +162,7 @@ export class CheckBlocks extends BlocksBase {
     }
   }
 
-  async deleteBlockWithMissingTxs (blocks) {
+  async deleteMissingTxsBlocks (blocks) {
     try {
       let res = await Promise.all([...blocks.map(block => this.Blocks.deleteOne({ hash: block.hash }))])
       return res
