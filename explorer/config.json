@@ -1,0 +1,22 @@
+{
+  "source": {
+    "node": "rsk-node01",
+    "port": 4444
+  },
+  "publicSettings": {
+    "bridgeAddress": "0x0000000000000000000000000000000001000006",
+    "remascAddress": "0x0000000000000000000000000000000001000008",
+    "contractDeployAddress": "0x0000000000000000000000000000000000000000"
+  },
+  "server": {
+    "port": 3003
+  },
+  "db": {
+    "server": "mongod01",
+    "port": 27017,
+    "database": "blockDB"
+  },
+  "blocks": {
+    "blocksQueueSize":100
+  }
+}
