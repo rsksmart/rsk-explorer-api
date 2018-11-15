@@ -89,6 +89,7 @@ Required values
     "remascAddress": "0x0000000000000000000000000000000001000008"
   },
   "server": {
+    "address": "localhost",
     "port": 3003
   },
   "db": {
