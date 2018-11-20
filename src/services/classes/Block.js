@@ -71,6 +71,7 @@ export class Block extends BcThing {
   async getTx (txHash, index, tx) {
     try {
       if (!tx) tx = await this.getTransactionByHash(txHash)
+      if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`)
       // if (!tx) tx = await this.getTransactionByIndex(index)
       let receipt = await this.getTxReceipt(txHash)
       if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `)
@@ -254,7 +255,10 @@ export class Block extends BcThing {
 
   async replaceBlock (newBlock, oldBlock) {
     try {
-      if (!oldBlock || !newBlock) return
+      if (!oldBlock || !newBlock) {
+        this.log.trace(`Replace block missing arguments`, oldBlock, newBlock)
+        throw new Error(`Replace block error, missing arguments`)
+      }
       let { block, txs, events } = oldBlock
       block._replacedBy = newBlock.hash
       block._events = events
