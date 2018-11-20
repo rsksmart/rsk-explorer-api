@@ -127,13 +127,13 @@ export class Block extends BcThing {
 
   async save () {
     let db = this.collections
+    const result = {}
+    let data = await this.fetch()
     try {
-      let data = await this.fetch()
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
       data = this.serialize(data)
       let block, txs, events, tokenAddresses
       ({ block, txs, events, tokenAddresses } = data)
-      let result = {}
 
       // check transactions
       let txsErr = missmatchBlockTransactions(block, txs)
@@ -142,20 +142,11 @@ export class Block extends BcThing {
         throw new Error(`Block: ${block.number} - ${block.hash} Missing transactions `)
       }
 
-      // save block
-      result.block = await this.saveOrReplaceBlock(block)
+      // clean db
+      block = await this.removeOldBlockData(block, txs)
 
-      // remove blocks by tx
-      await Promise.all([...txs.map(async tx => {
-        try {
-          let oldTx = await this.getTransactionFromDb(tx.hash)
-          if (!oldTx) return
-          let oldBlock = this.getTransactionFromDb(tx.hash)
-          await this.deleteBlockDataFromDb(oldBlock.hash, oldBlock.number)
-        } catch (err) {
-          return Promise.reject(err)
-        }
-      })])
+      // insert block
+      result.block = await this.insertBlock(block)
 
       // insert txs
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))])
@@ -179,34 +170,88 @@ export class Block extends BcThing {
         tokenAddresses.map(ta => db.TokensAddrs.updateOne(
           { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true })))
         .then(res => { result.tokenAddresses = res })
+
       return { result, data }
     } catch (err) {
+      // remove blockData if block was inserted
+      if (result.block) {
+        this.deleteBlockDataFromDb(data.block.hash, data.block.number)
+      }
       this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
       return Promise.reject(err)
     }
   }
 
-  async saveOrReplaceBlock (block) {
+  async getOldBlockData (block) {
     try {
       if (!block || !block.hash) throw new Error('Block data is empty')
-      let res
       let exists = await this.searchBlock(block)
       if (exists.length > 1) {
         throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`)
       }
-      if (exists.length) {
-        let oldBlock = exists[0]
-        if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`)
-        let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
-        if (!oldBlockData) throw new Error(`Missing block data for: ${block}`)
-        res = await this.replaceBlock(block, oldBlockData)
-      } else {
-        res = await this.insertBlock(block)
-      }
-      return res
+      if (!exists.length) return
+      let oldBlock = exists[0]
+      if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`)
+      let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
+      if (!oldBlockData) throw new Error(`Missing block data for: ${block}`)
+      return oldBlockData
     } catch (err) {
       this.log.debug(err.message)
-      this.log.trace(err)
+      return Promise.reject(err)
+    }
+  }
+
+  async removeOldBlockData (block, txs) {
+    try {
+      let oldBlock = await this.getOldBlockData(block)
+      if (oldBlock) block = this.moveOldBlock(block, oldBlock)
+      await this.removeBlocksByTxs(txs)
+      return block
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async moveOldBlock (newBlock, oldBlockData) {
+    try {
+      if (!oldBlockData || !newBlock) {
+        this.log.trace(`Replace block missing arguments`, oldBlockData, newBlock)
+        throw new Error(`Replace block error, missing arguments`)
+      }
+      let { block, txs, events } = oldBlockData
+      block._replacedBy = newBlock.hash
+      block._events = events
+      block.transactions = txs
+      await this.saveOrphanBlock(block)
+      await this.deleteBlockDataFromDb(block.hash, block.number)
+      newBlock._replacedBlockHash = block.hash
+      return newBlock
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  deleteBlockDataFromDb (blockHash, blockNumber) {
+    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections)
+  }
+
+  async removeBlocksByTxs (txs) {
+    try {
+      await Promise.all([...txs.map(async tx => {
+        try {
+          let oldTx = await this.getTransactionFromDb(tx.hash)
+          if (!oldTx) return
+          let oldBlock = await this.getTransactionFromDb(tx.hash)
+          if (oldBlock) {
+            let { blockHash, blockNumber } = oldBlock
+            await this.deleteBlockDataFromDb(blockHash, blockNumber)
+          }
+          return
+        } catch (err) {
+          return Promise.reject(err)
+        }
+      })])
+    } catch (err) {
       return Promise.reject(err)
     }
   }
@@ -256,30 +301,6 @@ export class Block extends BcThing {
 
   getTransactionFromDb (hash) {
     return this.collections.Txs.findOne({ hash })
-  }
-
-  async replaceBlock (newBlock, oldBlock) {
-    try {
-      if (!oldBlock || !newBlock) {
-        this.log.trace(`Replace block missing arguments`, oldBlock, newBlock)
-        throw new Error(`Replace block error, missing arguments`)
-      }
-      let { block, txs, events } = oldBlock
-      block._replacedBy = newBlock.hash
-      block._events = events
-      block.transactions = txs
-      await this.saveOrphanBlock(block)
-      await this.deleteBlockDataFromDb(block.hash, block.number)
-      newBlock._replacedBlockHash = block.hash
-      let res = await this.insertBlock(newBlock)
-      return res
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  deleteBlockDataFromDb (blockHash, blockNumber) {
-    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections)
   }
 
   saveOrphanBlock (blockData) {
