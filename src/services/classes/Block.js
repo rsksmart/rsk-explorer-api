@@ -108,17 +108,21 @@ export class Block extends BcThing {
     })
   }
 
-  parseTxEvents (tx) {
+  async parseTxEvents (tx) {
+    if (!tx.receipt || parseInt(tx.receipt.status) !== 1) return
     const timestamp = tx.timestamp
-    return this.parseTxLogs(tx.receipt.logs)
-      .then(topics => topics.filter(t => t.event)
+    try {
+      let topics = await this.parseTxLogs(tx.receipt.logs)
+      return topics.filter(t => t.event)
         .map(event => {
           let eventId = `${event.transactionHash}-${event.logIndex}`
           event.eventId = eventId
           event.timestamp = timestamp
           return event
         })
-      )
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   async save () {
