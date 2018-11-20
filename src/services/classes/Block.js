@@ -143,13 +143,15 @@ export class Block extends BcThing {
       }
 
       // remove blocks by tx
-      await Promise.all([...txs.map(tx => {
-        return this.getTransactionFromDb(tx.hash)
-          .then(oldTx => {
-            if (!oldTx) return Promise.resolve()
-            return this.getBlockFromDb(oldTx.blockHash, true)
-              .then(oldBlock => this.replaceBlock(block, oldBlock))
-          })
+      await Promise.all([...txs.map(async tx => {
+        try {
+          let oldTx = await this.getTransactionFromDb(tx.hash)
+          if (!oldTx) return
+          let oldBlock = this.getTransactionFromDb(tx.hash)
+          await this.deleteBlockDataFromDb(oldBlock.hash, oldBlock.number)
+        } catch (err) {
+          return Promise.reject(err)
+        }
       })])
 
       // insert txs
