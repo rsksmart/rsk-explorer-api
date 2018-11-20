@@ -103,6 +103,11 @@ export default {
     {
       key: { timestamp: 1 },
       name: 'eventTsIndex'
+    },
+    {
+      key: { eventId: 1 },
+      name: 'eventIdIndex',
+      unique: true
     }
   ],
   TokensAddrs: [
