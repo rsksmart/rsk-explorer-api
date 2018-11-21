@@ -363,7 +363,10 @@ export class Block extends BcThing {
 }
 
 export const missmatchBlockTransactions = (block, transactions) => {
-  return arrayDifference(block.transactions, transactions.map(tx => tx.hash))
+  let diff = arrayDifference(block.transactions, transactions.map(tx => tx.hash))
+  if (diff.length) return diff
+  let blockHash = block.hash
+  return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash)
 }
 
 export const getBlockFromDb = async (blockHashOrNumber, collection) => {
