@@ -137,14 +137,13 @@ export class Block extends BcThing {
 
       // check transactions
       let txsErr = missmatchBlockTransactions(block, txs)
-      if (txsErr.length) throw new Error(`Missing block transactions ${txsErr}`)
+      if (txsErr.length) {
+        this.log.trace(`Block: ${block.number} - ${block.hash} Missing transactions: ${JSON.stringify(txsErr)} `)
+        throw new Error(`Block: ${block.number} - ${block.hash} Missing transactions `)
+      }
 
       // save block
       result.block = await this.saveOrReplaceBlock(block)
-      if (!result.block) {
-        this.log.debug(`Block ${block.number} - ${block.hash} was not saved`)
-        return { result, data }
-      }
 
       // remove blocks by tx
       await Promise.all([...txs.map(async tx => {
@@ -208,7 +207,7 @@ export class Block extends BcThing {
     } catch (err) {
       this.log.debug(err.message)
       this.log.trace(err)
-      return null
+      return Promise.reject(err)
     }
   }
 
