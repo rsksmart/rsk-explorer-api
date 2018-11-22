@@ -109,7 +109,6 @@ export class Block extends BcThing {
   }
 
   async parseTxEvents (tx) {
-    if (!tx.receipt || parseInt(tx.receipt.status) !== 1) return
     const timestamp = tx.timestamp
     try {
       let topics = await this.parseTxLogs(tx.receipt.logs)
@@ -118,6 +117,7 @@ export class Block extends BcThing {
           let eventId = `${event.transactionHash}-${event.logIndex}`
           event.eventId = eventId
           event.timestamp = timestamp
+          event.txStatus = tx.receipt.status
           return event
         })
     } catch (err) {
