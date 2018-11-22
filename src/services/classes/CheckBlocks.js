@@ -152,17 +152,22 @@ export class CheckBlocks extends BlocksBase {
     this.tipBlock = tip
   }
 
-  updateTipBlock (block) {
-    if (!block || !block.number) return
-    let number = block.number
-    this.setTipBlock(number)
-    this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`)
-    if (this.tipCount >= this.tipSize) {
-      let lastBlock = this.tipBlock
-      this.tipCount = 0
-      this.log.info(`Checking db / LastBlock: ${lastBlock}`)
-      return this.checkDb(true, lastBlock, lastBlock - this.tipSize * 2)
-        .then(res => this.getBlocks(res))
+  async updateTipBlock (block) {
+    try {
+      if (!block || !block.number) return
+      let number = block.number
+      this.setTipBlock(number)
+      this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`)
+      if (this.tipCount >= this.tipSize) {
+        let lastBlock = this.tipBlock
+        this.tipCount = 0
+        this.log.info(`Checking db / LastBlock: ${lastBlock}`)
+        let res = await this.checkDb(true, lastBlock, lastBlock - this.tipSize * 10)
+        this.log.trace(`Check db: ${res}`)
+        return this.getBlocks(res)
+      }
+    } catch (err) {
+      this.log.error(`Error updating tip: ${err}`)
     }
   }
 
