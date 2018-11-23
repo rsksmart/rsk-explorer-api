@@ -53,3 +53,8 @@ function help () {
 function getTime (t) {
   return Date.now() - (t || 0)
 }
+
+process.on('unhandledRejection', err => {
+  console.error(err)
+  process.exit(9)
+})
