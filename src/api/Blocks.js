@@ -1,5 +1,6 @@
 import { DataCollector } from '../lib/DataCollector'
 import config from '../lib/config'
+import { txTypes } from '../lib/types'
 import { Block } from './Block'
 import { Tx } from './Tx'
 import { Address } from './Address'
@@ -40,7 +41,7 @@ class Blocks extends DataCollector {
         if (err) console.log(err)
         else {
           this.Tx.db
-            .find()
+            .find({ txType: { $in: [txTypes.default, txTypes.contract] } })
             .sort({ blockNumber: -1, transactionIndex: -1 })
             .limit(this.lastLimit)
             .toArray((err, txs) => {
