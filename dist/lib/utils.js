@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.isHexString = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.add0x = exports.isHexString = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
 var _types = require('./types');
 
 const filterParams = exports.filterParams = (params, perPageMax = 50) => {
@@ -54,6 +54,8 @@ const isHexString = exports.isHexString = str => {
   str = str.substring(0, 2) === '0x' ? str.substring(2) : str;
   return (/^[0-9a-f]+$/i.test(str));
 };
+
+const add0x = exports.add0x = str => isHexString(str) && str.substring(0, 2) !== '0x' ? `0x${str}` : str;
 
 const isAddress = exports.isAddress = address => {
   return (/^(0x)?[0-9a-f]{40}$/i.test(address));

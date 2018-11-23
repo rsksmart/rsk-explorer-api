@@ -71,6 +71,7 @@ class Block extends _BcThing.BcThing {
   async getTx(txHash, index, tx) {
     try {
       if (!tx) tx = await this.getTransactionByHash(txHash);
+      if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`);
       // if (!tx) tx = await this.getTransactionByIndex(index)
       let receipt = await this.getTxReceipt(txHash);
       if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `);
@@ -107,49 +108,45 @@ class Block extends _BcThing.BcThing {
     });
   }
 
-  parseTxEvents(tx) {
+  async parseTxEvents(tx) {
     const timestamp = tx.timestamp;
-    return this.parseTxLogs(tx.receipt.logs).
-    then(topics => topics.filter(t => t.event).
-    map(event => {
-      let eventId = `${event.transactionHash}-${event.logIndex}`;
-      event.eventId = eventId;
-      event.timestamp = timestamp;
-      return event;
-    }));
-
+    try {
+      let topics = await this.parseTxLogs(tx.receipt.logs);
+      return topics.filter(t => t.event).
+      map(event => {
+        let eventId = `${event.transactionHash}-${event.logIndex}`;
+        event.eventId = eventId;
+        event.timestamp = timestamp;
+        event.txStatus = tx.receipt.status;
+        return event;
+      });
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   async save() {
     let db = this.collections;
+    const result = {};
+    let data = await this.fetch();
     try {
-      let data = await this.fetch();
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`);
       data = this.serialize(data);
       let block, txs, events, tokenAddresses;
       ({ block, txs, events, tokenAddresses } = data);
-      let result = {};
 
       // check transactions
       let txsErr = missmatchBlockTransactions(block, txs);
-      if (txsErr.length) throw new Error(`Missing block transactions ${txsErr}`);
-
-      // save block
-      result.block = await this.saveOrReplaceBlock(block);
-      if (!result.block) {
-        this.log.debug(`Block ${block.number} - ${block.hash} was not saved`);
-        return { result, data };
+      if (txsErr.length) {
+        this.log.trace(`Block: ${block.number} - ${block.hash} Missing transactions: ${JSON.stringify(txsErr)} `);
+        throw new Error(`Block: ${block.number} - ${block.hash} Missing transactions `);
       }
 
-      // remove blocks by tx
-      await Promise.all([...txs.map(tx => {
-        return this.getTransactionFromDb(tx.hash).
-        then(oldTx => {
-          if (!oldTx) return Promise.resolve();
-          return this.getBlockFromDb(oldTx.blockHash, true).
-          then(oldBlock => this.replaceBlock(block, oldBlock));
-        });
-      })]);
+      // clean db
+      block = await this.removeOldBlockData(block, txs);
+
+      // insert block
+      result.block = await this.insertBlock(block);
 
       // insert txs
       await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))]).
@@ -173,35 +170,89 @@ class Block extends _BcThing.BcThing {
       tokenAddresses.map(ta => db.TokensAddrs.updateOne(
       { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))).
       then(res => {result.tokenAddresses = res;});
+
       return { result, data };
     } catch (err) {
+      // remove blockData if block was inserted
+      if (result.block) {
+        this.deleteBlockDataFromDb(data.block.hash, data.block.number);
+      }
       this.log.trace(`Block save error [${this.hashOrNumber}]`, err);
       return Promise.reject(err);
     }
   }
 
-  async saveOrReplaceBlock(block) {
+  async getOldBlockData(block) {
     try {
       if (!block || !block.hash) throw new Error('Block data is empty');
-      let res;
       let exists = await this.searchBlock(block);
       if (exists.length > 1) {
         throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`);
       }
-      if (exists.length) {
-        let oldBlock = exists[0];
-        if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`);
-        let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true);
-        if (!oldBlockData) throw new Error(`Missing block data for: ${block}`);
-        res = await this.replaceBlock(block, oldBlockData);
-      } else {
-        res = await this.insertBlock(block);
-      }
-      return res;
+      if (!exists.length) return;
+      let oldBlock = exists[0];
+      if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`);
+      let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true);
+      if (!oldBlockData) throw new Error(`Missing block data for: ${block}`);
+      return oldBlockData;
     } catch (err) {
       this.log.debug(err.message);
-      this.log.trace(err);
-      return null;
+      return Promise.reject(err);
+    }
+  }
+
+  async removeOldBlockData(block, txs) {
+    try {
+      let oldBlock = await this.getOldBlockData(block);
+      if (oldBlock) block = this.moveOldBlock(block, oldBlock);
+      await this.removeBlocksByTxs(txs);
+      return block;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async moveOldBlock(newBlock, oldBlockData) {
+    try {
+      if (!oldBlockData || !newBlock) {
+        this.log.trace(`Replace block missing arguments`, oldBlockData, newBlock);
+        throw new Error(`Replace block error, missing arguments`);
+      }
+      let { block, txs, events } = oldBlockData;
+      block._replacedBy = newBlock.hash;
+      block._events = events;
+      block.transactions = txs;
+      await this.saveOrphanBlock(block);
+      await this.deleteBlockDataFromDb(block.hash, block.number);
+      newBlock._replacedBlockHash = block.hash;
+      return newBlock;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  deleteBlockDataFromDb(blockHash, blockNumber) {
+    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections);
+  }
+
+  async removeBlocksByTxs(txs) {
+    try {
+      await Promise.all([...txs.map(async tx => {
+        try {
+          let oldTx = await this.getTransactionFromDb(tx.hash);
+          if (!oldTx) return;
+          let oldBlock = await this.getTransactionFromDb(tx.hash);
+          if (oldBlock) {
+            let { blockHash, blockNumber } = oldBlock;
+            await this.deleteBlockDataFromDb(blockHash, blockNumber);
+          }
+          return;
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      })]);
+    } catch (err) {
+      return Promise.reject(err);
     }
   }
 
@@ -250,27 +301,6 @@ class Block extends _BcThing.BcThing {
 
   getTransactionFromDb(hash) {
     return this.collections.Txs.findOne({ hash });
-  }
-
-  async replaceBlock(newBlock, oldBlock) {
-    try {
-      if (!oldBlock || !newBlock) return;
-      let { block, txs, events } = oldBlock;
-      block._replacedBy = newBlock.hash;
-      block._events = events;
-      block.transactions = txs;
-      await this.saveOrphanBlock(block);
-      await this.deleteBlockDataFromDb(block.hash, block.number);
-      newBlock._replacedBlockHash = block.hash;
-      let res = await this.insertBlock(newBlock);
-      return res;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  deleteBlockDataFromDb(blockHash, blockNumber) {
-    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections);
   }
 
   saveOrphanBlock(blockData) {
@@ -353,7 +383,10 @@ class Block extends _BcThing.BcThing {
 
 
 const missmatchBlockTransactions = exports.missmatchBlockTransactions = (block, transactions) => {
-  return (0, _utils.arrayDifference)(block.transactions, transactions.map(tx => tx.hash));
+  let diff = (0, _utils.arrayDifference)(block.transactions, transactions.map(tx => tx.hash));
+  if (diff.length) return diff;
+  let blockHash = block.hash;
+  return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash);
 };
 
 const getBlockFromDb = exports.getBlockFromDb = async (blockHashOrNumber, collection) => {

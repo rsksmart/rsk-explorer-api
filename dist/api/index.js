@@ -18,6 +18,7 @@ var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return o
 
 
 const port = _config2.default.server.port || '3000';
+const address = _config2.default.server.address;
 const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
 
 _dataSource2.default.then(db => {
@@ -41,7 +42,7 @@ _dataSource2.default.then(db => {
     }
     res.end();
   });
-  httpServer.listen(port);
+  httpServer.listen(port, address);
 
   const io = new _socket2.default(httpServer);
 
@@ -49,7 +50,7 @@ _dataSource2.default.then(db => {
   const userEvents = (0, _UserEventsApi2.default)(io, blocks, log);
 
   io.httpServer.on('listening', () => {
-    log.info('Server listen on port ' + port);
+    log.info(`Server listen on: ${address || '0.0.0.0'}:${port}`);
   });
 
   // broadcast new blocks

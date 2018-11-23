@@ -49,7 +49,8 @@ socket.on('data', async res => {
       results.push(data);
 
       if (page < pages) {
-        getPage(socket, payload, page++, pages);
+        page++;
+        getPage(socket, payload, page, pages);
       } else {
         c.ok(`Done: ${results.length} results`);
         if (results.length) await saveToFile(results, outFile);

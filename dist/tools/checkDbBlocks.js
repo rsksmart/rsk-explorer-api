@@ -9,9 +9,10 @@ const outFile = process.argv[2] || '/tmp/blocksLog.json';
 _dataSource2.default.then(async db => {
   try {
     const Blocks = db.collection(config.collections.Blocks);
+    const Txs = db.collection(config.collections.Txs);
     console.log('Getting blocks....');
     let res = await (0, _CheckBlocks.checkBlocksCongruence)(Blocks);
-    res.missingTxs = await (0, _CheckBlocks.checkBlocksTransactions)(Blocks);
+    res.missingTxs = await (0, _CheckBlocks.checkBlocksTransactions)(Blocks, Txs);
 
     res.missingTotal = res.missing.length;
     res.invalidTotal = res.invalid.length;

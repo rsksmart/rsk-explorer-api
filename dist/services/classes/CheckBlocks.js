@@ -11,26 +11,34 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     this.tipSize = options.bcTipSize || 12;
   }
 
-  start() {
-    Promise.all([this.getBlock(0), this.getLastBlock()]).
-    then(() => this.checkDb(true).then(res => this.getBlocks(res)));
+  async start() {
+    try {
+      await Promise.all([this.getBlock(0), this.getLastBlock()]);
+      this.log.info('Checking database');
+      let res = await this.checkDb(true);
+      this.log.info('Getting missing blocks');
+      this.log.trace(res);
+      await this.getBlocks(res);
+    } catch (err) {
+      this.log.error(`[CheckBlocks.start] ${err}`);
+      return Promise.reject(err);
+    }
   }
 
-  async checkDb(checkOrphans, lastBlock) {
+  async checkDb(checkOrphans, lastBlock, firstBlock) {
     if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock();
     lastBlock = lastBlock.number;
     let blocks = await this.countDbBlocks();
 
-    /* let missingTxs = await this.getMissingTransactions()
-                                             await this.deleteBlockWithMissingTxs(missingTxs)
-                                             */
     let missingSegments = [];
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments();
     }
 
-    // let res = { lastBlock, blocks, missingSegments, missingTxs }
-    let res = { lastBlock, blocks, missingSegments };
+    let missingTxs = await this.getMissingTransactions(lastBlock, firstBlock);
+    await this.deleteMissingTxsBlocks(missingTxs);
+
+    let res = { lastBlock, blocks, missingSegments, missingTxs };
     if (checkOrphans) {
       let orphans = await this.getOrphans(lastBlock);
       res = Object.assign(res, orphans);
@@ -66,8 +74,8 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     });
   }
 
-  getMissingTransactions() {
-    return checkBlocksTransactions(this.Blocks);
+  getMissingTransactions(lastBlock, firstBlock) {
+    return checkBlocksTransactions(this.Blocks, this.collections.Txs, lastBlock, firstBlock);
   }
 
   getMissing(a) {
@@ -95,6 +103,11 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     let invalid = check.invalid || [];
     let missingTxs = check.missingTxs || [];
     let values = [];
+
+    missingTxs.forEach(block => {
+      values.push(block.number);
+    });
+
     segments.forEach(segment => {
       if (Array.isArray(segment)) {
         let number = segment[0];
@@ -109,10 +122,6 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     });
     invalid.forEach(block => {
       values.push(block.validHash);
-    });
-
-    missingTxs.forEach(block => {
-      values.push(block.number);
     });
 
     if (values.length) {
@@ -143,23 +152,29 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
     this.tipBlock = tip;
   }
 
-  updateTipBlock(block) {
-    if (!block || !block.number) return;
-    let number = block.number;
-    this.setTipBlock(number);
-    this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`);
-    if (this.tipCount >= this.tipSize) {
-      let lastBlock = this.tipBlock;
-      this.tipCount = 0;
-      this.log.info(`Checking db / LastBlock: ${lastBlock}`);
-      return this.checkDb(true, lastBlock).
-      then(res => this.getBlocks(res));
+  async updateTipBlock(block) {
+    try {
+      if (!block || !block.number) return;
+      let number = block.number;
+      this.setTipBlock(number);
+      this.log.trace(`TipCount: ${this.tipCount} / TipBlock: ${this.tipBlock} / Block: ${number}`);
+      if (this.tipCount >= this.tipSize) {
+        let lastBlock = this.tipBlock;
+        this.tipCount = 0;
+        this.log.info(`Checking db / LastBlock: ${lastBlock}`);
+        let res = await this.checkDb(true, lastBlock, lastBlock - this.tipSize * 10);
+        this.log.trace(`Check db: ${res}`);
+        return this.getBlocks(res);
+      }
+    } catch (err) {
+      this.log.error(`Error updating tip: ${err}`);
     }
   }
 
-  async deleteBlockWithMissingTxs(blocks) {
+  async deleteMissingTxsBlocks(blocks) {
     try {
-      let res = await Promise.all([...blocks.map(block => this.Blocks.deleteOne({ hash: block.hash }))]);
+      let res = await Promise.all([...blocks.
+      map(block => (0, _Block.deleteBlockDataFromDb)(block.hash, block.number, this.collections))]);
       return res;
     } catch (err) {
       this.log.error(`Error deleting blocks: ${blocks}`);
@@ -201,25 +216,23 @@ const checkBlocksCongruence = exports.checkBlocksCongruence = async (blocksColle
   }
 };
 
-const checkBlocksTransactions = exports.checkBlocksTransactions = async blocksCollection => {
+const checkBlocksTransactions = exports.checkBlocksTransactions = async (blocksCollection, txsCollection, lastBlock, firstBlock) => {
   try {
-    let missing = await blocksCollection.aggregate([
-    {
-      $unwind: '$transactions' },
-
-    {
-      $lookup: {
-        from: 'transactions',
-        localField: 'transactions',
-        foreignField: 'hash',
-        as: 'txs' } },
-
-
-    {
-      $match: { 'txs': { $eq: [] } } }]).
-
-    toArray();
-    return missing;
+    let missing = {};
+    let query = lastBlock || firstBlock ? { number: {} } : {};
+    if (lastBlock) query.number.$lte = lastBlock;
+    if (firstBlock) query.number.$gte = firstBlock;
+    let cursor = blocksCollection.find(query);
+    while (await cursor.hasNext()) {
+      let block = await cursor.next();
+      await Promise.all(block.transactions.
+      map(hash => txsCollection.
+      find({ hash }, { hash: 1 }).count().
+      then(txs => {
+        if (txs < 1) missing[block.number] = block;
+      })));
+    }
+    return Object.values(missing);
   } catch (err) {
     return Promise.reject(err);
   }
