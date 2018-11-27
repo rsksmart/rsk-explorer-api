@@ -4,7 +4,6 @@ import Blocks from './Blocks'
 import Status from './Status'
 import TxPool from './TxPool'
 import Logger from '../lib/Logger'
-import { filterParams } from '../lib/utils'
 import http from 'http'
 import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
@@ -13,6 +12,7 @@ import {
   formatError,
   formatRes,
   publicSettings,
+  filterParams,
   getDelayedFields,
   getModule
 } from './apiLib'

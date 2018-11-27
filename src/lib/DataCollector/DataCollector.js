@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
-import { filterParams, serialize } from '../utils'
+import { serialize } from '../utils'
+import { filterParams } from '../../api/apiLib'
 import { Db } from 'mongodb'
 import DataCollectorItem from './DataCollectorItem'
 class Emitter extends EventEmitter { }
