@@ -1,8 +1,8 @@
 version: "3"
 services:
-  explorer:
+  explorer01:
     build: .
-    image: explorer:latest
+    image: explorer01:latest
     depends_on:
       - rsk-node
       - mongod
@@ -10,9 +10,9 @@ services:
     ports:
       - "3003:3003"
     networks:
-      - net_explorer
+      - net_explorer          
   rsk-node:
-    build: ./rsk-node
+    build: ./dockerized/rsk-node
     image: rsk-node01:latest
     container_name: rsk-node01
     ports:
@@ -22,7 +22,7 @@ services:
     networks:
       - net_explorer
   mongod:
-    build: ./mongod
+    build: ./dockerized/mongod
     image: mongod01:latest
     container_name: mongod01
     ports:
@@ -31,4 +31,4 @@ services:
       - net_explorer    
 networks: 
   net_explorer:
-    driver: "bridge"      
+    driver: "bridge"

@@ -23,7 +23,9 @@ RUN \
   apt-get clean && \
   rm -rf /var/lib/apt/lists/* && \
   rm -f /etc/rsk/node.conf && \
-  ln -s /etc/rsk/regtest.conf /etc/rsk/node.conf
+  ln -s /etc/rsk/regtest.conf /etc/rsk/node.conf && \
+  rm -f /etc/rsk/regtest.conf
+COPY regtest.conf /etc/rsk/regtest.conf
 
 # Supervisod CONF
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
