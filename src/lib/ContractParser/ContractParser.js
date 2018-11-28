@@ -33,14 +33,21 @@ class ContractParser {
   parseTxLogs (logs) {
     const abi = this.abi
     let decoders = abi.filter(def => def.type === 'event')
-      .map(def => new SolidityEvent(null, def, null))
+      .map(def => {
+        return { abi: def, event: new SolidityEvent(null, def, null) }
+      })
 
     return logs.map(log => {
+      let back = Object.assign({}, log)
       let decoder = decoders.find(decoder => {
         if (!log.topics.length) return false
-        return (decoder.signature() === log.topics[0].slice(2))
+        return (decoder.event.signature() === log.topics[0].slice(2))
       })
-      return (decoder) ? decoder.decode(log) : log
+      let decoded = (decoder) ? decoder.event.decode(log) : log
+      decoded.topics = back.topics
+      decoded.data = back.data
+      if (decoder) decoded.abi = decoder.abi
+      return decoded
     }).map(log => {
       let abis = abi.find(def => {
         return (def.type === 'event' && log.event === def.name)

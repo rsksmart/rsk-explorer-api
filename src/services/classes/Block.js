@@ -112,14 +112,14 @@ export class Block extends BcThing {
     const timestamp = tx.timestamp
     try {
       let topics = await this.parseTxLogs(tx.receipt.logs)
-      return topics.filter(t => t.event)
-        .map(event => {
-          let eventId = `${event.transactionHash}-${event.logIndex}`
-          event.eventId = eventId
-          event.timestamp = timestamp
-          event.txStatus = tx.receipt.status
-          return event
-        })
+      return topics.map(event => {
+        let eventId = `${event.transactionHash}-${event.logIndex}`
+        event.eventId = eventId
+        event.timestamp = timestamp
+        event.txStatus = tx.receipt.status
+        event.event = event.event || null
+        return event
+      })
     } catch (err) {
       return Promise.reject(err)
     }
