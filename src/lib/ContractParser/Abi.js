@@ -1,4 +1,8 @@
-export default [
+import gnosisAbi from './GnosisWallet.js'
+
+const gnosisEvents = gnosisAbi.filter(def => def.type === 'event')
+
+const mainAbi = [
   {
     constant: true,
     inputs: [],
@@ -346,3 +350,6 @@ export default [
     type: 'function'
   }
 ]
+
+const Abi = mainAbi.concat(gnosisEvents)
+export default Abi
