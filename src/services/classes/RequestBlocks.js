@@ -109,11 +109,17 @@ export class RequestBlocks extends BlocksBase {
     this.processPending()
   }
 
+  isRequestedOrPending (key) {
+    return this.isRequested(key) || this.isPending(key)
+  }
+
+  isPending (key) {
+    return this.pending.has(key)
+  }
+
   isRequested (key) {
-    let isPending = this.pending.has(key)
     let isRequested = this.requested.has(key)
-    if (isRequested) isRequested = ((Date.now() - this.requested.get(key)) > this.maxRequestTime)
-    return isRequested || isPending
+    return (isRequested) ? ((Date.now() - this.requested.get(key)) > this.maxRequestTime) : false
   }
 
   getRequested () {
