@@ -4,7 +4,7 @@ import fs from 'fs'
 import util from 'util'
 
 const writeFile = util.promisify(fs.writeFile)
-const url = process.env.url || 'http://localhost:4444'
+const url = process.env.url || 'http://localhost:3003'
 const outDir = process.env.outDir || '/tmp'
 
 let payload = process.env.payload
