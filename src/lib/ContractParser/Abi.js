@@ -297,6 +297,24 @@ export default [
     name: 'Transfer',
     type: 'event'
   },
+  // OwnershipTransferred
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        name: '_from',
+        type: 'address'
+      },
+      {
+        indexed: true,
+        name: '_to',
+        type: 'address'
+      }
+    ],
+    name: 'OwnershipTransferred',
+    type: 'event'
+  },
   // Erc 667 transferAndCall
   {
     constant: true,
