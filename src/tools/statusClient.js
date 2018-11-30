@@ -43,7 +43,7 @@ socket.on('data', data => {
     if (blocksPerSecond) {
       let color = (blocksPerSecond < 10) ? red : (blocksPerSecond < 20) ? orange : green
       let endTime = Math.floor(dbMissingBlocks / blocksPerSecond)
-      let end = new Date(Date.now() - endTime * 1000)
+      let end = new Date(Date.now() + (endTime * 1000))
       console.log()
       console.log(`${color} ≈ ${blocksPerSecond} B/s${reset}`)
       console.log(`${color} ≈ ${parseInt(blocksPerSecond * 3600)} B/h${reset}`)
