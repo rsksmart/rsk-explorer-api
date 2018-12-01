@@ -6,13 +6,11 @@ import { txTypes } from './types'
 import delayedFields from './delayedFields'
 
 export default {
-  server: {
-    port: 3003
-  },
   source: {
     protocol: 'http',
     node: 'localhost',
-    port: 4444
+    port: 4444,
+    url: null
   },
   log: {
     dir: '/var/log/rsk-explorer',
@@ -24,6 +22,8 @@ export default {
     database: 'blockDB'
   },
   api: {
+    address: 'localhost',
+    port: 3003,
     lastBlocks: 30,
     perPage: 50,
     allowUserEvents: true,

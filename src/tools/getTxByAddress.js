@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 import config from '../lib/config'
-const url = process.env.URL || `ws://localhost:${config.server.port}`
+const url = process.env.URL || `ws://localhost:${config.api.port}`
 const address = process.argv[2] || null
 const type = 'blocks'
 const action = 'getTransactionsByAddress'

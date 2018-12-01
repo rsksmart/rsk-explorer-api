@@ -17,8 +17,9 @@ import {
   getModule
 } from './apiLib'
 
-const port = config.server.port || '3000'
-const address = config.server.address
+const port = config.api.port || '3003'
+const address = config.api.address || 'localhost'
+console.log(address, port)
 const log = Logger('explorer-api', config.api.log)
 
 dataSource.then(db => {

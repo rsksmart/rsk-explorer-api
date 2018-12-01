@@ -2,7 +2,7 @@ import io from 'socket.io-client'
 import config from '../lib/config'
 import { info, ok, warn, red, green, orange, blue, reset, error, progressBar } from '../lib/cli'
 
-const url = process.env.URL || `ws://localhost:${config.server.port}`
+const url = process.env.URL || `ws://localhost:${config.api.port}`
 const socket = io.connect(url, { reconnect: true })
 let blocksPerSecond
 let stats = { time: 0, blocks: 0 }

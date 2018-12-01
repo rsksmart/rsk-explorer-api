@@ -8,15 +8,14 @@
     "bridgeAddress": "0x0000000000000000000000000000000001000006",
     "remascAddress": "0x0000000000000000000000000000000001000008"
   },
-  "server": {
-    "port": 3003
-  },
   "db": {
     "server": "localhost",
     "port": 27017,
     "database": "blockDB"
   },
   "api": {
+    "address": "localhost",
+    "port": 3003,
     "lastBlocks": 30,
     "perPage": 50,
     "allowUserEvents": true

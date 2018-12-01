@@ -4,16 +4,15 @@
 
 ## Components
 
-### api
+### Api server
 
 
-### blocks service
+### Blocks service
   Imports blockchain data from rsk node to db.
 
-### user events service
+### User events service
   (Optional)
  Allows to update fields on the fly and send async response to clients.
-
 
 ## Requisites
 
@@ -28,13 +27,14 @@
     npm install
   ```
 
-- Create configuration file
+## Configuration file 
+(optional)
 
 ``` shell
     cp config-example.json config.json
   ```
 
-- Check database configuration.
+see [configuration](#configuration)
 
 ## Start
 
@@ -71,24 +71,27 @@ Production build to ./dist folder
   ```
 
 ## Configuration
-
+  
+  **config.json**
   See defaults on: **lib/defaultConfig**
   *(config.json overrides this values)*
 
-  Use dist/tools/showConfig to check values
+  Use:
   
-Required values
+  ```shell
+  node dist/tools/showConfig.js 
+  ```
+
+  to check current configuration
+  
+**Configurarion Example:**
 
 ``` javascript
    "source": {
     "node": "localhost",
     "port": 4444
   },
-  "publicSettings": {
-    "bridgeAddress": "0x0000000000000000000000000000000001000006",
-    "remascAddress": "0x0000000000000000000000000000000001000008"
-  },
-  "server": {
+  "api": {
     "address": "localhost",
     "port": 3003
   },
@@ -98,7 +101,7 @@ Required values
     "database": "blockDB"
   }
 
-```
+  ```
 
 ### Source
 
@@ -123,6 +126,8 @@ Required values
   **bcTipSize**:[Number] BC tip size
 
 ### api
+  **address** [string] api server bind address
+  **port**  [number] api server port
 
   **allowUserEvents** [Boolean]: enable/disable userEventsApi
 
