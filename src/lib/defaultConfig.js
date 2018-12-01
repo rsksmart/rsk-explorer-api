@@ -36,7 +36,7 @@ export default {
   },
   blocks: {
     blocksQueueSize: 100,
-    validateCollections: true,
+    validateCollections: false,
     bcTipSize: 12,
     batchRequestSize: 20,
     collections: {
