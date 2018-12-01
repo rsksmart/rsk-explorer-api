@@ -1,15 +1,18 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
-import Abi from './Abi'
+import compiledAbi from './Abi'
 import { web3 } from '../web3Connect'
-import { hasValues } from '../utils'
+import { hasValues, keccak256 } from '../utils'
 import { contractsTypes } from '../types'
 class ContractParser {
   constructor (abi, options = {}) {
-    this.abi = abi || Abi
+    this.abi = null
+    this.abi = setAbi(abi || compiledAbi)
     this.web3 = web3
-    this.methods = this.getAbiMethods()
-    this.methodsKeys = this.getMethodsKeys()
     this.log = options.logger || console
+  }
+
+  setAbi (abi) {
+    this.abi = setAbi(abi)
   }
 
   setWeb3 (web3) {
@@ -17,16 +20,22 @@ class ContractParser {
   }
   getMethodsKeys () {
     let keys = {}
-    let methods = this.methods
-    for (let method in methods) {
-      keys[method] = this.web3.sha3(`${method}(${methods[method]})`).slice(2, 10)
+    let methods = this.getAbiMethods()
+    for (let m in methods) {
+      let method = methods[m]
+      let signature = method.signature || soliditySignature(m)
+      keys[m] = signature.slice(0, 8)
     }
     return keys
   }
   getAbiMethods () {
     let methods = {}
     this.abi.filter(def => def.type === 'function')
-      .map(m => { methods[m.name] = m.inputs.map(i => i.type) })
+      .map(m => {
+        let sig = m[ABI_SIGNATURE] || abiSignatureData(m)
+        sig.name = m.name
+        methods[sig.method] = sig
+      })
     return methods
   }
 
@@ -44,11 +53,13 @@ class ContractParser {
         return (decoder.event.signature() === log.topics[0].slice(2))
       })
       let decoded = (decoder) ? decoder.event.decode(log) : log
+
       decoded.topics = back.topics
       decoded.data = back.data
-      if (decoder) decoded.abi = decoder.abi
+      if (decoder) decoded.abi = removeAbiSignaureData(decoder.abi)
       return decoded
     }).map(log => {
+      // Hmm review
       let abis = abi.find(def => {
         return (def.type === 'event' && log.event === def.name)
       })
@@ -91,15 +102,14 @@ class ContractParser {
     return { name, symbol, decimals, totalSupply }
   }
 
-  hasMethod (txInputData, method) {
-    let key = this.methodsKeys[method]
-    if (!key) this.log.debug(`Unknown method: ${method}`)
-    return (key) ? txInputData.includes(key) : null
+  hasMethodSignature (txInputData, signature) {
+    return (signature) ? txInputData.includes(signature) : null
   }
 
   getMethods (txInputData) {
-    return Object.keys(this.methods)
-      .filter(method => this.hasMethod(txInputData, method) === true)
+    let methods = this.getMethodsKeys()
+    return Object.keys(methods)
+      .filter(method => this.hasMethodSignature(txInputData, methods[method]) === true)
   }
 
   getContractInfo (txInputData) {
@@ -124,18 +134,57 @@ class ContractParser {
 
   hasErc20methods (methods) {
     return hasValues(methods, [
-      'totalSupply',
-      'balanceOf',
-      'allowance',
-      'transfer',
-      'approve',
-      'transferFrom'])
+      'totalSupply()',
+      'balanceOf(address)',
+      'allowance(address,address)',
+      'transfer(address,uint256)',
+      'approve(address,uint256)',
+      'transferFrom(address,address,uint256)'
+    ])
   }
 
   hasErc667methods (methods) {
     return this.hasErc20methods(methods) &&
-      hasValues(methods, ['transferAndCall'])
+      hasValues(methods, [
+        'transferAndCall(address,uint256,bytes)'
+      ])
   }
+}
+
+const setAbi = abi => addSignatureDataToAbi(abi, true)
+
+export const abiEvents = abi => abi.filter(v => v.type === 'event')
+
+export const abiMethods = abi => abi.filter(v => v.type === 'function')
+
+export const soliditySignature = name => keccak256(name)
+
+export const solidityName = abi => {
+  let { name, inputs } = abi
+  inputs = (inputs) ? inputs.map(i => i.type) : []
+  return (name) ? `${name}(${inputs.join(',')})` : null
+}
+
+export const ABI_SIGNATURE = '__signatureData'
+
+export const removeAbiSignaureData = (abi) => {
+  if (undefined !== abi[ABI_SIGNATURE]) delete abi[ABI_SIGNATURE]
+  return abi
+}
+
+export const abiSignatureData = value => {
+  let method = solidityName(value)
+  let signature = (method) ? soliditySignature(method) : null
+  return { method, signature }
+}
+
+export const addSignatureDataToAbi = (abi, skip) => {
+  abi.map((value, i) => {
+    if (!value[ABI_SIGNATURE] || !skip) {
+      value[ABI_SIGNATURE] = abiSignatureData(value)
+    }
+  })
+  return abi
 }
 
 export default ContractParser

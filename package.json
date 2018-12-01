@@ -28,6 +28,7 @@
   "dependencies": {
     "bignumber.js": "^7.2.1",
     "bunyan": "^2.0.2",
+    "keccak": "^1.4.0",
     "mongodb": "^3.1.1",
     "nod3": "git+https://github.com/rsksmart/nod3.git",
     "socket.io": "^2.1.1",

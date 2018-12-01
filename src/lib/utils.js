@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
+import keccak from 'keccak'
 
 export const isHexString = str => {
   str = (str.substring(0, 2) === '0x') ? str.substring(2) : str
@@ -124,3 +125,5 @@ export const base64toHex = (base64) => {
     return (h.length === 2) ? h : `0${h}`
   }).join('').toLowerCase()
 }
+
+export const keccak256 = (input, format = 'hex') => keccak('keccak256').update(input).digest(format)

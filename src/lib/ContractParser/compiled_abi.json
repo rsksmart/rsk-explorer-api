@@ -1,0 +1,1026 @@
+[
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_spender",
+        "type": "address"
+      },
+      {
+        "name": "_value",
+        "type": "uint256"
+      },
+      {
+        "name": "_extraData",
+        "type": "bytes"
+      }
+    ],
+    "name": "approveAndCall",
+    "outputs": [
+      {
+        "name": "success",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "type": "function",
+    "__signatureData": {
+      "method": "approveAndCall(address,uint256,bytes)",
+      "signature": "cae9ca5133009d821214ac8231b3d170f22d822ee165adb631578070b6316fc9"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "_to",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event",
+    "__signatureData": {
+      "method": "OwnershipTransferred(address,address)",
+      "signature": "8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "_value",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "_data",
+        "type": "bytes"
+      }
+    ],
+    "name": "transferAndCall",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "type": "function",
+    "__signatureData": {
+      "method": "transferAndCall(address,uint256,bytes)",
+      "signature": "4000aea038e4acde4ff65b413088ec658ae209bdf83ccba2ffbbaa2d9ce48cde"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "Transfer",
+    "type": "event",
+    "__signatureData": {
+      "method": "Transfer(address,address,uint256,bytes)",
+      "signature": "e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "name",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "name()",
+      "signature": "06fdde0383f15d582d1a74511486c9ddf862a882fb7904b3d9fe9b8b8e58a796"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_spender",
+        "type": "address"
+      },
+      {
+        "name": "_value",
+        "type": "uint256"
+      }
+    ],
+    "name": "approve",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "approve(address,uint256)",
+      "signature": "095ea7b334ae44009aa867bfb386f5c3b4b443ac6f0ee573fa91c4608fbadfba"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "totalSupply",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "totalSupply()",
+      "signature": "18160ddd7f15c72528c2f94fd8dfe3c8d5aa26e2c50c7d81f4bc7bee8d4b7932"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_from",
+        "type": "address"
+      },
+      {
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "name": "_value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transferFrom",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "transferFrom(address,address,uint256)",
+      "signature": "23b872dd7302113369cda2901243429419bec145408fa8b352b3dd92b66c680b"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "decimals",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint8"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "decimals()",
+      "signature": "313ce567add4d438edf58b94ff345d7d38c45b17dfc0f947988d7819dca364f9"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      }
+    ],
+    "name": "balanceOf",
+    "outputs": [
+      {
+        "name": "balance",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "balanceOf(address)",
+      "signature": "70a08231b98ef4ca268c9cc3f6b4590e4bfec28280db06bb5d45e689f2a360be"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "symbol",
+    "outputs": [
+      {
+        "name": "",
+        "type": "string"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "symbol()",
+      "signature": "95d89b41e2f5f391a79ec54e9d87c79d6e777c63e32c28da95b4e9e4a79250ec"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_to",
+        "type": "address"
+      },
+      {
+        "name": "_value",
+        "type": "uint256"
+      }
+    ],
+    "name": "transfer",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "transfer(address,uint256)",
+      "signature": "a9059cbb2ab09eb219583f4a59a5d0623ade346d962bcd4e46b11da047c9049b"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "_owner",
+        "type": "address"
+      },
+      {
+        "name": "_spender",
+        "type": "address"
+      }
+    ],
+    "name": "allowance",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "allowance(address,address)",
+      "signature": "dd62ed3e90e97b3d417db9c0c7522647811bafca5afc6694f143588d255fdfb4"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "spender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Approval",
+    "type": "event",
+    "__signatureData": {
+      "method": "Approval(address,address,uint256)",
+      "signature": "8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Transfer",
+    "type": "event",
+    "__signatureData": {
+      "method": "Transfer(address,address,uint256)",
+      "signature": "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "owners",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "owners(uint256)",
+      "signature": "025e7c27eac939a1d6b87a08c3f39516072d58f65abdf6d1ca77156530d4cc35"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "removeOwner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "removeOwner(address)",
+      "signature": "173825d90d5095783b384d0c08afb549944c4f4c89ad29a276da04db8e14ff9e"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "revokeConfirmation",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "revokeConfirmation(uint256)",
+      "signature": "20ea8d86087397d6737ff70ebe94a8ed7065f3e7db4534a9523ae818a3fe01b7"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isOwner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "isOwner(address)",
+      "signature": "2f54bf6efe3c885d4f7c60dd2b62f9e1c8e834c7152c314a797c4d0e05c447cf"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "confirmations",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "confirmations(uint256,address)",
+      "signature": "3411c81c46ee3d7cf872c1145662928d2120e74c6d45b79c2d87092372f7c84a"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "pending",
+        "type": "bool"
+      },
+      {
+        "name": "executed",
+        "type": "bool"
+      }
+    ],
+    "name": "getTransactionCount",
+    "outputs": [
+      {
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getTransactionCount(bool,bool)",
+      "signature": "5474152539dd948724b4cf552d5b1dd2789758b9698c5bdc66e2fdcf7c3cabde"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "addOwner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "addOwner(address)",
+      "signature": "7065cb489ab3e47058ef9c048a2255f3e0dc15732bc16897592e2e8d246a0414"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "isConfirmed",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "isConfirmed(uint256)",
+      "signature": "784547a768b57de63c01309e9534f8339f117d1469fee08fcaadd193742686c6"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getConfirmationCount",
+    "outputs": [
+      {
+        "name": "count",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getConfirmationCount(uint256)",
+      "signature": "8b51d13f1bf42439587b478dcbb3c1c7b41d364e7e61f430d823fb5844597435"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "transactions",
+    "outputs": [
+      {
+        "name": "destination",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes"
+      },
+      {
+        "name": "executed",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "transactions(uint256)",
+      "signature": "9ace38c2d967ad67e6abb390955f4fa15d49d10dc79b0b602cb97d942b537041"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getOwners",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getOwners()",
+      "signature": "a0e67e2bdc0a6d8a09ccd6c353c9df590807ad66ff5e6630c4f31a86dfa84821"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "from",
+        "type": "uint256"
+      },
+      {
+        "name": "to",
+        "type": "uint256"
+      },
+      {
+        "name": "pending",
+        "type": "bool"
+      },
+      {
+        "name": "executed",
+        "type": "bool"
+      }
+    ],
+    "name": "getTransactionIds",
+    "outputs": [
+      {
+        "name": "_transactionIds",
+        "type": "uint256[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getTransactionIds(uint256,uint256,bool,bool)",
+      "signature": "a8abe69a30f0243194c6d9cd7b301fbf510ca7fa157488f505e08e138e2a5b25"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getConfirmations",
+    "outputs": [
+      {
+        "name": "_confirmations",
+        "type": "address[]"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getConfirmations(uint256)",
+      "signature": "b5dc40c3b5620210adf51dca4154c224fa8bea2847510e80bb45632e9f88427b"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "transactionCount",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "transactionCount()",
+      "signature": "b77bf6009627e15897d3198ef815426bb9543fa4e37a6f6c8b82da0703b372c4"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_required",
+        "type": "uint256"
+      }
+    ],
+    "name": "changeRequirement",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "changeRequirement(uint256)",
+      "signature": "ba51a6df11ed2f9658b32100640ebce3ff8ed00be3830b92867b3e30629140ad"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "confirmTransaction",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "confirmTransaction(uint256)",
+      "signature": "c01a8c8473427a14639d2bc8bef9d7b2742747740ed212950f4e530781dbdf5d"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "destination",
+        "type": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes"
+      }
+    ],
+    "name": "submitTransaction",
+    "outputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "submitTransaction(address,uint256,bytes)",
+      "signature": "c6427474ff2c4baa130d285c9d32ec41c0e07b9cc4b5b273ab66f916faee964a"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "MAX_OWNER_COUNT",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "MAX_OWNER_COUNT()",
+      "signature": "d74f8edde535768f1ff54c90926dc3dbf92d9a622a8bef11a7b8190467308d77"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "required",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "required()",
+      "signature": "dc8452cd18861a7926d01a29fd774a76d0fc4e57278afa13cbc91639fcd16e1f"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "replaceOwner",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "replaceOwner(address,address)",
+      "signature": "e20056e60a9f58b726b610d5a8e40f97e687707f2f9b3f9ccdaabe2ee85aa6d4"
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "executeTransaction",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "executeTransaction(uint256)",
+      "signature": "ee22610b57af59171fe491c7d4d59b4d01c283e32b93b77db36266c6ad1b5877"
+    }
+  },
+  {
+    "inputs": [
+      {
+        "name": "_owners",
+        "type": "address[]"
+      },
+      {
+        "name": "_required",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor",
+    "__signatureData": {
+      "method": null,
+      "signature": null
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Confirmation",
+    "type": "event",
+    "__signatureData": {
+      "method": "Confirmation(address,uint256)",
+      "signature": "4a504a94899432a9846e1aa406dceb1bcfd538bb839071d49d1e5e23f5be30ef"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Revocation",
+    "type": "event",
+    "__signatureData": {
+      "method": "Revocation(address,uint256)",
+      "signature": "f6a317157440607f36269043eb55f1287a5a19ba2216afeab88cd46cbcfb88e9"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Submission",
+    "type": "event",
+    "__signatureData": {
+      "method": "Submission(uint256)",
+      "signature": "c0ba8fe4b176c1714197d43b9cc6bcf797a4a7461c5fe8d0ef6e184ae7601e51"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "Execution",
+    "type": "event",
+    "__signatureData": {
+      "method": "Execution(uint256)",
+      "signature": "33e13ecb54c3076d8e8bb8c2881800a4d972b792045ffae98fdf46df365fed75"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "transactionId",
+        "type": "uint256"
+      }
+    ],
+    "name": "ExecutionFailure",
+    "type": "event",
+    "__signatureData": {
+      "method": "ExecutionFailure(uint256)",
+      "signature": "526441bb6c1aba3c9a4a6ca1d6545da9c2333c8c48343ef398eb858d72b79236"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "sender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
+      }
+    ],
+    "name": "Deposit",
+    "type": "event",
+    "__signatureData": {
+      "method": "Deposit(address,uint256)",
+      "signature": "e1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnerAddition",
+    "type": "event",
+    "__signatureData": {
+      "method": "OwnerAddition(address)",
+      "signature": "f39e6e1eb0edcf53c221607b54b00cd28f3196fed0a24994dc308b8f611b682d"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnerRemoval",
+    "type": "event",
+    "__signatureData": {
+      "method": "OwnerRemoval(address)",
+      "signature": "8001553a916ef2f495d26a907cc54d96ed840d7bda71e73194bf5a9df7a76b90"
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "required",
+        "type": "uint256"
+      }
+    ],
+    "name": "RequirementChange",
+    "type": "event",
+    "__signatureData": {
+      "method": "RequirementChange(uint256)",
+      "signature": "a3f1ee9126a074d9326c682f561767f710e927faa811f7a99829d49dc421797a"
+    }
+  }
+]
