@@ -310,7 +310,7 @@ export class Block extends BcThing {
   }
 
   addAddress (address, type) {
-    if (!this.isAddress(address)) return
+    if (!this.isAddress(address) || this.addresses[address]) return
     const Addr = new Address(address, this.nod3, this.collections.Addrs)
     this.addresses[address] = Addr
   }
@@ -343,14 +343,23 @@ export class Block extends BcThing {
     this.data.events.forEach(event => {
       if (event && event.args) {
         let address = event.address
-        let fromAddress = event.args._from
-        let toAddress = event.args._to
-        this.addAddress(fromAddress)
-        this.addAddress(toAddress)
+        this.addAddress(address)
+        let abi = event.abi
         let contract = this.getContract(address)
-        contract.addAddress(fromAddress)
-        contract.addAddress(toAddress)
-        // get token balances of accounts
+        if (abi && abi.inputs) {
+          let eventAddresses = abi.inputs
+            .filter(i => i.type === 'address')
+            .map((field, i) => {
+              let address = event.args[field.name]
+              if (this.isAddress(address)) {
+                return address
+              }
+            })
+          eventAddresses.forEach(a => {
+            this.addAddress(a)
+            contract.addAddress(a)
+          })
+        }
       }
     })
   }
