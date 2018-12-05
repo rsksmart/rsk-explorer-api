@@ -119,7 +119,7 @@ export class RequestBlocks extends BlocksBase {
 
   isRequested (key) {
     let isRequested = this.requested.has(key)
-    return (isRequested) ? ((Date.now() - this.requested.get(key)) > this.maxRequestTime) : false
+    return (isRequested) ? ((Date.now() - this.requested.get(key)) < this.maxRequestTime) : false
   }
 
   getRequested () {
