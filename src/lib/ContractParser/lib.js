@@ -1,0 +1,56 @@
+import { keccak256, add0x } from '../utils'
+
+export const ABI_SIGNATURE = '__signatureData'
+
+export const INTERFACE_ID_BYTES = 4
+
+export const setAbi = abi => addSignatureDataToAbi(abi, true)
+
+export const abiEvents = abi => abi.filter(v => v.type === 'event')
+
+export const abiMethods = abi => abi.filter(v => v.type === 'function')
+
+export const soliditySignature = name => keccak256(name)
+
+export const soliditySelector = signature => signature.slice(0, 8)
+
+export const solidityName = abi => {
+  let { name, inputs } = abi
+  inputs = (inputs) ? inputs.map(i => i.type) : []
+  return (name) ? `${name}(${inputs.join(',')})` : null
+}
+
+export const removeAbiSignaureData = (abi) => {
+  if (undefined !== abi[ABI_SIGNATURE]) delete abi[ABI_SIGNATURE]
+  return abi
+}
+
+export const abiSignatureData = value => {
+  let method = solidityName(value)
+  let signature = (method) ? soliditySignature(method) : null
+  return { method, signature }
+}
+
+export const addSignatureDataToAbi = (abi, skip) => {
+  abi.map((value, i) => {
+    if (!value[ABI_SIGNATURE] || !skip) {
+      value[ABI_SIGNATURE] = abiSignatureData(value)
+    }
+  })
+  return abi
+}
+
+export const erc165Id = selectors => {
+  let id = selectors.map(s => Buffer.from(s, 'hex'))
+    .reduce((a, bytes) => {
+      for (let i = 0; i < INTERFACE_ID_BYTES; i++) {
+        a[i] = a[i] ^ bytes[i]
+      }
+      return a
+    }, Buffer.alloc(INTERFACE_ID_BYTES))
+  return add0x(id.toString('hex'))
+}
+
+export const erc165IdFromMethods = methods => {
+  return erc165Id(methods.map(m => soliditySelector(soliditySignature(m))))
+}

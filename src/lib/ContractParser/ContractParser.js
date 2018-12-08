@@ -1,9 +1,19 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import compiledAbi from './Abi'
 import { web3 } from '../web3Connect'
-import { hasValues, keccak256 } from '../utils'
 import { contractsTypes } from '../types'
-class ContractParser {
+import interfacesIds from './interfacesIds'
+import { hasValues } from '../../lib/utils'
+
+import {
+  ABI_SIGNATURE,
+  setAbi,
+  removeAbiSignaureData,
+  abiSignatureData,
+  soliditySelector,
+  soliditySignature
+} from './lib'
+export class ContractParser {
   constructor (abi, options = {}) {
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
@@ -18,16 +28,17 @@ class ContractParser {
   setWeb3 (web3) {
     if (web3) this.web3 = web3
   }
-  getMethodsKeys () {
-    let keys = {}
+  getMethodsSelectors () {
+    let selectors = {}
     let methods = this.getAbiMethods()
     for (let m in methods) {
       let method = methods[m]
       let signature = method.signature || soliditySignature(m)
-      keys[m] = signature.slice(0, 8)
+      selectors[m] = soliditySelector(signature)
     }
-    return keys
+    return selectors
   }
+
   getAbiMethods () {
     let methods = {}
     this.abi.filter(def => def.type === 'function')
@@ -83,6 +94,7 @@ class ContractParser {
       contract[method].call(params, (err, res) => {
         if (err !== null) {
           resolve(null)
+          this.log.warn(err)
           return reject(err)
         } else {
           resolve(res)
@@ -102,89 +114,65 @@ class ContractParser {
     return { name, symbol, decimals, totalSupply }
   }
 
-  hasMethodSignature (txInputData, signature) {
-    return (signature) ? txInputData.includes(signature) : null
+  hasMethodSelector (txInputData, selector) {
+    return (selector) ? txInputData.includes(selector) : null
   }
 
-  getMethods (txInputData) {
-    let methods = this.getMethodsKeys()
+  getMethodsBySelectors (txInputData) {
+    let methods = this.getMethodsSelectors()
     return Object.keys(methods)
-      .filter(method => this.hasMethodSignature(txInputData, methods[method]) === true)
+      .filter(method => this.hasMethodSelector(txInputData, methods[method]) === true)
   }
 
-  getContractInfo (txInputData) {
-    let methods = this.getMethods(txInputData)
-    let interfaces = this.getContractInterfaces(methods)
+  async getContractInfo (txInputData, contract) {
+    let methods = this.getMethodsBySelectors(txInputData)
+    let isErc165 = await this.implementsErc165(contract)
+    let interfaces
+    if (isErc165) interfaces = await this.getInterfacesERC165(contract)
+    else interfaces = this.getInterfacesByMethods(methods)
+    interfaces = Object.keys(interfaces)
+      .filter(k => interfaces[k] === true)
+      .map(t => contractsTypes[t] || t)
     return { methods, interfaces }
   }
 
-  getContractInterfaces (methods) {
-    let types = this.testContractTypes(methods)
-    return Object.keys(types)
-      .filter(k => types[k] === true)
-      .map(t => contractsTypes[t])
+  async getInterfacesERC165 (contract) {
+    let ifaces = {}
+    let keys = Object.keys(interfacesIds)
+    for (let i of keys) {
+      ifaces[i] = await this.supportsInterface(contract, interfacesIds[i].id)
+    }
+    return ifaces
   }
 
-  testContractTypes (methods) {
-    return {
-      ERC20: this.hasErc20methods(methods),
-      ERC667: this.hasErc667methods(methods)
+  getInterfacesByMethods (methods, isErc165) {
+    return Object.keys(interfacesIds)
+      .map(i => {
+        return [i, hasValues(methods, interfacesIds[i].methods)]
+      })
+      .reduce((obj, value) => {
+        obj[value[0]] = value[1]
+        return obj
+      }, {})
+  }
+
+  async supportsInterface (contract, interfaceId) {
+    let res = await this.call('supportsInterface', contract, interfaceId)
+    return res
+  }
+
+  async implementsErc165 (contract) {
+    try {
+      let first = await this.supportsInterface(contract, interfacesIds.ERC165.id)
+      if (first === true) {
+        let second = await this.supportsInterface(contract, '0xffffffff')
+        return !(second === true || second === null)
+      }
+      return false
+    } catch (err) {
+      return Promise.reject(err)
     }
   }
-
-  hasErc20methods (methods) {
-    return hasValues(methods, [
-      'totalSupply()',
-      'balanceOf(address)',
-      'allowance(address,address)',
-      'transfer(address,uint256)',
-      'approve(address,uint256)',
-      'transferFrom(address,address,uint256)'
-    ])
-  }
-
-  hasErc667methods (methods) {
-    return this.hasErc20methods(methods) &&
-      hasValues(methods, [
-        'transferAndCall(address,uint256,bytes)'
-      ])
-  }
-}
-
-const setAbi = abi => addSignatureDataToAbi(abi, true)
-
-export const abiEvents = abi => abi.filter(v => v.type === 'event')
-
-export const abiMethods = abi => abi.filter(v => v.type === 'function')
-
-export const soliditySignature = name => keccak256(name)
-
-export const solidityName = abi => {
-  let { name, inputs } = abi
-  inputs = (inputs) ? inputs.map(i => i.type) : []
-  return (name) ? `${name}(${inputs.join(',')})` : null
-}
-
-export const ABI_SIGNATURE = '__signatureData'
-
-export const removeAbiSignaureData = (abi) => {
-  if (undefined !== abi[ABI_SIGNATURE]) delete abi[ABI_SIGNATURE]
-  return abi
-}
-
-export const abiSignatureData = value => {
-  let method = solidityName(value)
-  let signature = (method) ? soliditySignature(method) : null
-  return { method, signature }
-}
-
-export const addSignatureDataToAbi = (abi, skip) => {
-  abi.map((value, i) => {
-    if (!value[ABI_SIGNATURE] || !skip) {
-      value[ABI_SIGNATURE] = abiSignatureData(value)
-    }
-  })
-  return abi
 }
 
 export default ContractParser

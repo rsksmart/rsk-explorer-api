@@ -377,6 +377,29 @@
     "constant": true,
     "inputs": [
       {
+        "name": "interfaceID",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "supportsInterface(bytes4)",
+      "signature": "01ffc9a7a5cef8baa21ed3c5c0d7e23accb804b619e9333b597f47a0d84076e2"
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
         "name": "",
         "type": "uint256"
       }

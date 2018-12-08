@@ -1,7 +1,7 @@
 import fs from 'fs'
 import util from 'util'
 import path from 'path'
-import { addSignatureDataToAbi, ABI_SIGNATURE } from './ContractParser'
+import { addSignatureDataToAbi, ABI_SIGNATURE } from './lib'
 
 const readDir = util.promisify(fs.readdir)
 const readFile = util.promisify(fs.readFile)
@@ -53,8 +53,10 @@ function processAbi (abi) {
   abi = addSignatureDataToAbi(abi)
   // detect 4 bytes collisions
   let signatures = (abi.map(a => a[ABI_SIGNATURE].signature)).filter(v => v)
+  signatures = [...new Set(signatures)]
   let fourBytes = signatures.map(s => s.slice(0, 8))
   if (fourBytes.length !== [...new Set(fourBytes)].length) {
+    console.log(fourBytes.filter((v, i) => fourBytes.indexOf(v) !== i))
     throw new Error('4bytes collision')
   }
   return abi

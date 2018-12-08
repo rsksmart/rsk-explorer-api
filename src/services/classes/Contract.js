@@ -27,7 +27,8 @@ class Contract extends BcThing {
       // new contracts
       if (this.creationData) {
         let txInputData = this.creationData.tx.input
-        let { interfaces, methods } = this.parser.getContractInfo(txInputData)
+        let info = await this.parser.getContractInfo(txInputData, this.contract)
+        let { interfaces, methods } = info
         if (interfaces.length) this.data.contractInterfaces = interfaces
         if (methods) this.data.contractMethods = methods
         if (this.isToken(interfaces)) {
