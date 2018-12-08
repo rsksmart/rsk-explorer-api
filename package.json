@@ -11,6 +11,7 @@
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
     "status": "./node_modules/.bin/nodemon src/tools/statusClient.js --exec babel-node",
+    "abi": "./node_modules/.bin/nodemon src/lib/ContractParser/compileJsonAbis.js --exec babel-node",
     "lint": "./node_modules/.bin/eslint src/**/*",
     "test": "./node_modules/.bin/mocha"
   },
