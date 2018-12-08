@@ -1,6 +1,6 @@
 import { assert } from 'chai'
-import { ContractParser } from '../src/lib/ContractParser/ContractParser'
-import { nod3 } from '../src/lib/nod3Connect'
+import { ContractParser } from '../../src/lib/ContractParser/ContractParser'
+import { nod3 } from '../../src/lib/nod3Connect'
 
 const erc165 = [
   '0x2560368d8b6b5d4c05fd8b2d41b90b9286697026',
