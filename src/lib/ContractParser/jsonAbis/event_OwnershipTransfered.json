@@ -4,12 +4,12 @@
     "inputs": [
       {
         "indexed": true,
-        "name": "_from",
+        "name": "from",
         "type": "address"
       },
       {
         "indexed": true,
-        "name": "_to",
+        "name": "to",
         "type": "address"
       }
     ],
