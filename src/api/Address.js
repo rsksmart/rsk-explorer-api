@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { contractsTypes, addrTypes } from '../lib/types'
+import { tokensInterfaces, addrTypes } from '../lib/types'
 import { GetTxBalance } from './getBalanceFromTxs'
 export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
@@ -28,7 +28,7 @@ export class Address extends DataCollectorItem {
       getTokens: params => {
         return this.getPageData({
           type: addrTypes.CONTRACT,
-          contractInterfaces: { $in: Object.values(contractsTypes) }
+          contractInterfaces: { $in: tokensInterfaces }
         }, params)
       }
     }

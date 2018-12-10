@@ -1,7 +1,7 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import compiledAbi from './Abi'
 import { web3 } from '../web3Connect'
-import { contractsTypes } from '../types'
+import { contractsInterfaces } from '../types'
 import interfacesIds from './interfacesIds'
 import { hasValues } from '../../lib/utils'
 
@@ -70,7 +70,6 @@ export class ContractParser {
       if (decoder) decoded.abi = removeAbiSignaureData(decoder.abi)
       return decoded
     }).map(log => {
-      // Hmm review
       let abis = abi.find(def => {
         return (def.type === 'event' && log.event === def.name)
       })
@@ -132,7 +131,7 @@ export class ContractParser {
     else interfaces = this.getInterfacesByMethods(methods)
     interfaces = Object.keys(interfaces)
       .filter(k => interfaces[k] === true)
-      .map(t => contractsTypes[t] || t)
+      .map(t => contractsInterfaces[t] || t)
     return { methods, interfaces }
   }
 

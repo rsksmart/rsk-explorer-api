@@ -22,10 +22,20 @@ export const addrTypes = {
   CONTRACT: 'contract'
 }
 
-export const contractsTypes = {
+export const contractsInterfaces = {
   ERC20: 'ERC20',
-  ERC667: 'ERC667'
+  ERC667: 'ERC667',
+  ERC165: 'ERC165',
+  ERC721: 'ERC721'
 }
+
+const ci = contractsInterfaces
+
+export const tokensInterfaces = [
+  ci.ERC20,
+  ci.ERC667,
+  ci.ERC721
+]
 
 export const events = {
   'BLOCK_QUEUED': 'blockQueued',
@@ -54,4 +64,4 @@ export const modules = {
 
 export const BIG_NUMBER = 'BigNumber'
 
-export default { txTypes, errors, addrTypes, contractsTypes }
+export default { txTypes, errors, addrTypes, contractsInterfaces }

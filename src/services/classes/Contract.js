@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '../../lib/ContractParser/ContractParser'
-import { contractsTypes as types } from '../../lib/types'
+import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
 
@@ -75,7 +75,7 @@ class Contract extends BcThing {
   }
 
   isToken (interfaces) {
-    return hasValue(interfaces, [types.ERC20, types.ERC667])
+    return hasValue(interfaces, tokensInterfaces)
   }
   async fetchAddresses () {
     let data = []
