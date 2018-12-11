@@ -1,7 +1,7 @@
 import fs from 'fs'
 import util from 'util'
 import path from 'path'
-import { addSignatureDataToAbi, ABI_SIGNATURE } from './lib'
+import { addSignatureDataToAbi, ABI_SIGNATURE, abiEvents } from './lib'
 
 const readDir = util.promisify(fs.readdir)
 const readFile = util.promisify(fs.readFile)
@@ -59,7 +59,19 @@ function processAbi (abi) {
     console.log(fourBytes.filter((v, i) => fourBytes.indexOf(v) !== i))
     throw new Error('4bytes collision')
   }
+  // check events
+  let duppEvents = searchDupplicatedEvents(abi)
+  if (duppEvents) throw new Error('Dupplicated events')
   return abi
+}
+
+function searchDupplicatedEvents (abi) {
+  let events = abiEvents(abi).map(e => {
+    let s = e[ABI_SIGNATURE]
+    return `${s.signature}_${s.indexed}`
+  })
+  let unique = [...new Set(events)]
+  return events.length !== unique.length
 }
 
 process.on('unhandledRejection', err => {

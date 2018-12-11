@@ -8,6 +8,7 @@ import { hasValues } from '../../lib/utils'
 import {
   ABI_SIGNATURE,
   setAbi,
+  abiEvents,
   removeAbiSignaureData,
   abiSignatureData,
   soliditySelector,
@@ -17,12 +18,14 @@ export class ContractParser {
   constructor (abi, options = {}) {
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
+    this.eventsAbi = abiEvents(this.abi)
     this.web3 = web3
     this.log = options.logger || console
   }
 
   setAbi (abi) {
     this.abi = setAbi(abi)
+    this.eventsAbi = abiEvents(this.abi)
   }
 
   setWeb3 (web3) {
@@ -51,30 +54,24 @@ export class ContractParser {
   }
 
   parseTxLogs (logs) {
-    const abi = this.abi
-    let decoders = abi.filter(def => def.type === 'event')
-      .map(def => {
-        return { abi: def, event: new SolidityEvent(null, def, null) }
-      })
-
     return logs.map(log => {
       let back = Object.assign({}, log)
-      let decoder = decoders.find(decoder => {
-        if (!log.topics.length) return false
-        return (decoder.event.signature() === log.topics[0].slice(2))
-      })
+      let decoder = this.getLogDecoder(log.topics || [])
+
       let decoded = (decoder) ? decoder.event.decode(log) : log
 
       decoded.topics = back.topics
       decoded.data = back.data
-      if (decoder) decoded.abi = removeAbiSignaureData(decoder.abi)
+      if (decoder) {
+        let signature = Object.assign({}, decoder.abi[ABI_SIGNATURE])
+        decoded.signature = signature.signature
+        decoded.abi = removeAbiSignaureData(decoder.abi)
+      }
       return decoded
     }).map(log => {
-      let abis = abi.find(def => {
-        return (def.type === 'event' && log.event === def.name)
-      })
-      if (abis && abis.inputs) {
-        abis.inputs.forEach(param => {
+      let abi = log.abi
+      if (abi && abi.inputs) {
+        abi.inputs.forEach(param => {
           if (param.type === 'bytes32') {
             log.args[param.name] = this.web3.toAscii(log.args[param.name])
           }
@@ -84,17 +81,40 @@ export class ContractParser {
     })
   }
 
+  getLogDecoder (topics) {
+    if (!topics.length) return null
+    let events = this.eventsAbi
+    let signature = topics[0].slice(2)
+    let indexed = topics.length - 1
+    let decoders = events
+      .filter(e => {
+        let s = e[ABI_SIGNATURE]
+        return s.signature === signature && s.indexed === indexed
+      })
+    if (decoders.length) {
+      if (decoders[1]) this.log.error(`ERROR, dupplicated event: ${decoders[0].name}`)
+      return this.createLogDecoder(decoders[0])
+    }
+  }
+
+  createLogDecoder (abi) {
+    abi = Object.assign({}, abi)
+    const event = new SolidityEvent(null, abi, null)
+    return { abi, event }
+  }
+
   makeContract (address, abi) {
     abi = abi || this.abi
     return this.web3.eth.contract(abi).at(address)
   }
+
   call (method, contract, params) {
     return new Promise((resolve, reject) => {
       contract[method].call(params, (err, res) => {
         if (err !== null) {
+          this.log.warn(`Method ${method} call ${err}`)
           resolve(null)
-          this.log.warn(err)
-          return reject(err)
+          // return reject(err)
         } else {
           resolve(res)
         }

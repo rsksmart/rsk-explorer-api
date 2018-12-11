@@ -25,10 +25,17 @@ export const removeAbiSignaureData = (abi) => {
   return abi
 }
 
-export const abiSignatureData = value => {
-  let method = solidityName(value)
+export const getInputsIndexes = abi => {
+  let { inputs } = abi
+  return (inputs && abi.type === 'event') ? inputs.map(i => i.indexed) : null
+}
+
+export const abiSignatureData = abi => {
+  let method = solidityName(abi)
   let signature = (method) ? soliditySignature(method) : null
-  return { method, signature }
+  let index = getInputsIndexes(abi)
+  let indexed = (index) ? index.filter(i => i === true).length : 0
+  return { method, signature, index, indexed }
 }
 
 export const addSignatureDataToAbi = (abi, skip) => {
