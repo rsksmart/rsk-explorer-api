@@ -2,7 +2,7 @@
 class Event extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
-    this.sort = { address: 1 };
+    this.sort = { timestamp: -1 };
     this.publicActions = {
 
       getEvent: async params => {

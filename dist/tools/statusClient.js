@@ -2,7 +2,7 @@
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
 var _cli = require('../lib/cli');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const url = process.env.URL || `ws://localhost:${_config2.default.server.port}`;
+const url = process.env.URL || `ws://localhost:${_config2.default.api.port}`;
 const socket = _socket2.default.connect(url, { reconnect: true });
 let blocksPerSecond;
 let stats = { time: 0, blocks: 0 };
@@ -43,7 +43,7 @@ socket.on('data', data => {
     if (blocksPerSecond) {
       let color = blocksPerSecond < 10 ? _cli.red : blocksPerSecond < 20 ? _cli.orange : _cli.green;
       let endTime = Math.floor(dbMissingBlocks / blocksPerSecond);
-      let end = new Date(Date.now() - endTime * 1000);
+      let end = new Date(Date.now() + endTime * 1000);
       console.log();
       console.log(`${color} ≈ ${blocksPerSecond} B/s${_cli.reset}`);
       console.log(`${color} ≈ ${parseInt(blocksPerSecond * 3600)} B/h${_cli.reset}`);

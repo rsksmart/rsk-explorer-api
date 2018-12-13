@@ -1,21 +1,23 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _config = require('../../config.json');var _config2 = _interopRequireDefault(_config);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _path = require('path');var _path2 = _interopRequireDefault(_path);
+var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
+
 var _defaultConfig = require('./defaultConfig');var _defaultConfig2 = _interopRequireDefault(_defaultConfig);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const keys = Object.keys(_defaultConfig2.default);
-
+const config = loadConfig();
 for (let key of keys) {
-  _config2.default[key] = _config2.default[key] || _defaultConfig2.default[key];
+  config[key] = config[key] || _defaultConfig2.default[key];
   for (let p in _defaultConfig2.default[key]) {
-    if (undefined === _config2.default[key][p]) _config2.default[key][p] = _defaultConfig2.default[key][p];
+    if (undefined === config[key][p]) config[key][p] = _defaultConfig2.default[key][p];
   }
 }
 
 // defaults  servers/ports
 
-_config2.default.blocks.node = _config2.default.blocks.node || _config2.default.source.node;
-_config2.default.blocks.port = _config2.default.blocks.port || _config2.default.source.port;
+config.blocks.node = config.blocks.node || config.source.node;
+config.blocks.port = config.blocks.port || config.source.port;
 
-let s = _config2.default.source;
-_config2.default.source.url = _config2.default.source.url || `${s.protocol}://${s.node}:${s.port}`;
+let s = config.source;
+config.source.url = config.source.url || `${s.protocol}://${s.node}:${s.port}`;
 
 // defaults log files
 
@@ -27,15 +29,28 @@ publicSettings('bridgeAddress');
 publicSettings('remascAddress');
 
 function publicSettings(key) {
-  _config2.default[key] = _config2.default.publicSettings[key] || null;
+  config[key] = config.publicSettings[key] || null;
 }
 
 function defaultLogs(key) {
-  const dir = _config2.default.log.dir;
+  const dir = config.log.dir;
   if (!dir) return;
-  _config2.default[key].log = _config2.default[key].log || {};
-  _config2.default[key].log.file = _config2.default[key].log.file || `${dir}/${key}.json`;
-  _config2.default[key].log.level = _config2.default[key].log.level || _config2.default.log.level || 'error';
+  config[key].log = config[key].log || {};
+  config[key].log.file = config[key].log.file || `${dir}/${key}.json`;
+  config[key].log.level = config[key].log.level || config.log.level || 'error';
+}
+
+function loadConfig() {
+  let config = {};
+  try {
+    let file = _path2.default.resolve(__dirname, '../../config.json');
+    if (_fs2.default.existsSync(file)) config = JSON.parse(_fs2.default.readFileSync(file, 'utf-8'));
+
+  } catch (err) {
+    console.log(err);
+    process.exit(8);
+  }
+  return config;
 }exports.default =
 
-_config2.default;
+config;

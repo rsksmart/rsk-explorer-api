@@ -112,12 +112,12 @@ class Block extends _BcThing.BcThing {
     const timestamp = tx.timestamp;
     try {
       let topics = await this.parseTxLogs(tx.receipt.logs);
-      return topics.filter(t => t.event).
-      map(event => {
+      return topics.map(event => {
         let eventId = `${event.transactionHash}-${event.logIndex}`;
         event.eventId = eventId;
         event.timestamp = timestamp;
         event.txStatus = tx.receipt.status;
+        event.event = event.event || null;
         return event;
       });
     } catch (err) {
@@ -310,7 +310,7 @@ class Block extends _BcThing.BcThing {
   }
 
   addAddress(address, type) {
-    if (!this.isAddress(address)) return;
+    if (!this.isAddress(address) || this.addresses[address]) return;
     const Addr = new _Address2.default(address, this.nod3, this.collections.Addrs);
     this.addresses[address] = Addr;
   }
@@ -343,14 +343,23 @@ class Block extends _BcThing.BcThing {
     this.data.events.forEach(event => {
       if (event && event.args) {
         let address = event.address;
-        let fromAddress = event.args._from;
-        let toAddress = event.args._to;
-        this.addAddress(fromAddress);
-        this.addAddress(toAddress);
+        this.addAddress(address);
+        let abi = event.abi;
         let contract = this.getContract(address);
-        contract.addAddress(fromAddress);
-        contract.addAddress(toAddress);
-        // get token balances of accounts
+        if (abi && abi.inputs) {
+          let eventAddresses = abi.inputs.
+          filter(i => i.type === 'address').
+          map((field, i) => {
+            let address = event.args[field.name];
+            if (this.isAddress(address)) {
+              return address;
+            }
+          });
+          eventAddresses.forEach(a => {
+            this.addAddress(a);
+            contract.addAddress(a);
+          });
+        }
       }
     });
   }

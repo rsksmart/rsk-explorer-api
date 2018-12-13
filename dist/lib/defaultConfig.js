@@ -6,13 +6,11 @@ var _types = require('./types');
 var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRequireDefault(_delayedFields);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
                                                                                                                                                                                                             *  This file provides default values,
                                                                                                                                                                                                             *  use /config.json, to overwrite settings
-                                                                                                                                                                                                            */exports.default = { server: {
-    port: 3003 },
-
-  source: {
+                                                                                                                                                                                                            */exports.default = { source: {
     protocol: 'http',
     node: 'localhost',
-    port: 4444 },
+    port: 4444,
+    url: null },
 
   log: {
     dir: '/var/log/rsk-explorer',
@@ -24,6 +22,8 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     database: 'blockDB' },
 
   api: {
+    address: 'localhost',
+    port: 3003,
     lastBlocks: 30,
     perPage: 50,
     allowUserEvents: true,
@@ -36,7 +36,7 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
 
   blocks: {
     blocksQueueSize: 100,
-    validateCollections: true,
+    validateCollections: false,
     bcTipSize: 12,
     batchRequestSize: 20,
     collections: {

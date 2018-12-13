@@ -1,5 +1,10 @@
 # Updates
 
+## 0.5.3
+
+ 1. Drop Database
+ 2. Start blocks service 
+
 ## 0.4.0 to 0.4.1
 
  1. Backup db

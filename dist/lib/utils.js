@@ -1,54 +1,6 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.add0x = exports.isHexString = exports.filterSort = exports.filterQuery = exports.filterParams = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.keccak256 = exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.add0x = exports.isHexString = undefined;var _bignumber = require('bignumber.js');
 var _types = require('./types');
-
-const filterParams = exports.filterParams = (params, perPageMax = 50) => {
-  params = params || {};
-  let perPage = params.perPage || perPageMax;
-  perPage = perPage <= perPageMax ? perPage : perPageMax;
-  params.page = params.page || 1;
-  let limit = params.limit || perPage;
-  limit = limit <= perPage ? limit : perPage;
-  params.limit = limit;
-  params.query = filterQuery(params.query);
-  params.sort = filterSort(params.sort);
-  return params;
-};
-
-const filterQuery = exports.filterQuery = query => {
-  if (!query) return;
-  if (typeof query === 'object') {
-    if (Object.keys(query).length > 0) {
-      return sanitizeQuery(query);
-    }
-  }
-};
-
-const filterSort = exports.filterSort = sort => {
-  if (!sort) return;
-  let filtered = null;
-  if (sort && typeof sort === 'object') {
-    let keys = Object.keys(sort);
-    filtered = {};
-    for (let k of keys) {
-      let val = sort[k];
-      filtered[k] = !val || val === 1 ? 1 : -1;
-    }
-  }
-  return retFiltered(filtered);
-};
-
-const sanitizeQuery = query => {
-  let filtered = {};
-  for (let p in query) {
-    let k = p.replace('$', '');
-    if (k === p) filtered[k] = query[p];
-  }
-  return retFiltered(filtered);
-};
-
-const retFiltered = filtered => {
-  return filtered && Object.keys(filtered).length > 0 ? filtered : null;
-};
+var _keccak = require('keccak');var _keccak2 = _interopRequireDefault(_keccak);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const isHexString = exports.isHexString = str => {
   str = str.substring(0, 2) === '0x' ? str.substring(2) : str;
@@ -173,3 +125,5 @@ const base64toHex = exports.base64toHex = base64 => {
     return h.length === 2 ? h : `0${h}`;
   }).join('').toLowerCase();
 };
+
+const keccak256 = exports.keccak256 = (input, format = 'hex') => (0, _keccak2.default)('keccak256').update(input).digest(format);

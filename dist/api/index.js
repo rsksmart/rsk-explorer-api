@@ -4,7 +4,6 @@ var _Blocks = require('./Blocks');var _Blocks2 = _interopRequireDefault(_Blocks)
 var _Status = require('./Status');var _Status2 = _interopRequireDefault(_Status);
 var _TxPool = require('./TxPool');var _TxPool2 = _interopRequireDefault(_TxPool);
 var _Logger = require('../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
-var _utils = require('../lib/utils');
 var _http = require('http');var _http2 = _interopRequireDefault(_http);
 var _UserEventsApi = require('./UserEventsApi');var _UserEventsApi2 = _interopRequireDefault(_UserEventsApi);
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
@@ -17,8 +16,10 @@ var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return o
 
 
 
-const port = _config2.default.server.port || '3000';
-const address = _config2.default.server.address;
+
+const port = _config2.default.api.port || '3003';
+const address = _config2.default.api.address || 'localhost';
+console.log(address, port);
 const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
 
 _dataSource2.default.then(db => {
@@ -91,7 +92,7 @@ _dataSource2.default.then(db => {
         socket.emit('Error', (0, _apiLib.formatError)(_apiLib.errors.INVALID_REQUEST));
       } else {
         const action = payload.action;
-        const params = (0, _utils.filterParams)(payload.params);
+        const params = (0, _apiLib.filterParams)(payload.params);
         const module = (0, _apiLib.getModule)(payload.module);
         const delayed = (0, _apiLib.getDelayedFields)(module, action);
         try {

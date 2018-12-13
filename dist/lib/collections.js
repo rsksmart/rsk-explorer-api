@@ -95,10 +95,12 @@
 
   Events: [
   {
-    key: { address: 1 } },
+    key: { address: 1 },
+    name: 'eventAddressIndex' },
 
   {
-    key: { event: 1 } },
+    key: { event: 1 },
+    name: 'eventEvIndex' },
 
   {
     key: { timestamp: 1 },
@@ -107,7 +109,11 @@
   {
     key: { eventId: 1 },
     name: 'eventIdIndex',
-    unique: true }],
+    unique: true },
+
+  {
+    key: { blockNumber: 1 },
+    name: 'eventBlockNumberIndex' }],
 
 
   TokensAddrs: [

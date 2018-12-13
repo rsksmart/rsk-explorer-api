@@ -1,5 +1,6 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _DataCollector = require('../lib/DataCollector');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
+var _types = require('../lib/types');
 var _Block = require('./Block');
 var _Tx = require('./Tx');
 var _Address = require('./Address');
@@ -40,7 +41,7 @@ class Blocks extends _DataCollector.DataCollector {
       if (err) console.log(err);else
       {
         this.Tx.db.
-        find().
+        find({ txType: { $in: [_types.txTypes.default, _types.txTypes.contract] } }).
         sort({ blockNumber: -1, transactionIndex: -1 }).
         limit(this.lastLimit).
         toArray((err, txs) => {

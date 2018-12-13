@@ -4,7 +4,7 @@ var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
 var _util = require('util');var _util2 = _interopRequireDefault(_util);function _interopRequireWildcard(obj) {if (obj && obj.__esModule) {return obj;} else {var newObj = {};if (obj != null) {for (var key in obj) {if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];}}newObj.default = obj;return newObj;}}function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const writeFile = _util2.default.promisify(_fs2.default.writeFile);
-const url = process.env.url || 'http://localhost:4444';
+const url = process.env.url || 'http://localhost:3003';
 const outDir = process.env.outDir || '/tmp';
 
 let payload = process.env.payload;

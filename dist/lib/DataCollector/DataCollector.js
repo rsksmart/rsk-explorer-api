@@ -1,6 +1,7 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.DataCollector = undefined;var _events = require('events');
 var _timers = require('timers');
 var _utils = require('../utils');
+var _apiLib = require('../../api/apiLib');
 var _mongodb = require('mongodb');
 var _DataCollectorItem = require('./DataCollectorItem');var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class Emitter extends _events.EventEmitter {}
@@ -94,7 +95,7 @@ class DataCollector {
   }
 
   filterParams(params) {
-    return (0, _utils.filterParams)(params, this.perPage);
+    return (0, _apiLib.filterParams)(params, this.perPage);
   }
 
   formatData(data) {
