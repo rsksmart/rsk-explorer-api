@@ -1,2 +1,2 @@
 import config from '../lib/config'
-console.dir(config, { colors: true })
+console.log(JSON.stringify(config, null, 2))
