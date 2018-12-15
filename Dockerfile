@@ -8,6 +8,7 @@ RUN apt-get update -y && \
 
 ADD . /rsk-explorer-api
 WORKDIR /rsk-explorer-api
+RUN git checkout -B docker-branch origin/master
 RUN /usr/local/bin/npm install forever -g &&\
     mkdir /var/log/rsk-explorer/ &&\
     touch /var/log/rsk-explorer/blocks.json &&\
