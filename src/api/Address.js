@@ -20,7 +20,9 @@ export class Address extends DataCollectorItem {
       },
 
       getAddresses: params => {
-        return this.getPageData({}, params)
+        let type = (params.query) ? params.query.type : null
+        let query = (type) ? { type } : {}
+        return this.getPageData(query, params)
       },
 
       getTokens: params => {
