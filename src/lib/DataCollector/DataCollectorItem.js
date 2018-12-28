@@ -40,7 +40,7 @@ export class DataCollectorItem {
       this.db.aggregate(aggregate, options, (err, cursor) => {
         if (err) reject(err)
         cursor.toArray().then(res => {
-          let total = res[0].total
+          let total = res.length ? res[0].total : 0
           resolve(this._pages(params, total))
         })
       })
@@ -138,7 +138,8 @@ export class DataCollectorItem {
     return this.setSortableFields()
   }
 
-  getAggPageData (aggregate, params, sort) {
+  getAggPageData (aggregate, params) {
+    let sort = params.sort || this.sort
     return this.getAggPages(aggregate.concat(), params).then(pages => {
       if (sort) {
         aggregate.push({ $sort: sort })
@@ -148,20 +149,19 @@ export class DataCollectorItem {
       })
     })
   }
-  getPageData (query, params) {
+
+  async getPageData (query, params) {
     let sort = params.sort || this.sort || {}
-    return this.getSortableFields().then(sortable => {
-      sort = this.filterSort(sort, sortable)
-      return this.getPages(query, params).then(pages => {
-        pages.sort = sort
-        pages.sortable = sortable
-        pages.defaultSort = this.sort
-        return this._findPages(query, pages, sort).then(data => {
-          return { pages, data }
-        })
-      })
-    })
+    let sortable = await this.getSortableFields()
+    sort = this.filterSort(sort, sortable)
+    let pages = await this.getPages(query, params)
+    pages.sort = sort
+    pages.sortable = sortable
+    pages.defaultSort = this.sort
+    let data = await this._findPages(query, pages, sort)
+    return { pages, data }
   }
+
   filterSort (sort, sortable) {
     let filteredSort = {}
     // allow only one field to user sort
