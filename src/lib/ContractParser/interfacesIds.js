@@ -9,13 +9,13 @@ const erc20methods = [
   'transferFrom(address,address,uint256)'
 ]
 
-const erc667Methods = erc20methods.concat([
+const erc677Methods = erc20methods.concat([
   'transferAndCall(address,uint256,bytes)'
 ])
 
 export const interfacesIds = {
   ERC20: makeInterface(erc20methods),
-  ERC667: makeInterface(erc667Methods),
+  ERC677: makeInterface(erc677Methods),
   ERC165: makeInterface(['supportsInterface(bytes4)']),
   ERC721: makeInterface([
     'balanceOf(address)',

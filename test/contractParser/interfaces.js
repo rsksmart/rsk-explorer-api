@@ -23,7 +23,7 @@ const contracts = erc165.concat(notErc165)
 
 const addresses = {
   '0xb08bfbaa77143b2781cf0ab37fce73f3367c8b10': ['ERC20'],
-  '0x46c717ed9a86de26f11db97e884ae563083dbfe7': ['ERC20', 'ERC667'],
+  '0x46c717ed9a86de26f11db97e884ae563083dbfe7': ['ERC20', 'ERC677'],
   '0x11944f818fee2c724d4acd1dbc4b4df5dde824f9': ['ERC20'],
   '0x9046dca7ad4dc4bc34b7a3e654b2079fc3a7c92d': ['ERC165', 'ERC721'],
   '0x2454534228f9a8a313e668dab3bfd5f9ab898a45': ['ERC20']

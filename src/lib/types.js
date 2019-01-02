@@ -24,7 +24,7 @@ export const addrTypes = {
 
 export const contractsInterfaces = {
   ERC20: 'ERC20',
-  ERC667: 'ERC667',
+  ERC677: 'ERC677',
   ERC165: 'ERC165',
   ERC721: 'ERC721'
 }
@@ -33,7 +33,7 @@ const ci = contractsInterfaces
 
 export const tokensInterfaces = [
   ci.ERC20,
-  ci.ERC667,
+  ci.ERC677,
   ci.ERC721
 ]
 

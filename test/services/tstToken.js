@@ -22,8 +22,8 @@ describe('TST token', function () {
     contract = blockData.contracts[0]
   })
 
-  it('should be an ERC667 token', function () {
-    expect(contract.contractInterfaces).include.members(['ERC20', 'ERC667'])
+  it('should be an ERC677 token', function () {
+    expect(contract.contractInterfaces).include.members(['ERC20', 'ERC677'])
   })
 
   it('should be TST token', function () {
