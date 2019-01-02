@@ -35,11 +35,8 @@ class Contract extends BcThing {
           let tokenData = await this.getTokenData()
           if (tokenData) this.data = Object.assign(this.data, tokenData)
         }
-      } else {
-        // saved contracts
-        // let totalSupply = await this.call('totalSupply')
-        // if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
       }
+
       this.data.addresses = await this.fetchAddresses()
       let data = this.getData()
       return data
