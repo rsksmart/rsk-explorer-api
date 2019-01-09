@@ -108,9 +108,10 @@ export class ContractParser {
     return this.web3.eth.contract(abi).at(address)
   }
 
-  call (method, contract, params) {
+  call (method, contract, params = []) {
     return new Promise((resolve, reject) => {
-      contract[method].call(params, (err, res) => {
+      if (!Array.isArray(params)) reject(new Error(`Params must be an array`))
+      contract[method].call(...params, (err, res) => {
         if (err !== null) {
           this.log.warn(`Method ${method} call ${err}`)
           resolve(null)
@@ -145,7 +146,11 @@ export class ContractParser {
 
   async getContractInfo (txInputData, contract) {
     let methods = this.getMethodsBySelectors(txInputData)
-    let isErc165 = await this.implementsErc165(contract)
+    let isErc165 = false
+    //  skip non-erc165 conrtacts
+    if (hasValues(methods, ['supportsInterface(bytes4)'])) {
+      isErc165 = await this.implementsErc165(contract)
+    }
     let interfaces
     if (isErc165) interfaces = await this.getInterfacesERC165(contract)
     else interfaces = this.getInterfacesByMethods(methods)
@@ -176,7 +181,9 @@ export class ContractParser {
   }
 
   async supportsInterface (contract, interfaceId) {
-    let res = await this.call('supportsInterface', contract, interfaceId)
+    // fixed gas to prevent infinite loops
+    let options = { gas: 30000 }
+    let res = await this.call('supportsInterface', contract, [interfaceId, options])
     return res
   }
 

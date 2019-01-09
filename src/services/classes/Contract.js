@@ -66,7 +66,7 @@ class Contract extends BcThing {
     return new TokenAddress(address, this)
   }
 
-  call (method, params) {
+  call (method, params = []) {
     const contract = this.contract
     return this.parser.call(method, contract, params)
   }
