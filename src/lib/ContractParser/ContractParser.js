@@ -57,15 +57,19 @@ export class ContractParser {
     return logs.map(log => {
       let back = Object.assign({}, log)
       let decoder = this.getLogDecoder(log.topics || [])
-
       let decoded = (decoder) ? decoder.event.decode(log) : log
-
       decoded.topics = back.topics
       decoded.data = back.data
       if (decoder) {
         let signature = Object.assign({}, decoder.abi[ABI_SIGNATURE])
         decoded.signature = signature.signature
         decoded.abi = removeAbiSignaureData(decoder.abi)
+        // convert args object to array to remove properties names
+        if (decoded.args) {
+          let inputs = decoded.abi.inputs || []
+          let args = inputs.map(i => i.name).map(i => decoded.args[i])
+          decoded.args = args
+        }
       }
       return decoded
     }).map(log => {

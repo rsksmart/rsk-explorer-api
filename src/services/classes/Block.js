@@ -350,7 +350,7 @@ export class Block extends BcThing {
           let eventAddresses = abi.inputs
             .filter(i => i.type === 'address')
             .map((field, i) => {
-              let address = event.args[field.name]
+              let address = event.args[i]
               if (this.isAddress(address)) {
                 return address
               }
