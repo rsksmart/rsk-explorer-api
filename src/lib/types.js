@@ -62,6 +62,10 @@ export const modules = {
   tokens: 'Token'
 }
 
+export const BRIDGE_NAME = 'bridge (native)'
+
+export const REMASC_NAME = 'remasc (native)'
+
 export const BIG_NUMBER = 'BigNumber'
 
 export default { txTypes, errors, addrTypes, contractsInterfaces }

@@ -1,6 +1,9 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { tokensInterfaces, addrTypes } from '../lib/types'
+import { tokensInterfaces, addrTypes, REMASC_NAME, BRIDGE_NAME } from '../lib/types'
 import { GetTxBalance } from './getBalanceFromTxs'
+import config from '../lib/config'
+const bridgeAddress = config.bridgeAddress
+const remascAddress = config.remascAddress
 export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
@@ -11,12 +14,16 @@ export class Address extends DataCollectorItem {
     this.publicActions = {
       getAddress: async params => {
         const { address } = params
-        const addressData = await this.getOne({ address })
-        if (addressData.data) {
+        const aData = await this.getOne({ address })
+        if (aData.data) {
           const txBalance = await this.getBalanceFromTxs(address)
-          if (txBalance) addressData.data.txBalance = this.serialize(txBalance)
+          if (txBalance) aData.data.txBalance = this.serialize(txBalance)
+          if (!aData.data.name) {
+            if (address === remascAddress) aData.data.name = REMASC_NAME
+            if (address === bridgeAddress) aData.data.name = BRIDGE_NAME
+          }
         }
-        return addressData
+        return aData
       },
 
       getAddresses: params => {
