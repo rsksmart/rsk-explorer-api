@@ -20,13 +20,11 @@ export class Tx extends DataCollectorItem {
 
       getTransaction: async params => {
         const hash = params.hash
-        const blockNumber = params.block || params.blockNumber
-        const transactionIndex = params.index || params.transactionIndex
         if (hash) {
-          let tx = await this.getOne({ hash })
-          return (tx.data) ? tx : this.PendingTxs.getPendingTransaction(params)
-        } else if (undefined !== blockNumber && undefined !== transactionIndex) {
-          return this.getOne({ blockNumber, transactionIndex })
+          let tx
+          tx = await this.getOne({ hash })
+          if (!tx.data) tx = await this.PendingTxs.getPendingTransaction(params)
+          return tx
         }
       },
 
