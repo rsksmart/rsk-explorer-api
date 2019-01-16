@@ -95,10 +95,12 @@ describe('# decode events', function () {
             assert.equal(argsLength, Object.keys(decoded.args).length)
           })
 
+          let keys = Object.keys(event.args)
+
           for (let a in event.args) {
             let arg = event.args[a]
             it(`should have: ${a} arg with value: ${arg}`, function () {
-              assert.propertyVal(decoded.args, a, arg)
+              assert.propertyVal(decoded.args, keys.indexOf(a), arg)
             })
           }
         })
