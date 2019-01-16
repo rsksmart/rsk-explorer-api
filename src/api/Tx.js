@@ -28,6 +28,29 @@ export class Tx extends DataCollectorItem {
         }
       },
 
+      getTransactionWithAddressData: async params => {
+        let data = await this.publicActions.getTransaction(params)
+        let tx = data.data
+        if (tx) {
+          let logs = (tx.receipt) ? tx.receipt.logs : []
+          let addresses = new Set(logs.map(log => log.address))
+          addresses.add(tx.from)
+          addresses.add(tx.to)
+          let Address = this.parent.Address
+          let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })))
+          if (res) {
+            res = res.reduce((v, a, i) => {
+              let d = a.data
+              if (d && d.address) v[d.address] = d
+              return v
+            }, {})
+
+            tx._addresses = res
+          }
+          return data
+        }
+      },
+
       getTransactionsByBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.number
 
