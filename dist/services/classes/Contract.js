@@ -27,18 +27,16 @@ class Contract extends _BcThing.BcThing {
       // new contracts
       if (this.creationData) {
         let txInputData = this.creationData.tx.input;
-        let { interfaces, methods } = this.parser.getContractInfo(txInputData);
+        let info = await this.parser.getContractInfo(txInputData, this.contract);
+        let { interfaces, methods } = info;
         if (interfaces.length) this.data.contractInterfaces = interfaces;
         if (methods) this.data.contractMethods = methods;
         if (this.isToken(interfaces)) {
           let tokenData = await this.getTokenData();
           if (tokenData) this.data = Object.assign(this.data, tokenData);
         }
-      } else {
-        // saved contracts
-        // let totalSupply = await this.call('totalSupply')
-        // if (totalSupply) this.data = Object.assign(this.data, { totalSupply })
       }
+
       this.data.addresses = await this.fetchAddresses();
       let data = this.getData();
       return data;
@@ -68,13 +66,13 @@ class Contract extends _BcThing.BcThing {
     return new _TokenAddress2.default(address, this);
   }
 
-  call(method, params) {
+  call(method, params = []) {
     const contract = this.contract;
     return this.parser.call(method, contract, params);
   }
 
   isToken(interfaces) {
-    return (0, _utils.hasValue)(interfaces, [_types.contractsTypes.ERC20, _types.contractsTypes.ERC667]);
+    return (0, _utils.hasValue)(interfaces, _types.tokensInterfaces);
   }
   async fetchAddresses() {
     let data = [];

@@ -11,6 +11,25 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
         if (contract) return this.getPageData({ contract }, params);
       },
 
+      getTokensByAddress: async params => {
+        const address = params.address;
+        const from = this.parent.Address.db.collectionName;
+        if (address) {
+          let aggregate = [
+          {
+            $lookup: { from, localField: 'contract', foreignField: 'address', as: 'addressesItems' } },
+
+          { $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ['$addressesItems', 0] }, '$$ROOT'] } } },
+          { $project: { addressesItems: 0 } },
+          {
+            $match: { address } }];
+
+
+          let data = await this.getAggPageData(aggregate, params);
+          return data;
+        }
+      },
+
       getContractAccount: params => {
         const { address, contract } = params;
         return this.getOne({ address, contract });

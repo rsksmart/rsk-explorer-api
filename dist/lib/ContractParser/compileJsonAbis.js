@@ -1,7 +1,7 @@
 'use strict';var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
 var _util = require('util');var _util2 = _interopRequireDefault(_util);
 var _path = require('path');var _path2 = _interopRequireDefault(_path);
-var _ContractParser = require('./ContractParser');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const readDir = _util2.default.promisify(_fs2.default.readdir);
 const readFile = _util2.default.promisify(_fs2.default.readFile);
@@ -50,14 +50,28 @@ function processAbi(abi) {
   // remove duplicates
   abi = [...new Set(abi.map(a => JSON.stringify(a)))].map(a => JSON.parse(a));
   // add signatures
-  abi = (0, _ContractParser.addSignatureDataToAbi)(abi);
+  abi = (0, _lib.addSignatureDataToAbi)(abi);
   // detect 4 bytes collisions
-  let signatures = abi.map(a => a[_ContractParser.ABI_SIGNATURE].signature).filter(v => v);
+  let signatures = abi.map(a => a[_lib.ABI_SIGNATURE].signature).filter(v => v);
+  signatures = [...new Set(signatures)];
   let fourBytes = signatures.map(s => s.slice(0, 8));
   if (fourBytes.length !== [...new Set(fourBytes)].length) {
+    console.log(fourBytes.filter((v, i) => fourBytes.indexOf(v) !== i));
     throw new Error('4bytes collision');
   }
+  // check events
+  let duppEvents = searchDupplicatedEvents(abi);
+  if (duppEvents) throw new Error('Dupplicated events');
   return abi;
+}
+
+function searchDupplicatedEvents(abi) {
+  let events = (0, _lib.abiEvents)(abi).map(e => {
+    let s = e[_lib.ABI_SIGNATURE];
+    return `${s.signature}_${s.indexed}`;
+  });
+  let unique = [...new Set(events)];
+  return events.length !== unique.length;
 }
 
 process.on('unhandledRejection', err => {

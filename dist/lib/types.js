@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BIG_NUMBER = exports.modules = exports.actions = exports.events = exports.contractsTypes = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BIG_NUMBER = exports.REMASC_NAME = exports.BRIDGE_NAME = exports.modules = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
 
 const txTypes = exports.txTypes = {
   default: 'normal',
@@ -22,9 +22,19 @@ const addrTypes = exports.addrTypes = {
   CONTRACT: 'contract' };
 
 
-const contractsTypes = exports.contractsTypes = {
+const contractsInterfaces = exports.contractsInterfaces = {
   ERC20: 'ERC20',
-  ERC667: 'ERC667' };
+  ERC677: 'ERC677',
+  ERC165: 'ERC165',
+  ERC721: 'ERC721' };
+
+
+const ci = contractsInterfaces;
+
+const tokensInterfaces = exports.tokensInterfaces = [
+ci.ERC20,
+ci.ERC677,
+ci.ERC721];
 
 
 const events = exports.events = {
@@ -52,6 +62,10 @@ const modules = exports.modules = {
   tokens: 'Token' };
 
 
+const BRIDGE_NAME = exports.BRIDGE_NAME = 'bridge (native)';
+
+const REMASC_NAME = exports.REMASC_NAME = 'remasc (native)';
+
 const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';exports.default =
 
-{ txTypes, errors, addrTypes, contractsTypes };
+{ txTypes, errors, addrTypes, contractsInterfaces };

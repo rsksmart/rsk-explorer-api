@@ -20,13 +20,34 @@ class Tx extends _DataCollector.DataCollectorItem {
 
       getTransaction: async params => {
         const hash = params.hash;
-        const blockNumber = params.block || params.blockNumber;
-        const transactionIndex = params.index || params.transactionIndex;
         if (hash) {
-          let tx = await this.getOne({ hash });
-          return tx.data ? tx : this.PendingTxs.getPendingTransaction(params);
-        } else if (undefined !== blockNumber && undefined !== transactionIndex) {
-          return this.getOne({ blockNumber, transactionIndex });
+          let tx;
+          tx = await this.getOne({ hash });
+          if (!tx.data) tx = await this.PendingTxs.getPendingTransaction(params);
+          return tx;
+        }
+      },
+
+      getTransactionWithAddressData: async params => {
+        let data = await this.publicActions.getTransaction(params);
+        let tx = data.data;
+        if (tx) {
+          let logs = tx.receipt ? tx.receipt.logs : [];
+          let addresses = new Set(logs.map(log => log.address));
+          addresses.add(tx.from);
+          addresses.add(tx.to);
+          let Address = this.parent.Address;
+          let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })));
+          if (res) {
+            res = res.reduce((v, a, i) => {
+              let d = a.data;
+              if (d && d.address) v[d.address] = d;
+              return v;
+            }, {});
+
+            tx._addresses = res;
+          }
+          return data;
         }
       },
 

@@ -13,7 +13,7 @@ const GetTxBalance = exports.GetTxBalance = Tx => {
     values.
     map(v => v.value).
     forEach(value => {
-      total = total.plus(new _bignumber.BigNumber(value.value));
+      total = total.plus(new _bignumber.BigNumber(value));
     });
     return total;
   }

@@ -28,7 +28,7 @@ class TokenAddress extends _BcThing.BcThing {
     }
   }
   getBalance() {
-    return this.Contract.call('balanceOf', this.address);
+    return this.Contract.call('balanceOf', [this.address]);
   }}exports.TokenAddress = TokenAddress;exports.default =
 
 

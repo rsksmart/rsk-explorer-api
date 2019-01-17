@@ -3,17 +3,22 @@
     "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
+        "indexed": false,
         "name": "from",
         "type": "address"
       },
       {
-        "indexed": true,
+        "indexed": false,
         "name": "to",
         "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "value",
+        "type": "uint256"
       }
     ],
-    "name": "OwnershipTransferred",
+    "name": "Transfer",
     "type": "event"
   }
 ]

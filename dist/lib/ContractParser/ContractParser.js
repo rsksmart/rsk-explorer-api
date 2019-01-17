@@ -1,38 +1,52 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.addSignatureDataToAbi = exports.abiSignatureData = exports.removeAbiSignaureData = exports.ABI_SIGNATURE = exports.solidityName = exports.soliditySignature = exports.abiMethods = exports.abiEvents = undefined;var _event = require('web3/lib/web3/event.js');var _event2 = _interopRequireDefault(_event);
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.ContractParser = undefined;var _event = require('web3/lib/web3/event.js');var _event2 = _interopRequireDefault(_event);
 var _Abi = require('./Abi');var _Abi2 = _interopRequireDefault(_Abi);
 var _web3Connect = require('../web3Connect');
-var _utils = require('../utils');
-var _types = require('../types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _types = require('../types');
+var _interfacesIds = require('./interfacesIds');var _interfacesIds2 = _interopRequireDefault(_interfacesIds);
+var _utils = require('../../lib/utils');
+
+var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+
+
+
+
+
+
+
+
 class ContractParser {
   constructor(abi, options = {}) {
     this.abi = null;
-    this.abi = setAbi(abi || _Abi2.default);
+    this.abi = (0, _lib.setAbi)(abi || _Abi2.default);
+    this.eventsAbi = (0, _lib.abiEvents)(this.abi);
     this.web3 = _web3Connect.web3;
     this.log = options.logger || console;
   }
 
   setAbi(abi) {
-    this.abi = setAbi(abi);
+    this.abi = (0, _lib.setAbi)(abi);
+    this.eventsAbi = (0, _lib.abiEvents)(this.abi);
   }
 
   setWeb3(web3) {
     if (web3) this.web3 = web3;
   }
-  getMethodsKeys() {
-    let keys = {};
+  getMethodsSelectors() {
+    let selectors = {};
     let methods = this.getAbiMethods();
     for (let m in methods) {
       let method = methods[m];
-      let signature = method.signature || soliditySignature(m);
-      keys[m] = signature.slice(0, 8);
+      let signature = method.signature || (0, _lib.soliditySignature)(m);
+      selectors[m] = (0, _lib.soliditySelector)(signature);
     }
-    return keys;
+    return selectors;
   }
+
   getAbiMethods() {
     let methods = {};
     this.abi.filter(def => def.type === 'function').
     map(m => {
-      let sig = m[ABI_SIGNATURE] || abiSignatureData(m);
+      let sig = m[_lib.ABI_SIGNATURE] || (0, _lib.abiSignatureData)(m);
       sig.name = m.name;
       methods[sig.method] = sig;
     });
@@ -40,31 +54,28 @@ class ContractParser {
   }
 
   parseTxLogs(logs) {
-    const abi = this.abi;
-    let decoders = abi.filter(def => def.type === 'event').
-    map(def => {
-      return { abi: def, event: new _event2.default(null, def, null) };
-    });
-
     return logs.map(log => {
       let back = Object.assign({}, log);
-      let decoder = decoders.find(decoder => {
-        if (!log.topics.length) return false;
-        return decoder.event.signature() === log.topics[0].slice(2);
-      });
+      let decoder = this.getLogDecoder(log.topics || []);
       let decoded = decoder ? decoder.event.decode(log) : log;
-
       decoded.topics = back.topics;
       decoded.data = back.data;
-      if (decoder) decoded.abi = removeAbiSignaureData(decoder.abi);
+      if (decoder) {
+        let signature = Object.assign({}, decoder.abi[_lib.ABI_SIGNATURE]);
+        decoded.signature = signature.signature;
+        decoded.abi = (0, _lib.removeAbiSignaureData)(decoder.abi);
+        // convert args object to array to remove properties names
+        if (decoded.args) {
+          let inputs = decoded.abi.inputs || [];
+          let args = inputs.map(i => i.name).map(i => decoded.args[i]);
+          decoded.args = args;
+        }
+      }
       return decoded;
     }).map(log => {
-      // Hmm review
-      let abis = abi.find(def => {
-        return def.type === 'event' && log.event === def.name;
-      });
-      if (abis && abis.inputs) {
-        abis.inputs.forEach(param => {
+      let abi = log.abi;
+      if (abi && abi.inputs) {
+        abi.inputs.forEach(param => {
           if (param.type === 'bytes32') {
             log.args[param.name] = this.web3.toAscii(log.args[param.name]);
           }
@@ -74,16 +85,41 @@ class ContractParser {
     });
   }
 
+  getLogDecoder(topics) {
+    if (!topics.length) return null;
+    let events = this.eventsAbi;
+    let signature = topics[0].slice(2);
+    let indexed = topics.length - 1;
+    let decoders = events.
+    filter(e => {
+      let s = e[_lib.ABI_SIGNATURE];
+      return s.signature === signature && s.indexed === indexed;
+    });
+    if (decoders.length) {
+      if (decoders[1]) this.log.error(`ERROR, dupplicated event: ${decoders[0].name}`);
+      return this.createLogDecoder(decoders[0]);
+    }
+  }
+
+  createLogDecoder(abi) {
+    abi = Object.assign({}, abi);
+    const event = new _event2.default(null, abi, null);
+    return { abi, event };
+  }
+
   makeContract(address, abi) {
     abi = abi || this.abi;
     return this.web3.eth.contract(abi).at(address);
   }
-  call(method, contract, params) {
+
+  call(method, contract, params = []) {
     return new Promise((resolve, reject) => {
-      contract[method].call(params, (err, res) => {
+      if (!Array.isArray(params)) reject(new Error(`Params must be an array`));
+      contract[method].call(...params, (err, res) => {
         if (err !== null) {
+          this.log.warn(`Method ${method} call ${err}`);
           resolve(null);
-          return reject(err);
+          // return reject(err)
         } else {
           resolve(res);
         }
@@ -102,89 +138,71 @@ class ContractParser {
     return { name, symbol, decimals, totalSupply };
   }
 
-  hasMethodSignature(txInputData, signature) {
-    return signature ? txInputData.includes(signature) : null;
+  hasMethodSelector(txInputData, selector) {
+    return selector ? txInputData.includes(selector) : null;
   }
 
-  getMethods(txInputData) {
-    let methods = this.getMethodsKeys();
+  getMethodsBySelectors(txInputData) {
+    let methods = this.getMethodsSelectors();
     return Object.keys(methods).
-    filter(method => this.hasMethodSignature(txInputData, methods[method]) === true);
+    filter(method => this.hasMethodSelector(txInputData, methods[method]) === true);
   }
 
-  getContractInfo(txInputData) {
-    let methods = this.getMethods(txInputData);
-    let interfaces = this.getContractInterfaces(methods);
+  async getContractInfo(txInputData, contract) {
+    let methods = this.getMethodsBySelectors(txInputData);
+    let isErc165 = false;
+    //  skip non-erc165 conrtacts
+    if ((0, _utils.hasValues)(methods, ['supportsInterface(bytes4)'])) {
+      isErc165 = await this.implementsErc165(contract);
+    }
+    let interfaces;
+    if (isErc165) interfaces = await this.getInterfacesERC165(contract);else
+    interfaces = this.getInterfacesByMethods(methods);
+    interfaces = Object.keys(interfaces).
+    filter(k => interfaces[k] === true).
+    map(t => _types.contractsInterfaces[t] || t);
     return { methods, interfaces };
   }
 
-  getContractInterfaces(methods) {
-    let types = this.testContractTypes(methods);
-    return Object.keys(types).
-    filter(k => types[k] === true).
-    map(t => _types.contractsTypes[t]);
-  }
-
-  testContractTypes(methods) {
-    return {
-      ERC20: this.hasErc20methods(methods),
-      ERC667: this.hasErc667methods(methods) };
-
-  }
-
-  hasErc20methods(methods) {
-    return (0, _utils.hasValues)(methods, [
-    'totalSupply()',
-    'balanceOf(address)',
-    'allowance(address,address)',
-    'transfer(address,uint256)',
-    'approve(address,uint256)',
-    'transferFrom(address,address,uint256)']);
-
-  }
-
-  hasErc667methods(methods) {
-    return this.hasErc20methods(methods) &&
-    (0, _utils.hasValues)(methods, [
-    'transferAndCall(address,uint256,bytes)']);
-
-  }}
-
-
-const setAbi = abi => addSignatureDataToAbi(abi, true);
-
-const abiEvents = exports.abiEvents = abi => abi.filter(v => v.type === 'event');
-
-const abiMethods = exports.abiMethods = abi => abi.filter(v => v.type === 'function');
-
-const soliditySignature = exports.soliditySignature = name => (0, _utils.keccak256)(name);
-
-const solidityName = exports.solidityName = abi => {
-  let { name, inputs } = abi;
-  inputs = inputs ? inputs.map(i => i.type) : [];
-  return name ? `${name}(${inputs.join(',')})` : null;
-};
-
-const ABI_SIGNATURE = exports.ABI_SIGNATURE = '__signatureData';
-
-const removeAbiSignaureData = exports.removeAbiSignaureData = abi => {
-  if (undefined !== abi[ABI_SIGNATURE]) delete abi[ABI_SIGNATURE];
-  return abi;
-};
-
-const abiSignatureData = exports.abiSignatureData = value => {
-  let method = solidityName(value);
-  let signature = method ? soliditySignature(method) : null;
-  return { method, signature };
-};
-
-const addSignatureDataToAbi = exports.addSignatureDataToAbi = (abi, skip) => {
-  abi.map((value, i) => {
-    if (!value[ABI_SIGNATURE] || !skip) {
-      value[ABI_SIGNATURE] = abiSignatureData(value);
+  async getInterfacesERC165(contract) {
+    let ifaces = {};
+    let keys = Object.keys(_interfacesIds2.default);
+    for (let i of keys) {
+      ifaces[i] = await this.supportsInterface(contract, _interfacesIds2.default[i].id);
     }
-  });
-  return abi;
-};exports.default =
+    return ifaces;
+  }
+
+  getInterfacesByMethods(methods, isErc165) {
+    return Object.keys(_interfacesIds2.default).
+    map(i => {
+      return [i, (0, _utils.hasValues)(methods, _interfacesIds2.default[i].methods)];
+    }).
+    reduce((obj, value) => {
+      obj[value[0]] = value[1];
+      return obj;
+    }, {});
+  }
+
+  async supportsInterface(contract, interfaceId) {
+    // fixed gas to prevent infinite loops
+    let options = { gas: 30000 };
+    let res = await this.call('supportsInterface', contract, [interfaceId, options]);
+    return res;
+  }
+
+  async implementsErc165(contract) {
+    try {
+      let first = await this.supportsInterface(contract, _interfacesIds2.default.ERC165.id);
+      if (first === true) {
+        let second = await this.supportsInterface(contract, '0xffffffff');
+        return !(second === true || second === null);
+      }
+      return false;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }}exports.ContractParser = ContractParser;exports.default =
+
 
 ContractParser;
