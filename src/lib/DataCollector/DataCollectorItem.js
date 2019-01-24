@@ -19,7 +19,7 @@ export class DataCollectorItem {
     }
   }
   paginator (query, params) {
-    return this.db.countDocuments(query, { hint: '_id_' }).then(total => {
+    return this.db.countDocuments(query).then(total => {
       let pages = Math.ceil(total / params.limit)
       return { total, pages }
     })
