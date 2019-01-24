@@ -162,7 +162,10 @@ export class Block extends BcThing {
 
       // insert events
       await Promise.all(
-        events.map(e => db.Events.insertOne(e)))
+        events.map(e => db.Events.updateOne(
+          { eventId: e.eventId },
+          { $set: e },
+          { upsert: true })))
         .then(res => { result.events = res })
 
       // insert tokenAddresses
