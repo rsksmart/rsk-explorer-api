@@ -1,21 +1,19 @@
 import { BcThing } from './BcThing'
+import Tx from './Tx'
 import Address from './Address'
-import txFormat from '../../lib/txFormat'
 import Contract from './Contract'
-import ContractParser from '../../lib/ContractParser/ContractParser'
 import { blockQuery, arrayDifference } from '../../lib/utils'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, options) {
-    super(options.nod3, options.collections)
+  constructor (hashOrNumber, { nod3, collections, Logger }) {
+    super(nod3, collections)
     this.Blocks = this.collections.Blocks
     this.fetched = false
-    this.log = options.Logger || console
+    this.log = Logger || console
     this.hashOrNumber = hashOrNumber
     this.addresses = {}
     this.contracts = {}
     this.tokenAddresses = {}
-    this.contractParser = new ContractParser()
     this.data = {
       block: null,
       txs: [],
@@ -38,14 +36,16 @@ export class Block extends BcThing {
       let blockData = await this.getBlock(this.hashOrNumber)
       this.data.block = blockData
       this.addAddress(blockData.miner)
-      this.data.txs = await Promise.all(blockData.transactions
-        .map((txHash, index) => this.getTx(txHash, index)))
+
+      let { transactions, timestamp } = blockData
+      let txs = transactions.map(hash => new Tx(hash, timestamp, this))
+      let txsData = await this.fetchItems(txs)
+      this.data.txs = txsData.map(d => d.tx)
+      this.data.txs.forEach(tx => this.addTxAddresses(tx))
+
+      this.data.events = [].concat.apply([], txsData.map(d => d.events))
+
       this.data.contracts = await this.fetchItems(this.contracts)
-      this.data.events = await Promise.all(this.data.txs
-        .map(tx => this.parseTxEvents(tx)))
-        .then(
-          events => [].concat.apply([], events)
-        )
       this.addEventsAddresses()
       this.mergeContractsAddresses()
       this.data.addresses = await this.fetchItems(this.addresses)
@@ -68,61 +68,12 @@ export class Block extends BcThing {
     }
   }
 
-  async getTx (txHash, index, tx) {
-    try {
-      if (!tx) tx = await this.getTransactionByHash(txHash)
-      if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`)
-      // if (!tx) tx = await this.getTransactionByIndex(index)
-      let receipt = await this.getTxReceipt(txHash)
-      if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `)
-      tx.receipt = receipt
-      if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
-      this.addAddress(receipt.contractAddress)
-      tx.timestamp = this.data.block.timestamp
-      this.addContract(tx)
-      this.addAddress(tx.to)
-      this.addAddress(tx.from)
-      tx = txFormat(tx)
-      return tx
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  getTransactionByHash (txHash) {
-    return this.nod3.eth.getTransactionByHash(txHash)
-  }
-
-  getTransactionByIndex (index) {
-    return this.nod3.eth.getTransactionByIndex(this.hashOrNumber, index)
-  }
-
-  getTxReceipt (txHash) {
-    return this.nod3.eth.getTransactionReceipt(txHash)
-  }
-
-  parseTxLogs (logs) {
-    let parser = this.contractParser
-    return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve(parser.parseTxLogs(logs)))
-    })
-  }
-
-  async parseTxEvents (tx) {
-    const timestamp = tx.timestamp
-    try {
-      let topics = await this.parseTxLogs(tx.receipt.logs)
-      return topics.map(event => {
-        let eventId = `${event.transactionHash}-${event.logIndex}`
-        event.eventId = eventId
-        event.timestamp = timestamp
-        event.txStatus = tx.receipt.status
-        event.event = event.event || null
-        return event
-      })
-    } catch (err) {
-      return Promise.reject(err)
-    }
+  addTxAddresses (tx) {
+    let { receipt, to, from } = tx
+    this.addAddress(receipt.contractAddress)
+    this.addContract(tx)
+    this.addAddress(to)
+    this.addAddress(from)
   }
 
   async save () {
@@ -312,7 +263,7 @@ export class Block extends BcThing {
     return this.collections.OrphanBlocks.updateOne({ hash: blockData.hash }, { $set: blockData }, { upsert: true })
   }
 
-  addAddress (address, type) {
+  addAddress (address) {
     if (!this.isAddress(address) || this.addresses[address]) return
     const Addr = new Address(address, this.nod3, this.collections.Addrs)
     this.addresses[address] = Addr
@@ -333,7 +284,7 @@ export class Block extends BcThing {
   }
 
   newContract (address, data) {
-    let contract = new Contract(address, data, this.nod3, this.contractParser)
+    let contract = new Contract(address, data, this.nod3)
     this.contracts[address] = contract
     return contract
   }
