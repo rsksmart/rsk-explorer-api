@@ -114,7 +114,7 @@ export class Block extends BcThing {
       // insert events
       await Promise.all(
         events.map(e => db.Events.updateOne(
-          { eventId: e.eventId },
+          { _id: e._id },
           { $set: e },
           { upsert: true })))
         .then(res => { result.events = res })
@@ -366,8 +366,13 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
     let query = { $or: [{ blockHash }, { blockNumber }] }
     result.block = await db.Blocks.deleteOne({ hash })
     result.block = await db.Blocks.deleteOne({ number: blockNumber })
+
+    let txs = await db.Txs.find(query).toArray()
     result.txs = await db.Txs.deleteMany(query)
+    // remove events by block
     result.events = await db.Events.deleteMany(query)
+    // remove event by tx
+    result.eventsByTxs = await Promise.all(...txs.map(tx => db.Events.deleteMany({ txHash: tx.hash })))
     result.addresses = await db.Addrs.deleteMany(
       { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] })
     return result

@@ -107,11 +107,6 @@ export default {
       name: 'eventTsIndex'
     },
     {
-      key: { eventId: 1 },
-      name: 'eventIdIndex',
-      unique: true
-    },
-    {
       key: { blockNumber: 1 },
       name: 'eventBlockNumberIndex'
     }

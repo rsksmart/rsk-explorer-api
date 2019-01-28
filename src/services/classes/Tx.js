@@ -50,8 +50,8 @@ export class Tx extends BcThing {
     try {
       let topics = await this.parseLogs(tx.receipt.logs)
       return topics.map(event => {
-        let eventId = `${event.transactionHash}-${event.logIndex}`
-        event.eventId = eventId
+        let { blockNumber, transactionIndex } = tx
+        event._id = `${blockNumber}-${transactionIndex}-${event.logIndex}`
         event.timestamp = timestamp
         event.txStatus = tx.receipt.status
         event.event = event.event || null
