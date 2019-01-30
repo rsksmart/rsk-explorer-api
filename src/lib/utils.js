@@ -9,6 +9,8 @@ export const isHexString = str => {
 
 export const add0x = str => (isHexString(str) && str.substring(0, 2) !== '0x') ? `0x${str}` : str
 
+export const remove0x = str => (isHexString(str) && str.substring(0, 2) === '0x') ? str.substr(2, str.length) : str
+
 export const isAddress = address => {
   return /^(0x)?[0-9a-f]{40}$/i.test(address)
 }
