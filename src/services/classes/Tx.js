@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import txFormat from '../../lib/txFormat'
+import { formatEvent } from './Event'
 import ContractParser from '../../lib/ContractParser/ContractParser'
 
 export class Tx extends BcThing {
@@ -46,15 +47,13 @@ export class Tx extends BcThing {
     return this.nod3.eth.getTransactionReceipt(txHash)
   }
   async parseEvents (tx) {
-    const timestamp = tx.timestamp
     try {
       let topics = await this.parseLogs(tx.receipt.logs)
-      return topics.map(event => {
-        let { blockNumber, transactionIndex } = tx
-        event._id = `${blockNumber}-${transactionIndex}-${event.logIndex}`
-        event.timestamp = timestamp
-        event.txStatus = tx.receipt.status
-        event.event = event.event || null
+      return topics.map(topic => {
+        topic = formatEvent(topic, tx)
+        let event = Object.assign({}, topic)
+        delete event.eventId
+        delete topic._id
         return event
       })
     } catch (err) {

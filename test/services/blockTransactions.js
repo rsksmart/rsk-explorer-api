@@ -5,7 +5,6 @@ import blockA from './block-1234.json'
 import blockB from './block-4567.json'
 import badBlock from './block-badTxs.json'
 
-
 const txs = [
   { hash: '0x1', blockHash: '0xabc123', receipt: { blockHash: '0xabc123' } },
   { hash: '0x2', blockHash: '0xcccccc', receipt: { blockHash: '0xabc123' } },

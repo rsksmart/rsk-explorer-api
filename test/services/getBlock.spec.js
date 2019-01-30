@@ -1,5 +1,5 @@
 
-import { expect, assert } from 'chai'
+import { expect } from 'chai'
 import { Block } from '../../src/services/classes/Block'
 import { BlocksBase } from '../../src/lib/BlocksBase'
 import { nod3 } from '../../src/lib/nod3Connect'
@@ -7,8 +7,6 @@ import datasource from '../../src/lib/dataSource'
 
 import blockJson from './block-35162.json'
 const blockSpec = blockJson.block
-
-
 
 describe('Get Block', function () {
   let blockData
