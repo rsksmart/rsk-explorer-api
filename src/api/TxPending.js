@@ -3,7 +3,6 @@ import { DataCollectorItem } from '../lib/DataCollector'
 export class TxPending extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
-    this.sort = { timestamp: -1 }
     this.publicActions = {
 
       getPendingTransaction: params => {

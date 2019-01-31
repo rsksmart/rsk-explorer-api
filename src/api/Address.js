@@ -7,7 +7,6 @@ const remascAddress = config.remascAddress
 export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
-    this.sort = { address: 1 }
     const Tx = this.parent.getItem({ key: 'Tx' })
     this.Tx = Tx
     this.getBalanceFromTxs = GetTxBalance(Tx)

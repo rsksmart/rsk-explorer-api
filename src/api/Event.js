@@ -2,7 +2,6 @@ import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
-    this.sort = { timestamp: -1 }
     this.publicActions = {
 
       getEvent: async params => {

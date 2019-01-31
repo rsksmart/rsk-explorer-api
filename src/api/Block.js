@@ -2,8 +2,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../lib/utils'
 export class Block extends DataCollectorItem {
   constructor (collection, key, parent) {
-    super(collection, key, parent)
-    this.sort = { number: -1 }
+    let sort = { number: -1 }
+    let cursorField = 'number'
+    super(collection, key, parent, { sort, cursorField })
     this.publicActions = {
 
       getBlock: async params => {

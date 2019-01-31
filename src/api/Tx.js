@@ -4,7 +4,6 @@ import { isBlockHash } from '../lib/utils'
 export class Tx extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
-    this.sort = { blockNumber: -1, transactionIndex: -1 }
     const PendingTxs = this.parent.getItem({ key: 'TxPending' })
     this.PendingTxs = PendingTxs.publicActions
     this.publicActions = {

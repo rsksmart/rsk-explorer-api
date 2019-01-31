@@ -1,14 +1,16 @@
 import { Collection } from 'mongodb'
 export class DataCollectorItem {
-  constructor (collection, key, parent) {
+  constructor (collection, key, parent, { cursorField = '_id', sortable = { _id: -1 }, sort = { _id: -1 } } = {}) {
     if (!(collection instanceof Collection)) {
       throw (new Error('Collection is not mongodb Collection'))
     }
     this.db = collection
     this.key = key
-    this.publicActions = {}
     this.parent = parent
-    this.sortableFields = null
+    this.cursorField = cursorField
+    this.sortableFields = sortable
+    this.sort = sort
+    this.publicActions = {}
   }
   run (action, params) {
     let f = this.publicActions[action]
@@ -122,22 +124,6 @@ export class DataCollectorItem {
     return this.db.aggregate(aggregate, options).toArray()
   }
 
-  async setSortableFields () {
-    const indexes = await this.db.indexes()
-    let fields = {}
-    for (let index of indexes) {
-      let keys = Object.keys(index.key)
-      if (keys.length === 1) fields[keys[0]] = index.key[keys[0]]
-    }
-    this.sortableFields = fields
-    return fields
-  }
-
-  async getSortableFields () {
-    if (this.sortableFields) return Promise.resolve(this.sortableFields)
-    return this.setSortableFields()
-  }
-
   getAggPageData (aggregate, params) {
     let sort = params.sort || this.sort
     return this.getAggPages(aggregate.concat(), params).then(pages => {
@@ -152,7 +138,7 @@ export class DataCollectorItem {
 
   async getPageData (query, params) {
     let sort = params.sort || this.sort || {}
-    let sortable = await this.getSortableFields()
+    let sortable = this.sortableFields
     sort = this.filterSort(sort, sortable)
     let pages = await this.getPages(query, params)
     pages.sort = sort
@@ -164,6 +150,7 @@ export class DataCollectorItem {
 
   filterSort (sort, sortable) {
     let filteredSort = {}
+    sortable = sortable || this.sortableFields
     // allow only one field to user sort
     if (Object.keys(sort).length > 1) return this.sort
     for (let field in sort) {
