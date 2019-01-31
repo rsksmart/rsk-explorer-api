@@ -19,7 +19,6 @@ import {
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
-console.log(address, port)
 const log = Logger('explorer-api', config.api.log)
 
 dataSource.then(db => {
@@ -44,14 +43,13 @@ dataSource.then(db => {
     res.end()
   })
   httpServer.listen(port, address)
-
   const io = new IO(httpServer)
 
   // start userEvents api
   const userEvents = UserEventsApi(io, blocks, log)
 
   io.httpServer.on('listening', () => {
-    log.info(`Server listen on: ${address || '0.0.0.0'}:${port}`)
+    log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
   })
 
   // broadcast new blocks
