@@ -67,7 +67,7 @@ async function storeAndSort (collectionName, data, sort) {
   try {
     let db = await dataBase.db()
     let coll = db.collection(collectionName)
-    await db.dropCollection(collectionName)
+    await coll.deleteMany({})
     await coll.insertMany(data, { ordered: true })
     let sortedById = await coll.find({}).sort({ _id: 1 }).toArray()
     let sorted = await coll.find({}).sort(sort).toArray()

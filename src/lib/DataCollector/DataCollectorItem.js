@@ -1,17 +1,23 @@
-import { Collection } from 'mongodb'
+import { Collection, ObjectID } from 'mongodb'
+import { find, findPages, aggregatePages } from './pagination'
+import { OBJECT_ID } from '../../lib/types'
 export class DataCollectorItem {
-  constructor (collection, key, parent, { cursorField = '_id', sortable = { _id: -1 }, sort = { _id: -1 } } = {}) {
+  constructor (collection, key, parent, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     if (!(collection instanceof Collection)) {
       throw (new Error('Collection is not mongodb Collection'))
     }
     this.db = collection
     this.key = key
     this.parent = parent
+    this.fieldsTypes = null
     this.cursorField = cursorField
+    this.cursorData = null
+    this.sortDir = sortDir
     this.sortableFields = sortable
-    this.sort = sort
+    this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
   }
+
   run (action, params) {
     let f = this.publicActions[action]
     if (f) {
@@ -20,165 +26,146 @@ export class DataCollectorItem {
       console.log('Unknown action' + action)
     }
   }
-  paginator (query, params) {
-    return this.db.countDocuments(query).then(total => {
-      let pages = Math.ceil(total / params.limit)
-      return { total, pages }
-    })
-  }
-  getPages (query, params) {
-    return this.db.countDocuments(query, { hint: '_id_' }).then(total => {
-      return this._pages(params, total)
-    })
-  }
-  getAggPages (aggregate, params) {
-    return new Promise((resolve, reject) => {
-      aggregate.push({
-        $group: { _id: 'result', total: { $sum: 1 } }
-      })
-      // review this
-      // let options = { allowDiskUse: true }
-      let options = {}
-      this.db.aggregate(aggregate, options, (err, cursor) => {
-        if (err) reject(err)
-        cursor.toArray().then(res => {
-          let total = res.length ? res[0].total : 0
-          resolve(this._pages(params, total))
-        })
-      })
-    })
+
+  async find (query, sort, limit, project) {
+    let collection = this.db
+    project = project || {}
+    let data = await find(collection, query, sort, limit, project)
+    return { data }
   }
 
-  _pages (params, total) {
-    let page = 1
-    let skip = 0
-    let pages = 1
-    let perPage = params.limit || 10
-    if (total) {
-      page = params.page > 0 ? params.page : 1
-      pages = Math.ceil(total / perPage)
-      page = page * perPage < total ? page : pages
-      skip = (page - 1) * perPage
-    }
-    return { page, total, pages, perPage, skip }
-  }
-  _formatPrevNext (prev, data, next) {
-    return { prev, data, next }
-  }
-  getOne (query, projection) {
-    return this.db.findOne(query, projection).then(data => {
+  getOne (query, project) {
+    project = project || {}
+    return this.db.findOne(query, project).then(data => {
       return { data }
     })
   }
-  find (query, sort, limit) {
-    sort = sort || {}
-    limit = limit || 0
-    return this.db
-      .find(query)
-      .sort(sort)
-      .limit(limit)
-      .toArray()
-      .then(data => {
-        return { data }
-      })
+
+  async setFieldsTypes () {
+    let types = await getFieldsTypes(this.db)
+    this.fieldsTypes = types
+    return types
   }
-  getPrevNext (params, query, queryP, queryN, sort) {
-    return this._findPN(query, sort).then(data => {
-      if (data) {
-        let jsonData = JSON.stringify(data)
-        return this._findPN(queryP, sort).then(prev => {
-          if (jsonData === JSON.stringify(prev)) prev = null
-          return this._findPN(queryN, sort).then(next => {
-            if (jsonData === JSON.stringify(next)) next = null
-            return { data, next, prev }
-          })
-        })
-      }
-    })
+  async getFieldsTypes () {
+    let types = this.fieldsTypes
+    return types || this.setFieldsTypes()
   }
-  _findPN (query, sort) {
-    return this.db
-      .find(query)
-      .sort(sort)
-      .limit(1)
-      .toArray()
-      .then(res => {
-        return res[0]
-      })
+  responseParams (params) {
+    let sort = params.sort || this.sort || {}
+    let sortable = this.sortableFields
+    let defaultSort = this.sort
+    let sortDir = this.sortDir
+    let { limit, next, prev } = params
+    sort = filterSort(sort, sortable, defaultSort)
+    return { sort, sortable, defaultSort, sortDir, limit, next, prev }
   }
-  _findPages (query, pages, sort) {
-    const options = {}
-    if (pages.skip) options.skip = pages.skip
-    return this.db
-      .find(query, options)
-      .sort(sort)
-      .limit(pages.perPage)
-      .toArray()
+
+  async getCursorData () {
+    let data = this.cursorData
+    if (!data) data = await this.setCursorData()
+    return data
   }
-  _aggregatePages (aggregate, pages) {
-    // review this
-    let options = {}
-    // options.allowDiskUse = true
-    aggregate.push({ $skip: pages.skip })
-    aggregate.push({ $limit: pages.perPage })
-    return this.db.aggregate(aggregate, options).toArray()
+
+  async setCursorData () {
+    const field = this.cursorField
+    const types = await this.getFieldsTypes()
+    const type = types[field]
+    this.cursorData = { field, type }
+    return this.cursorData
+  }
+
+  getPageData (query, params) {
+    return this.getPages({ query, params })
   }
 
   getAggPageData (aggregate, params) {
-    let sort = params.sort || this.sort
-    return this.getAggPages(aggregate.concat(), params).then(pages => {
-      if (sort) {
-        aggregate.push({ $sort: sort })
-      }
-      return this._aggregatePages(aggregate, pages).then(data => {
-        return { pages, data }
-      })
-    })
+    return this.getPages({ aggregate, params })
   }
 
-  async getPageData (query, params) {
-    let sort = params.sort || this.sort || {}
-    let sortable = this.sortableFields
-    sort = this.filterSort(sort, sortable)
-    let pages = await this.getPages(query, params)
-    pages.sort = sort
-    pages.sortable = sortable
-    pages.defaultSort = this.sort
-    let data = await this._findPages(query, pages, sort)
-    return { pages, data }
-  }
-
-  filterSort (sort, sortable) {
-    let filteredSort = {}
-    sortable = sortable || this.sortableFields
-    // allow only one field to user sort
-    if (Object.keys(sort).length > 1) return this.sort
-    for (let field in sort) {
-      if (undefined !== sortable[field]) filteredSort[field] = sort[field]
+  async getPrevNext (query, project, data) {
+    try {
+      let { cursorField } = this
+      project = project || {}
+      if (!data) data = (await this.getOne(query)).data
+      if (!data) return
+      let value = query[cursorField] || data[cursorField]
+      if (undefined === value) throw new Error(`Missing ${cursorField} value`)
+      let prev = (await find(this.db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0]
+      let next = (await find(this.db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0]
+      return { prev, data, next }
+    } catch (err) {
+      return Promise.reject(err)
     }
-    return (Object.keys(filteredSort).length > 0) ? filteredSort : this.sort
   }
-  // value: string| array of searched values | Object: 'value':true|false
+
+  async getPages ({ aggregate, query, params }) {
+    try {
+      let pages = this.responseParams(params)
+      let cursorData = await this.getCursorData()
+      query = aggregate || query
+      let args = [this.db, cursorData, query, pages]
+      let result = (aggregate) ? await aggregatePages(...args) : await findPages(...args)
+      return formatResponse(result, pages)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
   fieldFilterParse (field, value, query) {
-    query = query || {}
-    let fieldQuery
-    let inArr = []
-    let ninArr = []
-    if (typeof value === 'string') {
-      fieldQuery = value
-    } else if (Array.isArray(value)) {
-      inArr = value
-    } else if (typeof value === 'object') {
-      for (let p in value) {
-        if (value[p]) inArr.push(p)
-        else ninArr.push(p)
-      }
-    }
-    if (inArr.length || ninArr.length) fieldQuery = {}
-    if (inArr.length) fieldQuery['$in'] = inArr
-    if (ninArr.length) fieldQuery['$nin'] = ninArr
-    if (fieldQuery) query[field] = fieldQuery
-    return query
+    return fieldFilterParse(field, value, query)
   }
 }
+
+export function formatResponse (result, pages) {
+  if (!result) return
+  let { data, pagination } = result
+  pages = Object.assign(pages, pagination)
+  return { pages, data }
+}
+
+export async function getFieldsTypes (collection) {
+  let doc = await collection.findOne()
+  let fields = {}
+  for (let p in doc) {
+    let value = doc[p]
+    let type = typeof value
+    type = (value instanceof ObjectID) ? OBJECT_ID : type
+    fields[p] = type
+  }
+  return fields
+}
+
+export function filterSort (sort, sortable, defaultSort) {
+  let filteredSort = {}
+  // allow only one field to user sort
+  if (Object.keys(sort).length > 1) return defaultSort
+  for (let field in sort) {
+    if (undefined !== sortable[field]) filteredSort[field] = sort[field]
+  }
+  return (Object.keys(filteredSort).length > 0) ? filteredSort : defaultSort
+}
+
+// value: string| array of searched values | Object: 'value':true|false
+export function fieldFilterParse (field, value, query) {
+  query = query || {}
+  let fieldQuery
+  let inArr = []
+  let ninArr = []
+  if (typeof value === 'string') {
+    fieldQuery = value
+  } else if (Array.isArray(value)) {
+    inArr = value
+  } else if (typeof value === 'object') {
+    for (let p in value) {
+      if (value[p]) inArr.push(p)
+      else ninArr.push(p)
+    }
+  }
+  if (inArr.length || ninArr.length) fieldQuery = {}
+  if (inArr.length) fieldQuery['$in'] = inArr
+  if (ninArr.length) fieldQuery['$nin'] = ninArr
+  if (fieldQuery) query[field] = fieldQuery
+  return query
+}
+
 export default DataCollectorItem

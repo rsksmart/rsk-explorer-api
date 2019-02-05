@@ -3,10 +3,10 @@ import config from '../lib/config'
 const delayedFields = config.api.delayedFields || {}
 
 export const filterParams = (params, perPageMax = 50) => {
+  /// REWRITE
   params = params || {}
   let perPage = params.perPage || perPageMax
   perPage = (perPage <= perPageMax) ? perPage : perPageMax
-  params.page = params.page || 1
   let limit = params.limit || perPage
   limit = limit <= perPage ? limit : perPage
   params.limit = limit

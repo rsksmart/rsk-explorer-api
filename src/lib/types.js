@@ -68,4 +68,6 @@ export const REMASC_NAME = 'remasc (native)'
 
 export const BIG_NUMBER = 'BigNumber'
 
+export const OBJECT_ID = 'ObjectID'
+
 export default { txTypes, errors, addrTypes, contractsInterfaces }

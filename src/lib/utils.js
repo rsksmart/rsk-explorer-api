@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
+import { ObjectID } from 'mongodb'
 import keccak from 'keccak'
 
 export const isHexString = str => {
@@ -58,12 +59,14 @@ const isObj = (value) => {
 
 export const serialize = (obj) => {
   if (typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(o => serialize(o))
   if (isBigNumber(obj)) return serializeBigNumber(obj)
+  if (obj instanceof ObjectID) return obj.toString()
   let serialized = {}
   for (let p in obj) {
     let value = obj[p]
     if (value !== null && typeof value === 'object') {
-      if (value instanceof Array) {
+      if (Array.isArray(value)) {
         serialized[p] = value.map(v => serialize(v))
       } else {
         if (!isBigNumber(value)) serialized[p] = serialize(value)

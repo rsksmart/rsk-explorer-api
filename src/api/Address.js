@@ -6,7 +6,7 @@ const bridgeAddress = config.bridgeAddress
 const remascAddress = config.remascAddress
 export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
-    super(collection, key, parent)
+    super(collection, key, parent, { sortDir: 1 })
     const Tx = this.parent.getItem({ key: 'Tx' })
     this.Tx = Tx
     this.getBalanceFromTxs = GetTxBalance(Tx)
