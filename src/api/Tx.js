@@ -21,7 +21,7 @@ export class Tx extends DataCollectorItem {
         const hash = params.hash
         if (hash) {
           let tx
-          tx = await this.getOne({ hash })
+          tx = await this.getPrevNext({ hash }, { hash: 1 })
           if (!tx.data) tx = await this.PendingTxs.getPendingTransaction(params)
           return tx
         }

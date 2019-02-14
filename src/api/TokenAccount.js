@@ -15,14 +15,12 @@ export class TokenAccount extends DataCollectorItem {
         const from = this.parent.Address.db.collectionName
         if (address) {
           let aggregate = [
+            { $match: { address } },
             {
               $lookup: { from, localField: 'contract', foreignField: 'address', as: 'addressesItems' }
             },
             { $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ['$addressesItems', 0] }, '$$ROOT'] } } },
-            { $project: { addressesItems: 0 } },
-            {
-              $match: { address }
-            }
+            { $project: { addressesItems: 0 } }
           ]
           let data = await this.getAggPageData(aggregate, params)
           return data

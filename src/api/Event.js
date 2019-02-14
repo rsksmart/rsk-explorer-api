@@ -6,11 +6,12 @@ export class Event extends DataCollectorItem {
 
       getEvent: async params => {
         try {
-          const eventId = params.eventId
-          const data = await this.getOne({ eventId })
-          if (!data) throw new Error(`Event ${eventId} does not exist`)
+          const _id = params._id
+          let data = await this.getOne({ _id })
+          if (!data) throw new Error(`Event ${_id} does not exist`)
           const address = data.data.address
-          return this.parent.addAddressData(address, data)
+          data = await this.parent.addAddressData(address, data)
+          return data
         } catch (err) {
           return Promise.resolve(err)
         }

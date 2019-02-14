@@ -10,10 +10,12 @@ export class Address extends DataCollectorItem {
     const Tx = this.parent.getItem({ key: 'Tx' })
     this.Tx = Tx
     this.getBalanceFromTxs = GetTxBalance(Tx)
+    this.fields = { code: 0, createdByTx: 0 }
     this.publicActions = {
+
       getAddress: async params => {
         const { address } = params
-        const aData = await this.getOne({ address })
+        const aData = await this.getOne({ address }, { createdByTx: 1 })
         if (aData.data) {
           const txBalance = await this.getBalanceFromTxs(address)
           if (txBalance) aData.data.txBalance = this.serialize(txBalance)

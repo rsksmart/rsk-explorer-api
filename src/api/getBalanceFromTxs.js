@@ -2,7 +2,7 @@ import { BigNumber } from 'bignumber.js'
 
 export const GetTxBalance = (Tx) => {
   function getTxs (query) {
-    return Tx.db.find(query, {})
+    return Tx.db.find(query)
       .project({ value: 1 })
       .toArray()
       .then(data => { return data })
