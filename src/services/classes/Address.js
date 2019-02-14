@@ -1,6 +1,7 @@
 import { BcThing } from './BcThing'
+
 export class Address extends BcThing {
-  constructor (address, nod3, db, block = 'latest') {
+  constructor (address, { nod3, db, block = 'latest' } = {}) {
     super(nod3)
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
@@ -29,7 +30,7 @@ export class Address extends BcThing {
     if (prop === 'address') return
     this.data[prop] = value
   }
-  
+
   getBalance () {
     return this.nod3.eth.getBalance(this.address, this.block)
   }

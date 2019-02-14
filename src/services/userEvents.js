@@ -24,7 +24,7 @@ dataSource.then(db => {
               msg.data = cached
               sendMessage(msg)
             } else {
-              const Addr = new Address(address, nod3, addressCollection)
+              const Addr = new Address(address, { nod3, db: addressCollection })
               Addr.fetch().then(result => {
                 msg.result = result
                 cache.set(block, [module, action, address], result)

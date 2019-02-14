@@ -265,7 +265,9 @@ export class Block extends BcThing {
 
   addAddress (address) {
     if (!this.isAddress(address) || this.addresses[address]) return
-    const Addr = new Address(address, this.nod3, this.collections.Addrs)
+    let db = this.collections.Addrs
+    let { nod3 } = this
+    const Addr = new Address(address, { db, nod3 })
     this.addresses[address] = Addr
   }
 
