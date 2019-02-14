@@ -29,10 +29,10 @@
     "bignumber.js": "^7.2.1",
     "bunyan": "^2.0.2",
     "keccak": "^1.4.0",
-    "mongodb": "^3.1.1",
+    "mongodb": "^3.1.13",
     "nod3": "git+https://github.com/rsksmart/nod3.git",
-    "socket.io": "^2.1.1",
-    "web3": "^0.20.6"
+    "socket.io": "^2.2.0",
+    "web3": "^0.20.7"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -40,12 +40,12 @@
     "chai": "^4.2.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
-    "eslint-plugin-import": "^2.13.0",
-    "eslint-plugin-mocha": "^5.2.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-mocha": "^5.3.0",
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "mocha": "^5.2.0",
-    "nodemon": "^1.18.2"
+    "nodemon": "^1.18.10"
   }
 }
