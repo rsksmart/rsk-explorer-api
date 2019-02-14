@@ -59,9 +59,10 @@ export class DataCollectorItem {
     let sortable = this.sortableFields
     let defaultSort = this.sort
     let sortDir = this.sortDir
-    let { limit, next, prev } = params
+    let { limit, next, prev, fields } = params
+    if (!fields) fields = this.getDefaultsFields()
     sort = filterSort(sort, sortable, defaultSort)
-    return { sort, sortable, defaultSort, sortDir, limit, next, prev }
+    return { sort, sortable, defaultSort, sortDir, limit, next, prev, fields }
   }
 
   async getCursorData () {

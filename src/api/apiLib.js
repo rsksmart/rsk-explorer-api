@@ -12,7 +12,18 @@ export const filterParams = (params, perPageMax = 50) => {
   params.limit = limit
   params.query = filterQuery(params.query)
   params.sort = filterSort(params.sort)
+  params.fields = filterFields(params.fields)
   return params
+}
+
+export const filterFields = fields => {
+  if (!fields) return
+  let filtered = {}
+  for (let p in fields) {
+    let k = remove$(p)
+    filtered[k] = (fields[p]) ? 1 : 0
+  }
+  return filtered
 }
 
 export const filterQuery = (query) => {
@@ -41,7 +52,7 @@ export const filterSort = (sort) => {
 const sanitizeQuery = (query) => {
   let filtered = {}
   for (let p in query) {
-    let k = p.replace('$', '')
+    let k = remove$(p)
     if (k === p) filtered[k] = query[p]
   }
   return retFiltered(filtered)
@@ -50,6 +61,8 @@ const sanitizeQuery = (query) => {
 const retFiltered = (filtered) => {
   return (filtered && Object.keys(filtered).length > 0) ? filtered : null
 }
+
+export const remove$ = value => value.replace('$', '')
 
 export const formatRes = (payload) => {
   let { module, action, result, req, error } = payload

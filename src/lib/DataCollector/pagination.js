@@ -61,10 +61,10 @@ export function parseParams (cursorData, params) {
 export async function findPages (collection, cursorData, query, params) {
   try {
     params = parseParams(cursorData, params)
-    const { limit } = params
+    const { limit, fields } = params
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
-    let data = await find(collection, $query, $sort, limit + 1)
+    let data = await find(collection, $query, $sort, limit + 1, fields)
     let total = (data.length) ? (await collection.countDocuments(query)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
@@ -75,12 +75,11 @@ export async function findPages (collection, cursorData, query, params) {
 export async function aggregatePages (collection, cursorData, query, params) {
   try {
     params = parseParams(cursorData, params)
-    const { limit } = params
+    const { limit, fields } = params
     let match = generateQuery(params)
     const sort = generateSort(params)
     let data = []
-    const aggregate = modifyAggregate(query, { match, sort, limit: limit + 1 })
-    console.log(JSON.stringify(aggregate))
+    const aggregate = modifyAggregate(query, { match, sort, limit: limit + 1, fields })
     let cursor = await collection.aggregate(aggregate)
     data = await cursor.toArray()
     let total = (data.length) ? await getAggregateTotal(collection, query) : null
@@ -90,7 +89,7 @@ export async function aggregatePages (collection, cursorData, query, params) {
   }
 }
 
-export function modifyAggregate (query, { match, sort, limit }) {
+export function modifyAggregate (query, { match, sort, limit, fields }) {
   let aggregate = [...query]
   let index = aggregate.findIndex(v => v.$match)
   index = (index > -1) ? index : aggregate.unshift(null)
