@@ -265,9 +265,8 @@ export class Block extends BcThing {
 
   addAddress (address) {
     if (!this.isAddress(address) || this.addresses[address]) return
-    let db = this.collections.Addrs
-    let { nod3 } = this
-    const Addr = new Address(address, { db, nod3 })
+    let { nod3, collections } = this
+    const Addr = new Address(address, { collections, nod3 })
     this.addresses[address] = Addr
   }
 
@@ -369,7 +368,7 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
     result.block = await db.Blocks.deleteOne({ hash })
     result.block = await db.Blocks.deleteOne({ number: blockNumber })
 
-    let txs = await db.Txs.find(query).toArray()
+    let txs = await db.Txs.find(query).toArray() || []
     result.txs = await db.Txs.deleteMany(query)
     // remove events by block
     result.events = await db.Events.deleteMany(query)

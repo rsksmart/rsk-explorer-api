@@ -1,4 +1,5 @@
 import dataSource from '../lib/dataSource.js'
+import { getDbBlocksCollections } from '../lib/blocksCollections'
 import conf from '../lib/config'
 import nod3 from '../lib/nod3Connect'
 import Address from './classes/Address'
@@ -10,7 +11,7 @@ const config = Object.assign({}, conf.blocks)
 const log = Logger('UserRequests', config.log)
 
 dataSource.then(db => {
-  const addressCollection = db.collection(config.collections.Addrs)
+  const collections = getDbBlocksCollections(db)
   const cache = new RequestCache()
   process.on('message', msg => {
     let { module, action, params, block } = msg
@@ -24,7 +25,7 @@ dataSource.then(db => {
               msg.data = cached
               sendMessage(msg)
             } else {
-              const Addr = new Address(address, { nod3, db: addressCollection })
+              const Addr = new Address(address, { nod3, collections })
               Addr.fetch().then(result => {
                 msg.result = result
                 cache.set(block, [module, action, address], result)

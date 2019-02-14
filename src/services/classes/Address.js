@@ -1,12 +1,14 @@
 import { BcThing } from './BcThing'
+import { GetTxBalance } from './getBalanceFromTxs'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, db, block = 'latest' } = {}) {
-    super(nod3)
+  constructor (address, { nod3, db, collections, block = 'latest' } = {}) {
+    super(nod3, collections)
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
-    this.db = db
+    this.db = db || this.collections.Addrs
     this.codeIsSaved = false
+    this.TxsBalance = new GetTxBalance(this.collections.Txs)
     this.data = new Proxy(
       { address, type: 'account' }, {
         set (obj, prop, val) {
@@ -71,9 +73,37 @@ export class Address extends BcThing {
     if (this.codeIsSaved) delete data.code
     return (serialize) ? this.serialize(data) : data
   }
-  save () {
-    const a = this.getData(true)
-    return this.db.updateOne({ address: a.address }, { $set: a }, { upsert: true })
+  async save () {
+    try {
+      const data = this.getData(true)
+      let res = await this.update(data)
+      return res
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  async updateTxBalance () {
+    try {
+      let txBalance = await this.getBalanceFromTxs()
+      if (txBalance) await this.update({ txBalance })
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  update (data) {
+    let address = data.address || this.address
+    return this.db.updateOne({ address }, { $set: data }, { upsert: true })
+  }
+
+  async getBalanceFromTxs () {
+    let address = this.address
+    try {
+      let balance = await this.TxsBalance.getBalanceFromTx(address)
+      if (balance) return this.serialize(balance)
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 }
 
