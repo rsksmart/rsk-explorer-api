@@ -16,8 +16,12 @@ export class DataCollectorItem {
     this.sortableFields = sortable
     this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
+    this.fields = {}
   }
 
+  getDefaultsFields () {
+    return Object.assign({}, this.fields)
+  }
   run (action, params) {
     let f = this.publicActions[action]
     if (f) {
@@ -29,13 +33,13 @@ export class DataCollectorItem {
 
   async find (query, sort, limit, project) {
     let collection = this.db
-    project = project || {}
+    project = project || this.getDefaultsFields()
     let data = await find(collection, query, sort, limit, project)
     return { data }
   }
 
   getOne (query, project) {
-    project = project || {}
+    project = project || this.getDefaultsFields()
     return this.db.findOne(query, project).then(data => {
       return { data }
     })
@@ -85,7 +89,7 @@ export class DataCollectorItem {
   async getPrevNext (query, project, data) {
     try {
       let { cursorField } = this
-      project = project || {}
+      project = project || this.getDefaultsFields()
       if (!data) data = (await this.getOne(query)).data
       if (!data) return
       let value = query[cursorField] || data[cursorField]
