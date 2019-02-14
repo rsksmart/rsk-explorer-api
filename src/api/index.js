@@ -94,7 +94,12 @@ dataSource.then(db => {
         const module = getModule(payload.module)
         const delayed = getDelayedFields(module, action)
         try {
+          const time = Date.now()
           let result = await blocks.run(module, action, params)
+          const queryTime = Date.now() - time
+          const logCmd = (queryTime > 1000) ? 'warn' : 'trace'
+          log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`)
+
           if (delayed && userEvents) {
             const registry = !result.data && delayed.runIfEmpty
             if (payload.getDelayed) {
