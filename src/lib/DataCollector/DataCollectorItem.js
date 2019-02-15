@@ -22,12 +22,13 @@ export class DataCollectorItem {
   getDefaultsFields () {
     return Object.assign({}, this.fields)
   }
-  run (action, params) {
-    let f = this.publicActions[action]
-    if (f) {
-      return f(params)
-    } else {
-      console.log('Unknown action' + action)
+  async run (action, params) {
+    try {
+      const f = this.publicActions[action]
+      if (f && typeof f === 'function') return f(params)
+      else throw new Error(`Unknown action: ${action}`)
+    } catch (err) {
+      return Promise.reject(err)
     }
   }
 
@@ -59,10 +60,11 @@ export class DataCollectorItem {
     let sortable = this.sortableFields
     let defaultSort = this.sort
     let sortDir = this.sortDir
-    let { limit, next, prev, fields } = params
+
+    let { limit, next, prev, fields, count, countOnly } = params
     if (!fields) fields = this.getDefaultsFields()
     sort = filterSort(sort, sortable, defaultSort)
-    return { sort, sortable, defaultSort, sortDir, limit, next, prev, fields }
+    return { sort, sortable, defaultSort, sortDir, limit, next, prev, fields, count, countOnly }
   }
 
   async getCursorData () {

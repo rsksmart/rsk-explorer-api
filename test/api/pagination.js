@@ -10,7 +10,7 @@ const collectionName = 'pagination'
 const total = 100
 const testData = [...new Array(total)].map((v, i) => { return { number: i + 1 } })
 const limit = 10
-const params = { limit }
+const params = { limit, count: true }
 
 describe('# Pagination', () => {
   let db, collection, collector, storedData, data, pages, field
@@ -53,7 +53,7 @@ describe('# Pagination', () => {
 
 function testPages (collector, params, prevData) {
   describe(`Get results from ${params.next}`, function () {
-    it('.....', async function () {
+    it('Checks results', async function () {
       let { pages, data } = await getResult(collector, params)
       let { next, prev } = pages
       assert.typeOf(data, 'array', 'data must be an array')

@@ -18,10 +18,7 @@ export function formatSearchValue (type, value) {
 }
 
 export function generateSort ({ cursorField, sort, sortDir }) {
-  // uncomplete
-  // sortDir = sort[cursorField] ? sort[cursorField] : sortDir
-  //delete sort[cursorField]
-  //let cSort = (Object.entries(sort).length > 0) ? sort : {}
+  // UNCOMPLETED
   let cSort = Object.assign({}, sort)
   cSort[cursorField] = sortDir
   return cSort
@@ -43,7 +40,8 @@ export function parseParams (cursorData, params) {
   params.sort = params.sort || {}
   const cursorField = cursorData.field
   const cursorType = cursorData.type
-  let { sortDir, prev, next, sort } = params
+  let { sortDir, prev, next, sort, count, countOnly } = params
+  count = count || countOnly
   sortDir = (sortDir === 1) ? 1 : -1
   sortDir = (sort[cursorField]) ? sort[cursorField] : sortDir
   const limit = getLimit(params)
@@ -54,18 +52,18 @@ export function parseParams (cursorData, params) {
 
   let value = (backwardNav) ? prev : next
   value = formatSearchValue(cursorType, value)
-  params = Object.assign(params, { sortDir, backwardNav, value, limit, cursorField, cursorData })
+  params = Object.assign(params, { sortDir, backwardNav, value, limit, cursorField, cursorData, count })
   return params
 }
 
 export async function findPages (collection, cursorData, query, params) {
   try {
     params = parseParams(cursorData, params)
-    const { limit, fields } = params
+    const { limit, fields, count, countOnly } = params
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
-    let data = await find(collection, $query, $sort, limit + 1, fields)
-    let total = (data.length) ? (await collection.countDocuments(query)) : null
+    let data = (!countOnly) ? await find(collection, $query, $sort, limit + 1, fields) : null
+    let total = (count) ? (await collection.countDocuments(query)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)
@@ -75,14 +73,12 @@ export async function findPages (collection, cursorData, query, params) {
 export async function aggregatePages (collection, cursorData, query, params) {
   try {
     params = parseParams(cursorData, params)
-    const { limit, fields } = params
+    const { limit, fields, count, countOnly } = params
     let match = generateQuery(params)
     const sort = generateSort(params)
-    let data = []
     const aggregate = modifyAggregate(query, { match, sort, limit: limit + 1, fields })
-    let cursor = await collection.aggregate(aggregate)
-    data = await cursor.toArray()
-    let total = (data.length) ? await getAggregateTotal(collection, query) : null
+    let data = (!countOnly) ? await collection.aggregate(aggregate).toArray() : null
+    let total = (count) ? await getAggregateTotal(collection, query) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)
