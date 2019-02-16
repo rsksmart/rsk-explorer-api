@@ -1,12 +1,11 @@
 import { DataCollector } from '../lib/DataCollector'
 import config from '../lib/config'
 
-const perPage = config.api.perPage
 const collectionName = config.blocks.collections.TxPool
 
 export class TxPool extends DataCollector {
   constructor (db) {
-    super(db, { perPage, collectionName })
+    super(db, { collectionName })
     this.tickDelay = 1000
     this.state = {}
     this.chart = []

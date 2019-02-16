@@ -1,9 +1,6 @@
 import { OBJECT_ID } from '../../lib/types'
 import { ObjectID } from 'mongodb'
 
-export const MIN_LIMIT = 10
-export const MAX_LIMIT = 300
-
 export function generateCursorQuery ({ cursorField, sortDir, value }) {
   const op = (sortDir === -1) ? '$lt' : '$gt'
   return (value) ? { [cursorField]: { [op]: value } } : null
@@ -30,26 +27,19 @@ export function generateQuery (params, query = {}) {
   return (query && Object.keys(query).length > 0) ? { $and: [cursorQuery, query] } : cursorQuery
 }
 
-export function getLimit ({ limit }) {
-  limit = limit || MIN_LIMIT
-  if (limit > MAX_LIMIT) limit = MAX_LIMIT
-  return limit
-}
-
 export function parseParams (cursorData, params) {
   params.sort = params.sort || {}
   const cursorField = cursorData.field
   const cursorType = cursorData.type
-  let { sortDir, prev, next, sort, count, countOnly } = params
+  let { sortDir, prev, next, sort, count, countOnly, limit } = params
   count = count || countOnly
+  limit = limit || 50
   sortDir = (sortDir === 1) ? 1 : -1
   sortDir = (sort[cursorField]) ? sort[cursorField] : sortDir
-  const limit = getLimit(params)
   let backwardNav = !!prev
   if (backwardNav) {
     sortDir = (sortDir === 1) ? -1 : 1
   }
-
   let value = (backwardNav) ? prev : next
   value = formatSearchValue(cursorType, value)
   params = Object.assign(params, { sortDir, backwardNav, value, limit, cursorField, cursorData, count })

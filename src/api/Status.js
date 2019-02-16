@@ -1,13 +1,12 @@
 import { DataCollector } from '../lib/DataCollector'
 import config from '../lib/config'
 
-const perPage = config.api.perPage
 const statusCollection = config.blocks.collections.Status
 const blocksCollection = config.blocks.collections.Blocks
 
 export class Status extends DataCollector {
   constructor (db) {
-    super(db, { perPage, statusCollection })
+    super(db, { statusCollection })
     this.tickDelay = 5000
     this.state = {}
     this.addItem(statusCollection, 'Status', null, true)

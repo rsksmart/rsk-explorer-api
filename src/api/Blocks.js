@@ -7,13 +7,12 @@ import { Address } from './Address'
 import { Event } from './Event'
 import { TokenAccount } from './TokenAccount'
 import { TxPending } from './TxPending'
-const perPage = config.api.perPage
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
 class Blocks extends DataCollector {
   constructor (db) {
     let collectionName = collections.Blocks
-    super(db, { perPage, collectionName })
+    super(db, { collectionName })
     this.lastLimit = lastLimit
     this.latest = 0
     this.lastBlocks = []

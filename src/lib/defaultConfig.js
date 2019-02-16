@@ -25,7 +25,9 @@ export default {
     address: 'localhost',
     port: 3003,
     lastBlocks: 30,
-    perPage: 50,
+    MIN_LIMIT: 10,
+    LIMIT: 50,
+    MAX_LIMIT: 500,
     allowUserEvents: true,
     delayedFields
   },

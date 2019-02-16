@@ -1,19 +1,23 @@
 import { errors, modules } from '../lib/types'
 import config from '../lib/config'
 const delayedFields = config.api.delayedFields || {}
+const { MAX_LIMIT, LIMIT, MIN_LIMIT } = config.api
 
-export const filterParams = (params, perPageMax = 50) => {
-  /// REWRITE
+export const filterParams = (params) => {
   params = params || {}
-  let perPage = params.perPage || perPageMax
-  perPage = (perPage <= perPageMax) ? perPage : perPageMax
-  let limit = params.limit || perPage
-  limit = limit <= perPage ? limit : perPage
-  params.limit = limit
-  params.query = filterQuery(params.query)
-  params.sort = filterSort(params.sort)
-  params.fields = filterFields(params.fields)
+  let { limit, sort, fields, query } = params
+  params.limit = getLimit(limit)
+  params.query = filterQuery(query)
+  params.sort = filterSort(sort)
+  params.fields = filterFields(fields)
   return params
+}
+
+export const getLimit = (limit) => {
+  limit = limit || LIMIT
+  limit = (limit > MAX_LIMIT) ? MAX_LIMIT : limit
+  limit = (limit < MIN_LIMIT) ? MIN_LIMIT : limit
+  return limit
 }
 
 export const filterFields = fields => {
