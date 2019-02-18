@@ -28,6 +28,7 @@ export default {
     MIN_LIMIT: 10,
     LIMIT: 50,
     MAX_LIMIT: 500,
+    MAX_PAGES: 10,
     allowUserEvents: true,
     delayedFields
   },
