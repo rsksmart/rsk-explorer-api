@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import { GetTxBalance } from './getBalanceFromTxs'
+import { GetTxBalance } from './GetTxBalance'
 
 export class Address extends BcThing {
   constructor (address, { nod3, db, collections, block = 'latest' } = {}) {
@@ -85,12 +85,15 @@ export class Address extends BcThing {
   async updateTxBalance () {
     try {
       let txBalance = await this.getBalanceFromTxs()
-      if (txBalance) await this.update({ txBalance })
+      if (txBalance) this.setData('txBalance', txBalance)
+      return txBalance
     } catch (err) {
       return Promise.reject(err)
     }
   }
-
+  resetTxBalance () {
+    this.setData('txBalance', '0x0')
+  }
   update (data) {
     let address = data.address || this.address
     return this.db.updateOne({ address }, { $set: data }, { upsert: true })

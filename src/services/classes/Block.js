@@ -108,7 +108,10 @@ export class Block extends BcThing {
 
       // insert addresses
       await Promise.all(
-        Object.values(this.addresses).map(a => a.save()))
+        Object.values(this.addresses).map(a => {
+          a.resetTxBalance() // reset to force update in next query
+          return a.save()
+        }))
         .then(res => { result.addresses = res })
 
       // insert events
