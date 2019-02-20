@@ -3,7 +3,6 @@
 class TxPending extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
-    this.sort = { timestamp: -1 };
     this.publicActions = {
 
       getPendingTransaction: params => {

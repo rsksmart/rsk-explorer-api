@@ -99,35 +99,39 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   getBlocks(check) {
-    let segments = check.missingSegments || [];
-    let invalid = check.invalid || [];
-    let missingTxs = check.missingTxs || [];
-    let values = [];
+    try {
+      let segments = check.missingSegments || [];
+      let invalid = check.invalid || [];
+      let missingTxs = check.missingTxs || [];
+      let values = [];
 
-    missingTxs.forEach(block => {
-      values.push(block.number);
-    });
+      missingTxs.forEach(block => {
+        values.push(block.number);
+      });
 
-    segments.forEach(segment => {
-      if (Array.isArray(segment)) {
-        let number = segment[0];
-        let limit = segment[1];
-        while (number >= limit) {
-          values.push(number);
-          number--;
+      segments.forEach(segment => {
+        if (Array.isArray(segment)) {
+          let number = segment[0];
+          let limit = segment[1];
+          while (number >= limit) {
+            values.push(number);
+            number--;
+          }
+        } else {
+          values.push(segment);
         }
-      } else {
-        values.push(segment);
-      }
-    });
-    invalid.forEach(block => {
-      values.push(block.validHash);
-    });
+      });
+      invalid.forEach(block => {
+        values.push(block.validHash);
+      });
 
-    if (values.length) {
-      this.log.warn(`Getting ${values.length} bad blocks`);
-      this.log.trace(values);
-      process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] });
+      if (values.length) {
+        this.log.warn(`Getting ${values.length} bad blocks`);
+        this.log.trace(values);
+        process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] });
+      }
+    } catch (err) {
+      this.log.error(err);
     }
   }
 

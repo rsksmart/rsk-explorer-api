@@ -1,13 +1,12 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Status = undefined;var _DataCollector = require('../lib/DataCollector');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const perPage = _config2.default.api.perPage;
 const statusCollection = _config2.default.blocks.collections.Status;
 const blocksCollection = _config2.default.blocks.collections.Blocks;
 
 class Status extends _DataCollector.DataCollector {
   constructor(db) {
-    super(db, { perPage, statusCollection });
+    super(db, { statusCollection });
     this.tickDelay = 5000;
     this.state = {};
     this.addItem(statusCollection, 'Status', null, true);

@@ -2,33 +2,27 @@
 var _utils = require('../lib/utils');
 class Block extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
-    super(collection, key, parent);
-    this.sort = { number: -1 };
+    let cursorField = 'number';
+    let sortDir = -1;
+    let sortable = { timestamp: -1 };
+    super(collection, key, parent, { sortDir, cursorField, sortable });
     this.publicActions = {
 
-      getBlock: async params => {
+      getBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.hash || params.number;
+        let query = {};
         if ((0, _utils.isBlockHash)(hashOrNumber)) {
-          const block = await this.getOne({ hash: hashOrNumber });
-          if (block && block.data) return this.getBlockNextPrev(block.data.number, params);
+          query = { hash: hashOrNumber };
         } else {
-          const number = parseInt(hashOrNumber);
-          return this.getBlockNextPrev(number, params);
+          query = { number: parseInt(hashOrNumber) };
         }
+        return this.getPrevNext(query, { number: 1 });
       },
 
       getBlocks: params => {
         return this.getPageData({}, params);
       } };
 
-  }
-  getBlockNextPrev(number, params) {
-    return this.getPrevNext(
-    params,
-    { number: number },
-    { number: { $lte: number - 1 } },
-    { number: { $lte: number + 1 } },
-    this.sort);
   }}exports.Block = Block;exports.default =
 
 

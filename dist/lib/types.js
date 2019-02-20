@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BIG_NUMBER = exports.REMASC_NAME = exports.BRIDGE_NAME = exports.modules = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.OBJECT_ID = exports.BIG_NUMBER = exports.REMASC_NAME = exports.BRIDGE_NAME = exports.modules = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
 
 const txTypes = exports.txTypes = {
   default: 'normal',
@@ -66,6 +66,8 @@ const BRIDGE_NAME = exports.BRIDGE_NAME = 'bridge (native)';
 
 const REMASC_NAME = exports.REMASC_NAME = 'remasc (native)';
 
-const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';exports.default =
+const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';
+
+const OBJECT_ID = exports.OBJECT_ID = 'ObjectID';exports.default =
 
 { txTypes, errors, addrTypes, contractsInterfaces };

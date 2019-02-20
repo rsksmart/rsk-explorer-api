@@ -3,7 +3,6 @@
 class TokenAccount extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     super(collection, key, parent);
-    this.sort = { address: 1 };
     this.publicActions = {
 
       getTokenAccounts: params => {
@@ -16,14 +15,12 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
         const from = this.parent.Address.db.collectionName;
         if (address) {
           let aggregate = [
+          { $match: { address } },
           {
             $lookup: { from, localField: 'contract', foreignField: 'address', as: 'addressesItems' } },
 
           { $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ['$addressesItems', 0] }, '$$ROOT'] } } },
-          { $project: { addressesItems: 0 } },
-          {
-            $match: { address } }];
-
+          { $project: { addressesItems: 0 } }];
 
           let data = await this.getAggPageData(aggregate, params);
           return data;

@@ -25,7 +25,10 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     address: 'localhost',
     port: 3003,
     lastBlocks: 30,
-    perPage: 50,
+    MIN_LIMIT: 10,
+    LIMIT: 50,
+    MAX_LIMIT: 500,
+    MAX_PAGES: 10,
     allowUserEvents: true,
     delayedFields: _delayedFields2.default },
 

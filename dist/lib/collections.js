@@ -36,15 +36,12 @@
     unique: true },
 
   {
-    key: {
-      blockNumber: -1,
-      transactionIndex: -1 },
-
-    name: 'blockTrasaction' },
+    key: { blockNumber: -1 },
+    name: 'txBlockNumberIndex' },
 
   {
-    key: { blockNumber: -1 },
-    name: 'txBlockIndex' },
+    key: { blockHash: 1 },
+    name: 'txBlockHashIndex' },
 
   {
     key: { from: 1 },
@@ -53,14 +50,6 @@
   {
     key: { to: 1 },
     name: 'toIndex' },
-
-  {
-    key: { value: 1 },
-    name: 'txValueIndex' },
-
-  {
-    key: { timestamp: 1 },
-    name: 'timeIndex' },
 
   {
     key: { txType: 1 },
@@ -107,11 +96,6 @@
     name: 'eventTsIndex' },
 
   {
-    key: { eventId: 1 },
-    name: 'eventIdIndex',
-    unique: true },
-
-  {
     key: { blockNumber: 1 },
     name: 'eventBlockNumberIndex' }],
 
@@ -122,7 +106,16 @@
       address: 1,
       contract: 1 },
 
-    unique: true }],
+    unique: true },
+
+  {
+    key: { address: 1 },
+    name: 'addressIndx' },
+
+  {
+    key: { contract: 1 },
+    name: 'contractIndx' }],
+
 
 
   OrphanBlocks: [
@@ -145,4 +138,12 @@
     key: {
       hash: 1 },
 
-    unique: true }] };
+    unique: true },
+
+  {
+    key: { from: 1 },
+    name: 'pendingTxFrom' },
+
+  {
+    key: { to: 1 },
+    name: 'pendingTxTo' }] };

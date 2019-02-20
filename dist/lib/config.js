@@ -45,7 +45,6 @@ function loadConfig() {
   try {
     let file = _path2.default.resolve(__dirname, '../../config.json');
     if (_fs2.default.existsSync(file)) config = JSON.parse(_fs2.default.readFileSync(file, 'utf-8'));
-
   } catch (err) {
     console.log(err);
     process.exit(8);

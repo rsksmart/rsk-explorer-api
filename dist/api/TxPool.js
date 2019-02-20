@@ -1,12 +1,11 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TxPool = undefined;var _DataCollector = require('../lib/DataCollector');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const perPage = _config2.default.api.perPage;
 const collectionName = _config2.default.blocks.collections.TxPool;
 
 class TxPool extends _DataCollector.DataCollector {
   constructor(db) {
-    super(db, { perPage, collectionName });
+    super(db, { collectionName });
     this.tickDelay = 1000;
     this.state = {};
     this.chart = [];

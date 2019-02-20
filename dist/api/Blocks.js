@@ -7,13 +7,12 @@ var _Address = require('./Address');
 var _Event = require('./Event');
 var _TokenAccount = require('./TokenAccount');
 var _TxPending = require('./TxPending');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const perPage = _config2.default.api.perPage;
 const lastLimit = _config2.default.api.lastBlocks || 10;
 const collections = _config2.default.blocks.collections;
 class Blocks extends _DataCollector.DataCollector {
   constructor(db) {
     let collectionName = collections.Blocks;
-    super(db, { perPage, collectionName });
+    super(db, { collectionName });
     this.lastLimit = lastLimit;
     this.latest = 0;
     this.lastBlocks = [];

@@ -19,7 +19,6 @@ var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return o
 
 const port = _config2.default.api.port || '3003';
 const address = _config2.default.api.address || 'localhost';
-console.log(address, port);
 const log = (0, _Logger2.default)('explorer-api', _config2.default.api.log);
 
 _dataSource2.default.then(db => {
@@ -44,14 +43,13 @@ _dataSource2.default.then(db => {
     res.end();
   });
   httpServer.listen(port, address);
-
   const io = new _socket2.default(httpServer);
 
   // start userEvents api
   const userEvents = (0, _UserEventsApi2.default)(io, blocks, log);
 
   io.httpServer.on('listening', () => {
-    log.info(`Server listen on: ${address || '0.0.0.0'}:${port}`);
+    log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`);
   });
 
   // broadcast new blocks
@@ -96,7 +94,12 @@ _dataSource2.default.then(db => {
         const module = (0, _apiLib.getModule)(payload.module);
         const delayed = (0, _apiLib.getDelayedFields)(module, action);
         try {
+          const time = Date.now();
           let result = await blocks.run(module, action, params);
+          const queryTime = Date.now() - time;
+          const logCmd = queryTime > 1000 ? 'warn' : 'trace';
+          log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`);
+
           if (delayed && userEvents) {
             const registry = !result.data && delayed.runIfEmpty;
             if (payload.getDelayed) {

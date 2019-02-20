@@ -17,7 +17,6 @@ class DataCollector {
     this.events = emitter;
     this._interval = null;
     this.items = {};
-    this.perPage = options.perPage || 50;
     this.setCollection(options.collectionName);
     this.tickDelay = 1000;
     this.serialize = _utils.serialize;
@@ -95,7 +94,7 @@ class DataCollector {
   }
 
   filterParams(params) {
-    return (0, _apiLib.filterParams)(params, this.perPage);
+    return (0, _apiLib.filterParams)(params);
   }
 
   formatData(data) {

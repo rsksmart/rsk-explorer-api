@@ -1,21 +1,19 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.missmatchBlockTransactions = exports.Block = undefined;var _BcThing = require('./BcThing');
+var _Tx = require('./Tx');var _Tx2 = _interopRequireDefault(_Tx);
 var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
-var _txFormat = require('../../lib/txFormat');var _txFormat2 = _interopRequireDefault(_txFormat);
 var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);
-var _ContractParser = require('../../lib/ContractParser/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
 var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Block extends _BcThing.BcThing {
-  constructor(hashOrNumber, options) {
-    super(options.nod3, options.collections);
+  constructor(hashOrNumber, { nod3, collections, Logger }) {
+    super(nod3, collections);
     this.Blocks = this.collections.Blocks;
     this.fetched = false;
-    this.log = options.Logger || console;
+    this.log = Logger || console;
     this.hashOrNumber = hashOrNumber;
     this.addresses = {};
     this.contracts = {};
     this.tokenAddresses = {};
-    this.contractParser = new _ContractParser2.default();
     this.data = {
       block: null,
       txs: [],
@@ -38,14 +36,16 @@ class Block extends _BcThing.BcThing {
       let blockData = await this.getBlock(this.hashOrNumber);
       this.data.block = blockData;
       this.addAddress(blockData.miner);
-      this.data.txs = await Promise.all(blockData.transactions.
-      map((txHash, index) => this.getTx(txHash, index)));
-      this.data.contracts = await this.fetchItems(this.contracts);
-      this.data.events = await Promise.all(this.data.txs.
-      map(tx => this.parseTxEvents(tx))).
-      then(
-      events => [].concat.apply([], events));
 
+      let { transactions, timestamp } = blockData;
+      let txs = transactions.map(hash => new _Tx2.default(hash, timestamp, this));
+      let txsData = await this.fetchItems(txs);
+      this.data.txs = txsData.map(d => d.tx);
+      this.data.txs.forEach(tx => this.addTxAddresses(tx));
+
+      this.data.events = [].concat.apply([], txsData.map(d => d.events));
+
+      this.data.contracts = await this.fetchItems(this.contracts);
       this.addEventsAddresses();
       this.mergeContractsAddresses();
       this.data.addresses = await this.fetchItems(this.addresses);
@@ -68,61 +68,12 @@ class Block extends _BcThing.BcThing {
     }
   }
 
-  async getTx(txHash, index, tx) {
-    try {
-      if (!tx) tx = await this.getTransactionByHash(txHash);
-      if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`);
-      // if (!tx) tx = await this.getTransactionByIndex(index)
-      let receipt = await this.getTxReceipt(txHash);
-      if (!receipt) throw new Error(`Block: ${this.hashOrNumber}, the Tx ${txHash} .receipt is: ${receipt} `);
-      tx.receipt = receipt;
-      if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex;
-      this.addAddress(receipt.contractAddress);
-      tx.timestamp = this.data.block.timestamp;
-      this.addContract(tx);
-      this.addAddress(tx.to);
-      this.addAddress(tx.from);
-      tx = (0, _txFormat2.default)(tx);
-      return tx;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  getTransactionByHash(txHash) {
-    return this.nod3.eth.getTransactionByHash(txHash);
-  }
-
-  getTransactionByIndex(index) {
-    return this.nod3.eth.getTransactionByIndex(this.hashOrNumber, index);
-  }
-
-  getTxReceipt(txHash) {
-    return this.nod3.eth.getTransactionReceipt(txHash);
-  }
-
-  parseTxLogs(logs) {
-    let parser = this.contractParser;
-    return new Promise((resolve, reject) => {
-      process.nextTick(() => resolve(parser.parseTxLogs(logs)));
-    });
-  }
-
-  async parseTxEvents(tx) {
-    const timestamp = tx.timestamp;
-    try {
-      let topics = await this.parseTxLogs(tx.receipt.logs);
-      return topics.map(event => {
-        let eventId = `${event.transactionHash}-${event.logIndex}`;
-        event.eventId = eventId;
-        event.timestamp = timestamp;
-        event.txStatus = tx.receipt.status;
-        event.event = event.event || null;
-        return event;
-      });
-    } catch (err) {
-      return Promise.reject(err);
-    }
+  addTxAddresses(tx) {
+    let { receipt, to, from } = tx;
+    this.addAddress(receipt.contractAddress);
+    this.addContract(tx);
+    this.addAddress(to);
+    this.addAddress(from);
   }
 
   async save() {
@@ -157,12 +108,18 @@ class Block extends _BcThing.BcThing {
 
       // insert addresses
       await Promise.all(
-      Object.values(this.addresses).map(a => a.save())).
+      Object.values(this.addresses).map(a => {
+        a.resetTxBalance(); // reset to force update in next query
+        return a.save();
+      })).
       then(res => {result.addresses = res;});
 
       // insert events
       await Promise.all(
-      events.map(e => db.Events.insertOne(e))).
+      events.map(e => db.Events.updateOne(
+      { _id: e._id },
+      { $set: e },
+      { upsert: true }))).
       then(res => {result.events = res;});
 
       // insert tokenAddresses
@@ -309,9 +266,10 @@ class Block extends _BcThing.BcThing {
     return this.collections.OrphanBlocks.updateOne({ hash: blockData.hash }, { $set: blockData }, { upsert: true });
   }
 
-  addAddress(address, type) {
+  addAddress(address) {
     if (!this.isAddress(address) || this.addresses[address]) return;
-    const Addr = new _Address2.default(address, this.nod3, this.collections.Addrs);
+    let { nod3, collections } = this;
+    const Addr = new _Address2.default(address, { collections, nod3 });
     this.addresses[address] = Addr;
   }
 
@@ -330,7 +288,7 @@ class Block extends _BcThing.BcThing {
   }
 
   newContract(address, data) {
-    let contract = new _Contract2.default(address, data, this.nod3, this.contractParser);
+    let contract = new _Contract2.default(address, data, this.nod3);
     this.contracts[address] = contract;
     return contract;
   }
@@ -412,8 +370,13 @@ const deleteBlockDataFromDb = exports.deleteBlockDataFromDb = async (blockHash, 
     let query = { $or: [{ blockHash }, { blockNumber }] };
     result.block = await db.Blocks.deleteOne({ hash });
     result.block = await db.Blocks.deleteOne({ number: blockNumber });
+
+    let txs = (await db.Txs.find(query).toArray()) || [];
     result.txs = await db.Txs.deleteMany(query);
+    // remove events by block
     result.events = await db.Events.deleteMany(query);
+    // remove event by tx
+    result.eventsByTxs = await Promise.all([...txs.map(tx => db.Events.deleteMany({ txHash: tx.hash }))]);
     result.addresses = await db.Addrs.deleteMany(
     { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] });
     return result;

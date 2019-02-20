@@ -5,11 +5,10 @@ var _TokenAddress = require('./TokenAddress');var _TokenAddress2 = _interopRequi
 var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Contract extends _BcThing.BcThing {
-  constructor(address, creationData, nod3, parser) {
+  constructor(address, creationData, nod3) {
     super(nod3);
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`);
-    parser = parser || new _ContractParser2.default();
-    this.parser = parser;
+    this.parser = new _ContractParser2.default();
     this.address = address;
     this.creationData = creationData;
     const createdByTx = creationData && creationData.tx ? creationData.tx : null;

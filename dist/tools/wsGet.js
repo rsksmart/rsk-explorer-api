@@ -33,38 +33,44 @@ socket.on('disconnect', socket => {
 });
 
 socket.on('data', async res => {
-  let { data, action, error, req } = res;
+  try {
+    let { data, error, req } = res;
 
-  if (error) c.error(error);
-  if (!error && req && key === req.key) {
+    if (error) throw new Error(error);
+    if (!error && req && key === req.key) {
+      // multiple results
+      if (res.pages) {
+        let { prev, next, total, limit } = res.pages;
+        if (!prev) c.info(`Total ${total}`);
 
-    // multiple results
-    if (res.pages) {
-      let { page, pages, total } = res.pages;
-      if (page === 1) c.info(`Total ${total}`);
+        c.info(`Adding ${data.length}`);
 
-      c.info(`Adding ${data.length}`);
+        if (Array.isArray(data)) results = results.concat(data);else
+        results.push(data);
 
-      if (Array.isArray(data)) results = results.concat(data);else
-      results.push(data);
+        if (!payload.limit) payload.limit = limit;
 
-      if (page < pages) {
-        page++;
-        getPage(socket, payload, page, pages);
-      } else {
-        c.ok(`Done: ${results.length} results`);
-        if (results.length) await saveToFile(results, outFile);
+        if (next) {
+          getPage(socket, payload, next);
+        } else {
+          c.ok(`Done: ${results.length} results`);
+          if (results.length) await saveToFile(results, outFile);
+          process.exit(0);
+        }
+      } else {// single result
+        c.ok('Saving to file');
+        await saveToFile(data, outFile);
         process.exit(0);
       }
-    } else {// single result
-      c.ok('Saving to file');
-      await saveToFile(data, outFile);
-      process.exit(0);
     }
+  } catch (err) {
+    c.error(err);
+    process.exit(9);
   }
 });
 
 socket.on('Error', err => {
+  c.error('ERROR:');
   c.error(err);
 });
 
@@ -73,12 +79,20 @@ process.on('unhandledRejection', err => {
   process.exit(9);
 });
 
-function getPage(socket, payload, page = 1, pages = 0) {
-  let pMsg = pages ? `${page}/${pages}` : page;
-  c.ok(`Getting page: ${pMsg}`);
+function getPage(socket, payload, next) {
+  let { limit } = payload;
+  let count = false;
+  limit = limit || '';
+  if (!next) {
+    count = true;
+    c.ok(`Getting first ${limit} items`);
+  } else {
+    c.ok(`Getting next ${limit} items: ${next}`);
+  }
   payload = Object.assign({}, payload);
   payload.params = payload.params || {};
-  payload.params.page = page;
+  payload.params.next = next;
+  payload.params.count = count;
   socket.emit('data', payload);
 }
 

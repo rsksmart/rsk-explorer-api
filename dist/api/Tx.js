@@ -3,8 +3,8 @@ var _utils = require('../lib/utils');
 
 class Tx extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
-    super(collection, key, parent);
-    this.sort = { blockNumber: -1, transactionIndex: -1 };
+    const sortable = { timestamp: -1 };
+    super(collection, key, parent, { sortable });
     const PendingTxs = this.parent.getItem({ key: 'TxPending' });
     this.PendingTxs = PendingTxs.publicActions;
     this.publicActions = {
@@ -22,7 +22,7 @@ class Tx extends _DataCollector.DataCollectorItem {
         const hash = params.hash;
         if (hash) {
           let tx;
-          tx = await this.getOne({ hash });
+          tx = await this.getPrevNext({ hash }, { hash: 1 });
           if (!tx.data) tx = await this.PendingTxs.getPendingTransaction(params);
           return tx;
         }
