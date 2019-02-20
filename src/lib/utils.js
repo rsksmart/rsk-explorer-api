@@ -121,7 +121,7 @@ export const hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filte
 
 export const atob = str => Buffer.from(str, 'base64').toString('binary')
 
-export const btoa = str => Buffer.from(str, 'binary').toString('base64')
+export const btoa = base64 => Buffer.from(base64, 'binary').toString('base64')
 
 export const base64toHex = (base64) => {
   let raw = atob(base64)
@@ -132,3 +132,7 @@ export const base64toHex = (base64) => {
 }
 
 export const keccak256 = (input, format = 'hex') => keccak('keccak256').update(input).digest(format)
+
+export const jsonEncode = value => btoa(JSON.stringify(value))
+
+export const jsonDecode = value => JSON.parse(atob(value))
