@@ -4,7 +4,7 @@ export class Block extends DataCollectorItem {
   constructor (collection, key, parent) {
     let cursorField = 'number'
     let sortDir = -1
-    let sortable = { number: -1, timestamp: -1 }
+    let sortable = { timestamp: -1 }
     super(collection, key, parent, { sortDir, cursorField, sortable })
     this.publicActions = {
 
