@@ -376,7 +376,7 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
     // remove events by block
     result.events = await db.Events.deleteMany(query)
     // remove event by tx
-    result.eventsByTxs = await Promise.all(...txs.map(tx => db.Events.deleteMany({ txHash: tx.hash })))
+    result.eventsByTxs = await Promise.all([...txs.map(tx => db.Events.deleteMany({ txHash: tx.hash }))])
     result.addresses = await db.Addrs.deleteMany(
       { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] })
     return result
