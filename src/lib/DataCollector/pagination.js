@@ -2,13 +2,31 @@ import { OBJECT_ID } from '../../lib/types'
 import { ObjectID } from 'mongodb'
 import config from '../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
+const SEPARATOR = '__'
 
-export function generateCursorQuery ({ cursorField, sortDir, value }) {
+export function generateCursorQuery ({ cursorField, sortDir, value, sortField }) {
+  if (!value) return
   const op = (sortDir === -1) ? '$lt' : '$gt'
-  return (value) ? { [cursorField]: { [op]: value } } : null
+  if (sortField && (sortField !== cursorField)) {
+    return {
+      $or: [{
+        [sortField]: {
+          [op]: value[1]
+        }
+      }, {
+        [sortField]: {
+          $eq: value[1]
+        },
+        [cursorField]: {
+          [op]: value[1]
+        }
+      }]
+    }
+  }
+  return { [cursorField]: { [op]: value[0] } }
 }
 
-export function formatSearchValue (type, value) {
+export function formatSearchValue (value, type) {
   if (value !== null && value !== undefined) {
     if (type === 'number') value = parseInt(value)
     if (type === OBJECT_ID) value = new ObjectID(value)
@@ -16,11 +34,14 @@ export function formatSearchValue (type, value) {
   return value
 }
 
-export function generateSort ({ cursorField, sort, sortDir }) {
-  // UNCOMPLETED
-  let cSort = Object.assign({}, sort)
-  cSort[cursorField] = sortDir
-  return cSort
+export function generateSort ({ cursorField, sortField, sortDir }) {
+  if (sortField && (sortField !== cursorField)) {
+    return {
+      [sortField]: sortDir,
+      [cursorField]: sortDir
+    }
+  }
+  return { [cursorField]: sortDir }
 }
 
 export function generateQuery (params, query = {}) {
@@ -32,8 +53,7 @@ export function generateQuery (params, query = {}) {
 export function parseParams (cursorData, params) {
   params = Object.assign({}, params)
   params.sort = params.sort || {}
-  const cursorField = cursorData.field
-  const cursorType = cursorData.type
+  const { cursorField, fields } = cursorData
   let { sortDir, prev, next, sort, count, countOnly, limit, getPages, page, prevPage } = params
 
   count = count || countOnly
@@ -46,18 +66,32 @@ export function parseParams (cursorData, params) {
   const indexedSegment = Math.floor((page - 1) / indexedPages)
 
   let queryLimit = (getPages) ? indexedPages * limit : limit
+
+  // supports only one sort field
+  let sortField = Object.keys(sort)[0]
+  sortField = (sortField !== cursorField) ? sortField : null
+
+  sortDir = (sortField) ? sort[sortField] : sort[cursorField]
   sortDir = (sortDir === 1) ? 1 : -1
-  sortDir = (sort[cursorField]) ? sort[cursorField] : sortDir
   let backwardNav = !!prev || !!prevPage
   if (backwardNav) {
     sortDir = (sortDir === 1) ? -1 : 1
   }
-  let value = (backwardNav) ? prev : next
-  value = formatSearchValue(cursorType, value)
+
+  const valueEncoded = (backwardNav) ? prev : next
+  let value
+
+  const types = [fields[cursorField], fields[sortField]]
+  if (undefined !== valueEncoded) {
+    value = valueEncoded.toString().split(SEPARATOR).map((v, i) => formatSearchValue(v, types[i]))
+  }
+
   params = Object.assign(params, {
+    sortField,
     sortDir,
     backwardNav,
     value,
+    valueEncoded,
     limit,
     cursorField,
     cursorData,
@@ -76,7 +110,6 @@ export async function findPages (collection, cursorData, query, params) {
     params = parseParams(cursorData, params)
     const { fields, count, countOnly, queryLimit } = params
     const $query = generateQuery(params, query)
-
     const $sort = generateSort(params)
     let data = (!countOnly) ? await find(collection, $query, $sort, queryLimit + 1, fields) : null
     let total = (count) ? (await collection.countDocuments(query)) : null
@@ -135,7 +168,7 @@ export async function getAggregateTotal (collection, query) {
 
 export function paginationResponse (params, data, total) {
   total = total || null
-  const { indexedPages, limit, cursorField, getPages, indexedSegment, page, value, queryLimit } = params
+  const { indexedPages, limit, getPages, indexedSegment, page, valueEncoded, queryLimit } = params
   let pages = []
 
   const hasMore = data.length > queryLimit
@@ -147,8 +180,8 @@ export function paginationResponse (params, data, total) {
   if (hasMore) data.pop()
   if (params.prev) data.reverse()
 
-  const prev = (hasPrevious) ? data[0][cursorField] : null
-  const next = (!!params.prev || hasMore) ? data[data.length - 1][cursorField] : null
+  const prev = (hasPrevious) ? generateCursor(params, data[0]) : null
+  const next = (!!params.prev || hasMore) ? generateCursor(params, data[data.length - 1]) : null
   let nextPage, prevPage
 
   if (getPages) {
@@ -156,8 +189,8 @@ export function paginationResponse (params, data, total) {
     for (let i = 0; i < totalPages; i++) {
       pageNumber = (indexedSegment * indexedPages) + i
       let pageData = { page: (pageNumber + 1) }
-      if (params.next) pageData.next = value
-      else if (params.prev) pageData.prev = value
+      if (params.next) pageData.next = valueEncoded
+      else if (params.prev) pageData.prev = valueEncoded
       pages.push(pageData)
     }
 
@@ -190,4 +223,15 @@ export async function find (collection, query, sort, limit, project) {
       return Promise.reject(err)
     })
   return data
+}
+
+export function encodeValue (value) {
+  return value.join(SEPARATOR)
+}
+
+export function generateCursor ({ cursorField, sortField }, data) {
+  if (sortField) {
+    return encodeValue([data[cursorField], data[sortField]])
+  }
+  return data[cursorField]
 }

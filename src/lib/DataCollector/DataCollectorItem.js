@@ -13,6 +13,7 @@ export class DataCollectorItem {
     this.cursorField = cursorField
     this.cursorData = null
     this.sortDir = sortDir
+    sortable[cursorField] = sortDir
     this.sortableFields = sortable
     this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
@@ -74,10 +75,10 @@ export class DataCollectorItem {
   }
 
   async setCursorData () {
-    const field = this.cursorField
+    const cursorField = this.cursorField
     const types = await this.getFieldsTypes()
-    const type = types[field]
-    this.cursorData = { field, type }
+    const cursorType = types[cursorField]
+    this.cursorData = { cursorField, cursorType, fields: types }
     return this.cursorData
   }
 
