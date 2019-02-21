@@ -44,6 +44,10 @@
     name: 'txBlockHashIndex' },
 
   {
+    key: { timestamp: -1 },
+    name: 'txTime' },
+
+  {
     key: { from: 1 },
     name: 'fromIndex' },
 
@@ -71,7 +75,11 @@
 
   {
     key: { name: 1 },
-    name: 'addressNameIndex' }],
+    name: 'addressNameIndex' },
+
+  {
+    key: { 'createdByTx.timestamp': -1 },
+    name: 'contractCreated' }],
 
 
   Status: [
