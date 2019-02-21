@@ -3,8 +3,8 @@ import { isBlockHash } from '../lib/utils'
 
 export class Tx extends DataCollectorItem {
   constructor (collection, key, parent) {
-    const sortable = { timestamp: -1 }
-    super(collection, key, parent, { sortable })
+    // const sortable = { timestamp: -1 }
+    super(collection, key, parent)
     const PendingTxs = this.parent.getItem({ key: 'TxPending' })
     this.PendingTxs = PendingTxs.publicActions
     this.publicActions = {
