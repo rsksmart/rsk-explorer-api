@@ -76,6 +76,10 @@ export default {
     {
       key: { name: 1 },
       name: 'addressNameIndex'
+    },
+    {
+      key: { 'createdByTx.timestamp': -1 },
+      name: 'contractCreated'
     }
   ],
   Status: [
