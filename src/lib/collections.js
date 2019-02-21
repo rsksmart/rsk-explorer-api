@@ -44,6 +44,10 @@ export default {
       name: 'txBlockHashIndex'
     },
     {
+      key: { timestamp: -1 },
+      name: 'txTime'
+    },
+    {
       key: { from: 1 },
       name: 'fromIndex'
     },
