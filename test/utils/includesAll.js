@@ -1,4 +1,4 @@
-import { hasValues } from '../../src/lib/utils'
+import { includesAll } from '../../src/lib/utils'
 import { expect } from 'chai'
 
 const search = ['one', 'two', 'three']
@@ -14,14 +14,14 @@ const fail = [
   ['animal', 'tree']
 ]
 
-describe(`# hasValues ${search}`, function () {
+describe(`# includesAll [${search}]`, function () {
   success.forEach(t => {
     it(`${t} should be true`, function () {
-      expect(hasValues(t, search)).to.be.equal(true)
+      expect(includesAll(t, search)).to.be.equal(true)
     })
     fail.forEach(t => {
       it(`${t} should be false`, function () {
-        expect(hasValues(t, search)).to.be.equal(false)
+        expect(includesAll(t, search)).to.be.equal(false)
       })
     })
   })

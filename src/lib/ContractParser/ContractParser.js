@@ -3,7 +3,7 @@ import compiledAbi from './Abi'
 import { web3 } from '../web3Connect'
 import { contractsInterfaces } from '../types'
 import interfacesIds from './interfacesIds'
-import { hasValues } from '../../lib/utils'
+import { includesAll } from '../../lib/utils'
 
 import {
   ABI_SIGNATURE,
@@ -152,7 +152,7 @@ export class ContractParser {
     let methods = this.getMethodsBySelectors(txInputData)
     let isErc165 = false
     //  skip non-erc165 conrtacts
-    if (hasValues(methods, ['supportsInterface(bytes4)'])) {
+    if (includesAll(methods, ['supportsInterface(bytes4)'])) {
       isErc165 = await this.implementsErc165(contract)
     }
     let interfaces
@@ -176,7 +176,7 @@ export class ContractParser {
   getInterfacesByMethods (methods, isErc165) {
     return Object.keys(interfacesIds)
       .map(i => {
-        return [i, hasValues(methods, interfacesIds[i].methods)]
+        return [i, includesAll(methods, interfacesIds[i].methods)]
       })
       .reduce((obj, value) => {
         obj[value[0]] = value[1]

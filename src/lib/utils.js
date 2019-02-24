@@ -117,7 +117,7 @@ export const arraySymmetricDifference = (a, b) => arrayDifference(a, b).concat(b
 
 export const hasValue = (arr, search) => arrayIntersection(arr, search).length > 0
 
-export const hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length
+export const includesAll = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length
 
 export const atob = str => Buffer.from(str, 'base64').toString('binary')
 
