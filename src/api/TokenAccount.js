@@ -1,4 +1,6 @@
 import { DataCollectorItem } from '../lib/DataCollector'
+import { bigNumberSum } from '../lib/utils'
+import { BigNumber } from 'bignumber.js'
 
 export class TokenAccount extends DataCollectorItem {
   constructor (collection, key, parent) {
@@ -36,6 +38,25 @@ export class TokenAccount extends DataCollectorItem {
         const { address, contract } = params
         const account = await this.getOne({ address, contract })
         return this.parent.addAddressData(contract, account, '_contractData')
+      },
+
+      getTokenBalance: async params => {
+        const { contract } = params
+        let contractData = await this.parent.getAddress(contract)
+        contractData = contractData.data
+        if (!contractData) return
+        let { totalSupply } = contractData
+        if (!totalSupply) return
+        let accounts = await this.find({ contract })
+        if (accounts) accounts = accounts.data
+        if (!accounts) return
+
+        let accountsBalance = bigNumberSum(accounts.map(account => account.balance))
+        totalSupply = new BigNumber(totalSupply)
+        let balance = (accountsBalance) ? totalSupply.minus(accountsBalance) : totalSupply
+
+        const data = this.serialize({ balance, accountsBalance, totalSupply })
+        return { data }
       }
     }
   }
