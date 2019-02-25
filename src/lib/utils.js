@@ -50,6 +50,16 @@ export const bigNumberToSring = bn => {
   return bn
 }
 
+export const bigNumberSum = values => {
+  let total = new BigNumber(0)
+  values
+    .forEach(value => {
+      value = isBigNumber(value) ? value : new BigNumber(value)
+      total = total.plus(value)
+    })
+  return total
+}
+
 const isObj = (value) => {
   if (undefined === value || value === null) return false
   let is = (typeof value === 'object')

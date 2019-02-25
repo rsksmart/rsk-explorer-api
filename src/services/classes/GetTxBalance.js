@@ -1,4 +1,4 @@
-import { BigNumber } from 'bignumber.js'
+import { bigNumberSum } from '../../lib/utils'
 export class GetTxBalance {
   constructor (txCollection) {
     this.txCollection = txCollection
@@ -13,13 +13,7 @@ export class GetTxBalance {
   }
 
   sumValues (values) {
-    let total = new BigNumber(0)
-    values
-      .map(v => v.value)
-      .forEach(value => {
-        total = total.plus(new BigNumber(value))
-      })
-    return total
+    return bigNumberSum(values.map(v => v.value))
   }
 
   async getBalanceFromTx (address) {
