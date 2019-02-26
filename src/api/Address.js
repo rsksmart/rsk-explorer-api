@@ -1,8 +1,7 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { tokensInterfaces, addrTypes, REMASC_NAME, BRIDGE_NAME } from '../lib/types'
 import config from '../lib/config'
-const bridgeAddress = config.bridgeAddress
-const remascAddress = config.remascAddress
+const { bridgeAddress, remascAddress } = config
 export class Address extends DataCollectorItem {
   constructor (collection, key, parent) {
     let sortable = { 'createdByTx.timestamp': -1 }
