@@ -5,12 +5,14 @@ const addSpec = [
   ['123456', '0x123456'],
   ['abc456', '0xabc456'],
   ['john', 'john'],
-  ['0x23897bcfe8', '0x23897bcfe8']
+  ['0x23897bcfe8', '0x23897bcfe8'],
+  ['-1b5267b1b18ce000000', '-0x1b5267b1b18ce000000']
 ]
 
 const removeSpec = [
   ['123456', '123456'],
   ['0xabc456', 'abc456'],
+  ['-0xabc456', '-abc456'],
   ['john', 'john'],
   ['0x23897bcfe8', '23897bcfe8'],
   ['0x1234a0xb', '0x1234a0xb']

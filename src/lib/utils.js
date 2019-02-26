@@ -8,9 +8,25 @@ export const isHexString = str => {
   return /^[0-9a-f]+$/i.test(str)
 }
 
-export const add0x = str => (isHexString(str) && str.substring(0, 2) !== '0x') ? `0x${str}` : str
+export const add0x = str => {
+  let s = str
+  let prefix = (s[0] === '-') ? '-' : ''
+  if (prefix) s = s.substring(prefix.length)
+  if (isHexString(s) && s.substring(0, 2) !== '0x') {
+    return `${prefix}0x${s}`
+  }
+  return str
+}
 
-export const remove0x = str => (isHexString(str) && str.substring(0, 2) === '0x') ? str.substr(2, str.length) : str
+export const remove0x = str => {
+  let s = str
+  let prefix = (s[0] === '-') ? '-' : ''
+  if (prefix) s = s.substring(prefix.length)
+  if (isHexString(s)) {
+    if (s.substring(0, 2) === '0x') return prefix + s.substr(2)
+  }
+  return str
+}
 
 export const isAddress = address => {
   return /^(0x)?[0-9a-f]{40}$/i.test(address)
