@@ -4,7 +4,8 @@ import { web3 } from '../web3Connect'
 import { contractsInterfaces } from '../types'
 import interfacesIds from './interfacesIds'
 import { includesAll } from '../../lib/utils'
-
+import config from '../config'
+import remascEvents from './RemascEvents'
 import {
   ABI_SIGNATURE,
   setAbi,
@@ -14,6 +15,8 @@ import {
   soliditySelector,
   soliditySignature
 } from './lib'
+
+const { remascAddress } = config
 export class ContractParser {
   constructor (abi, options = {}) {
     this.abi = null
@@ -55,6 +58,9 @@ export class ContractParser {
 
   parseTxLogs (logs) {
     return logs.map(log => {
+      // non-standard remasc events
+      if (log.address === remascAddress) return remascEvents.decode(log)
+
       let back = Object.assign({}, log)
       let decoder = this.getLogDecoder(log.topics || [])
       let decoded = (decoder) ? decoder.event.decode(log) : log
