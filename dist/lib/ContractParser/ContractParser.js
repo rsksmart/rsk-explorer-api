@@ -4,7 +4,8 @@ var _web3Connect = require('../web3Connect');
 var _types = require('../types');
 var _interfacesIds = require('./interfacesIds');var _interfacesIds2 = _interopRequireDefault(_interfacesIds);
 var _utils = require('../../lib/utils');
-
+var _config = require('../config');var _config2 = _interopRequireDefault(_config);
+var _RemascEvents = require('./RemascEvents');var _RemascEvents2 = _interopRequireDefault(_RemascEvents);
 var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 
@@ -14,6 +15,8 @@ var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && 
 
 
 
+
+const { remascAddress } = _config2.default;
 class ContractParser {
   constructor(abi, options = {}) {
     this.abi = null;
@@ -55,6 +58,9 @@ class ContractParser {
 
   parseTxLogs(logs) {
     return logs.map(log => {
+      // non-standard remasc events
+      if (log.address === remascAddress) return _RemascEvents2.default.decode(log);
+
       let back = Object.assign({}, log);
       let decoder = this.getLogDecoder(log.topics || []);
       let decoded = decoder ? decoder.event.decode(log) : log;
@@ -152,7 +158,7 @@ class ContractParser {
     let methods = this.getMethodsBySelectors(txInputData);
     let isErc165 = false;
     //  skip non-erc165 conrtacts
-    if ((0, _utils.hasValues)(methods, ['supportsInterface(bytes4)'])) {
+    if ((0, _utils.includesAll)(methods, ['supportsInterface(bytes4)'])) {
       isErc165 = await this.implementsErc165(contract);
     }
     let interfaces;
@@ -176,7 +182,7 @@ class ContractParser {
   getInterfacesByMethods(methods, isErc165) {
     return Object.keys(_interfacesIds2.default).
     map(i => {
-      return [i, (0, _utils.hasValues)(methods, _interfacesIds2.default[i].methods)];
+      return [i, (0, _utils.includesAll)(methods, _interfacesIds2.default[i].methods)];
     }).
     reduce((obj, value) => {
       obj[value[0]] = value[1];

@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.jsonDecode = exports.jsonEncode = exports.keccak256 = exports.base64toHex = exports.btoa = exports.atob = exports.hasValues = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.remove0x = exports.add0x = exports.isHexString = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.jsonDecode = exports.jsonEncode = exports.keccak256 = exports.base64toHex = exports.btoa = exports.atob = exports.includesAll = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.remove0x = exports.add0x = exports.isHexString = undefined;var _bignumber = require('bignumber.js');
 var _types = require('./types');
 var _mongodb = require('mongodb');
 var _keccak = require('keccak');var _keccak2 = _interopRequireDefault(_keccak);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
@@ -8,9 +8,25 @@ const isHexString = exports.isHexString = str => {
   return (/^[0-9a-f]+$/i.test(str));
 };
 
-const add0x = exports.add0x = str => isHexString(str) && str.substring(0, 2) !== '0x' ? `0x${str}` : str;
+const add0x = exports.add0x = str => {
+  let s = str;
+  let prefix = s[0] === '-' ? '-' : '';
+  if (prefix) s = s.substring(prefix.length);
+  if (isHexString(s) && s.substring(0, 2) !== '0x') {
+    return `${prefix}0x${s}`;
+  }
+  return str;
+};
 
-const remove0x = exports.remove0x = str => isHexString(str) && str.substring(0, 2) === '0x' ? str.substr(2, str.length) : str;
+const remove0x = exports.remove0x = str => {
+  let s = str;
+  let prefix = s[0] === '-' ? '-' : '';
+  if (prefix) s = s.substring(prefix.length);
+  if (isHexString(s)) {
+    if (s.substring(0, 2) === '0x') return prefix + s.substr(2);
+  }
+  return str;
+};
 
 const isAddress = exports.isAddress = address => {
   return (/^(0x)?[0-9a-f]{40}$/i.test(address));
@@ -48,6 +64,16 @@ const bigNumberToSring = exports.bigNumberToSring = bn => {
   if (bn.type && bn.type === _types.BIG_NUMBER) return bn.value;
   if (isBigNumber(bn)) return bn.toString();
   return bn;
+};
+
+const bigNumberSum = exports.bigNumberSum = values => {
+  let total = new _bignumber.BigNumber(0);
+  values.
+  forEach(value => {
+    value = isBigNumber(value) ? value : new _bignumber.BigNumber(value);
+    total = total.plus(value);
+  });
+  return total;
 };
 
 const isObj = value => {
@@ -117,7 +143,7 @@ const arraySymmetricDifference = exports.arraySymmetricDifference = (a, b) => ar
 
 const hasValue = exports.hasValue = (arr, search) => arrayIntersection(arr, search).length > 0;
 
-const hasValues = exports.hasValues = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length;
+const includesAll = exports.includesAll = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length;
 
 const atob = exports.atob = str => Buffer.from(str, 'base64').toString('binary');
 

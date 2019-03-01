@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.GetTxBalance = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.GetTxBalance = undefined;var _utils = require('../../lib/utils');
 class GetTxBalance {
   constructor(txCollection) {
     this.txCollection = txCollection;
@@ -13,13 +13,7 @@ class GetTxBalance {
   }
 
   sumValues(values) {
-    let total = new _bignumber.BigNumber(0);
-    values.
-    map(v => v.value).
-    forEach(value => {
-      total = total.plus(new _bignumber.BigNumber(value));
-    });
-    return total;
+    return (0, _utils.bigNumberSum)(values.map(v => v.value));
   }
 
   async getBalanceFromTx(address) {

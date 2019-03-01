@@ -7,7 +7,7 @@ const writeFile = _util2.default.promisify(_fs2.default.writeFile);
 const url = process.env.url || 'http://localhost:3003';
 const outDir = process.env.outDir || '/tmp';
 
-let payload = process.env.payload;
+let payload = process.env.payload || process.argv[2];
 
 if (!url || !payload) help();
 payload = JSON.parse(payload);
@@ -35,8 +35,10 @@ socket.on('disconnect', socket => {
 socket.on('data', async res => {
   try {
     let { data, error, req } = res;
-
-    if (error) throw new Error(error);
+    if (error) {
+      c.error(error);
+      process.exit();
+    }
     if (!error && req && key === req.key) {
       // multiple results
       if (res.pages) {
@@ -70,8 +72,9 @@ socket.on('data', async res => {
 });
 
 socket.on('Error', err => {
-  c.error('ERROR:');
-  c.error(err);
+  let error = err.error || '';
+  c.error(`ERROR: ${error}`);
+  c.warn(err);
 });
 
 process.on('unhandledRejection', err => {

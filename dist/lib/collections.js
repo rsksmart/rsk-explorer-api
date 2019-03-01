@@ -105,7 +105,15 @@
 
   {
     key: { blockNumber: 1 },
-    name: 'eventBlockNumberIndex' }],
+    name: 'eventBlockNumberIndex' },
+
+  {
+    key: { args: 1 },
+    name: 'eventsArgsIndex' },
+
+  {
+    key: { signature: 1 },
+    name: 'eventSignatureIndex' }],
 
 
   TokensAddrs: [

@@ -71,9 +71,12 @@ class Blocks extends _DataCollector.DataCollector {
       this.events.emit('newBlocks', this.formatData({ blocks, transactions }));
     }
   }
+  async getAddress(address) {
+    return this.Address.run('getAddress', { address });
+  }
 
   async addAddressData(address, data, key = '_addressData') {
-    const account = await this.Address.run('getAddress', { address });
+    const account = await this.getAddress(address);
     if (data && data.data && account) data.data[key] = account.data;
     return data || account;
   }}exports.default =

@@ -1,4 +1,6 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TokenAccount = undefined;var _DataCollector = require('../lib/DataCollector');
+var _utils = require('../lib/utils');
+var _bignumber = require('bignumber.js');
 
 class TokenAccount extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
@@ -36,6 +38,25 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
         const { address, contract } = params;
         const account = await this.getOne({ address, contract });
         return this.parent.addAddressData(contract, account, '_contractData');
+      },
+
+      getTokenBalance: async params => {
+        const { contract } = params;
+        let contractData = await this.parent.getAddress(contract);
+        contractData = contractData.data;
+        if (!contractData) return;
+        let { totalSupply } = contractData;
+        if (!totalSupply) return;
+        let accounts = await this.find({ contract });
+        if (accounts) accounts = accounts.data;
+        if (!accounts) return;
+
+        let accountsBalance = (0, _utils.bigNumberSum)(accounts.map(account => account.balance));
+        totalSupply = new _bignumber.BigNumber(totalSupply);
+        let balance = accountsBalance ? totalSupply.minus(accountsBalance) : totalSupply;
+
+        const data = this.serialize({ balance, accountsBalance, totalSupply });
+        return { data };
       } };
 
   }}exports.TokenAccount = TokenAccount;exports.default =

@@ -1,8 +1,7 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Address = undefined;var _DataCollector = require('../lib/DataCollector');
 var _types = require('../lib/types');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const bridgeAddress = _config2.default.bridgeAddress;
-const remascAddress = _config2.default.remascAddress;
+const { bridgeAddress, remascAddress } = _config2.default;
 class Address extends _DataCollector.DataCollectorItem {
   constructor(collection, key, parent) {
     let sortable = { 'createdByTx.timestamp': -1 };
