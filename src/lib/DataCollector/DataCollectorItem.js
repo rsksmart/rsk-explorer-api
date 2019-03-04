@@ -40,11 +40,10 @@ export class DataCollectorItem {
     return { data }
   }
 
-  getOne (query, project) {
+  async getOne (query, project) {
     project = project || this.getDefaultsFields()
-    return this.db.findOne(query, project).then(data => {
-      return { data }
-    })
+    let data = await this.db.findOne(query, { project })
+    return { data }
   }
 
   async setFieldsTypes () {
@@ -94,7 +93,8 @@ export class DataCollectorItem {
     try {
       let { cursorField } = this
       project = project || this.getDefaultsFields()
-      if (!data) data = (await this.getOne(query)).data
+      if (!data) data = (await this.getOne(query))
+      if (data) data = data.data
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
