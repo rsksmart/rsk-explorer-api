@@ -23,14 +23,14 @@ export class Tx extends DataCollectorItem {
         if (hash) {
           let tx
           tx = await this.getPrevNext({ hash }, { hash: 1 })
-          if (!tx.data) tx = await this.PendingTxs.getPendingTransaction(params)
+          if (!tx || !tx.data) tx = await this.PendingTxs.getPendingTransaction(params)
           return tx
         }
       },
 
       getTransactionWithAddressData: async params => {
         let data = await this.publicActions.getTransaction(params)
-        let tx = data.data
+        let tx = (data) ? data.data : null
         if (tx) {
           let logs = (tx.receipt) ? tx.receipt.logs : []
           let addresses = new Set(logs.map(log => log.address))
