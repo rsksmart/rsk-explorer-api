@@ -156,6 +156,7 @@ export function filterSort (sort, sortable, defaultSort) {
 // value: string| array of searched values | Object: 'value':true|false
 export function fieldFilterParse (field, value, query) {
   query = query || {}
+  if (!field || !value || typeof field !== 'string') return query
   let fieldQuery
   let inArr = []
   let ninArr = []
