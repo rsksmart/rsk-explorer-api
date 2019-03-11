@@ -1,6 +1,5 @@
 import dataSource from '../lib/dataSource.js'
 
-
 dataSource.then(db => {
   let addresses = db.collection('addresses')
   addresses.find({ type: 'contract' })

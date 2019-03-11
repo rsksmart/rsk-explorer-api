@@ -46,9 +46,11 @@ dataBase.db().then(db => {
         }
       }
     }
+    /* eslint-disable-next-line no-unused-vars */
     const Listener = startService('Listener', listenToMessage)
     const Checker = startService('Checker', listenToMessage)
     const Requester = startService('Requester', listenToMessage)
+    /* eslint-disable-next-line no-unused-vars */
     const TxPool = startService('TxPool', listenToMessage, '../txPool.js')
   })
 })

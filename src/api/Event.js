@@ -51,7 +51,7 @@ export class Event extends DataCollectorItem {
           return res
         }
       },
-      
+
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {
