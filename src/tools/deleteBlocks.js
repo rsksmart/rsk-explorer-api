@@ -7,18 +7,23 @@ dataSource.then(async db => {
   const options = new BlocksBase(db)
   const p = path => path.split('/').pop()
   const help = () => {
-    info(`Use: ${p(process.argv[0])} ${p(process.argv[1])} [fromBlock-toBlock] ${orange} e.g. 400-6756`)
+    const myName = p(process.argv[1])
+    info(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`)
+    info(`e.g. ${orange} ${myName} 400`)
+    info(`e.g. ${orange} ${myName} 400-456`)
     process.exit(0)
   }
 
   let fromTo = process.argv[2]
   if (!fromTo) help()
   fromTo = fromTo.split('-')
-  let f = fromTo[0]
-  let t = fromTo[1]
+  let [f, t] = fromTo
 
-  if (!f && !t) help()
+  if (!f) help()
+  if (!t) t = f
+  if (isNaN(f) || isNaN(t)) help()
   if (f > t) help()
+
   try {
     let Q = []
     while (t >= f) {
