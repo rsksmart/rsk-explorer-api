@@ -108,6 +108,14 @@ export default {
       name: 'eventBlockNumberIndex'
     },
     {
+      key: { txHash: 1 },
+      name: 'eventTxHashIndex'
+    },
+    {
+      key: { blockHash: 1 },
+      name: 'eventBlockHashIndex'
+    },
+    {
       key: { args: 1 },
       name: 'eventsArgsIndex'
     },
