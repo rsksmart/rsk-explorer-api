@@ -4,7 +4,7 @@ import BlocksBase from '../lib/BlocksBase'
 import { info } from '../lib/cli'
 import util from 'util'
 
-const hashOrNumber = process.argv[2] || 'latest'
+const hashOrNumber = process.argv[2]
 const opt = process.argv[3]
 const save = (opt === '--save')
 const json = (opt === '--json')
@@ -46,7 +46,8 @@ async function getBlock (db, hashOrNumber) {
 }
 
 function help () {
-  info(`Usage: ${process.argv[1]} ${process.argv[1]} number|hash|latest [--json | --save ]`)
+  const myName = process.argv[1].split('/').pop()
+  info(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`)
   process.exit(0)
 }
 
