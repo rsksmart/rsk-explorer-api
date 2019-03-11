@@ -178,7 +178,7 @@ export class Block extends BcThing {
       block._replacedBy = newBlock.hash
       block._events = events
       block.transactions = txs
-      await this.saveOrphanBlock(block)
+      await this.saveOrphanBlock(block).catch(err => this.log.debug(err))
       await this.deleteBlockDataFromDb(block.hash, block.number)
       newBlock._replacedBlockHash = block.hash
       return newBlock
