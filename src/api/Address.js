@@ -34,6 +34,10 @@ export class Address extends DataCollectorItem {
           type: addrTypes.CONTRACT,
           contractInterfaces: { $in: tokensInterfaces }
         }, params)
+      },
+
+      getCirculatingSupply: params => {
+        return this.parent.getCirculatingSupply()
       }
     }
   }
