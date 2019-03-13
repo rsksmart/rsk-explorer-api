@@ -70,11 +70,19 @@ export const bigNumberSum = values => {
   let total = new BigNumber(0)
   values
     .forEach(value => {
-      value = isBigNumber(value) ? value : new BigNumber(value)
+      value = newBigNumber(value)
       total = total.plus(value)
     })
   return total
 }
+
+export const bigNumberDifference = (a, b) => {
+  a = newBigNumber(a)
+  b = newBigNumber(b)
+  return a.minus(b)
+}
+
+export const newBigNumber = value => isBigNumber(value) ? value : new BigNumber(value)
 
 const isObj = (value) => {
   if (undefined === value || value === null) return false
@@ -155,6 +163,13 @@ export const base64toHex = (base64) => {
     let h = raw.charCodeAt(i).toString(16)
     return (h.length === 2) ? h : `0${h}`
   }).join('').toLowerCase()
+}
+
+export const applyDecimals = (value, decimals = 18) => {
+  value = newBigNumber(value)
+  const divisor = new BigNumber(10).exponentiatedBy(parseInt(decimals))
+  const result = value.dividedBy(divisor)
+  return result
 }
 
 export const keccak256 = (input, format = 'hex') => keccak('keccak256').update(input).digest(format)
