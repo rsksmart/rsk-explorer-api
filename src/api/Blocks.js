@@ -7,8 +7,11 @@ import { Address } from './Address'
 import { Event } from './Event'
 import { TokenAccount } from './TokenAccount'
 import { TxPending } from './TxPending'
+import getCirculatingSupply from './getCirculatingSupply'
+
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
+
 class Blocks extends DataCollector {
   constructor (db) {
     let collectionName = collections.Blocks
@@ -17,6 +20,7 @@ class Blocks extends DataCollector {
     this.latest = 0
     this.lastBlocks = []
     this.lastTransactions = []
+    this.circulatingSupply = null
     this.addItem(collections.Blocks, 'Block', Block)
     this.addItem(collections.PendingTxs, 'TxPending', TxPending)
     this.addItem(collections.Txs, 'Tx', Tx)
@@ -26,31 +30,39 @@ class Blocks extends DataCollector {
   }
   tick () {
     this.setLastBlocks()
+    this.setCirculatingSupply()
   }
 
   run (module, action, params) {
     return this.itemPublicAction(module, action, params)
   }
-  setLastBlocks () {
-    this.collection
-      .find()
-      .sort({ number: -1 })
-      .limit(this.lastLimit)
-      .toArray((err, blocks) => {
-        if (err) console.log(err)
-        else {
-          this.Tx.db
-            .find({ txType: { $in: [txTypes.default, txTypes.contract] } })
-            .sort({ blockNumber: -1, transactionIndex: -1 })
-            .limit(this.lastLimit)
-            .toArray((err, txs) => {
-              if (err) console.log(err)
-              else {
-                this.updateLastBlocks(blocks, txs)
-              }
-            })
-        }
-      })
+
+  async setLastBlocks () {
+    try {
+      let { collection, lastLimit, Tx } = this
+      let blocks = await collection.find().sort({ number: -1 }).limit(lastLimit).toArray()
+      let txs = await Tx.db.find({ txType: { $in: [txTypes.default, txTypes.contract] } })
+        .sort({ blockNumber: -1, transactionIndex: -1 })
+        .limit(this.lastLimit)
+        .toArray()
+
+      this.updateLastBlocks(blocks, txs)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  async setCirculatingSupply () {
+    try {
+      const collection = this.db.collection(collections.Addrs)
+      let circulating = await getCirculatingSupply(collection)
+      this.circulatingSupply = Object.assign({}, circulating)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+  getCirculatingSupply () {
+    return this.formatData(this.circulatingSupply)
   }
 
   getLastBlocks () {
@@ -58,9 +70,11 @@ class Blocks extends DataCollector {
     let transactions = this.lastTransactions
     return this.formatData({ blocks, transactions })
   }
+
   getLastBlock () {
     return this.lastBlocks[0] || null
   }
+
   updateLastBlocks (blocks, transactions) {
     this.lastBlocks = blocks
     this.lastTransactions = transactions
@@ -71,6 +85,7 @@ class Blocks extends DataCollector {
       this.events.emit('newBlocks', this.formatData({ blocks, transactions }))
     }
   }
+
   async getAddress (address) {
     return this.Address.run('getAddress', { address })
   }

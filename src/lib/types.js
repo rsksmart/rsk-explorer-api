@@ -70,4 +70,6 @@ export const BIG_NUMBER = 'BigNumber'
 
 export const OBJECT_ID = 'ObjectID'
 
+export const TOTAL_SUPPLY = 21 * 10 ** 6
+
 export default { txTypes, errors, addrTypes, contractsInterfaces }
