@@ -7,18 +7,23 @@ _dataSource2.default.then(async db => {
   const options = new _BlocksBase.BlocksBase(db);
   const p = path => path.split('/').pop();
   const help = () => {
-    (0, _cli.info)(`Use: ${p(process.argv[0])} ${p(process.argv[1])} [fromBlock-toBlock] ${_cli.orange} e.g. 400-6756`);
+    const myName = p(process.argv[1]);
+    (0, _cli.info)(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`);
+    (0, _cli.info)(`e.g. ${_cli.orange} ${myName} 400`);
+    (0, _cli.info)(`e.g. ${_cli.orange} ${myName} 400-456`);
     process.exit(0);
   };
 
   let fromTo = process.argv[2];
   if (!fromTo) help();
   fromTo = fromTo.split('-');
-  let f = fromTo[0];
-  let t = fromTo[1];
+  let [f, t] = fromTo;
 
-  if (!f && !t) help();
+  if (!f) help();
+  if (!t) t = f;
+  if (isNaN(f) || isNaN(t)) help();
   if (f > t) help();
+
   try {
     let Q = [];
     while (t >= f) {

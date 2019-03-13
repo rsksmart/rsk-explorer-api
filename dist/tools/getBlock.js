@@ -4,7 +4,7 @@ var _BlocksBase = require('../lib/BlocksBase');var _BlocksBase2 = _interopRequir
 var _cli = require('../lib/cli');
 var _util = require('util');var _util2 = _interopRequireDefault(_util);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const hashOrNumber = process.argv[2] || 'latest';
+const hashOrNumber = process.argv[2];
 const opt = process.argv[3];
 const save = opt === '--save';
 const json = opt === '--json';
@@ -46,7 +46,8 @@ async function getBlock(db, hashOrNumber) {
 }
 
 function help() {
-  (0, _cli.info)(`Usage: ${process.argv[1]} ${process.argv[1]} number|hash|latest [--json | --save ]`);
+  const myName = process.argv[1].split('/').pop();
+  (0, _cli.info)(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`);
   process.exit(0);
 }
 

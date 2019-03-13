@@ -34,6 +34,10 @@ class Address extends _DataCollector.DataCollectorItem {
           type: _types.addrTypes.CONTRACT,
           contractInterfaces: { $in: _types.tokensInterfaces } },
         params);
+      },
+
+      getCirculatingSupply: params => {
+        return this.parent.getCirculatingSupply();
       } };
 
   }}exports.Address = Address;exports.default =

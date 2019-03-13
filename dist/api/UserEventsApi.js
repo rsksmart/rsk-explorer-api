@@ -4,7 +4,7 @@ var _config = require('../lib/config');var _config2 = _interopRequireDefault(_co
 var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 function UserEventsSocket() {
-  return (0, _child_process.fork)(_path2.default.resolve(__dirname, '../services/userEvents.js'));
+  return (0, _child_process.fork)(_path2.default.resolve(__dirname, '../services/userEvents/userEventsService.js'));
 }
 
 const UserEventsApi = exports.UserEventsApi = (io, Blocks, log) => {

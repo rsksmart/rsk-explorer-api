@@ -4,9 +4,10 @@ var _Blocks = require('./Blocks');var _Blocks2 = _interopRequireDefault(_Blocks)
 var _Status = require('./Status');var _Status2 = _interopRequireDefault(_Status);
 var _TxPool = require('./TxPool');var _TxPool2 = _interopRequireDefault(_TxPool);
 var _Logger = require('../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
-var _http = require('http');var _http2 = _interopRequireDefault(_http);
 var _UserEventsApi = require('./UserEventsApi');var _UserEventsApi2 = _interopRequireDefault(_UserEventsApi);
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
+var _HttpServer = require('./HttpServer');
+
 var _apiLib = require('./apiLib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 
@@ -32,16 +33,8 @@ _dataSource2.default.then(db => {
   status.start();
   txPool.start();
 
-  const httpServer = _http2.default.createServer((req, res) => {
-    const url = req.url || null;
-    if (url && url === '/status') {
-      res.writeHead(200, { 'Content-type': 'application/json' });
-      res.write(JSON.stringify(status.state));
-    } else {
-      res.writeHead(404, 'Not Found');
-    }
-    res.end();
-  });
+  // http server
+  const httpServer = (0, _HttpServer.HttpServer)({ blocks, status });
   httpServer.listen(port, address);
   const io = new _socket2.default(httpServer);
 

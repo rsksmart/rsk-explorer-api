@@ -83,8 +83,7 @@ class Block extends _BcThing.BcThing {
     try {
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`);
       data = this.serialize(data);
-      let block, txs, events, tokenAddresses;
-      ({ block, txs, events, tokenAddresses } = data);
+      let { block, txs, events, tokenAddresses } = data;
 
       // check transactions
       let txsErr = missmatchBlockTransactions(block, txs);
@@ -179,7 +178,7 @@ class Block extends _BcThing.BcThing {
       block._replacedBy = newBlock.hash;
       block._events = events;
       block.transactions = txs;
-      await this.saveOrphanBlock(block);
+      await this.saveOrphanBlock(block).catch(err => this.log.debug(err));
       await this.deleteBlockDataFromDb(block.hash, block.number);
       newBlock._replacedBlockHash = block.hash;
       return newBlock;
@@ -368,17 +367,24 @@ const deleteBlockDataFromDb = exports.deleteBlockDataFromDb = async (blockHash, 
     let hash = blockHash;
     let result = {};
     let query = { $or: [{ blockHash }, { blockNumber }] };
-    result.block = await db.Blocks.deleteOne({ hash });
-    result.block = await db.Blocks.deleteOne({ number: blockNumber });
+
+    result.block = await db.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] });
 
     let txs = (await db.Txs.find(query).toArray()) || [];
-    result.txs = await db.Txs.deleteMany(query);
+    let txsHashes = txs.map(tx => tx.hash);
+
+    // remove txs
+    result.txs = await db.Txs.deleteMany({ hash: { $in: txsHashes } });
+
     // remove events by block
     result.events = await db.Events.deleteMany(query);
-    // remove event by tx
-    result.eventsByTxs = await Promise.all([...txs.map(tx => db.Events.deleteMany({ txHash: tx.hash }))]);
-    result.addresses = await db.Addrs.deleteMany(
-    { $or: [{ 'createdByTx.blockNumber': blockNumber }, { 'createdByTx.blockHash': blockHash }] });
+
+    // remove events by txs
+    result.eventsByTxs = await db.Events.deleteMany({ txHash: { $in: txsHashes } });
+
+    // remove contracts by blockHash
+    result.addresses = await db.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash });
+
     return result;
   } catch (err) {
     return Promise.reject(err);
