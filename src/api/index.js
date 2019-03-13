@@ -4,9 +4,10 @@ import Blocks from './Blocks'
 import Status from './Status'
 import TxPool from './TxPool'
 import Logger from '../lib/Logger'
-import http from 'http'
 import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
+import { HttpServer } from './HttpServer'
+
 import {
   errors,
   formatError,
@@ -32,16 +33,8 @@ dataSource.then(db => {
   status.start()
   txPool.start()
 
-  const httpServer = http.createServer((req, res) => {
-    const url = req.url || null
-    if (url && url === '/status') {
-      res.writeHead(200, { 'Content-type': 'application/json' })
-      res.write(JSON.stringify(status.state))
-    } else {
-      res.writeHead(404, 'Not Found')
-    }
-    res.end()
-  })
+  // http server
+  const httpServer = HttpServer({ blocks, status })
   httpServer.listen(port, address)
   const io = new IO(httpServer)
 
