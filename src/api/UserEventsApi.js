@@ -4,7 +4,7 @@ import config from '../lib/config'
 import { errors, formatRes, getModule } from './apiLib'
 
 function UserEventsSocket () {
-  return fork(path.resolve(__dirname, '../services/userEvents.js'))
+  return fork(path.resolve(__dirname, '../services/userEvents/userEventsService.js'))
 }
 
 export const UserEventsApi = (io, Blocks, log) => {
