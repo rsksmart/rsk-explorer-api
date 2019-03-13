@@ -8,7 +8,13 @@ export const HttpServer = ({ blocks, status }) => {
   app.set('x-powered-by', false)
 
   app.use('/status', (req, res) => {
-    res.send(status.state)
+    const data = status.getState().data
+    res.send(data)
+  })
+
+  app.use('/circulating', (req, res) => {
+    const data = blocks.getCirculatingSupply().data
+    res.send(data)
   })
 
   // 404
