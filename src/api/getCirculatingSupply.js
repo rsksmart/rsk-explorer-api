@@ -5,7 +5,9 @@ const { bridgeAddress } = config
 
 export default async function (collection) {
   try {
-    let { balance, decimals } = await collection.findOne({ address: bridgeAddress })
+    const result = await collection.findOne({ address: bridgeAddress })
+    if (!result) throw new Error('Missing bridge account from db')
+    let { balance, decimals } = result
     decimals = decimals || 18
     const bridgeBalance = applyDecimals(balance, decimals).toString(10)
     let circulatingSupply = bigNumberDifference(TOTAL_SUPPLY, bridgeBalance).toString(10)
