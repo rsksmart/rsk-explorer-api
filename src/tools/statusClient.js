@@ -10,6 +10,8 @@ let mark = '●'
 
 info(`Waiting for: ${url}`)
 
+socket.emit('subscribe', { to: 'status' })
+
 socket.on('connect', socket => {
   ok('Connected! ✌')
 })
