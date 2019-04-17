@@ -7,6 +7,7 @@ import Logger from '../lib/Logger'
 import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
 import { HttpServer } from './HttpServer'
+import { createChannels } from './channels'
 
 import {
   errors,
@@ -45,36 +46,66 @@ dataSource.then(db => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
   })
 
-  // broadcast new blocks
+  // create channels
+  const channels = createChannels(io)
+  const { blocksChannel, statusChannel, txPoolChannel } = channels.channels
+
+  // send blocks on join
+  blocksChannel.on('join', socket => {
+    socket.emit('data', formatRes({ action: 'newBlocks', result: blocks.getLastBlocks() }))
+  })
+
+  // send status on join
+  statusChannel.on('join', socket => {
+    socket.emit('data', formatRes({ action: 'dbStatus', result: status.getState() }))
+  })
+
+  // send txPool & txPoolChart on join
+  txPoolChannel.on('join', socket => {
+    socket.emit('data', formatRes({ action: 'txPool', result: txPool.getState() }))
+    socket.emit('data', formatRes({ action: 'txPoolChart', result: txPool.getPoolChart() }))
+  })
+
+  // send new blocks to channel
   blocks.events.on('newBlocks', result => {
-    io.emit('data', formatRes({ action: 'newBlocks', result }))
+    blocksChannel.emit('newBlocks', result)
   })
 
-  // broadcast status
+  // send status to channel
   status.events.on('newStatus', result => {
-    io.emit('data', formatRes({ action: 'dbStatus', result }))
+    statusChannel.emit('dbStatus', result)
   })
 
-  // broadcast txPool
+  // send txPool to channel
   txPool.events.on('newPool', result => {
-    io.emit('data', formatRes({ action: 'txPool', result }))
+    txPoolChannel.emit('txPool', result)
   })
 
-  // broadcast txPool chart
+  // send txPool chart to channel
   txPool.events.on('poolChart', result => {
-    io.emit('data', formatRes({ action: 'txPoolChart', result }))
+    txPoolChannel.emit('txPoolChart', result)
   })
 
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
-    socket.emit('data', formatRes({ action: 'newBlocks', result: blocks.getLastBlocks() }))
-    socket.emit('data', formatRes({ action: 'dbStatus', result: status.getState() }))
-    socket.emit('data', formatRes({ action: 'txPool', result: txPool.getState() }))
-    socket.emit('data', formatRes({ action: 'txPoolChart', result: txPool.getPoolChart() }))
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {
       log.debug('Socket Error: ' + err)
+    })
+
+    // subscribe to room
+    socket.on('subscribe', (payload) => {
+      try {
+        channels.subscribe(socket, payload)
+      } catch (err) {
+        log.debug(err)
+      }
+    })
+
+    // unsuscribe
+    socket.on('unsubscribe', (payload) => {
+      channels.unsubscribe(socket, payload)
     })
 
     // data handler
