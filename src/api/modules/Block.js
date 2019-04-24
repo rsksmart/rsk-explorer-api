@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { isBlockHash } from '../lib/utils'
+import { isBlockHash } from '../../lib/utils'
 export class Block extends DataCollectorItem {
   constructor (collection, key, parent) {
     let cursorField = 'number'

@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import config from '../lib/config'
+import config from '../../lib/config'
 const { remascAddress, bridgeAddress } = config
 export class Event extends DataCollectorItem {
   constructor (collection, key, parent) {

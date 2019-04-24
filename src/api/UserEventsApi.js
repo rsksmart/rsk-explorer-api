@@ -1,7 +1,7 @@
 import path from 'path'
 import { fork } from 'child_process'
 import config from '../lib/config'
-import { errors, formatRes, getModule } from './apiLib'
+import { errors, formatRes, getModule } from './lib/apiTools'
 
 function UserEventsSocket () {
   return fork(path.resolve(__dirname, '../services/userEvents/userEventsService.js'))

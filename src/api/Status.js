@@ -1,4 +1,4 @@
-import { DataCollector } from '../lib/DataCollector'
+import { DataCollector } from './lib/DataCollector'
 import config from '../lib/config'
 
 const statusCollection = config.blocks.collections.Status

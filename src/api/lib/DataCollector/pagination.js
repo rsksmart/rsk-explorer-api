@@ -1,6 +1,6 @@
-import { OBJECT_ID } from '../../lib/types'
+import { OBJECT_ID } from '../../../lib/types'
 import { ObjectID } from 'mongodb'
-import config from '../../lib/config'
+import config from '../../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
 const SEPARATOR = '__'
 

@@ -1,4 +1,4 @@
-import { formatRes } from './apiLib'
+import { formatRes } from './apiTools'
 
 export function Channel (name, io) {
   const events = {

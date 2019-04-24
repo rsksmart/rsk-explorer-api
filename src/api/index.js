@@ -1,6 +1,6 @@
 import IO from 'socket.io'
 import dataSource from '../lib/dataSource'
-import Blocks from './Blocks'
+import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
 import Logger from '../lib/Logger'
@@ -17,7 +17,7 @@ import {
   filterParams,
   getDelayedFields,
   getModule
-} from './apiLib'
+} from './lib/apiTools'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
@@ -27,20 +27,20 @@ dataSource.then(db => {
   log.info('Database connected')
 
   // data collectors
-  const blocks = new Blocks(db)
+  const api = new Api(db)
   const status = new Status(db)
   const txPool = new TxPool(db)
-  blocks.start()
+  api.start()
   status.start()
   txPool.start()
 
   // http server
-  const httpServer = HttpServer({ blocks, status })
+  const httpServer = HttpServer({ blocks: api, status })
   httpServer.listen(port, address)
   const io = new IO(httpServer)
 
   // start userEvents api
-  const userEvents = UserEventsApi(io, blocks, log)
+  const userEvents = UserEventsApi(io, api, log)
 
   io.httpServer.on('listening', () => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
@@ -52,7 +52,7 @@ dataSource.then(db => {
 
   // send blocks on join
   blocksChannel.on('join', socket => {
-    socket.emit('data', formatRes({ action: 'newBlocks', result: blocks.getLastBlocks() }))
+    socket.emit('data', formatRes({ action: 'newBlocks', result: api.getLastBlocks() }))
   })
 
   // send status on join
@@ -67,7 +67,7 @@ dataSource.then(db => {
   })
 
   // send new blocks to channel
-  blocks.events.on('newBlocks', result => {
+  api.events.on('newBlocks', result => {
     blocksChannel.emit('newBlocks', result)
   })
 
@@ -119,7 +119,7 @@ dataSource.then(db => {
         const delayed = getDelayedFields(module, action)
         try {
           const time = Date.now()
-          let result = await blocks.run(module, action, params)
+          let result = await api.run(module, action, params)
           const queryTime = Date.now() - time
           const logCmd = (queryTime > 1000) ? 'warn' : 'trace'
           log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`)
@@ -133,7 +133,7 @@ dataSource.then(db => {
                 params,
                 socketId: socket.id,
                 payload,
-                block: blocks.getLastBlock().number
+                block: api.getLastBlock().number
               })
             }
             result.delayed = { fields: delayed.fields, registry }

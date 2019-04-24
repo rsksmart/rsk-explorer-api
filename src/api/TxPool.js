@@ -1,4 +1,4 @@
-import { DataCollector } from '../lib/DataCollector'
+import { DataCollector } from './lib/DataCollector'
 import config from '../lib/config'
 
 const collectionName = config.blocks.collections.TxPool

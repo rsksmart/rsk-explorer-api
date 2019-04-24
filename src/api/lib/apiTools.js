@@ -1,5 +1,5 @@
-import { errors, modules } from '../lib/types'
-import config from '../lib/config'
+import { errors, modules } from '../../lib/types'
+import config from '../../lib/config'
 const delayedFields = config.api.delayedFields || {}
 const { MAX_LIMIT, LIMIT, MIN_LIMIT } = config.api
 
@@ -107,4 +107,4 @@ export const getModule = module => modules[module] || module
 
 export const getModuleName = key => Object.keys(modules)[Object.values(modules).indexOf(key)] || key
 
-export { errors } from '../lib/types'
+export { errors } from '../../lib/types'

@@ -1,18 +1,18 @@
-import { DataCollector } from '../lib/DataCollector'
+import { DataCollector } from './lib/DataCollector'
 import config from '../lib/config'
 import { txTypes } from '../lib/types'
-import { Block } from './Block'
-import { Tx } from './Tx'
-import { Address } from './Address'
-import { Event } from './Event'
-import { TokenAccount } from './TokenAccount'
-import { TxPending } from './TxPending'
-import getCirculatingSupply from './getCirculatingSupply'
+import { Block } from './modules/Block'
+import { Tx } from './modules/Tx'
+import { Address } from './modules/Address'
+import { Event } from './modules/Event'
+import { TokenAccount } from './modules/TokenAccount'
+import { TxPending } from './modules/TxPending'
+import getCirculatingSupply from './lib/getCirculatingSupply'
 
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
 
-class Blocks extends DataCollector {
+class Api extends DataCollector {
   constructor (db) {
     let collectionName = collections.Blocks
     super(db, { collectionName })
@@ -97,4 +97,4 @@ class Blocks extends DataCollector {
   }
 }
 
-export default Blocks
+export default Api

@@ -1,6 +1,6 @@
 import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages } from './pagination'
-import { OBJECT_ID } from '../../lib/types'
+import { OBJECT_ID } from '../../../lib/types'
 export class DataCollectorItem {
   constructor (collection, key, parent, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     if (!(collection instanceof Collection)) {

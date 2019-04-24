@@ -1,5 +1,5 @@
 
-import Channel from './Channel'
+import Channel from './lib/Channel'
 
 export const CHANNELS = {
   blocksChannel: 'blocks',

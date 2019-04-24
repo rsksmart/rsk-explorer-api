@@ -1,6 +1,6 @@
-import config from '../lib/config'
-import { TOTAL_SUPPLY } from '../lib/types'
-import { bigNumberDifference, applyDecimals } from '../lib/utils'
+import config from '../../lib/config'
+import { TOTAL_SUPPLY } from '../../lib/types'
+import { bigNumberDifference, applyDecimals } from '../../lib/utils'
 const { bridgeAddress } = config
 
 export default async function (collection) {

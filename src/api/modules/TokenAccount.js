@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { bigNumberSum } from '../lib/utils'
+import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
 
 export class TokenAccount extends DataCollectorItem {
