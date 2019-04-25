@@ -1,6 +1,6 @@
 import { formatRes } from './apiTools'
 
-export function Channel (name, io) {
+export function Channel (channelName, io) {
   const events = {
     join: undefined,
     leave: undefined
@@ -12,23 +12,28 @@ export function Channel (name, io) {
     if (typeof payload !== 'object') throw new Error(`invalid payload ${payload}`)
     if (Object.keys(payload) < 1) throw new Error(`payload is empty`)
     payload.action = action
+    payload.channel = channelName
     payload = formatRes(payload)
-    io.to(name).emit(event, payload)
+    io.to(channelName).emit(event, payload)
   }
   const emit = (action, result) => {
     return sendToChannel('data', action, { result })
   }
 
   const channelEvent = (event, socket) => {
-    socket[event](name)
+    socket[event](channelName)
     const onEvent = events[event]
     if (typeof onEvent === 'function') {
-      onEvent(socket)
+      return onEvent(socket)
     }
   }
 
+  const confirmSubsctption = socket => {
+    socket.emit('subscription', { channel: channelName })
+  }
   const join = socket => {
-    return channelEvent('join', socket)
+    channelEvent('join', socket)
+    confirmSubsctption(socket)
   }
 
   const leave = socket => {
@@ -44,7 +49,7 @@ export function Channel (name, io) {
     }
     events[event] = cb
   }
-  return Object.freeze({ name, join, leave, on, emit })
+  return Object.freeze({ name: channelName, join, leave, on, emit })
 }
 
 export default Channel

@@ -69,7 +69,8 @@ const retFiltered = (filtered) => {
 export const remove$ = value => value.replace('$', '')
 
 export const formatRes = (payload) => {
-  let { module, action, result, req, error } = payload
+  let { module, action, result, req, error, channel } = payload
+  channel = channel || null
   module = (module) ? getModuleName(module) : null
   let data, pages, next, prev, delayed
   if (!result && !error) error = errors.EMPTY_RESULT
@@ -85,7 +86,7 @@ export const formatRes = (payload) => {
       error = formatError(errors.EMPTY_RESULT)
     }
   }
-  return { module, action, data, req, pages, error, prev, next, delayed }
+  return { module, channel, action, data, req, pages, error, prev, next, delayed }
 }
 
 export const formatError = error => {
