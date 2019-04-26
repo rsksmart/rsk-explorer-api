@@ -7,6 +7,7 @@ import { Address } from './modules/Address'
 import { Event } from './modules/Event'
 import { TokenAccount } from './modules/TokenAccount'
 import { TxPending } from './modules/TxPending'
+import { Stats } from './modules/Stats'
 import getCirculatingSupply from './lib/getCirculatingSupply'
 
 const lastLimit = config.api.lastBlocks || 10
@@ -21,12 +22,14 @@ class Api extends DataCollector {
     this.lastBlocks = []
     this.lastTransactions = []
     this.circulatingSupply = null
+    this.stats = { timestamp: 0 }
     this.addItem(collections.Blocks, 'Block', Block)
     this.addItem(collections.PendingTxs, 'TxPending', TxPending)
     this.addItem(collections.Txs, 'Tx', Tx)
     this.addItem(collections.Addrs, 'Address', Address)
     this.addItem(collections.Events, 'Event', Event)
     this.addItem(collections.TokensAddrs, 'Token', TokenAccount)
+    this.addItem(collections.Stats, 'Stats', Stats)
   }
   tick () {
     this.setLastBlocks()
@@ -83,6 +86,7 @@ class Api extends DataCollector {
     if (latest !== this.latest) {
       this.latest = latest
       this.events.emit('newBlocks', this.formatData({ blocks, transactions }))
+      this.updateStats()
     }
   }
 
@@ -94,6 +98,16 @@ class Api extends DataCollector {
     const account = await this.getAddress(address)
     if (data && data.data && account) data.data[key] = account.data
     return data || account
+  }
+
+  async updateStats () {
+    const oldStats = this.stats
+    const stats = await this.Stats.run('getLatest')
+    if (!stats) return
+    this.stats = Object.assign({}, stats)
+    if (stats.timestamp !== oldStats.timestamp) {
+      this.events.emit('newStats', this.stats)
+    }
   }
 }
 

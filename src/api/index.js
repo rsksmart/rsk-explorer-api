@@ -21,7 +21,6 @@ import {
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
-const log = Logger('explorer-api', config.api.log)
 
 dataSource.then(db => {
   log.info('Database connected')
@@ -48,7 +47,7 @@ dataSource.then(db => {
 
   // create channels
   const channels = createChannels(io)
-  const { blocksChannel, statusChannel, txPoolChannel } = channels.channels
+  const { blocksChannel, statusChannel, txPoolChannel, statsChannel } = channels.channels
 
   // send blocks on join
   blocksChannel.on('join', socket => {
@@ -86,6 +85,11 @@ dataSource.then(db => {
     txPoolChannel.emit('txPoolChart', result)
   })
 
+  // send stats to channel
+  api.events.on('newStats', result => {
+    statsChannel.emit('stats', result)
+  })
+
   io.on('connection', socket => {
     socket.emit('open', { time: Date.now(), settings: publicSettings() })
     socket.on('message', () => { })
@@ -99,6 +103,9 @@ dataSource.then(db => {
       try {
         channels.subscribe(socket, payload)
       } catch (err) {
+        const error = errors.INVALID_REQUEST
+        error.error = err.message
+        socket.emit('Error', formatError(error))
         log.debug(err)
       }
     })

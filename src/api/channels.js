@@ -4,7 +4,8 @@ import Channel from './lib/Channel'
 export const CHANNELS = {
   blocksChannel: 'blocks',
   statusChannel: 'status',
-  txPoolChannel: 'txpool'
+  txPoolChannel: 'txpool',
+  statsChannel: 'stats'
 }
 
 export const createChannels = io => {
