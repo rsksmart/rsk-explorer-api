@@ -57,7 +57,7 @@ dataBase.db().then(db => {
 
 // WIP
 const readEvent = (event, data) => {
-  console.log(event, data)
+  log.info(event, data)
 }
 
 async function createBlocksCollections (config, db) {

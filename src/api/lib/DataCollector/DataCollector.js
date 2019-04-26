@@ -4,6 +4,8 @@ import { serialize } from '../../../lib/utils'
 import { filterParams } from '../apiTools'
 import { Db } from 'mongodb'
 import DataCollectorItem from './DataCollectorItem'
+import log from '../log'
+
 class Emitter extends EventEmitter { }
 const emitter = new Emitter()
 
@@ -20,7 +22,7 @@ export class DataCollector {
     this.setCollection(options.collectionName)
     this.tickDelay = 1000
     this.serialize = serialize
-    this.log = options.logger || console
+    this.log = options.log || log
   }
   tick () { }
   stop () {
@@ -84,11 +86,11 @@ export class DataCollector {
           this.items[key] = item
           if (addToRoot) {
             if (!this[key]) this[key] = item
-            else console.log(`Error key: ${key} exists`)
+            else this.log.warn(`Error key: ${key} exists`)
           }
         }
       } else {
-        console.log('Error the key: ' + key + ' already exists')
+        this.log.warn('Error the key: ' + key + ' already exists')
       }
     }
   }

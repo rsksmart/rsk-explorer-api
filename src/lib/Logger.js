@@ -1,6 +1,6 @@
 import bunyan from 'bunyan'
 
-export default function (name, options) {
+export const Logger = (name, options) => {
   options = options || {}
   const log = bunyan.createLogger({
     name,
@@ -19,3 +19,5 @@ export default function (name, options) {
   })
   return log
 }
+
+export default Logger

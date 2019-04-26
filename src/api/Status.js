@@ -44,7 +44,7 @@ export class Status extends DataCollector {
         return status
       }
     } catch (err) {
-      console.log(err)
+      this.log.warn(err)
     }
   }
 

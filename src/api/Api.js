@@ -48,7 +48,7 @@ class Api extends DataCollector {
 
       this.updateLastBlocks(blocks, txs)
     } catch (err) {
-      console.log(err)
+      this.log.debug(err)
     }
   }
 
@@ -58,7 +58,7 @@ class Api extends DataCollector {
       let circulating = await getCirculatingSupply(collection)
       this.circulatingSupply = Object.assign({}, circulating)
     } catch (err) {
-      console.log(err)
+      this.log.debug(err)
     }
   }
   getCirculatingSupply () {
