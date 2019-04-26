@@ -172,5 +172,15 @@ export default {
       key: { to: 1 },
       name: 'pendingTxTo'
     }
+  ],
+  Stats: [
+    {
+      key: { timestamp: 1 },
+      name: 'statsTime'
+    },
+    {
+      key: { blockNumber: -1 },
+      name: 'statsBlockNumber'
+    }
   ]
 }

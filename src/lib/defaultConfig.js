@@ -51,7 +51,8 @@ export default {
       TokensAddrs: 'tokensAddresses',
       OrphanBlocks: 'orphanBlocks',
       TxPool: 'txPool',
-      PendingTxs: 'transactionsPending'
+      PendingTxs: 'transactionsPending',
+      Stats: 'stats'
     }
   }
 }
