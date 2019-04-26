@@ -5,6 +5,7 @@ import conf from '../../lib/config'
 import blocksCollections from '../../lib/collections'
 import Logger from '../../lib/Logger'
 import { BlocksStatus } from '../classes/BlocksStatus'
+import { BcStats } from '../classes/BcStats'
 import { actions } from '../../lib/types'
 
 const config = Object.assign({}, conf.blocks)
@@ -23,6 +24,7 @@ function startService (name, parseMessage, script) {
 dataBase.db().then(db => {
   createBlocksCollections(config, db).then(() => {
     const Status = new BlocksStatus(db, config)
+    const Stats = new BcStats(db, config)
     const listenToMessage = (msg, service) => {
       let action, args, event, data
       ({ action, args, event, data } = msg)
@@ -41,6 +43,7 @@ dataBase.db().then(db => {
             break
 
           case actions.UPDATE_TIP_BLOCK:
+            Stats.update(...args)
             Checker.send({ action, args })
             break
         }
