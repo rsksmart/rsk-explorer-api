@@ -56,7 +56,7 @@ export const actions = {
 
 export const modules = {
   blocks: 'Block',
-  txs: 'Tx',
+  transactions: 'Tx',
   addresses: 'Address',
   events: 'Event',
   tokens: 'Token',
