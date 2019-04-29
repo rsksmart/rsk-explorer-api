@@ -13,10 +13,7 @@ import {
   errors,
   formatError,
   formatRes,
-  publicSettings,
-  filterParams,
-  getDelayedFields,
-  getModule
+  publicSettings
 } from './lib/apiTools'
 
 const port = config.api.port || '3003'
@@ -34,7 +31,7 @@ dataSource.then(db => {
   txPool.start()
 
   // http server
-  const httpServer = HttpServer({ blocks: api, status })
+  const httpServer = HttpServer({ api, status, log })
   httpServer.listen(port, address)
   const io = new IO(httpServer)
 
@@ -117,41 +114,28 @@ dataSource.then(db => {
 
     // data handler
     socket.on('data', async payload => {
-      if (!payload) {
-        socket.emit('Error', formatError(errors.INVALID_REQUEST))
-      } else {
-        const action = payload.action
-        const params = filterParams(payload.params)
-        const module = getModule(payload.module)
-        const delayed = getDelayedFields(module, action)
-        try {
-          const time = Date.now()
-          let result = await api.run(module, action, params)
-          const queryTime = Date.now() - time
-          const logCmd = (queryTime > 1000) ? 'warn' : 'trace'
-          log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`)
-
-          if (delayed && userEvents) {
-            const registry = !result.data && delayed.runIfEmpty
-            if (payload.getDelayed) {
-              userEvents.send({
-                action: delayed.action,
-                module: delayed.module,
-                params,
-                socketId: socket.id,
-                payload,
-                block: api.getLastBlock().number
-              })
-            }
-            result.delayed = { fields: delayed.fields, registry }
+      try {
+        const { module, action, params, result, delayed } = await api.run(payload)
+        if (delayed && userEvents) {
+          const registry = !result.data && delayed.runIfEmpty
+          if (payload.getDelayed) {
+            userEvents.send({
+              action: delayed.action,
+              module: delayed.module,
+              params,
+              socketId: socket.id,
+              payload,
+              block: api.getLastBlock().number
+            })
           }
-          socket.emit('data', formatRes({ module, action, result, req: payload }))
-        } catch (err) {
-          log.debug(`Action: ${action}: ERROR: ${err}`)
-          socket.emit('Error',
-            formatRes({ module, action, result: null, req: payload, error: errors.INVALID_REQUEST })
-          )
+          result.delayed = { fields: delayed.fields, registry }
         }
+        socket.emit('data', formatRes({ module, action, result, req: payload }))
+      } catch (err) {
+        log.debug(`Action: ${payload.action}: ERROR: ${err}`)
+        socket.emit('Error',
+          formatRes({ result: null, req: payload, error: errors.INVALID_REQUEST })
+        )
       }
     })
   })

@@ -9,6 +9,11 @@ import { TokenAccount } from './modules/TokenAccount'
 import { TxPending } from './modules/TxPending'
 import { Stats } from './modules/Stats'
 import getCirculatingSupply from './lib/getCirculatingSupply'
+import {
+  filterParams,
+  getDelayedFields,
+  getModule
+} from './lib/apiTools'
 
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
@@ -36,8 +41,26 @@ class Api extends DataCollector {
     this.setCirculatingSupply()
   }
 
-  run (module, action, params) {
-    return this.itemPublicAction(module, action, params)
+  async run (payload) {
+    try {
+      if (Object.keys(payload).length < 1) throw new Error('invalid request')
+      const action = payload.action
+      if (!action) throw new Error('Missing action')
+      const params = filterParams(payload.params)
+      const module = getModule(payload.module)
+      if (!module) throw new Error('Unknown module')
+      const delayed = getDelayedFields(module, action)
+      const time = Date.now()
+      const result = await this.itemPublicAction(module, action, params)
+
+      const queryTime = Date.now() - time
+      const logCmd = (queryTime > 1000) ? 'warn' : 'trace'
+      this.log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`)
+
+      return { module, action, params, result, delayed }
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   async setLastBlocks () {
