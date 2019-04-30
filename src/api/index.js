@@ -36,7 +36,7 @@ dataSource.then(db => {
   const io = new IO(httpServer)
 
   // start userEvents api
-  const userEvents = UserEventsApi(io, api, log)
+  const userEvents = UserEventsApi(io, api, { log })
 
   io.httpServer.on('listening', () => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)

@@ -1,50 +1,43 @@
 import path from 'path'
 import { fork } from 'child_process'
 import config from '../lib/config'
-import { errors, formatRes, getModule } from './lib/apiTools'
+import { errors, formatRes } from './lib/apiTools'
 
 function UserEventsSocket () {
   return fork(path.resolve(__dirname, '../services/userEvents/userEventsService.js'))
 }
 
-export const UserEventsApi = (io, Blocks, log) => {
+export const UserEventsApi = (io, api, { log }) => {
   if (!config.api.allowUserEvents) return
   log = log || console
   const userEvents = UserEventsSocket()
 
-  userEvents.on('message', msg => {
-    const socket = io.sockets.connected[msg.socketId]
-    if (socket) {
-      const payload = msg.payload
+  userEvents.on('message', async msg => {
+    try {
+      const { payload, module } = msg
       const action = payload.action
-      const module = msg.module
-      processMsg(msg, Blocks)
-        .then(res => {
-          let result = res.data
-          let req = payload
-          let error = res.error
-          socket.emit('data', formatRes({ module, action, result, req, error }))
-        }).catch(err => {
-          log.error(err)
-        })
-    } else {
-      log.error(`Socket id: ${msg.socketId} not found`)
+      const res = await processMsg(msg, api)
+      let result = res.data
+      let req = payload
+      let error = res.error
+      const socket = io.sockets.connected[msg.socketId]
+      if (socket) socket.emit('data', formatRes({ module, action, result, req, error }))
+    } catch (err) {
+      log.error(err)
+      return Promise.reject(err)
     }
   })
-  return userEvents
+  return Object.freeze(userEvents)
 }
 
-async function processMsg (msg, Blocks) {
+async function processMsg (msg, api) {
   let data, error
   if (!msg.error) {
     if (msg.data) {
       data = msg
     } else {
-      let { module, action, params } = msg.payload
-      module = getModule(module)
-      data = await Blocks.run(module, action, params).then(result => {
-        return result
-      })
+      const { result } = await api.run(msg.payload)
+      data = result
     }
   } else {
     error = errors[msg.error.code] || errors.INVALID_REQUEST
