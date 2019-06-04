@@ -1,5 +1,5 @@
 import DB from '../../src/lib/Db'
-import DataCollectorItem from '../../src/lib/DataCollector/DataCollectorItem'
+import DataCollectorItem from '../../src/api/lib/DataCollector/DataCollectorItem'
 import { serialize } from '../../src/lib/utils'
 import config from '../../src/lib/config'
 import { assert } from 'chai'

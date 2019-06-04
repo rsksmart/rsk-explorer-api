@@ -5,6 +5,9 @@ import blockA from './block-1234.json'
 import blockB from './block-4567.json'
 import badBlock from './block-badTxs.json'
 
+import one from './01.json'
+import two from './02.json'
+
 const txs = [
   { hash: '0x1', blockHash: '0xabc123', receipt: { blockHash: '0xabc123' } },
   { hash: '0x2', blockHash: '0xcccccc', receipt: { blockHash: '0xabc123' } },
@@ -12,6 +15,19 @@ const txs = [
 ]
 
 describe('# missmatchBlockTransactions', function () {
+  it('sholud return 0 bad txs', () => {
+    const block = one.result
+    const transactions = two.result.transactions.map(
+      tx => {
+        const { blockHash } = tx
+        tx.receipt = { blockHash }
+        return tx
+      })
+    let res = missmatchBlockTransactions(block, transactions)
+    assert.isArray(res, true)
+    assert.equal(res.length, 0)
+  })
+
   it('should return 1 bad tx', function () {
     let res = missmatchBlockTransactions(badBlock.block.block, badBlock.block.txs)
     assert.isArray(res, true)

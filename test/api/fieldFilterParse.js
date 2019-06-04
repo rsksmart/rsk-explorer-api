@@ -1,4 +1,4 @@
-import { fieldFilterParse } from '../../src/lib/DataCollector/DataCollectorItem'
+import { fieldFilterParse } from '../../src/api/lib/DataCollector/DataCollectorItem'
 import { expect } from 'chai'
 
 const value = ['a', 'b', 'c']
