@@ -4,15 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "./node_modules/.bin/nodemon src/api --exec babel-node | ./node_modules/.bin/bunyan -o short",
-    "blocks": "./node_modules/.bin/nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "dev": "npx nodemon src/api --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "blocks": "npx src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist --copy-files",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
-    "status": "./node_modules/.bin/nodemon src/tools/statusClient.js --exec babel-node",
-    "abi": "./node_modules/.bin/nodemon src/lib/ContractParser/compileJsonAbis.js --exec babel-node",
-    "lint": "./node_modules/.bin/eslint src/**/*",
-    "test": "./node_modules/.bin/mocha"
+    "status": "npx src/tools/statusClient.js --exec babel-node",
+    "abi": "npx src/lib/ContractParser/compileJsonAbis.js --exec babel-node",
+    "lint": "npx eslint src/**/*",
+    "test": "npx mocha",
+    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
   },
   "repository": {
     "type": "git",
@@ -34,7 +35,8 @@
     "nod3": "git+https://github.com/rsksmart/nod3.git",
     "rlp": "^2.2.2",
     "socket.io": "^2.2.0",
-    "web3": "^0.20.7"
+    "web3": "^0.20.7",
+    "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -48,6 +50,9 @@
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
     "mocha": "^5.2.0",
-    "nodemon": "^1.18.10"
+    "nodemon": "^1.18.10",
+    "redoc": "^2.0.0-rc.8-1",
+    "redoc-cli": "^0.8.4",
+    "swagger-jsdoc": "^3.2.9"
   }
 }

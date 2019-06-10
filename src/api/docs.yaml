@@ -1,0 +1,51 @@
+parameters:
+  address:
+    name: address
+    in: query
+    required: true
+    type: string
+    schema:
+      type: string
+      example: "0x0000000000000000000000000000000001000008"
+responses:
+    Paginated:
+      description: paginated result
+      content:
+        application/json:
+          schema:
+            $ref: '#/definitions/PaginatedResult'
+
+
+definitions:
+  PaginatedResult:
+    type: object
+    properties:
+      result:
+        type: object
+        properties:
+          - pages:
+              type: object
+              properties:
+                sort:
+                  name: sort
+                  type: object
+                sortable:
+                  type: object
+                defaultSort:
+                sortDir:
+                limit:
+                  type: number
+                next:
+                  type: string
+                prev:
+                  type: string
+                fields:
+                  type: object
+                page:
+                  type: number
+                total:
+                  type: number
+                pages:
+                  type: number
+          - data:
+              type: array

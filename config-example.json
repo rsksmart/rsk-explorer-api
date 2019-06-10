@@ -17,7 +17,8 @@
     "address": "localhost",
     "port": 3003,
     "lastBlocks": 30,
-    "allowUserEvents": true
+    "allowUserEvents": true,
+    "exposeDoc": false
   },
   "blocks": {}
 }

@@ -8,15 +8,71 @@ export class Tx extends DataCollectorItem {
     const PendingTxs = this.parent.getItem({ key: 'TxPending' })
     this.PendingTxs = PendingTxs.publicActions
     this.publicActions = {
-
+      /**
+       * @swagger
+       * /api?module=transactions&action=getTransactions:
+       *    get:
+       *      description: get transactions
+       *      tags:
+       *        - transactions
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          default: transactions
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          default: getTransactions
+       *        - name: query
+       *          in: query
+       *          required: false
+       *          schema:
+       *            type: object
+       *            example:
+       *              txType:normal
+       *      responses:
+       *        400:
+       *          description: invalid request
+       *        200:
+       *          $ref: '#/responses/Paginated'
+      */
       getTransactions: params => {
         let query = {}
         let txType = (params.query) ? params.query.txType : null
+        console.log('txTYPE', txType)
         if (txType) {
           query = this.fieldFilterParse('txType', txType)
         }
         return this.getPageData(query, params)
       },
+      /**
+     * @swagger
+     * /api?module=transactions&action=getTransaction:
+     *    get:
+     *      description: get transaction
+     *      tags:
+     *        - transactions
+     *      parameters:
+     *        - name: module
+     *          in: query
+     *          required: true
+     *          default: transactions
+     *        - name: action
+     *          in: query
+     *          required: true
+     *          default: getTransaction
+     *        - name: hash
+     *          in: query
+     *          required: true
+     *          schema:
+     *            type: string
+     *      responses:
+     *        400:
+     *          description: invalid request
+     *        200:
+     *          description: transaction object
+    */
 
       getTransaction: async params => {
         const hash = params.hash
@@ -27,6 +83,34 @@ export class Tx extends DataCollectorItem {
           return tx
         }
       },
+
+      /**
+      * @swagger
+      * /api?module=transactions&action=getTransactionWithAddressData:
+      *    get:
+      *      description: get transaction
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          default: transactions
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          default: getTransactionWithAddressData
+      *        - name: hash
+      *          in: query
+      *          required: true
+      *          schema:
+      *            type: string
+      *      responses:
+      *        400:
+      *          description: invalid request
+      *        200:
+      *          description: transaction object
+      */
 
       getTransactionWithAddressData: async params => {
         let data = await this.publicActions.getTransaction(params)
@@ -51,6 +135,34 @@ export class Tx extends DataCollectorItem {
         }
       },
 
+      /**
+      * @swagger
+      * /api?module=transactions&action=getTransactionsByBlock:
+      *    get:
+      *      description: get transaction
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          default: transactions
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          default: getTransactionsByBlock
+      *        - name: hashOrNumber
+      *          in: query
+      *          required: true
+      *          schema:
+      *            type: string
+      *            example: 200
+      *      responses:
+      *        400:
+      *          description: invalid request
+      *        200:
+      *          description: transaction object
+      */
       getTransactionsByBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.number
 
@@ -62,7 +174,29 @@ export class Tx extends DataCollectorItem {
           return this.getTransactionsByBlockNumber(params)
         }
       },
-
+      /**
+      * @swagger
+      * /api?module=transactions&action=getTransactionsByAddress:
+      *    get:
+      *      description: get transactions by address
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          default: transactions
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          default: getTransactionsByAddress
+      *        - $ref: '#/parameters/address'
+      *      responses:
+      *        400:
+      *          description: invalid request
+      *        200:
+      *         $ref: '#/responses/Paginated'
+      */
       getTransactionsByAddress: params => {
         let address = params.address
         return this.getPageData(

@@ -129,5 +129,5 @@ Production build to ./dist folder
   **address** [string] api server bind address
   **port**  [number] api server port
 
-  **allowUserEvents** [Boolean]: enable/disable userEventsApi
-
+  **allowUserEvents** [boolean]: enable/disable userEventsApi
+  **exposeDoc** [boolean]: enable/disable api docs

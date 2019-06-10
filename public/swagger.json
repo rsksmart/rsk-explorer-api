@@ -1,0 +1,701 @@
+{
+  "info": {
+    "title": "rsk-explorer-api",
+    "version": "0.7.4",
+    "description": "explorer API Documentation"
+  },
+  "swagger": "2.0",
+  "paths": {
+    "/api?module=addresses&action=getAddress": {
+      "get": {
+        "description": "get address data",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "addresses"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getAddress"
+          },
+          {
+            "$ref": "#/parameters/address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "address data"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "invalid address"
+          }
+        }
+      }
+    },
+    "/api?module=addresses&action=getAddresses": {
+      "get": {
+        "description": "get list of addresses",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "addresses"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getAddresses"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "addresses list"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=addresses&action=getTokens": {
+      "get": {
+        "description": "get list of tokens",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "addresses"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTokens"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "tokens list"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=addresses&action=getCirculatingSupply": {
+      "get": {
+        "description": "get list of tokens",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "addresses"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getCirculatingSupply"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "cisculating supply data"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=blocks&action=getBlock": {
+      "get": {
+        "description": "get block data",
+        "tags": [
+          "blocks"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "blocks"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getBlock"
+          },
+          {
+            "name": "hashOrNumber",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "block data"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "unknown block"
+          }
+        }
+      }
+    },
+    "/api?module=blocks&action=getBlocks": {
+      "get": {
+        "description": "get list of blocks",
+        "tags": [
+          "blocks"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "blocks"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getBlocks"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "list of blocks"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=events&action=getEvent": {
+      "get": {
+        "description": "get event data",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "events"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getEvent"
+          },
+          {
+            "name": "_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "event data"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "unknown event"
+          }
+        }
+      }
+    },
+    "/api?module=events&action=getEventsByAddress": {
+      "get": {
+        "description": "get events by address",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "events"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getEventsByAddress"
+          },
+          {
+            "$ref": "#/parameters/address"
+          },
+          {
+            "name": "contract",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "0x0000000000000000000000000000000001000008"
+            }
+          },
+          {
+            "name": "signatures",
+            "in": "query",
+            "required": false,
+            "description": "filter by event's signatures",
+            "schema": {
+              "type": "array",
+              "example": "e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "events array"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "unknown block"
+          }
+        }
+      }
+    },
+    "/api?module=events&action=getAllEventsByAddress": {
+      "get": {
+        "description": "get events by address",
+        "tags": [
+          "events"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "events"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getAllEventsByAddress"
+          },
+          {
+            "$ref": "#/parameters/address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "events array"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "unknown block"
+          }
+        }
+      }
+    },
+    "/api?module=stats&action=getStats": {
+      "get": {
+        "description": "get stats",
+        "tags": [
+          "stats"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "stats"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getStats"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "block data"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=stats&action=getLatest": {
+      "get": {
+        "description": "get stats",
+        "tags": [
+          "stats"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "stats"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getLatest"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "block data"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=tokens&action=getTokenAccounts": {
+      "get": {
+        "description": "get token accounts",
+        "tags": [
+          "tokens"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "tokens"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTokenAccounts"
+          },
+          {
+            "$ref": "#/parameters/address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "accounts array"
+          },
+          "400": {
+            "description": "invalid request"
+          },
+          "404": {
+            "description": "unknown token"
+          }
+        }
+      }
+    },
+    "/api?module=transactions&action=getTransactions": {
+      "get": {
+        "description": "get transactions",
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "transactions"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTransactions"
+          },
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "example": "txType:normal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Paginated"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=transactions&action=getTransaction": {
+      "get": {
+        "description": "get transaction",
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "transactions"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTransaction"
+          },
+          {
+            "name": "hash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "transaction object"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=transactions&action=getTransactionWithAddressData": {
+      "get": {
+        "description": "get transaction",
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "transactions"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTransactionWithAddressData"
+          },
+          {
+            "name": "hash",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "transaction object"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=transactions&action=getTransactionsByBlock": {
+      "get": {
+        "description": "get transaction",
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "transactions"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTransactionsByBlock"
+          },
+          {
+            "name": "hashOrNumber",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "transaction object"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    },
+    "/api?module=transactions&action=getTransactionsByAddress": {
+      "get": {
+        "description": "get transactions by address",
+        "tags": [
+          "transactions"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "default": "transactions"
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "default": "getTransactionsByAddress"
+          },
+          {
+            "$ref": "#/parameters/address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Paginated"
+          },
+          "400": {
+            "description": "invalid request"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "PaginatedResult": {
+      "type": "object",
+      "properties": {
+        "result": {
+          "type": "object",
+          "properties": [
+            {
+              "pages": {
+                "type": "object",
+                "properties": {
+                  "sort": {
+                    "name": "sort",
+                    "type": "object"
+                  },
+                  "sortable": {
+                    "type": "object"
+                  },
+                  "defaultSort": null,
+                  "sortDir": null,
+                  "limit": {
+                    "type": "number"
+                  },
+                  "next": {
+                    "type": "string"
+                  },
+                  "prev": {
+                    "type": "string"
+                  },
+                  "fields": {
+                    "type": "object"
+                  },
+                  "page": {
+                    "type": "number"
+                  },
+                  "total": {
+                    "type": "number"
+                  },
+                  "pages": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            {
+              "data": {
+                "type": "array"
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
+  "responses": {
+    "Paginated": {
+      "description": "paginated result",
+      "content": {
+        "application/json": {
+          "schema": {
+            "$ref": "#/definitions/PaginatedResult"
+          }
+        }
+      }
+    }
+  },
+  "parameters": {
+    "address": {
+      "name": "address",
+      "in": "query",
+      "required": true,
+      "type": "string",
+      "schema": {
+        "type": "string",
+        "example": "0x0000000000000000000000000000000001000008"
+      }
+    }
+  },
+  "securityDefinitions": {},
+  "tags": []
+}

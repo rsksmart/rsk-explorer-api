@@ -6,7 +6,32 @@ export class TokenAccount extends DataCollectorItem {
   constructor (collection, key, parent) {
     super(collection, key, parent)
     this.publicActions = {
-
+      /**
+       * @swagger
+       * /api?module=tokens&action=getTokenAccounts:
+       *    get:
+       *      description: get token accounts
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          default: tokens
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          default: getTokenAccounts
+       *        - $ref: '#/parameters/address'
+       *      responses:
+       *        400:
+       *          description: invalid request
+       *        404:
+       *          description: unknown token
+       *        200:
+       *          description: accounts array
+       *
+      */
       getTokenAccounts: params => {
         const contract = params.contract || params.address
         if (contract) return this.getPageData({ contract }, params)

@@ -30,6 +30,7 @@ export default {
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
     allowUserEvents: true,
+    exposeDoc: false,
     delayedFields
   },
   publicSettings: {
