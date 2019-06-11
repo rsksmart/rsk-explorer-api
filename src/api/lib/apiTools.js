@@ -32,6 +32,7 @@ export const filterFields = fields => {
 
 export const filterQuery = (query) => {
   if (!query) return
+  if (Array.isArray(query)) return
   if (typeof (query) === 'object') {
     if (Object.keys(query).length > 0) {
       return sanitizeQuery(query)
