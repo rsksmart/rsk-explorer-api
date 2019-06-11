@@ -22,7 +22,8 @@ const Routes = ({ log, api }) => {
       delete params.action
       const { result } = await api.run({ module, action, params })
       if (!result) throw new Error('Missing result')
-      res.send({ result })
+      if (!result.data) throw new Error('Missing data')
+      res.send(result)
     } catch (err) {
       res.status(404).send()
       log.error(err)

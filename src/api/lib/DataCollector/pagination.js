@@ -58,6 +58,7 @@ export function parseParams (cursorData, params) {
 
   count = count || countOnly
   limit = limit || 50
+  limit = parseInt(limit)
   page = parseInt(page)
   page = (page > 0) ? page : 1
 
