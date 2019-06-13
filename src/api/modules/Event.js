@@ -17,24 +17,23 @@ export class Event extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: events
+       *          enum: [events]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getEvent
+       *          enum: [getEvent]
        *        - name: _id
        *          in: query
        *          schema:
        *            type: string
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: event data
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
        *        404:
-       *          description: unknown event
-      */
-      getEvent: async params => {
+       *          $ref: '#/responses/NotFound'
+       */Event: async params => {
         try {
           const { _id } = params
           if (!_id) throw new Error('invalid _id')
@@ -58,11 +57,11 @@ export class Event extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: events
+       *          enum: [events]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getEventsByAddress
+       *          enum: [getEventsByAddress]
        *        - $ref: '#/parameters/address'
        *        - name: contract
        *          in: query
@@ -78,14 +77,17 @@ export class Event extends DataCollectorItem {
        *            type: array
        *            example:
        *              e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: events array
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
        *        404:
-       *          description: unknown block
-      */
+       *          $ref: '#/responses/NotFound'
+       */
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params
         if (address) {
@@ -128,20 +130,23 @@ export class Event extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: events
+       *          enum: [events]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getAllEventsByAddress
+       *          enum: [getAllEventsByAddress]
        *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: events array
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
        *        404:
-       *          description: unknown block
-      */
+       *          $ref: '#/responses/NotFound'
+       */
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {

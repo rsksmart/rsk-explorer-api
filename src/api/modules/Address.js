@@ -22,20 +22,20 @@ export class Address extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: addresses
+       *          enum: [addresses]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getAddress
+       *          enum: [getAddress]
        *        - $ref: '#/parameters/address'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: address data
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
        *        404:
-       *          description: invalid address
-      */
+       *          $ref: '#/responses/NotFound'
+        */
 
       getAddress: async params => {
         const { address } = params
@@ -59,17 +59,22 @@ export class Address extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: addresses
+       *          enum: [addresses]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getAddresses
+       *          enum: [getAddresses]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: addresses list
-      */
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getAddresses: params => {
         let type = (params.query) ? params.query.type : null
         let query = (type) ? { type } : {}
@@ -86,17 +91,22 @@ export class Address extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: addresses
+       *          enum: [addresses]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getTokens
+       *          enum: [getTokens]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: tokens list
-      */
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokens: params => {
         return this.getPageData({
           type: addrTypes.CONTRACT,
@@ -114,17 +124,19 @@ export class Address extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: addresses
+       *          enum: [addresses]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getCirculatingSupply
+       *          enum: [getCirculatingSupply]
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: cisculating supply data
-      */
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getCirculatingSupply: params => {
         return this.parent.getCirculatingSupply()
       }

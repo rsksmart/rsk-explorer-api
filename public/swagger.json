@@ -17,13 +17,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "addresses"
+            "enum": [
+              "addresses"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getAddress"
+            "enum": [
+              "getAddress"
+            ]
           },
           {
             "$ref": "#/parameters/address"
@@ -31,13 +35,13 @@
         ],
         "responses": {
           "200": {
-            "description": "address data"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "invalid address"
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -53,21 +57,37 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "addresses"
+            "enum": [
+              "addresses"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getAddresses"
+            "enum": [
+              "getAddresses"
+            ]
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "addresses list"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -83,21 +103,37 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "addresses"
+            "enum": [
+              "addresses"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTokens"
+            "enum": [
+              "getTokens"
+            ]
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "tokens list"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -113,21 +149,28 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "addresses"
+            "enum": [
+              "addresses"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getCirculatingSupply"
+            "enum": [
+              "getCirculatingSupply"
+            ]
           }
         ],
         "responses": {
           "200": {
-            "description": "cisculating supply data"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -143,13 +186,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "blocks"
+            "enum": [
+              "blocks"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getBlock"
+            "enum": [
+              "getBlock"
+            ]
           },
           {
             "name": "hashOrNumber",
@@ -162,13 +209,13 @@
         ],
         "responses": {
           "200": {
-            "description": "block data"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "unknown block"
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -184,21 +231,37 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "blocks"
+            "enum": [
+              "blocks"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getBlocks"
+            "enum": [
+              "getBlocks"
+            ]
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "list of blocks"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -214,13 +277,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "events"
+            "enum": [
+              "events"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getEvent"
+            "enum": [
+              "getEvent"
+            ]
           },
           {
             "name": "_id",
@@ -232,13 +299,13 @@
         ],
         "responses": {
           "200": {
-            "description": "event data"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "unknown event"
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -254,13 +321,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "events"
+            "enum": [
+              "events"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getEventsByAddress"
+            "enum": [
+              "getEventsByAddress"
+            ]
           },
           {
             "$ref": "#/parameters/address"
@@ -283,17 +354,26 @@
               "type": "array",
               "example": "e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16"
             }
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "events array"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "unknown block"
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -309,27 +389,40 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "events"
+            "enum": [
+              "events"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getAllEventsByAddress"
+            "enum": [
+              "getAllEventsByAddress"
+            ]
           },
           {
             "$ref": "#/parameters/address"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "events array"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "unknown block"
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -345,21 +438,37 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "stats"
+            "enum": [
+              "stats"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getStats"
+            "enum": [
+              "getStats"
+            ]
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "block data"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -375,21 +484,28 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "stats"
+            "enum": [
+              "stats"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getLatest"
+            "enum": [
+              "getLatest"
+            ]
           }
         ],
         "responses": {
           "200": {
-            "description": "block data"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -405,27 +521,222 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "tokens"
+            "enum": [
+              "tokens"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTokenAccounts"
+            "enum": [
+              "getTokenAccounts"
+            ]
           },
           {
             "$ref": "#/parameters/address"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "accounts array"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
           },
           "404": {
-            "description": "unknown token"
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=tokens&action=getTokensByAddress": {
+      "get": {
+        "description": "get token by address",
+        "tags": [
+          "tokens"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "tokens"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getTokensByAddress"
+            ]
+          },
+          {
+            "$ref": "#/parameters/address"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/ResponseList"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=tokens&action=getContractAccount": {
+      "get": {
+        "description": "get token account",
+        "tags": [
+          "tokens"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "tokens"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getContractAccount"
+            ]
+          },
+          {
+            "$ref": "#/parameters/address"
+          },
+          {
+            "$ref": "#/parameters/contract"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=tokens&action=getTokenAccount": {
+      "get": {
+        "description": "get token account and address data",
+        "tags": [
+          "tokens"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "tokens"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getTokenAccount"
+            ]
+          },
+          {
+            "$ref": "#/parameters/address"
+          },
+          {
+            "$ref": "#/parameters/contract"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=tokens&action=getTokenBalance": {
+      "get": {
+        "description": "get token balance",
+        "tags": [
+          "tokens"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "tokens"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getTokenBalance"
+            ]
+          },
+          {
+            "$ref": "#/parameters/contract"
+          },
+          {
+            "name": "addresses",
+            "in": "query",
+            "type": "array",
+            "required": false,
+            "description": "include only this addresses in balance"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -436,18 +747,25 @@
         "tags": [
           "transactions"
         ],
+        "produces": [
+          "application/json"
+        ],
         "parameters": [
           {
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "transactions"
+            "enum": [
+              "transactions"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTransactions"
+            "enum": [
+              "getTransactions"
+            ]
           },
           {
             "name": "query",
@@ -457,14 +775,26 @@
               "type": "object",
               "example": "txType:normal"
             }
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/Paginated"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -480,29 +810,31 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "transactions"
+            "enum": [
+              "transactions"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTransaction"
+            "enum": [
+              "getTransaction"
+            ]
           },
           {
-            "name": "hash",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "$ref": "#/parameters/txHash"
           }
         ],
         "responses": {
           "200": {
-            "description": "transaction object"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -518,13 +850,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "transactions"
+            "enum": [
+              "transactions"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTransactionWithAddressData"
+            "enum": [
+              "getTransactionWithAddressData"
+            ]
           },
           {
             "name": "hash",
@@ -537,10 +873,13 @@
         ],
         "responses": {
           "200": {
-            "description": "transaction object"
+            "$ref": "#/definitions/Response"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -556,30 +895,40 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "transactions"
+            "enum": [
+              "transactions"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTransactionsByBlock"
+            "enum": [
+              "getTransactionsByBlock"
+            ]
           },
           {
-            "name": "hashOrNumber",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "example": 200
-            }
+            "$ref": "#/parameters/hashOrNumber"
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
           }
         ],
         "responses": {
           "200": {
-            "description": "transaction object"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
@@ -595,13 +944,17 @@
             "name": "module",
             "in": "query",
             "required": true,
-            "default": "transactions"
+            "enum": [
+              "transactions"
+            ]
           },
           {
             "name": "action",
             "in": "query",
             "required": true,
-            "default": "getTransactionsByAddress"
+            "enum": [
+              "getTransactionsByAddress"
+            ]
           },
           {
             "$ref": "#/parameters/address"
@@ -609,79 +962,130 @@
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/Paginated"
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
-            "description": "invalid request"
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
           }
         }
       }
     }
   },
   "definitions": {
-    "PaginatedResult": {
+    "Request": {
       "type": "object",
       "properties": {
-        "result": {
+        "module": {
+          "type": "string",
+          "required": true
+        },
+        "action": {
+          "type": "string",
+          "required": true
+        },
+        "params": {
           "type": "object",
-          "properties": [
-            {
-              "pages": {
-                "type": "object",
-                "properties": {
-                  "sort": {
-                    "name": "sort",
-                    "type": "object"
-                  },
-                  "sortable": {
-                    "type": "object"
-                  },
-                  "defaultSort": null,
-                  "sortDir": null,
-                  "limit": {
-                    "type": "number"
-                  },
-                  "next": {
-                    "type": "string"
-                  },
-                  "prev": {
-                    "type": "string"
-                  },
-                  "fields": {
-                    "type": "object"
-                  },
-                  "page": {
-                    "type": "number"
-                  },
-                  "total": {
-                    "type": "number"
-                  },
-                  "pages": {
-                    "type": "number"
-                  }
-                }
-              }
+          "properties": {
+            "limit": {
+              "type": "integer"
             },
-            {
-              "data": {
-                "type": "array"
-              }
+            "next": {
+              "type": "string"
             }
-          ]
+          }
+        }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "object",
+          "properties": {
+            "sort": {
+              "name": "sort",
+              "type": "object"
+            },
+            "sortable": {
+              "description": "sortable fields",
+              "type": "object"
+            },
+            "defaultSort": null,
+            "sortDir": {
+              "type": "boolean"
+            },
+            "limit": {
+              "type": "integer"
+            },
+            "next": {
+              "type": "object"
+            },
+            "prev": {
+              "type": "object"
+            },
+            "fields": {
+              "type": "object"
+            }
+          }
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "ResponseList": {
+      "type": "object",
+      "properties": {
+        "pages": {
+          "type": "object",
+          "properties": {
+            "sort": {
+              "name": "sort",
+              "type": "object"
+            },
+            "sortable": {
+              "description": "sortable fields",
+              "type": "object"
+            },
+            "defaultSort": null,
+            "sortDir": {
+              "type": "boolean"
+            },
+            "limit": {
+              "type": "integer"
+            },
+            "next": {
+              "type": "string"
+            },
+            "prev": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "object"
+            }
+          }
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
         }
       }
     }
   },
   "responses": {
-    "Paginated": {
-      "description": "paginated result",
-      "content": {
-        "application/json": {
-          "schema": {
-            "$ref": "#/definitions/PaginatedResult"
-          }
-        }
-      }
+    "NotFound": {
+      "description": "Not Found"
+    },
+    "BadRequest": {
+      "description": "Bad Request"
     }
   },
   "parameters": {
@@ -694,6 +1098,51 @@
         "type": "string",
         "example": "0x0000000000000000000000000000000001000008"
       }
+    },
+    "contract": {
+      "name": "address",
+      "in": "query",
+      "required": true,
+      "type": "string",
+      "schema": {
+        "type": "string",
+        "example": "0x0000000000000000000000000000000001000008"
+      }
+    },
+    "txHash": {
+      "name": "hash",
+      "type": "string",
+      "required": true,
+      "in": "query",
+      "schema": {
+        "type": "string",
+        "example": "0x4aa0649fdc1a4b0e07b64c26e43138400c84d6a127d0242027226b7ade17a53e"
+      }
+    },
+    "hashOrNumber": {
+      "name": "hashOrNumber",
+      "type": "string",
+      "description": "block hash or block number",
+      "in": "query",
+      "required": true,
+      "schema": {
+        "example": 200
+      }
+    },
+    "limit": {
+      "name": "limit",
+      "type": "integer",
+      "in": "query"
+    },
+    "next": {
+      "name": "next",
+      "type": "string",
+      "in": "query"
+    },
+    "prev": {
+      "name": "prev",
+      "type": "string",
+      "in": "query"
     }
   },
   "securityDefinitions": {},

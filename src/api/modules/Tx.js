@@ -15,15 +15,17 @@ export class Tx extends DataCollectorItem {
        *      description: get transactions
        *      tags:
        *        - transactions
+       *      produces:
+       *        - application/json
        *      parameters:
        *        - name: module
        *          in: query
        *          required: true
-       *          default: transactions
+       *          enum: [transactions]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getTransactions
+       *          enum: [getTransactions]
        *        - name: query
        *          in: query
        *          required: false
@@ -31,11 +33,16 @@ export class Tx extends DataCollectorItem {
        *            type: object
        *            example:
        *              txType:normal
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          $ref: '#/responses/Paginated'
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
       */
       getTransactions: params => {
         let query = {}
@@ -57,22 +64,20 @@ export class Tx extends DataCollectorItem {
      *        - name: module
      *          in: query
      *          required: true
-     *          default: transactions
+     *          enum: [transactions]
      *        - name: action
      *          in: query
      *          required: true
-     *          default: getTransaction
-     *        - name: hash
-     *          in: query
-     *          required: true
-     *          schema:
-     *            type: string
+     *          enum: [getTransaction]
+     *        - $ref: '#/parameters/txHash'
      *      responses:
-     *        400:
-     *          description: invalid request
      *        200:
-     *          description: transaction object
-    */
+     *          $ref: '#/definitions/Response'
+     *        400:
+     *          $ref: '#/responses/BadRequest'
+     *        404:
+     *          $ref: '#/responses/NotFound'
+   */
 
       getTransaction: async params => {
         const hash = params.hash
@@ -95,23 +100,24 @@ export class Tx extends DataCollectorItem {
       *        - name: module
       *          in: query
       *          required: true
-      *          default: transactions
+      *          enum: [transactions]
       *        - name: action
       *          in: query
       *          required: true
-      *          default: getTransactionWithAddressData
+      *          enum: [getTransactionWithAddressData]
       *        - name: hash
       *          in: query
       *          required: true
       *          schema:
       *            type: string
       *      responses:
-      *        400:
-      *          description: invalid request
       *        200:
-      *          description: transaction object
-      */
-
+      *          $ref: '#/definitions/Response'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+    */
       getTransactionWithAddressData: async params => {
         let data = await this.publicActions.getTransaction(params)
         let tx = (data) ? data.data : null
@@ -146,22 +152,22 @@ export class Tx extends DataCollectorItem {
       *        - name: module
       *          in: query
       *          required: true
-      *          default: transactions
+      *          enum: [transactions]
       *        - name: action
       *          in: query
       *          required: true
-      *          default: getTransactionsByBlock
-      *        - name: hashOrNumber
-      *          in: query
-      *          required: true
-      *          schema:
-      *            type: string
-      *            example: 200
+      *          enum: [getTransactionsByBlock]
+      *        - $ref: '#/parameters/hashOrNumber'
+      *        - $ref: '#/parameters/limit'
+      *        - $ref: '#/parameters/next'
+      *        - $ref: '#/parameters/prev'
       *      responses:
-      *        400:
-      *          description: invalid request
       *        200:
-      *          description: transaction object
+      *          $ref: '#/definitions/ResponseList'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
       */
       getTransactionsByBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.number
@@ -185,18 +191,20 @@ export class Tx extends DataCollectorItem {
       *        - name: module
       *          in: query
       *          required: true
-      *          default: transactions
+      *          enum: [transactions]
       *        - name: action
       *          in: query
       *          required: true
-      *          default: getTransactionsByAddress
+      *          enum: [getTransactionsByAddress]
       *        - $ref: '#/parameters/address'
       *      responses:
-      *        400:
-      *          description: invalid request
       *        200:
-      *         $ref: '#/responses/Paginated'
-      */
+      *          $ref: '#/definitions/ResponseList'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+    */
       getTransactionsByAddress: params => {
         let address = params.address
         return this.getPageData(

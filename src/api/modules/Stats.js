@@ -15,17 +15,22 @@ export class Stats extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: stats
+       *          enum: [stats]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getStats
+       *          enum: [getStats]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: block data
-      */
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getStats: params => {
         return this.getPageData({}, params)
       },
@@ -40,17 +45,19 @@ export class Stats extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: stats
+       *          enum: [stats]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getLatest
+       *          enum: [getLatest]
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: block data
-      */
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getLatest: () => {
         return this.getOne()
       }

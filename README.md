@@ -130,4 +130,10 @@ Production build to ./dist folder
   **port**  [number] api server port
 
   **allowUserEvents** [boolean]: enable/disable userEventsApi
-  **exposeDoc** [boolean]: enable/disable api docs
+  **exposeDoc** [boolean]: serve rsk-openapi-ui on /doc to render swagger.json
+
+## Documentation
+  
+ - [api documentation](doc/api.md)
+ - [open api specification](public/swagger.json)
+

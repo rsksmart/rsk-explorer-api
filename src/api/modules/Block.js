@@ -18,24 +18,24 @@ export class Block extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: blocks
+       *          enum: [blocks]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getBlock
+       *          enum: [getBlock]
        *        - name: hashOrNumber
        *          in: query
        *          schema:
        *            type: string
        *            example: 200
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: block data
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
        *        404:
-       *          description: unknown block
-      */
+       *          $ref: '#/responses/NotFound'
+       */
 
       getBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.hash || params.number
@@ -58,17 +58,22 @@ export class Block extends DataCollectorItem {
        *        - name: module
        *          in: query
        *          required: true
-       *          default: blocks
+       *          enum: [blocks]
        *        - name: action
        *          in: query
        *          required: true
-       *          default: getBlocks
+       *          enum: [getBlocks]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
        *      responses:
-       *        400:
-       *          description: invalid request
        *        200:
-       *          description: list of blocks
-      */
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
 
       getBlocks: params => {
         return this.getPageData({}, params)

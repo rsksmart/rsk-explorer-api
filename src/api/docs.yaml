@@ -7,45 +7,120 @@ parameters:
     schema:
       type: string
       example: "0x0000000000000000000000000000000001000008"
-responses:
-    Paginated:
-      description: paginated result
-      content:
-        application/json:
-          schema:
-            $ref: '#/definitions/PaginatedResult'
+  contract:
+    name: address
+    in: query
+    required: true
+    type: string
+    schema:
+      type: string
+      example: "0x0000000000000000000000000000000001000008"
+  txHash:
+    name: hash
+    type: string
+    required: true
+    in: query
+    schema:
+      type: string
+      example: "0x4aa0649fdc1a4b0e07b64c26e43138400c84d6a127d0242027226b7ade17a53e"
+  hashOrNumber:
+    name: hashOrNumber
+    type: string
+    description: block hash or block number
+    in: query
+    required: true
+    schema:
+      example: 200
+  limit:
+    name: limit
+    type: integer
+    in: query
+  next:
+    name: next
+    type: string
+    in: query
+  prev:
+    name: prev
+    type: string
+    in: query
 
+
+responses:
+  NotFound:
+    description: Not Found
+  BadRequest:
+    description: Bad Request
 
 definitions:
-  PaginatedResult:
+  Request:
     type: object
     properties:
-      result:
+      module:
+        type: string
+        required: true
+      action:
+        type: string
+        required: true
+      params:
         type: object
         properties:
-          - pages:
-              type: object
-              properties:
-                sort:
-                  name: sort
-                  type: object
-                sortable:
-                  type: object
-                defaultSort:
-                sortDir:
-                limit:
-                  type: number
-                next:
-                  type: string
-                prev:
-                  type: string
-                fields:
-                  type: object
-                page:
-                  type: number
-                total:
-                  type: number
-                pages:
-                  type: number
-          - data:
-              type: array
+          limit:
+            type: integer
+          next:
+            type: string
+
+  Response:
+    type: object
+    properties:
+      pages:
+        type: object
+        properties:
+          sort:
+            name: sort
+            type: object
+          sortable:
+            description: sortable fields
+            type: object
+          defaultSort:
+          sortDir:
+            type: boolean
+          limit:
+            type: integer
+          next:
+            type: object
+          prev:
+            type: object
+          fields:
+            type: object
+      data:
+        type: array
+        items:
+          type: object
+
+  ResponseList:
+    type: object
+    properties:
+      pages:
+        type: object
+        properties:
+          sort:
+            name: sort
+            type: object
+          sortable:
+            description: sortable fields
+            type: object
+          defaultSort:
+          sortDir:
+            type: boolean
+          limit:
+            type: integer
+          next:
+            type: string
+          prev:
+            type: string
+          fields:
+            type: object
+      data:
+        type: array
+        items:
+          type: object
