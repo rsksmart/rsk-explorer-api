@@ -34,9 +34,10 @@
     "mongodb": "^3.1.13",
     "nod3": "git+https://github.com/rsksmart/nod3.git",
     "rlp": "^2.2.2",
+    "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",
     "socket.io": "^2.2.0",
-    "web3": "^0.20.7",
-    "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git"
+    "swagger-markdown": "^1.1.7",
+    "web3": "^0.20.7"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
