@@ -72,6 +72,7 @@ export const remove$ = value => value.replace('$', '')
 export const formatRes = (payload) => {
   let { module, action, result, req, error, channel } = payload
   channel = channel || null
+  req = req || {}
   module = (module) ? getModuleName(module) : null
   let data, pages, next, prev, delayed
   if (!result && !error) error = errors.EMPTY_RESULT
@@ -81,7 +82,8 @@ export const formatRes = (payload) => {
     ({ data, pages, next, prev, delayed } = result)
   }
   if (!data && !error) {
-    if (req.getDelayed && delayed && delayed.registry) {
+    const { getDelayed } = req
+    if (getDelayed && delayed && delayed.registry) {
       error = formatError(errors.UPDATING_REGISTRY)
     } else {
       error = formatError(errors.EMPTY_RESULT)
