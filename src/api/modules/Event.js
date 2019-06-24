@@ -33,7 +33,8 @@ export class Event extends DataCollectorItem {
        *          $ref: '#/responses/BadRequest'
        *        404:
        *          $ref: '#/responses/NotFound'
-       */Event: async params => {
+       */
+      getEvent: async params => {
         try {
           const { _id } = params
           if (!_id) throw new Error('invalid _id')
