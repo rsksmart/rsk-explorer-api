@@ -92,6 +92,57 @@
         }
       }
     },
+    "/api?module=addresses&action=getMiners": {
+      "get": {
+        "description": "get list of miners",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "addresses"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getMiners"
+            ]
+          },
+          {
+            "name": "fromBlock",
+            "in": "query",
+            "required": false
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/ResponseList"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api?module=addresses&action=getTokens": {
       "get": {
         "description": "get list of tokens",
@@ -242,6 +293,11 @@
             "enum": [
               "getBlocks"
             ]
+          },
+          {
+            "name": "miner",
+            "in": "query",
+            "required": false
           },
           {
             "$ref": "#/parameters/limit"
