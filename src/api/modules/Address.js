@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { tokensInterfaces, addrTypes, REMASC_NAME, BRIDGE_NAME } from '../../lib/types'
+import { tokensInterfaces, addrTypes, REMASC_NAME, BRIDGE_NAME, fields } from '../../lib/types'
 import config from '../../lib/config'
 const { bridgeAddress, remascAddress } = config
 
@@ -78,6 +78,47 @@ export class Address extends DataCollectorItem {
       getAddresses: params => {
         let type = (params.query) ? params.query.type : null
         let query = (type) ? { type } : {}
+        return this.getPageData(query, params)
+      },
+      /**
+       * @swagger
+       * /api?module=addresses&action=getMiners:
+       *    get:
+       *      description: get list of miners
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getMiners]
+       *        - name: fromBlock
+       *          in: query
+       *          required: false
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
+      getMiners: params => {
+        let query = {}
+        const lbMined = fields.LAST_BLOCK_MINED
+        let { fromBlock } = params
+        query[lbMined] = { $exists: true }
+        if (fromBlock) {
+          fromBlock = parseInt(fromBlock)
+          query[`${lbMined}.number`] = { $gt: fromBlock }
+        }
         return this.getPageData(query, params)
       },
       /**
