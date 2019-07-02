@@ -1,4 +1,4 @@
-import { add0x, remove0x } from '../../src/lib/utils'
+import { add0x, remove0x, isValidBlockNumber } from '../../src/lib/utils'
 import { expect } from 'chai'
 
 const addSpec = [
@@ -32,4 +32,25 @@ describe('# remove0x', function () {
       expect(remove0x(spec[0])).to.be.equal(spec[1])
     })
   }
+})
+
+describe(`# isValidBlockNumber`, function () {
+  it(`undefined should be false`, () => {
+    expect(isValidBlockNumber()).to.be.equal(false)
+  })
+  it(`null should be false`, () => {
+    expect(isValidBlockNumber(null)).to.be.equal(false)
+  })
+  it(`negative numbers should be false`, () => {
+    expect(isValidBlockNumber(-1)).to.be.equal(false)
+    expect(isValidBlockNumber(-1000)).to.be.equal(false)
+  })
+  it(`0 should be true`, () => {
+    expect(isValidBlockNumber(0)).to.be.equal(true)
+  })
+  it(`integers should be true`, () => {
+    expect(isValidBlockNumber(1)).to.be.equal(true)
+    expect(isValidBlockNumber(0x2)).to.be.equal(true)
+    expect(isValidBlockNumber(900000)).to.be.equal(true)
+  })
 })

@@ -177,3 +177,12 @@ export const keccak256 = (input, format = 'hex') => keccak('keccak256').update(i
 export const jsonEncode = value => btoa(JSON.stringify(value))
 
 export const jsonDecode = value => JSON.parse(atob(value))
+
+export const isValidBlockNumber = number => parseInt(number) === number && number >= 0
+
+export const isBlockObject = block => {
+  if (typeof block !== 'object') return false
+  const { hash, number, transactions, miner } = block
+  if (!transactions) return false
+  return isBlockHash(hash) && isAddress(miner) && isValidBlockNumber(number)
+}
