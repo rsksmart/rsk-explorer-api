@@ -63,6 +63,9 @@ export class Block extends DataCollectorItem {
        *          in: query
        *          required: true
        *          enum: [getBlocks]
+       *        - name: miner
+       *          in: query
+       *          required: false
        *        - $ref: '#/parameters/limit'
        *        - $ref: '#/parameters/next'
        *        - $ref: '#/parameters/prev'
@@ -76,7 +79,9 @@ export class Block extends DataCollectorItem {
        */
 
       getBlocks: params => {
-        return this.getPageData({}, params)
+        const { miner } = params
+        const query = miner ? { miner } : {}
+        return this.getPageData(query, params)
       }
     }
   }
