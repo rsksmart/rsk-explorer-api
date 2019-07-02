@@ -1,5 +1,7 @@
 import { BcThing } from './BcThing'
 import { GetTxBalance } from './GetTxBalance'
+import { isBlockObject } from '../../lib/utils'
+import { fields } from '../../lib/types'
 
 export class Address extends BcThing {
   constructor (address, { nod3, db, collections, block = 'latest' } = {}) {
@@ -18,14 +20,33 @@ export class Address extends BcThing {
               obj.type = 'contract'
               obj.code = val
             }
+          } else if (prop === fields.LAST_BLOCK_MINED) {
+            const lastBlock = obj[fields.LAST_BLOCK_MINED] || {}
+            let number = lastBlock.number || -1
+            if (val.miner === obj.address && val.number > number) {
+              obj[prop] = val
+            }
           } else {
             obj[prop] = val
           }
           return true
         }
       })
-    this.block = block
+    this.block = 'latest'
     this.dbData = null
+    this.setBlock(block)
+  }
+
+  setBlock (block) {
+    if (!block) block = 'latest'
+    if (isBlockObject(block)) {
+      this.block = block.number
+      this.setLastBlock(block)
+    }
+  }
+
+  setLastBlock (block) {
+    this.setData(fields.LAST_BLOCK_MINED, block)
   }
 
   setData (prop, value) {

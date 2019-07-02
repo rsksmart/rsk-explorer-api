@@ -20,3 +20,5 @@ export const fakeTx = (transactionIndex, { hash, number }) => {
   let blockNumber = number || randomBlockNumber()
   return { blockHash, blockNumber, transactionIndex }
 }
+
+export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`

@@ -73,4 +73,8 @@ export const OBJECT_ID = 'ObjectID'
 
 export const TOTAL_SUPPLY = 21 * 10 ** 6
 
+export const fields = {
+  LAST_BLOCK_MINED: 'lastBlockMined'
+}
+
 export default { txTypes, errors, addrTypes, contractsInterfaces }
