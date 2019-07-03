@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx nodemon src/api --exec babel-node | ./node_modules/.bin/bunyan -o short",
-    "blocks": "npx src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "blocks": "npx nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && ./node_modules/.bin/babel src -d dist --copy-files",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
