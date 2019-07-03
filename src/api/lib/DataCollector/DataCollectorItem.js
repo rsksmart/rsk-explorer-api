@@ -46,6 +46,11 @@ export class DataCollectorItem {
     return { data }
   }
 
+  async getLatest (query, project) {
+    const result = await find(this.db, {}, this.sort, 1)
+    return result.length ? result[0] : null
+  }
+
   async setFieldsTypes () {
     let types = await getFieldsTypes(this.db)
     this.fieldsTypes = types

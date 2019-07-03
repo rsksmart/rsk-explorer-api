@@ -59,7 +59,7 @@ export class Stats extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getLatest: () => {
-        return this.getOne()
+        return this.getLatest()
       }
     }
   }
