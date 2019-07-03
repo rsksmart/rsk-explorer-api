@@ -15,6 +15,7 @@ import {
   getDelayedFields,
   getModule
 } from './lib/apiTools'
+import Hashrates from './modules/Hashrate';
 
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
@@ -37,6 +38,7 @@ class Api extends DataCollector {
     this.addItem(collections.TokensAddrs, 'Token', TokenAccount)
     this.addItem(collections.Stats, 'Stats', Stats)
     this.addItem(collections.BlocksSummary, 'Summary', Summary)
+    this.addItem(collections.Blocks, 'Hashrate', Hashrates)
   }
   tick () {
     this.setLastBlocks()
