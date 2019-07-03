@@ -131,6 +131,12 @@ class Api extends DataCollector {
     const oldStats = this.stats
     const stats = await this.Stats.run('getLatest')
     if (!stats) return
+
+    const { Hashrate } = this
+    const blockNumber = parseInt(stats.blockNumber)
+    const hashrates = await Hashrate.getHashrates(blockNumber)
+    stats.hashrates = hashrates
+
     this.stats = Object.assign({}, stats)
     if (stats.timestamp !== oldStats.timestamp) {
       this.events.emit('newStats', this.stats)
