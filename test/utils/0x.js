@@ -10,10 +10,16 @@ const addSpec = [
 ]
 
 const removeSpec = [
+  ['0x', ''],
   ['123456', '123456'],
   ['0xabc456', 'abc456'],
   ['-0xabc456', '-abc456'],
   ['john', 'john'],
+  [undefined, undefined],
+  [null, null],
+  [true, true],
+  [false, false],
+  [1, 1],
   ['0x23897bcfe8', '23897bcfe8'],
   ['0x1234a0xb', '0x1234a0xb']
 ]
@@ -29,7 +35,7 @@ describe('# add0x', function () {
 describe('# remove0x', function () {
   for (let spec of removeSpec) {
     it(`${spec[0]} should return ${spec[1]}`, function () {
-      expect(remove0x(spec[0])).to.be.equal(spec[1])
+      expect(remove0x(spec[0])).to.be.deep.equal(spec[1])
     })
   }
 })

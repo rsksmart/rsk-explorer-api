@@ -18,14 +18,18 @@ export const add0x = str => {
   return str
 }
 
-export const remove0x = str => {
-  let s = str
+export const remove0x = value => {
+  if (!value) return value
+  if (typeof value === 'object') return value
+  if (typeof value === 'boolean') return value
+  if (value === '0x') return ''
+  let s = `${value}`
   let prefix = (s[0] === '-') ? '-' : ''
   if (prefix) s = s.substring(prefix.length)
   if (isHexString(s)) {
     if (s.substring(0, 2) === '0x') return prefix + s.substr(2)
   }
-  return str
+  return value
 }
 
 export const isAddress = address => {
@@ -185,4 +189,12 @@ export const isBlockObject = block => {
   const { hash, number, transactions, miner } = block
   if (!transactions) return false
   return isBlockHash(hash) && isAddress(miner) && isValidBlockNumber(number)
+}
+
+export const sumDigits = value => `${value}`.split('').map(Number).reduce((a, b) => a + b, 0)
+
+export const isNullData = value => {
+  const test = (value && remove0x(value))
+  if (sumDigits(test) === 0) return true
+  return (test === '') ? true : !test
 }
