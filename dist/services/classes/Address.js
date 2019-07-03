@@ -1,5 +1,7 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Address = undefined;var _BcThing = require('./BcThing');
 var _GetTxBalance = require('./GetTxBalance');
+var _utils = require('../../lib/utils');
+var _types = require('../../lib/types');
 
 class Address extends _BcThing.BcThing {
   constructor(address, { nod3, db, collections, block = 'latest' } = {}) {
@@ -18,14 +20,33 @@ class Address extends _BcThing.BcThing {
             obj.type = 'contract';
             obj.code = val;
           }
+        } else if (prop === _types.fields.LAST_BLOCK_MINED) {
+          const lastBlock = obj[_types.fields.LAST_BLOCK_MINED] || {};
+          let number = lastBlock.number || -1;
+          if (val.miner === obj.address && val.number > number) {
+            obj[prop] = val;
+          }
         } else {
           obj[prop] = val;
         }
         return true;
       } });
 
-    this.block = block;
+    this.block = 'latest';
     this.dbData = null;
+    this.setBlock(block);
+  }
+
+  setBlock(block) {
+    if (!block) block = 'latest';
+    if ((0, _utils.isBlockObject)(block)) {
+      this.block = block.number;
+      this.setLastBlock(block);
+    }
+  }
+
+  setLastBlock(block) {
+    this.setData(_types.fields.LAST_BLOCK_MINED, block);
   }
 
   setData(prop, value) {

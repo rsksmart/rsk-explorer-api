@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Status = undefined;var _DataCollector = require('../lib/DataCollector');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Status = undefined;var _DataCollector = require('./lib/DataCollector');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const statusCollection = _config2.default.blocks.collections.Status;
@@ -44,7 +44,7 @@ class Status extends _DataCollector.DataCollector {
         return status;
       }
     } catch (err) {
-      console.log(err);
+      this.log.warn(err);
     }
   }
 

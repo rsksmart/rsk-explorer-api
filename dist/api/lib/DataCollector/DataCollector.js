@@ -1,9 +1,11 @@
 'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.DataCollector = undefined;var _events = require('events');
 var _timers = require('timers');
-var _utils = require('../utils');
-var _apiLib = require('../../api/apiLib');
+var _utils = require('../../../lib/utils');
+var _apiTools = require('../apiTools');
 var _mongodb = require('mongodb');
-var _DataCollectorItem = require('./DataCollectorItem');var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _DataCollectorItem = require('./DataCollectorItem');var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);
+var _log = require('../log');var _log2 = _interopRequireDefault(_log);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+
 class Emitter extends _events.EventEmitter {}
 const emitter = new Emitter();
 
@@ -20,7 +22,7 @@ class DataCollector {
     this.setCollection(options.collectionName);
     this.tickDelay = 1000;
     this.serialize = _utils.serialize;
-    this.log = options.logger || console;
+    this.log = options.log || _log2.default;
   }
   tick() {}
   stop() {
@@ -84,17 +86,17 @@ class DataCollector {
           this.items[key] = item;
           if (addToRoot) {
             if (!this[key]) this[key] = item;else
-            console.log(`Error key: ${key} exists`);
+            this.log.warn(`Error key: ${key} exists`);
           }
         }
       } else {
-        console.log('Error the key: ' + key + ' already exists');
+        this.log.warn('Error the key: ' + key + ' already exists');
       }
     }
   }
 
   filterParams(params) {
-    return (0, _apiLib.filterParams)(params);
+    return (0, _apiTools.filterParams)(params);
   }
 
   formatData(data) {

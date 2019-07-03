@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.jsonDecode = exports.jsonEncode = exports.keccak256 = exports.applyDecimals = exports.base64toHex = exports.btoa = exports.atob = exports.includesAll = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.newBigNumber = exports.bigNumberDifference = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.remove0x = exports.add0x = exports.isHexString = undefined;var _bignumber = require('bignumber.js');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.isBlockObject = exports.isValidBlockNumber = exports.jsonDecode = exports.jsonEncode = exports.keccak256 = exports.applyDecimals = exports.base64toHex = exports.btoa = exports.atob = exports.includesAll = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.newBigNumber = exports.bigNumberDifference = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.remove0x = exports.add0x = exports.isHexString = undefined;var _bignumber = require('bignumber.js');
 var _types = require('./types');
 var _mongodb = require('mongodb');
 var _keccak = require('keccak');var _keccak2 = _interopRequireDefault(_keccak);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
@@ -177,3 +177,12 @@ const keccak256 = exports.keccak256 = (input, format = 'hex') => (0, _keccak2.de
 const jsonEncode = exports.jsonEncode = value => btoa(JSON.stringify(value));
 
 const jsonDecode = exports.jsonDecode = value => JSON.parse(atob(value));
+
+const isValidBlockNumber = exports.isValidBlockNumber = number => parseInt(number) === number && number >= 0;
+
+const isBlockObject = exports.isBlockObject = block => {
+  if (typeof block !== 'object') return false;
+  const { hash, number, transactions, miner } = block;
+  if (!transactions) return false;
+  return isBlockHash(hash) && isAddress(miner) && isValidBlockNumber(number);
+};

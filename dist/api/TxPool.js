@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TxPool = undefined;var _DataCollector = require('../lib/DataCollector');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TxPool = undefined;var _DataCollector = require('./lib/DataCollector');
 var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const collectionName = _config2.default.blocks.collections.TxPool;

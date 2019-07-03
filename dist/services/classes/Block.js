@@ -35,7 +35,7 @@ class Block extends _BcThing.BcThing {
     try {
       let blockData = await this.getBlock(this.hashOrNumber);
       this.data.block = blockData;
-      this.addAddress(blockData.miner);
+      this.addAddress(blockData.miner, blockData);
 
       let { transactions, timestamp } = blockData;
       let txs = transactions.map(hash => new _Tx2.default(hash, timestamp, this));
@@ -265,10 +265,10 @@ class Block extends _BcThing.BcThing {
     return this.collections.OrphanBlocks.updateOne({ hash: blockData.hash }, { $set: blockData }, { upsert: true });
   }
 
-  addAddress(address) {
+  addAddress(address, block) {
     if (!this.isAddress(address) || this.addresses[address]) return;
     let { nod3, collections } = this;
-    const Addr = new _Address2.default(address, { collections, nod3 });
+    const Addr = new _Address2.default(address, { collections, nod3, block });
     this.addresses[address] = Addr;
   }
 

@@ -5,6 +5,7 @@ var _config = require('../../lib/config');var _config2 = _interopRequireDefault(
 var _collections = require('../../lib/collections');var _collections2 = _interopRequireDefault(_collections);
 var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
 var _BlocksStatus = require('../classes/BlocksStatus');
+var _BcStats = require('../classes/BcStats');
 var _types = require('../../lib/types');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const config = Object.assign({}, _config2.default.blocks);
@@ -23,6 +24,7 @@ function startService(name, parseMessage, script) {
 _dataSource.dataBase.db().then(db => {
   createBlocksCollections(config, db).then(() => {
     const Status = new _BlocksStatus.BlocksStatus(db, config);
+    const Stats = new _BcStats.BcStats(db, config);
     const listenToMessage = (msg, service) => {
       let action, args, event, data;
       ({ action, args, event, data } = msg);
@@ -41,6 +43,7 @@ _dataSource.dataBase.db().then(db => {
             break;
 
           case _types.actions.UPDATE_TIP_BLOCK:
+            Stats.update(...args);
             Checker.send({ action, args });
             break;}
 
@@ -57,7 +60,7 @@ _dataSource.dataBase.db().then(db => {
 
 // WIP
 const readEvent = (event, data) => {
-  console.log(event, data);
+  log.info(event, data);
 };
 
 async function createBlocksCollections(config, db) {

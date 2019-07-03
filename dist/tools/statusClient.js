@@ -10,6 +10,8 @@ let mark = '●';
 
 (0, _cli.info)(`Waiting for: ${url}`);
 
+socket.emit('subscribe', { to: 'status' });
+
 socket.on('connect', socket => {
   (0, _cli.ok)('Connected! ✌');
 });

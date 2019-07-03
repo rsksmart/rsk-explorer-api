@@ -30,6 +30,7 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
     allowUserEvents: true,
+    exposeDoc: false,
     delayedFields: _delayedFields2.default },
 
   publicSettings: {
@@ -51,4 +52,5 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
       TokensAddrs: 'tokensAddresses',
       OrphanBlocks: 'orphanBlocks',
       TxPool: 'txPool',
-      PendingTxs: 'transactionsPending' } } };
+      PendingTxs: 'transactionsPending',
+      Stats: 'stats' } } };

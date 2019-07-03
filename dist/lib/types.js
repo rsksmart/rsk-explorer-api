@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TOTAL_SUPPLY = exports.OBJECT_ID = exports.BIG_NUMBER = exports.REMASC_NAME = exports.BRIDGE_NAME = exports.modules = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
+'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.fields = exports.TOTAL_SUPPLY = exports.OBJECT_ID = exports.BIG_NUMBER = exports.REMASC_NAME = exports.BRIDGE_NAME = exports.modules = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = undefined;var _errors = require('../lib/errors');
 
 const txTypes = exports.txTypes = {
   default: 'normal',
@@ -56,10 +56,11 @@ const actions = exports.actions = {
 
 const modules = exports.modules = {
   blocks: 'Block',
-  txs: 'Tx',
+  transactions: 'Tx',
   addresses: 'Address',
   events: 'Event',
-  tokens: 'Token' };
+  tokens: 'Token',
+  stats: 'Stats' };
 
 
 const BRIDGE_NAME = exports.BRIDGE_NAME = 'bridge (native)';
@@ -70,6 +71,10 @@ const BIG_NUMBER = exports.BIG_NUMBER = 'BigNumber';
 
 const OBJECT_ID = exports.OBJECT_ID = 'ObjectID';
 
-const TOTAL_SUPPLY = exports.TOTAL_SUPPLY = 21 * 10 ** 6;exports.default =
+const TOTAL_SUPPLY = exports.TOTAL_SUPPLY = 21 * 10 ** 6;
+
+const fields = exports.fields = {
+  LAST_BLOCK_MINED: 'lastBlockMined' };exports.default =
+
 
 { txTypes, errors, addrTypes, contractsInterfaces };
