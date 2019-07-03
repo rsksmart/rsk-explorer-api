@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unrealeased]
+## [0.8.0] - 2019-06-03
 
 ### Added
 
@@ -9,6 +9,8 @@
 - API http endpoints
 - API stats module
 - API stats channel
+- API addresses.getMiners()
+- Services/Address, include last block mined in miners documents.
 - tools/wsChannel
 
 ### Changed
@@ -16,6 +18,7 @@
 - The websocket API, don't broadcasts messages any more,
   to listen to changes a channel subscription is required.
 - API responses: remove 'result' container
+- API: added 'miner' filter to blocks.getBlocks()
 - Renamed API module 'txs' to 'transactions'
 - Updated tools/statusClient to channels API
 
@@ -23,22 +26,22 @@
 
 ### Added
 
-- tools/updateContractAccounts
+- Tools/updateContractAccounts
 - API/Blocks.circulatingSupply()
 - API/Address.getCirculatingSupply()
-- routes/circulating
+- Routes/circulating
 
 ### Changed
 
 - http server
-- queries and collections indexes to improve performance
+- Queries and collections indexes to improve performance
 - API/Token/getTokenBalance: include filter by addresses 
   and add account balance when filter is present 
 
 ### Fixed
 
-- tools/getBlock: help message
-- services/classes/Block.deleteBlockDataFromDb
+- Tools/getBlock: help message
+- Services/classes/Block.deleteBlockDataFromDb
 
 ## [0.7.3] - 2019-03-04
 
@@ -67,7 +70,7 @@
 
 ### Fixed
 
-- tools/wsGet
+- Tools/wsGet
 
 ## [0.7.1] - 2019-02-21
 
@@ -77,12 +80,12 @@
 
 ### Changed
 
-- tx collection indexes
+- Tx collection indexes
 - API/Address, sort by contract creation date
 
 ### Removed
 
-- API/Txs, timestamp sort
+- API/Txs, sort by timestamp
 
 ## [0.7.0] - 2019-02-20
 
