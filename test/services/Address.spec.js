@@ -3,10 +3,30 @@ import { randomAddress, randomBlockHash } from '../shared'
 import { fields } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
 
+const options = { collections: { Addr: null } }
+
 describe(`# Address`, function () {
+  describe(`address type`, function () {
+    const address = new Address(randomAddress(), options)
+
+    it('address type should be account', () => {
+      expect(address.getData().type).to.be.equal('account')
+    })
+
+    it('address type should be account', () => {
+      address.setData('code', '0x0000')
+      expect(address.getData().type).to.be.equal('account')
+    })
+
+    it('adress type should be contract', () => {
+      address.setData('code', '0xa')
+      expect(address.getData().type).to.be.equal('contract')
+    })
+  })
+
   describe(`lastBlock`, function () {
     const a = randomAddress()
-    const address = new Address(a, { collections: { Addr: null } })
+    const address = new Address(a, options)
     let data = address.getData()
 
     it(`lastBlock should be undefined`, () => {

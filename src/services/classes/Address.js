@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import { GetTxBalance } from './GetTxBalance'
-import { isBlockObject } from '../../lib/utils'
+import { isBlockObject, isNullData } from '../../lib/utils'
 import { fields } from '../../lib/types'
 
 export class Address extends BcThing {
@@ -16,7 +16,7 @@ export class Address extends BcThing {
         set (obj, prop, val) {
           if (prop === 'code') {
             val = val || null
-            if (val && val !== '0x00') {
+            if (!isNullData(val)) {
               obj.type = 'contract'
               obj.code = val
             }
