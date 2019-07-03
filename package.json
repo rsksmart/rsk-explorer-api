@@ -11,7 +11,7 @@
     "md": "mkdir dist",
     "status": "npx src/tools/statusClient.js --exec babel-node",
     "abi": "npx src/lib/ContractParser/compileJsonAbis.js --exec babel-node",
-    "lint": "npx eslint src/**/*",
+    "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
     "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
   },
