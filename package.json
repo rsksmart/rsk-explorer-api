@@ -39,8 +39,11 @@
     "web3": "^0.20.7"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
+    "@babel/cli": "^7.5.0",
+    "@babel/core": "^7.5.0",
+    "@babel/node": "^7.5.0",
+    "@babel/preset-env": "^7.5.0",
+    "@babel/register": "^7.4.4",
     "chai": "^4.2.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",

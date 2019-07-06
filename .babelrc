@@ -3,7 +3,7 @@
   "retainLines": true,
   "presets": [
     [
-      "env",
+      "@babel/preset-env",
       {
         "targets": {
           "node": "8"
