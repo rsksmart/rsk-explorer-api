@@ -1,4 +1,19 @@
 import crypto from 'crypto'
+import DB from '../src/lib/Db'
+import config from '../src/lib/config'
+import { getDbBlocksCollections } from '../src/lib/blocksCollections'
+
+export const testDb = () => {
+  const dbConf = Object.assign(config.db, { database: 'dbToTest' })
+  return new DB(dbConf)
+}
+
+export const testCollections = async () => {
+  const database = testDb()
+  const db = await database.db()
+  const collections = await getDbBlocksCollections(db)
+  return collections
+}
 
 export const fakeBlocks = (count = 10, max) => [...new Array(count)].map(i => fakeBlock(max))
 

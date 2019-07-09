@@ -1,11 +1,8 @@
 import { getTxOrEventId } from '../../src/lib/txFormat'
-import DB from '../../src/lib/Db'
-import config from '../../src/lib/config'
-import { fakeBlocks, fakeTx } from '../shared'
+import { testDb, fakeBlocks, fakeTx } from '../shared'
 import { assert } from 'chai'
 
-const dbConf = Object.assign(config.db, { database: 'dbToTest' })
-const dataBase = new DB(dbConf)
+const dataBase = testDb()
 const blocks = fakeBlocks(20)
 
 const txs = blocks.reduce((v, block, i) => {
