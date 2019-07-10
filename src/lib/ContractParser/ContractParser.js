@@ -145,7 +145,7 @@ export class ContractParser {
   }
 
   hasMethodSelector (txInputData, selector) {
-    return (selector) ? txInputData.includes(selector) : null
+    return (selector && txInputData) ? txInputData.includes(selector) : null
   }
 
   getMethodsBySelectors (txInputData) {
