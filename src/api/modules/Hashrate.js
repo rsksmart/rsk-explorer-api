@@ -35,7 +35,7 @@ export class Hashrates extends DataCollectorItem {
                 .project({ _id: 0, miner: 1, difficulty: 1 })
                 .toArray()
 
-            hashrates[period] = this.hashrateCalculator.hashratePercentagePerMiner(blocks)
+            hashrates[period] = this.hashrateCalculator.hashrates(blocks)
         }
 
         return hashrates
