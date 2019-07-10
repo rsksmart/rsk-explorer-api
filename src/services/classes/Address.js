@@ -20,11 +20,11 @@ export class Address extends BcThing {
               obj.type = 'contract'
               obj.code = val
             }
-          } else if (prop === fields.LAST_BLOCK_MINED) {
+          } else if (val && prop === fields.LAST_BLOCK_MINED) {
             const lastBlock = obj[fields.LAST_BLOCK_MINED] || {}
             let number = lastBlock.number || -1
             if (val.miner === obj.address && val.number > number) {
-              obj[prop] = val
+              obj[prop] = Object.assign({}, val)
             }
           } else {
             obj[prop] = val
@@ -63,27 +63,35 @@ export class Address extends BcThing {
   }
 
   async fetch () {
-    let balance = await this.getBalance()
-      .catch(err => {
-        return new Error(`Address: error getting balance of ${this.address} ${err}`)
-      })
-    balance = balance || 0
-    this.data.balance = balance
+    try {
+      let balance = await this.getBalance()
+        .catch(err => {
+          throw new Error(`Address: error getting balance of ${this.address} ${err}`)
+        })
+      balance = balance || 0
+      this.data.balance = balance
 
-    let code = null
-    let dbData = await this.getFromDb()
-    this.dbData = dbData
+      let code = null
+      let dbData = await this.getFromDb()
+      this.dbData = dbData
 
-    if (dbData && dbData.code) {
-      code = dbData.code
-      this.codeIsSaved = true
+      if (dbData) {
+        if (dbData.code) {
+          code = dbData.code
+          this.codeIsSaved = true
+        }
+        // Update lastBlockMined to highest block number
+        this.setData(fields.LAST_BLOCK_MINED, dbData[fields.LAST_BLOCK_MINED])
+      }
+
+      if (undefined === code || code === null) {
+        code = await this.getCode()
+      }
+      this.data.code = code
+      return this.getData()
+    } catch (err) {
+      return Promise.reject(err)
     }
-
-    if (undefined === code || code === null) {
-      code = await this.getCode()
-    }
-    this.data.code = code
-    return this.getData()
   }
 
   getFromDb () {
@@ -113,7 +121,7 @@ export class Address extends BcThing {
     }
   }
   resetTxBalance () {
-    this.setData('txBalance', '0x0')
+    this.setData('txBalance', '0x00')
   }
   update (data) {
     let address = data.address || this.address
