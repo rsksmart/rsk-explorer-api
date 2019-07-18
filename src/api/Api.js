@@ -14,7 +14,7 @@ import {
   getDelayedFields,
   getModule
 } from './lib/apiTools'
-import Hashrates from './modules/Hashrate';
+import ExtendedStats from './modules/ExtendedStats';
 
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections
@@ -36,7 +36,7 @@ class Api extends DataCollector {
     this.addItem(collections.Events, 'Event', Event)
     this.addItem(collections.TokensAddrs, 'Token', TokenAccount)
     this.addItem(collections.Stats, 'Stats', Stats)
-    this.addItem(collections.Blocks, 'Hashrate', Hashrates)
+    this.addItem(collections.Blocks, 'ExtendedStats', ExtendedStats)
   }
   tick () {
     this.setLastBlocks()
@@ -130,10 +130,10 @@ class Api extends DataCollector {
     const stats = await this.Stats.run('getLatest')
     if (!stats) return
 
-    const { Hashrate } = this
+    const { ExtendedStats } = this
     const blockNumber = parseInt(stats.blockNumber)
-    const hashrates = await Hashrate.getHashrates(blockNumber)
-    stats.hashrates = hashrates
+    const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+    Object.assign(stats, extendedStats)
 
     this.stats = Object.assign({}, stats)
     if (stats.timestamp !== oldStats.timestamp) {
