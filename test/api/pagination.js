@@ -31,7 +31,7 @@ describe('# Pagination', () => {
     assert.equal(total, storedData[0].number)
   })
 
-  it('should returns data and pagination data', async function () {
+  it('should return data and pagination data', async function () {
     ({ data, pages } = await getResult(collector, params))
     assert.isArray(data)
     assert.containsAllKeys(pages, ['sort',

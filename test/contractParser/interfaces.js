@@ -3,15 +3,11 @@ import { ContractParser } from '../../src/lib/ContractParser/ContractParser'
 import { nod3 } from '../../src/lib/nod3Connect'
 
 const erc165 = [
-  '0x2560368d8b6b5d4c05fd8b2d41b90b9286697026',
-  '0xfaeaf2d04fa1385c47c4fa083dca536972b085fc',
-  '0xb6c7a5fda0ad03c39678e89ee7808529088c963a',
-  '0x9046dca7ad4dc4bc34b7a3e654b2079fc3a7c92d']
+  '0x4626f072c42afed36d7aad7f2ab9fa9e16bdb72a',
+  '0x1e6d0bad215c6407f552e4d1260e7bae90005ab2']
 
 const notErc165 = [
   '0xb08bfbaa77143b2781cf0ab37fce73f3367c8b10',
-  '0xcbcb5f1a49d64022c38269af2e48b5814b076e5b',
-  '0x59313581e7d735793962e16b8d0b10636bf53ae7',
   '0xb3d6522650ff2057023728443f5a7000df442654',
   '0x29a6d477592d7d1c35c2d3d6ca1eab56aefcac79']
 
@@ -22,11 +18,12 @@ const contracts = erc165.concat(notErc165)
   }, {})
 
 const addresses = {
-  '0xb08bfbaa77143b2781cf0ab37fce73f3367c8b10': ['ERC20'],
-  '0x46c717ed9a86de26f11db97e884ae563083dbfe7': ['ERC20', 'ERC677'],
-  '0x11944f818fee2c724d4acd1dbc4b4df5dde824f9': ['ERC20'],
-  '0x9046dca7ad4dc4bc34b7a3e654b2079fc3a7c92d': ['ERC165', 'ERC721'],
-  '0x2454534228f9a8a313e668dab3bfd5f9ab898a45': ['ERC20']
+  '0xebea27d994371cd0cb9896ae4c926bc5221f6317': ['ERC20'],
+  '0x0c52e0e76e13ba3e74c5b47f066e20cc152fd9ba': ['ERC20', 'ERC677'],
+  '0x4626f072c42afed36d7aad7f2ab9fa9e16bdb72a': ['ERC165', 'ERC721', 'ERC721Enumerable', 'ERC721Metadata'],
+  '0x1e6d0bad215c6407f552e4d1260e7bae90005ab2': ['ERC165', 'ERC721', 'ERC721Enumerable', 'ERC721Metadata'],
+  '0xe59f2877a51e570fbf751a07d50899838e6b6cc7': ['ERC721'],
+  '0x7974f2971e0b5d68f30513615fafec5c451da4d1': ['ERC20', 'ERC677']
 }
 
 const parser = new ContractParser()

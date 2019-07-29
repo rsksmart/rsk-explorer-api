@@ -5,12 +5,12 @@ import { BlocksBase } from '../../src/lib/BlocksBase'
 import { nod3 } from '../../src/lib/nod3Connect'
 import datasource from '../../src/lib/dataSource'
 
-import blockJson from './block-35162.json'
+import blockJson from './block-3516.json'
 const blockSpec = blockJson.block
 
 describe('Get Block', function () {
   let blockData
-  let blockNumber = 35162
+  let blockNumber = blockSpec.block.number
   it('should be connected to RSK testnet', async function () {
     let net = await nod3.net.version()
     expect(net.id).to.be.equal('31')
