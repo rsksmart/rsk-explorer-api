@@ -6,7 +6,7 @@ export class BlocksBase {
   constructor (db, options) {
     options = options || {}
     this.db = db
-    this.collections = getDbBlocksCollections(db)
+    this.collections = (db) ? getDbBlocksCollections(db) : undefined
     this.nod3 = nod3
     this.log = options.Logger || console
     this.et = events
