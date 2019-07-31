@@ -3,6 +3,7 @@ import Tx from './Tx'
 import Address from './Address'
 import Contract from './Contract'
 import { blockQuery, arrayDifference } from '../../lib/utils'
+import { getSummaryId } from '../../lib/ids'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, Logger }) {
@@ -95,6 +96,9 @@ export class Block extends BcThing {
       // clean db
       block = await this.removeOldBlockData(block, txs)
 
+      // save block summary
+      await this.saveBlockSummary(data)
+
       // insert block
       result.block = await this.insertBlock(block)
 
@@ -138,6 +142,22 @@ export class Block extends BcThing {
     }
   }
 
+  async saveBlockSummary (data) {
+    try {
+      const { hash, number, timestamp } = data.block
+      const collection = this.collections.BlocksSummary
+      if (!hash) throw new Error(`Missing block hash`)
+      const old = await collection.findOne({ hash }, { _id: 1 })
+      const _id = (old) ? old._id : getSummaryId(data.block)
+      const summary = { _id, hash, number, timestamp, data }
+      const res = await collection.updateOne({ _id }, { $set: summary }, { upsert: true })
+      return res
+    } catch (err) {
+      this.log.error(`Error saving block summary`)
+      this.log.debug(err)
+      return Promise.resolve()
+    }
+  }
   async getOldBlockData (block) {
     try {
       if (!block || !block.hash) throw new Error('Block data is empty')
