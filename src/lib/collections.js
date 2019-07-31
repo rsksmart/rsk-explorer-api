@@ -30,6 +30,18 @@ export default {
       name: 'blockReceivedTime'
     }
   ],
+  BlocksSummary: [
+    {
+      key: { hash: 1 },
+      unique: true
+    },
+    {
+      key: { number: -1 }
+    },
+    {
+      key: { timestamp: -1 }
+    }
+  ],
   Txs: [
     {
       key: { hash: 1 },

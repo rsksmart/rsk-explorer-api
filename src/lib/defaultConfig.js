@@ -53,7 +53,8 @@ export default {
       OrphanBlocks: 'orphanBlocks',
       TxPool: 'txPool',
       PendingTxs: 'transactionsPending',
-      Stats: 'stats'
+      Stats: 'stats',
+      BlocksSummary: 'blocksSummary'
     }
   }
 }
