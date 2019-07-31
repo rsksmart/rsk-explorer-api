@@ -8,6 +8,7 @@ import { Event } from './modules/Event'
 import { TokenAccount } from './modules/TokenAccount'
 import { TxPending } from './modules/TxPending'
 import { Stats } from './modules/Stats'
+import { Summary } from './modules/Summary'
 import getCirculatingSupply from './lib/getCirculatingSupply'
 import {
   filterParams,
@@ -35,6 +36,7 @@ class Api extends DataCollector {
     this.addItem(collections.Events, 'Event', Event)
     this.addItem(collections.TokensAddrs, 'Token', TokenAccount)
     this.addItem(collections.Stats, 'Stats', Stats)
+    this.addItem(collections.BlocksSummary, 'Summary', Summary)
   }
   tick () {
     this.setLastBlocks()

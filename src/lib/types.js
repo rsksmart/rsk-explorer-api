@@ -60,7 +60,8 @@ export const modules = {
   addresses: 'Address',
   events: 'Event',
   tokens: 'Token',
-  stats: 'Stats'
+  stats: 'Stats',
+  summary: 'Summary'
 }
 
 export const BRIDGE_NAME = 'bridge (native)'
