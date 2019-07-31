@@ -15,7 +15,17 @@ export const testCollections = async () => {
   return collections
 }
 
-export const fakeBlocks = (count = 10, max) => [...new Array(count)].map(i => fakeBlock(max))
+export const fakeBlocks = (count = 10, { max, addTimestamp } = {}) => {
+  let blocks = [...new Array(count)].map(i => fakeBlock(max))
+  if (addTimestamp) {
+    const time = Date.now()
+    blocks = blocks.map(block => {
+      block.timestamp = new Date(time - block.number).getTime()
+      return block
+    })
+  }
+  return blocks
+}
 
 export const randomBlockHash = () => '0x' + crypto.randomBytes(32).toString('hex')
 

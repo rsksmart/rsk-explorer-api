@@ -1,4 +1,4 @@
-import { eventId } from '../../lib/txFormat'
+import { eventId } from '../../lib/ids'
 
 export const formatEvent = (event, tx) => {
   let { timestamp, receipt } = tx

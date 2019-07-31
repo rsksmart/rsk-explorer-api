@@ -1,4 +1,4 @@
-import { getTxOrEventId } from '../../src/lib/txFormat'
+import { getTxOrEventId } from '../../src/lib/ids'
 import { testDb, fakeBlocks, fakeTx } from '../shared'
 import { assert } from 'chai'
 
