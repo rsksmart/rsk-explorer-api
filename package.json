@@ -4,13 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npx nodemon src/api --exec babel-node | ./node_modules/.bin/bunyan -o short",
+    "dev": "npx nodemon src/api | ./node_modules/.bin/bunyan -o short",
     "blocks": "npx nodemon src/services/blocks --exec babel-node | ./node_modules/.bin/bunyan -o short",
     "build": "npm run clean && npm run api-docs && ./node_modules/.bin/babel src -d dist --copy-files",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
     "md": "mkdir dist",
-    "status": "npx src/tools/statusClient.js --exec babel-node",
-    "abi": "npx src/lib/ContractParser/compileJsonAbis.js --exec babel-node",
+    "status": "npx nodemon src/tools/statusClient.js",
+    "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
     "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
