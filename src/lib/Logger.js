@@ -2,9 +2,10 @@ import bunyan from 'bunyan'
 
 export const Logger = (name, options) => {
   options = options || {}
+  let level = options.level || 'trace'
   const log = bunyan.createLogger({
     name,
-    level: 'trace'
+    level
   })
 
   if (options.file) {
