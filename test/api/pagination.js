@@ -31,6 +31,14 @@ describe('# Pagination', () => {
     assert.equal(total, storedData[0].number)
   })
 
+  it(`should return a doc with selected properies`, async () => {
+    const test = testData[0]
+    const { _id } = test
+    const { data } = await collector.getOne({ _id }, { number: 0 })
+    assert.deepEqual(data._id, _id)
+    assert.isUndefined(data.number)
+  })
+
   it('should return data and pagination data', async function () {
     ({ data, pages } = await getResult(collector, params))
     assert.isArray(data)

@@ -40,9 +40,9 @@ export class DataCollectorItem {
     return { data }
   }
 
-  async getOne (query, project) {
-    project = project || this.getDefaultsFields()
-    let data = await this.db.findOne(query, { project })
+  async getOne (query, projection) {
+    projection = projection || this.getDefaultsFields()
+    const data = await this.db.findOne(query, { projection })
     return { data }
   }
 
