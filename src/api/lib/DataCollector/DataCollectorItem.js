@@ -2,13 +2,12 @@ import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
 export class DataCollectorItem {
-  constructor (collection, key, parent, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
+  constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     if (!(collection instanceof Collection)) {
       throw (new Error('Collection is not mongodb Collection'))
     }
     this.db = collection
-    this.key = key
-    this.parent = parent
+    this.name = name
     this.fieldsTypes = null
     this.cursorField = cursorField
     this.cursorData = null
@@ -20,14 +19,19 @@ export class DataCollectorItem {
     this.fields = {}
   }
 
+  getName () {
+    return this.name
+  }
+
   getDefaultsFields () {
     return Object.assign({}, this.fields)
   }
   async run (action, params) {
     try {
       const f = this.publicActions[action]
-      if (f && typeof f === 'function') return f(params)
-      else throw new Error(`Unknown action: ${action}`)
+      if (!f && typeof f !== 'function') throw new Error(`Unknow action: ${action}`)
+      const result = await f(params)
+      return result
     } catch (err) {
       return Promise.reject(err)
     }

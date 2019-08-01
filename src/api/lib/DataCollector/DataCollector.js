@@ -3,7 +3,6 @@ import { clearInterval } from 'timers'
 import { serialize } from '../../../lib/utils'
 import { filterParams } from '../apiTools'
 import { Db } from 'mongodb'
-import DataCollectorItem from './DataCollectorItem'
 import log from '../log'
 
 class Emitter extends EventEmitter { }
@@ -18,7 +17,7 @@ export class DataCollector {
     this._keyName = options.keyName || '_id'
     this.events = emitter
     this._interval = null
-    this.items = {}
+    this.modules = {}
     this.setCollection(options.collectionName)
     this.tickDelay = 1000
     this.serialize = serialize
@@ -45,54 +44,26 @@ export class DataCollector {
     }
   }
 
-  getItem (params) {
-    let key = params.key || params[this._keyName]
-    if (key) return this.items[key]
-  }
-
   run () { }
 
-  itemPublicAction (moduleName, action, params) {
-    return new Promise((resolve, reject) => {
-      if (!action || !params) reject(new Error(`Mising arguments action:${action}`))
-      let module = this[moduleName] || this.getItem(params)
-      if (action && module) {
-        let method = module.publicActions[action]
-        if (method) {
-          resolve(method(this.filterParams(params)))
-        } else {
-          return reject(new Error(`Unknown method ${action}`))
-        }
-      }
-      return reject(new Error(`Unknown action or bad params requested, module: ${module} action: ${action}`))
-    })
-  }
-
-  searchItemByAction (action) {
-    for (let i in this.items) {
-      let item = this.items[i]
-      if (item.publicActions[action]) return item
+  addModule (module, name) {
+    try {
+      name = name || module.getName()
+      if (!name) throw new Error(`Invalid module name ${name}`)
+      if (this.modules[name]) throw new Error(`The module: ${name} already exists`)
+      module.serialize = this.serialize
+      module.parent = this
+      this.modules[name] = module
+    } catch (err) {
+      this.log.warn(err)
+      throw err
     }
   }
 
-  addItem (collectionName, key, ItemClass, addToRoot = true) {
-    if (collectionName && key) {
-      ItemClass = ItemClass || DataCollectorItem
-      if (!this.items[key]) {
-        let collection = this.db.collection(collectionName)
-        if (collection) {
-          let item = new ItemClass(collection, key, this)
-          item.serialize = this.serialize
-          this.items[key] = item
-          if (addToRoot) {
-            if (!this[key]) this[key] = item
-            else this.log.warn(`Error key: ${key} exists`)
-          }
-        }
-      } else {
-        this.log.warn('Error the key: ' + key + ' already exists')
-      }
-    }
+  getModule (name) {
+    const module = this.modules[name]
+    // if (!module) throw new Error(`Unknown module ${name}`)
+    return module
   }
 
   filterParams (params) {

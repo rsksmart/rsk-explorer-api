@@ -1,16 +1,15 @@
-import { DataCollector } from './lib/DataCollector'
+import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
 import config from '../lib/config'
-
-const statusCollection = config.blocks.collections.Status
-const blocksCollection = config.blocks.collections.Blocks
+const { collectionsNames } = config
 
 export class Status extends DataCollector {
   constructor (db) {
-    super(db, { statusCollection })
+    const collectionName = collectionsNames.Status
+    super(db, { collectionName })
     this.tickDelay = 5000
     this.state = {}
-    this.addItem(statusCollection, 'Status', null, true)
-    this.addItem(blocksCollection, 'Blocks', null, true)
+    this.addModule(new DataCollectorItem(db.collection(collectionsNames.Status), 'Status'))
+    this.addModule(new DataCollectorItem(db.collection(collectionsNames.Blocks), 'Blocks'))
   }
   tick () {
     this.updateState().then((newState) => {
@@ -23,7 +22,8 @@ export class Status extends DataCollector {
     return this.formatData(this.state)
   }
   getBlocksServiceStatus () {
-    return this.Status.find({}, { timestamp: -1 }, 1)
+    const Status = this.getModule('Status')
+    return Status.find({}, { timestamp: -1 }, 1)
       .then(res => {
         res = res.data[0]
         delete (res._id)
@@ -72,13 +72,13 @@ export class Status extends DataCollector {
   }
 
   getHighestBlock () {
-    return this.Blocks.db.findOne({}, { sort: { number: -1 }, limit: 1 })
+    return this.getModule('Blocks').db.findOne({}, { sort: { number: -1 }, limit: 1 })
   }
   getLastblockReceived () {
-    return this.Blocks.db.findOne({}, { sort: { _received: -1 }, limit: 1 })
+    return this.getModule('Blocks').db.findOne({}, { sort: { _received: -1 }, limit: 1 })
   }
   getTotalBlocks () {
-    return this.Blocks.db.countDocuments({})
+    return this.getModule('Blocks').db.countDocuments({})
   }
 }
 

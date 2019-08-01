@@ -1,11 +1,12 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 export class Block extends DataCollectorItem {
-  constructor (collection, key, parent) {
+  constructor (collections, key) {
+    const { Blocks } = collections
     let cursorField = 'number'
     let sortDir = -1
     let sortable = { timestamp: -1 }
-    super(collection, key, parent, { sortDir, cursorField, sortable })
+    super(Blocks, key, { sortDir, cursorField, sortable })
     this.publicActions = {
       /**
        * @swagger

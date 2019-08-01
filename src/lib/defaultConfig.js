@@ -2,8 +2,15 @@
  *  This file provides default values,
  *  use /config.json, to overwrite settings
  */
-import { txTypes } from './types'
+import { txTypes, MODULES } from './types'
 import delayedFields from './delayedFields'
+
+const setAllModules = (status) =>
+  Object.keys(MODULES)
+    .reduce((a, v, i) => {
+      a[v] = status
+      return a
+    }, {})
 
 export default {
   source: {
@@ -31,6 +38,8 @@ export default {
     MAX_PAGES: 10,
     allowUserEvents: true,
     exposeDoc: false,
+    // All modules are enabled as default
+    modules: setAllModules(true),
     delayedFields
   },
   publicSettings: {
@@ -42,19 +51,19 @@ export default {
     blocksQueueSize: 100,
     validateCollections: false,
     bcTipSize: 12,
-    batchRequestSize: 20,
-    collections: {
-      Blocks: 'blocks',
-      Txs: 'transactions',
-      Addrs: 'addresses',
-      Status: 'status',
-      Events: 'events',
-      TokensAddrs: 'tokensAddresses',
-      OrphanBlocks: 'orphanBlocks',
-      TxPool: 'txPool',
-      PendingTxs: 'transactionsPending',
-      Stats: 'stats',
-      BlocksSummary: 'blocksSummary'
-    }
+    batchRequestSize: 20
+  },
+  collectionsNames: {
+    Blocks: 'blocks',
+    Txs: 'transactions',
+    Addrs: 'addresses',
+    Status: 'status',
+    Events: 'events',
+    TokensAddrs: 'tokensAddresses',
+    OrphanBlocks: 'orphanBlocks',
+    TxPool: 'txPool',
+    PendingTxs: 'transactionsPending',
+    Stats: 'stats',
+    BlocksSummary: 'blocksSummary'
   }
 }

@@ -1,8 +1,9 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 
 export class TxPending extends DataCollectorItem {
-  constructor (collection, key, parent) {
-    super(collection, key, parent)
+  constructor (collections, key) {
+    const { PendingTxs } = collections
+    super(PendingTxs, key)
     this.publicActions = {
 
       getPendingTransaction: params => {

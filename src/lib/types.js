@@ -54,14 +54,15 @@ export const actions = {
   'UPDATE_TIP_BLOCK': 'updateTipBlock'
 }
 
-export const modules = {
+export const MODULES = {
   blocks: 'Block',
   transactions: 'Tx',
   addresses: 'Address',
   events: 'Event',
   tokens: 'Token',
   stats: 'Stats',
-  summary: 'Summary'
+  summary: 'Summary',
+  txPending: 'TxPending'
 }
 
 export const BRIDGE_NAME = 'bridge (native)'

@@ -18,7 +18,7 @@ describe('# Pagination', () => {
   it(`should insert ${total} regs in the db`, async function () {
     db = await dataBase.db()
     collection = db.collection(collectionName)
-    collector = new DataCollectorItem(collection, null, null)
+    collector = new DataCollectorItem(collection)
     field = collector.cursorField
     await collection.deleteMany({})
     let res = await collection.insertMany(testData)

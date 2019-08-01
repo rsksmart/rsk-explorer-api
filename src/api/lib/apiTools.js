@@ -1,4 +1,4 @@
-import { errors, modules } from '../../lib/types'
+import { errors, MODULES } from '../../lib/types'
 import config from '../../lib/config'
 const delayedFields = config.api.delayedFields || {}
 const { MAX_LIMIT, LIMIT, MIN_LIMIT } = config.api
@@ -73,7 +73,7 @@ export const formatRes = (payload) => {
   let { module, action, result, req, error, channel } = payload
   channel = channel || null
   req = req || {}
-  module = (module) ? getModuleName(module) : null
+  module = (module) ? getModuleKey(module) : null
   let data, pages, next, prev, delayed
   if (!result && !error) error = errors.EMPTY_RESULT
   if (error) {
@@ -107,8 +107,12 @@ export const getDelayedFields = (module, action) => {
   return delayed
 }
 
-export const getModule = module => modules[module] || module
+// export const getModule = module => modules[module] || module
 
-export const getModuleName = key => Object.keys(modules)[Object.values(modules).indexOf(key)] || key
+export const getModuleKey = key => Object.keys(MODULES)[Object.values(MODULES).indexOf(key)] || key
 
-export { errors } from '../../lib/types'
+export const getEnabledModules = modules => Object.keys(modules).filter(m => modules[m] === true)
+
+export const getModulesNames = modules => modules.map(k => MODULES[k])
+
+export { errors, MODULES } from '../../lib/types'

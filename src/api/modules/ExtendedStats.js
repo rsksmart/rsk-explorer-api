@@ -18,8 +18,8 @@ export const PERIODS = {
 }
 
 export class ExtendedStats extends DataCollectorItem {
-  constructor (collection, key, parent) {
-    super(collection, key, parent)
+  constructor ({ Blocks }, key) {
+    super(Blocks, key)
     this.hashrateCalculator = new HashrateCalculator()
     this.difficultyCalculator = new DifficultyCalculator()
     this.publicActions = {

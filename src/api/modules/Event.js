@@ -2,9 +2,10 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import config from '../../lib/config'
 const { remascAddress, bridgeAddress } = config
 export class Event extends DataCollectorItem {
-  constructor (collection, key, parent) {
+  constructor (collections, key) {
     // const sortable = { timestamp: -1 }
-    super(collection, key, parent)
+    const { Events, Addrs } = collections
+    super(Events, key)
     this.publicActions = {
       /**
        * @swagger
@@ -108,7 +109,8 @@ export class Event extends DataCollectorItem {
           if (res.data) {
             let addresses = new Set(res.data.map(d => d.address))
             addresses = [...addresses.values()]
-            let addrData = await this.parent.Address.find({ address: { $in: addresses } })
+
+            let addrData = await Addrs.find({ address: { $in: addresses } })
             let { data } = addrData
             if (data) {
               res.data = res.data.map(d => {

@@ -2,7 +2,7 @@ import config from './config'
 import dataSource from './dataSource'
 
 export const getDbBlocksCollections = (db, names) => {
-  names = names || config.blocks.collections
+  names = names || config.collectionsNames
   let collections = {}
   for (let n in names) {
     collections[n] = db.collection(names[n])

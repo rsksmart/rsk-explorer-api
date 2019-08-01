@@ -4,11 +4,9 @@ import config from '../../lib/config'
 const { bridgeAddress, remascAddress } = config
 
 export class Address extends DataCollectorItem {
-  constructor (collection, key, parent) {
+  constructor ({ Addrs }, name) {
     let sortable = { 'createdByTx.timestamp': -1 }
-    super(collection, key, parent, { sortDir: 1, sortable })
-    const Tx = this.parent.getItem({ key: 'Tx' })
-    this.Tx = Tx
+    super(Addrs, name, { sortDir: 1, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }
     this.publicActions = {
       /**

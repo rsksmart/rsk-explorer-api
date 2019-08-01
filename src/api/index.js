@@ -23,7 +23,7 @@ dataSource.then(db => {
   log.info('Database connected')
 
   // data collectors
-  const api = new Api(db)
+  const api = new Api(db, config.api)
   const status = new Status(db)
   const txPool = new TxPool(db)
   api.start()
@@ -115,7 +115,8 @@ dataSource.then(db => {
     // data handler
     socket.on('data', async payload => {
       try {
-        const { module, action, params, result, delayed } = await api.run(payload)
+        const res = await api.run(payload)
+        const { module, action, params, result, delayed } = res
         if (delayed && userEvents) {
           const registry = !result.data && delayed.runIfEmpty
           if (payload.getDelayed) {

@@ -2,9 +2,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
 
-export class TokenAccount extends DataCollectorItem {
-  constructor (collection, key, parent) {
-    super(collection, key, parent)
+export class Token extends DataCollectorItem {
+  constructor ({ TokensAddrs, Addrs }, key) {
+    super(TokensAddrs, key)
     this.publicActions = {
       /**
        * @swagger
@@ -68,7 +68,7 @@ export class TokenAccount extends DataCollectorItem {
        */
       getTokensByAddress: async params => {
         const address = params.address
-        const from = this.parent.Address.db.collectionName
+        const from = this.parent.collectionsNames.Addrs
         if (address) {
           let aggregate = [
             { $match: { address } },
@@ -209,4 +209,4 @@ export class TokenAccount extends DataCollectorItem {
   }
 }
 
-export default TokenAccount
+export default Token

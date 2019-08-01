@@ -1,0 +1,22 @@
+import { Block } from './Block'
+import { Tx } from './Tx'
+import { Address } from './Address'
+import { Event } from './Event'
+import { Token } from './Token'
+import { TxPending } from './TxPending'
+import { Stats } from './Stats'
+import { Summary } from './Summary'
+import { ExtendedStats } from './ExtendedStats'
+import { getModulesNames, getEnabledModules } from '../lib/apiTools'
+
+const apiModules = { Block, Tx, Address, Event, Token, TxPending, Stats, Summary, ExtendedStats }
+
+export const getEnabledApiModules = modules => {
+  const enabled = getModulesNames(getEnabledModules(modules))
+  return enabled.reduce((v, a) => {
+    v[a] = apiModules[a]
+    return v
+  }, {})
+}
+
+export default apiModules

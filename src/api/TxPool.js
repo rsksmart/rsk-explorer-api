@@ -1,7 +1,7 @@
 import { DataCollector } from './lib/DataCollector'
 import config from '../lib/config'
 
-const collectionName = config.blocks.collections.TxPool
+const collectionName = config.collectionsNames.TxPool
 
 export class TxPool extends DataCollector {
   constructor (db) {

@@ -28,6 +28,8 @@ defaultLogs('blocks')
 publicSettings('bridgeAddress')
 publicSettings('remascAddress')
 
+config.api.collectionsNames = config.collectionsNames
+
 function publicSettings (key) {
   config[key] = config.publicSettings[key] || null
 }

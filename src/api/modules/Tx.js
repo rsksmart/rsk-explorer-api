@@ -2,11 +2,10 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class Tx extends DataCollectorItem {
-  constructor (collection, key, parent) {
+  constructor (collections, key) {
+    const { Txs } = collections
     // const sortable = { timestamp: -1 }
-    super(collection, key, parent)
-    const PendingTxs = this.parent.getItem({ key: 'TxPending' })
-    this.PendingTxs = PendingTxs.publicActions
+    super(Txs, key)
     this.publicActions = {
       /**
        * @swagger
@@ -47,7 +46,6 @@ export class Tx extends DataCollectorItem {
       getTransactions: params => {
         let query = {}
         let txType = (params.query) ? params.query.txType : null
-        console.log('txTYPE', txType)
         if (txType) {
           query = this.fieldFilterParse('txType', txType)
         }
@@ -84,7 +82,7 @@ export class Tx extends DataCollectorItem {
         if (hash) {
           let tx
           tx = await this.getPrevNext({ hash }, { hash: 1 })
-          if (!tx || !tx.data) tx = await this.PendingTxs.getPendingTransaction(params)
+          if (!tx || !tx.data) return this.parent.getPendingTransaction(params)
           return tx
         }
       },
@@ -126,7 +124,7 @@ export class Tx extends DataCollectorItem {
           let addresses = new Set(logs.map(log => log.address))
           addresses.add(tx.from)
           addresses.add(tx.to)
-          let Address = this.parent.Address
+          let Address = this.parent.getModule('Address')
           let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })))
           if (res) {
             res = res.reduce((v, a, i) => {
