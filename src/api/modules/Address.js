@@ -9,7 +9,7 @@ export class Address extends DataCollectorItem {
     super(collection, key, parent, { sortDir: 1, sortable })
     const Tx = this.parent.getItem({ key: 'Tx' })
     this.Tx = Tx
-    this.fields = { code: 0 }
+    this.fields = { code: 0, 'createdByTx.input': 0 }
     this.publicActions = {
       /**
        * @swagger
@@ -180,6 +180,49 @@ export class Address extends DataCollectorItem {
        */
       getCirculatingSupply: params => {
         return this.parent.getCirculatingSupply()
+      },
+      /**
+         * @swagger
+         * /api?module=addresses&action=getCode:
+         *    get:
+         *      description: get contract code
+         *      tags:
+         *        - addresses
+         *      parameters:
+         *        - name: module
+         *          in: query
+         *          required: true
+         *          enum: [addresses]
+         *        - name: action
+         *          in: query
+         *          required: true
+         *          enum: [getCode]
+         *        - $ref: '#/parameters/address'
+         *      responses:
+         *        200:
+         *          $ref: '#/definitions/Response'
+         *        400:
+         *          $ref: '#/responses/BadRequest'
+         *        404:
+         *          $ref: '#/responses/NotFound'
+         */
+      getCode: async params => {
+        try {
+          const { address } = params
+          const fields = { _id: 0, address: 1, code: 1, createdByTx: 1, name: 1 }
+          const result = await this.getOne({ address }, fields)
+          let { data } = result
+          if (!data) throw new Error('Unknown address')
+          const { createdByTx, code } = data
+          if (!code) throw new Error('The address does not have code')
+          if (createdByTx) {
+            data.creationCode = createdByTx.input
+            delete data.createdByTx
+          }
+          return result
+        } catch (err) {
+          return Promise.reject(err)
+        }
       }
     }
   }
