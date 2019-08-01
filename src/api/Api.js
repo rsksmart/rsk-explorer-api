@@ -15,7 +15,7 @@ import {
   getDelayedFields,
   getModule
 } from './lib/apiTools'
-import ExtendedStats from './modules/ExtendedStats';
+import ExtendedStats from './modules/ExtendedStats'
 
 const lastLimit = config.api.lastBlocks || 10
 const collections = config.blocks.collections

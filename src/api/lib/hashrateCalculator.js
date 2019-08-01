@@ -1,107 +1,104 @@
-const BigNumber = require('bignumber.js');
+import { BigNumber } from 'bignumber.js'
 
 export const DECIMALS = 3
 export const EXA = new BigNumber('1e50')
 
 export class HashrateCalculator {
-    constructor() {
+  difficultyPerMiner (blocks) {
+    const diffPerMiner = {}
+
+    for (const block of blocks) {
+      if (Object.keys(diffPerMiner).indexOf(block.miner) === -1) {
+        diffPerMiner[block.miner] = new BigNumber(0)
+      }
+
+      const bnDiff = new BigNumber(block.difficulty)
+      diffPerMiner[block.miner] = diffPerMiner[block.miner].plus(bnDiff)
     }
 
-    difficultyPerMiner(blocks) {
-        const diffPerMiner = {}
+    return diffPerMiner
+  }
 
-        for (const block of blocks) {
-            if (Object.keys(diffPerMiner).indexOf(block.miner) === -1) {
-                diffPerMiner[block.miner] = new BigNumber(0);
-            }
-
-            const bnDiff = new BigNumber(block.difficulty);
-            diffPerMiner[block.miner] = diffPerMiner[block.miner].plus(bnDiff);
-        }
-
-        return diffPerMiner
+  hashratePercentagePerMiner (blocks) {
+    if (!Array.isArray(blocks)) {
+      return {}
     }
 
-    hashratePercentagePerMiner(blocks) {
-        if (!Array.isArray(blocks)) {
-            return {}
-        }
-
-        if (!blocks.length) {
-            return {}
-        }
-
-        const diffPerMiner = this.difficultyPerMiner(blocks)
-
-        let percPerMiner = this.innerHashratePercentagePerMiner(diffPerMiner);
-
-        return percPerMiner;
+    if (!blocks.length) {
+      return {}
     }
 
-    hashratePerMiner(blocks) {
-        if (!Array.isArray(blocks)) {
-            return {}
-        }
+    const diffPerMiner = this.difficultyPerMiner(blocks)
 
-        if (!blocks.length) {
-            return {}
-        }
+    let percPerMiner = this.innerHashratePercentagePerMiner(diffPerMiner)
 
-        let diffPerMiner = this.difficultyPerMiner(blocks)
+    return percPerMiner
+  }
 
-        let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner);
-
-        return hashratePerMiner
+  hashratePerMiner (blocks) {
+    if (!Array.isArray(blocks)) {
+      return {}
     }
 
-    hashrates(blocks) {
-        if (!Array.isArray(blocks)) {
-            return {}
-        }
-
-        if (!blocks.length) {
-            return {}
-        }
-
-        let diffPerMiner = this.difficultyPerMiner(blocks)
-
-        let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner)
-        let percPerMiner = this.innerHashratePercentagePerMiner(diffPerMiner)
-
-        let hashrates = {}
-
-        for (const m of Object.keys(diffPerMiner)) {
-            hashrates[m] = {
-                avg: hashratePerMiner[m],
-                perc: percPerMiner[m]
-            }
-        }
-
-        return hashrates
+    if (!blocks.length) {
+      return {}
     }
 
-    innerHashratePercentagePerMiner(diffPerMiner) {
-        const totalDiff = Object.values(diffPerMiner).reduce((prev, next) => prev.plus(next), new BigNumber(0));
+    let diffPerMiner = this.difficultyPerMiner(blocks)
 
-        let percPerMiner = {};
-        for (const m of Object.keys(diffPerMiner)) {
-            percPerMiner[m] = diffPerMiner[m].dividedBy(totalDiff).toFixed(DECIMALS);
-        }
+    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner)
 
-        return percPerMiner;
+    return hashratePerMiner
+  }
+
+  hashrates (blocks) {
+    if (!Array.isArray(blocks)) {
+      return {}
     }
 
-    innerHashratePerMiner(blocks, diffPerMiner) {
-        const start = new BigNumber(blocks[0].timestamp);
-        const end = new BigNumber(blocks[blocks.length - 1].timestamp);
-        const timeDiff = end.isGreaterThan(start) ? end.minus(start) : new BigNumber(1);
-
-        let hashratePerMiner = {};
-        for (const m of Object.keys(diffPerMiner)) {
-            const val = diffPerMiner[m].dividedBy(timeDiff).dividedBy(EXA).toFixed(DECIMALS);
-            hashratePerMiner[m] = `${val} EHs`;
-        }
-
-        return hashratePerMiner;
+    if (!blocks.length) {
+      return {}
     }
+
+    let diffPerMiner = this.difficultyPerMiner(blocks)
+
+    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner)
+    let percPerMiner = this.innerHashratePercentagePerMiner(diffPerMiner)
+
+    let hashrates = {}
+
+    for (const m of Object.keys(diffPerMiner)) {
+      hashrates[m] = {
+        avg: hashratePerMiner[m],
+        perc: percPerMiner[m]
+      }
+    }
+
+    return hashrates
+  }
+
+  innerHashratePercentagePerMiner (diffPerMiner) {
+    const totalDiff = Object.values(diffPerMiner).reduce((prev, next) => prev.plus(next), new BigNumber(0))
+
+    let percPerMiner = {}
+    for (const m of Object.keys(diffPerMiner)) {
+      percPerMiner[m] = diffPerMiner[m].dividedBy(totalDiff).toFixed(DECIMALS)
+    }
+
+    return percPerMiner
+  }
+
+  innerHashratePerMiner (blocks, diffPerMiner) {
+    const start = new BigNumber(blocks[0].timestamp)
+    const end = new BigNumber(blocks[blocks.length - 1].timestamp)
+    const timeDiff = end.isGreaterThan(start) ? end.minus(start) : new BigNumber(1)
+
+    let hashratePerMiner = {}
+    for (const m of Object.keys(diffPerMiner)) {
+      const val = diffPerMiner[m].dividedBy(timeDiff).dividedBy(EXA).toFixed(DECIMALS)
+      hashratePerMiner[m] = `${val} EHs`
+    }
+
+    return hashratePerMiner
+  }
 }
