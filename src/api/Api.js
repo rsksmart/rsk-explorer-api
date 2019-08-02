@@ -128,10 +128,12 @@ class Api extends DataCollector {
     const stats = await this.getModule('Stats').run('getLatest')
     if (!stats) return
 
-    /*     const { ExtendedStats } = this
-        const blockNumber = parseInt(stats.blockNumber)
-        const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
-        Object.assign(stats, extendedStats) */
+    const ExtendedStats = this.getModule('ExtendedStats')
+    if (ExtendedStats) {
+      const blockNumber = parseInt(stats.blockNumber)
+      const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+      Object.assign(stats, extendedStats)
+    }
 
     this.stats = Object.assign({}, stats)
     if (stats.timestamp !== oldStats.timestamp) {

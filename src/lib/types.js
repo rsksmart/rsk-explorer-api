@@ -62,7 +62,8 @@ export const MODULES = {
   tokens: 'Token',
   stats: 'Stats',
   summary: 'Summary',
-  txPending: 'TxPending'
+  txPending: 'TxPending',
+  extendedStats: 'ExtendedStats'
 }
 
 export const BRIDGE_NAME = 'bridge (native)'

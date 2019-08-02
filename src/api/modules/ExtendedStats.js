@@ -23,19 +23,106 @@ export class ExtendedStats extends DataCollectorItem {
     this.hashrateCalculator = new HashrateCalculator()
     this.difficultyCalculator = new DifficultyCalculator()
     this.publicActions = {
+      /**
+       * @swagger
+       * /api?module=extendedStats&action=getExtendedStats:
+       *    get:
+       *      description: get extended stats
+       *      tags:
+       *        - extendedStats
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [extendedStats]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getExtendedStats]
+       *        - name: blockNumber
+       *          in: query
+       *          schema:
+       *            type: string
+       *            example: 200
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getExtendedStats: async (params) => {
         return {
-          data: await this.getExtendedStats(params.blockNumber)
+          data: await this.getExtendedStats((parseInt(params.blockNumber)))
         }
       },
+      /**
+       * @swagger
+       * /api?module=extendedStats&action=getHashrates:
+       *    get:
+       *      description: get hashrates
+       *      tags:
+       *        - extendedStats
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [extendedStats]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getHashrates]
+       *        - name: blockNumber
+       *          in: query
+       *          schema:
+       *            type: string
+       *            example: 200
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getHashrates: async (params) => {
         return {
-          data: await this.getHashrates(params.blockNumber)
+          data: await this.getHashrates(parseInt(params.blockNumber))
         }
       },
+      /**
+      * @swagger
+      * /api?module=extendedStats&action=getDifficulties:
+      *    get:
+      *      description: get difficulties
+      *      tags:
+      *        - extendedStats
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [extendedStats]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getDifficulties]
+      *        - name: blockNumber
+      *          in: query
+      *          schema:
+      *            type: string
+      *            example: 200
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/Response'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+      */
       getDifficulties: async (params) => {
         return {
-          data: await this.getDifficulties(params.blockNumber)
+          data: await this.getDifficulties(parseInt(params.blockNumber))
         }
       }
     }
