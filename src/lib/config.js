@@ -11,6 +11,11 @@ for (let key of keys) {
   }
 }
 
+// enable undefined modules
+for (let module in defaultConf.api.modules) {
+  config.api.modules[module] = config.api.modules[module] !== false
+}
+
 // defaults  servers/ports
 
 config.blocks.node = config.blocks.node || config.source.node
@@ -39,7 +44,7 @@ function defaultLogs (key) {
   if (!dir) return
   config[key].log = config[key].log || {}
   config[key].log.file = config[key].log.file || `${dir}/${key}.json`
-  config[key].log.level = config[key].log.level || config.log.level || 'error'
+  config[key].log.level = config[key].log.level || config.log.level || 'info'
 }
 
 function loadConfig () {
