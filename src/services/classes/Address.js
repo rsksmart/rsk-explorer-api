@@ -55,11 +55,11 @@ export class Address extends BcThing {
   }
 
   getBalance () {
-    return this.nod3.eth.getBalance(this.address, this.block)
+    return this.nod3.eth.getBalance(this.address, 'latest') // rskj 1.0.1 returns 500 with blockNumbers
   }
 
   getCode () {
-    return this.nod3.eth.getCode(this.address, this.block)
+    return this.nod3.eth.getCode(this.address, 'latest') // rskj 1.0.1 returns 500 with blockNumbers
   }
 
   async fetch () {
