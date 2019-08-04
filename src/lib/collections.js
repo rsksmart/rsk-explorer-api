@@ -1,4 +1,5 @@
 export default {
+  Config: [],
   Blocks: [
     {
       key: { number: -1 },

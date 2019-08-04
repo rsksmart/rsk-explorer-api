@@ -3,9 +3,18 @@ import DB from '../src/lib/Db'
 import config from '../src/lib/config'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
 
+const testDatabase = 'dbToTest'
+
 export const testDb = () => {
-  const dbConf = Object.assign(config.db, { database: 'dbToTest' })
+  const database = testDatabase
+  const dbConf = Object.assign(config.db, { database })
   return new DB(dbConf)
+}
+
+export const dropTestDb = async() => {
+  const database = testDb()
+  const db = await database.db()
+  await db.dropDatabase()
 }
 
 export const testCollections = async () => {

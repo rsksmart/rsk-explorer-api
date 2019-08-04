@@ -54,6 +54,7 @@ export default {
     batchRequestSize: 20
   },
   collectionsNames: {
+    Config: 'config',
     Blocks: 'blocks',
     Txs: 'transactions',
     Addrs: 'addresses',
@@ -64,6 +65,7 @@ export default {
     TxPool: 'txPool',
     PendingTxs: 'transactionsPending',
     Stats: 'stats',
-    BlocksSummary: 'blocksSummary'
+    BlocksSummary: 'blocksSummary',
+    ContractVerification: 'contractsVerifications'
   }
 }
