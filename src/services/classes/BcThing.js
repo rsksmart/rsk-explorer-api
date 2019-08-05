@@ -1,9 +1,10 @@
 import { isAddress, serialize, isBlockHash } from '../../lib/utils'
 
 export class BcThing {
-  constructor (nod3, collections) {
+  constructor ({ nod3, nativeContracts, collections } = {}) {
     this.nod3 = nod3
     this.collections = collections
+    this.nativeContracts = nativeContracts
     this.data = {}
   }
   getData (serialize = false) {

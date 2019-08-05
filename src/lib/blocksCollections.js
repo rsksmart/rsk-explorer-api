@@ -12,7 +12,7 @@ export const getDbBlocksCollections = (db, names) => {
 
 export const blocksCollections = async () => {
   try {
-    let db = await dataSource
+    let { db } = await dataSource
     return getDbBlocksCollections(db)
   } catch (err) {
     console.log(err)

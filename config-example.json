@@ -4,10 +4,6 @@
     "node": "localhost",
     "port": 4444
   },
-  "publicSettings": {
-    "bridgeAddress": "0x0000000000000000000000000000000001000006",
-    "remascAddress": "0x0000000000000000000000000000000001000008"
-  },
   "db": {
     "server": "localhost",
     "port": 27017,

@@ -19,11 +19,11 @@ import {
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
-dataSource.then(db => {
+dataSource.then(({ db, initConfig, nativeContracts }) => {
   log.info('Database connected')
 
   // data collectors
-  const api = new Api(db, config.api)
+  const api = new Api({ db, initConfig, nativeContracts }, config.api)
   const status = new Status(db)
   const txPool = new TxPool(db)
   api.start()

@@ -4,7 +4,6 @@ import { web3 } from '../web3Connect'
 import { contractsInterfaces } from '../types'
 import interfacesIds from './interfacesIds'
 import { includesAll } from '../../lib/utils'
-import config from '../config'
 import remascEvents from './RemascEvents'
 import {
   ABI_SIGNATURE,
@@ -16,14 +15,22 @@ import {
   soliditySignature
 } from './lib'
 
-const { remascAddress } = config
 export class ContractParser {
-  constructor (abi, options = {}) {
+  constructor ({ abi, log, nativeContracts } = {}) {
+    if (!nativeContracts) throw new Error('Missing native contracts')
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
     this.eventsAbi = abiEvents(this.abi)
     this.web3 = web3
-    this.log = options.logger || console
+    this.log = log || console
+    this.nativeContracts = nativeContracts
+  }
+
+  getRemascAddress () {
+    const { nativeContracts } = this
+    if (nativeContracts) {
+      return nativeContracts.getNativeContractAddress('remasc')
+    }
   }
 
   setAbi (abi) {
@@ -59,6 +66,7 @@ export class ContractParser {
   parseTxLogs (logs) {
     return logs.map(log => {
       // non-standard remasc events
+      const remascAddress = this.getRemascAddress()
       if (log.address === remascAddress) return remascEvents.decode(log)
 
       let back = Object.assign({}, log)

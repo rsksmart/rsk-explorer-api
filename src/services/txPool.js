@@ -1,13 +1,12 @@
-import { dataBase } from '../lib/dataSource'
+import { setup } from '../lib/dataSource'
 import conf from '../lib/config'
 import { TxPool } from './classes/TxPool'
 import Logger from '../lib/Logger'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
-dataBase.setLogger(log)
 
-dataBase.db().then(db => {
+setup(log).then(({ db }) => {
   config.Logger = log
   const txPool = new TxPool(db, config)
   log.info(`Starting txPool`)

@@ -1,6 +1,4 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import config from '../../lib/config'
-const { remascAddress, bridgeAddress } = config
 export class Event extends DataCollectorItem {
   constructor (collections, key) {
     // const sortable = { timestamp: -1 }
@@ -98,7 +96,8 @@ export class Event extends DataCollectorItem {
           // search by events signatures
           if (Array.isArray(signatures)) {
             // skip remasc & bridge events
-            if (address !== remascAddress && address !== bridgeAddress) {
+            const isNative = this.parent.isNativeContract(address)
+            if (isNative !== 'bridge' || isNative !== 'remasc') {
               query.signature = { $in: signatures }
             }
           }

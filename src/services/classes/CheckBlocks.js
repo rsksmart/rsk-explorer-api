@@ -91,7 +91,8 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async getBlock (hashOrNumber) {
-    return getBlock(this.nod3, this.collections, hashOrNumber, this.log)
+    const { nod3, collections, log, nativeContracts } = this
+    return getBlock(hashOrNumber, { nod3, collections, log, nativeContracts })
   }
 
   getBlockFromDb (hashOrNumber) {

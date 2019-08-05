@@ -1,5 +1,6 @@
 import { errors, MODULES } from '../../lib/types'
 import config from '../../lib/config'
+
 const delayedFields = config.api.delayedFields || {}
 const { MAX_LIMIT, LIMIT, MIN_LIMIT } = config.api
 
@@ -95,10 +96,6 @@ export const formatRes = (payload) => {
 export const formatError = error => {
   error.serverTime = Date.now()
   return error
-}
-
-export const publicSettings = () => {
-  return config.publicSettings
 }
 
 export const getDelayedFields = (module, action) => {

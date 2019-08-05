@@ -2,7 +2,7 @@
  *  This file provides default values,
  *  use /config.json, to overwrite settings
  */
-import { txTypes, MODULES } from './types'
+import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
 const setAllModules = (status) =>
@@ -21,7 +21,7 @@ export default {
   },
   log: {
     dir: '/var/log/rsk-explorer',
-    level: 'error'
+    level: 'info'
   },
   db: {
     server: 'localhost',
@@ -41,11 +41,6 @@ export default {
     // All modules are enabled as default
     modules: setAllModules(true),
     delayedFields
-  },
-  publicSettings: {
-    bridgeAddress: '0x0000000000000000000000000000000001000006',
-    remascAddress: '0x0000000000000000000000000000000001000008',
-    txTypes
   },
   blocks: {
     blocksQueueSize: 100,

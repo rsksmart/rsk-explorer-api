@@ -4,8 +4,8 @@ import { isBlockObject, isNullData } from '../../lib/utils'
 import { fields } from '../../lib/types'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, db, collections, block = 'latest' } = {}) {
-    super(nod3, collections)
+  constructor (address, { nod3, nativeContracts, db, collections, block = 'latest' } = {}) {
+    super({ nod3, nativeContracts, collections })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
     this.db = db || this.collections.Addrs

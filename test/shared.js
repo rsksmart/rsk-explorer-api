@@ -2,6 +2,10 @@ import crypto from 'crypto'
 import DB from '../src/lib/Db'
 import config from '../src/lib/config'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
+import NativeContracts from '../src/lib/NativeContracts'
+import initConfig from '../src/lib/initialConfiguration'
+
+export const nativeContracts = NativeContracts(initConfig)
 
 const testDatabase = 'dbToTest'
 
@@ -11,7 +15,7 @@ export const testDb = () => {
   return new DB(dbConf)
 }
 
-export const dropTestDb = async() => {
+export const dropTestDb = async () => {
   const database = testDb()
   const db = await database.db()
   await db.dropDatabase()

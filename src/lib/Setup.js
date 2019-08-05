@@ -1,10 +1,14 @@
 import collections from './collections'
 import config from './config'
-import { dataBase } from './dataSource'
+import DB from './Db.js'
 import { StoredConfig } from './StoredConfig'
 import nod3 from './nod3Connect'
+import initConfig from './initialConfiguration'
+import NativeContracts from './NativeContracts'
 
-export async function Setup ({ log }) {
+export const dataBase = new DB(config.db)
+
+export async function Setup ({ log } = {}) {
   log = log || console
   dataBase.setLogger(log)
   const db = await dataBase.db()
@@ -23,8 +27,7 @@ export async function Setup ({ log }) {
         throw new Error(`Cannot connect to the node`)
       })
       const net = await nod3.net.version()
-      const timestamp = Date.now()
-      return { net, timestamp }
+      return Object.assign(initConfig, { net })
     } catch (err) {
       return Promise.reject(err)
     }
@@ -33,15 +36,16 @@ export async function Setup ({ log }) {
   const checkSetup = async () => {
     try {
       const current = await getInitConfig()
-      let stored = await storedConfig.getInitConfig()
+      let stored = await storedConfig.getConfig()
       if (!stored) {
+        log.info(`Saving initial configuration to db`)
         await storedConfig.saveConfig(current)
         return checkSetup()
       }
       if (stored.net.id !== current.net.id) {
         throw new Error(`Network stored id (${stored.net.id}) is not equal to node network id (${current.net.id})`)
       }
-      return true
+      return stored
     } catch (err) {
       return Promise.reject(err)
     }
@@ -49,8 +53,9 @@ export async function Setup ({ log }) {
 
   const start = async () => {
     try {
-      await checkSetup()
-      return { db, nod3 }
+      const initConfig = await checkSetup()
+      const nativeContracts = NativeContracts(initConfig)
+      return { initConfig, db, nativeContracts }
     } catch (err) {
       log.error(err)
       process.exit(9)

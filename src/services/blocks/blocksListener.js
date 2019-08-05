@@ -1,15 +1,14 @@
-import { dataBase } from '../../lib/dataSource.js'
+import { setup } from '../../lib/dataSource.js'
 import conf from '../../lib/config'
 import { ListenBlocks } from '../classes/ListenBlocks'
 import Logger from '../../lib/Logger'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
-dataBase.setLogger(log)
 
-dataBase.db().then(db => {
+setup(log).then(({ db }) => {
   config.Logger = log
-  const listener = new ListenBlocks(db, config)
+  const listener = new ListenBlocks(db, { log })
   log.info(`Starting blocks listener`)
   listener.start()
 })

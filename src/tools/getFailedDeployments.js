@@ -1,7 +1,7 @@
 import dataSource from '../lib/dataSource.js'
 import conf from '../lib/config'
 const config = Object.assign({}, conf.blocks)
-dataSource.then(async db => {
+dataSource.then(async ({ db }) => {
   try {
     const Addrs = db.collection(config.collections.Addrs)
     let result = await Addrs.find({ createdByTx: { $exists: true }, type: 'account' })

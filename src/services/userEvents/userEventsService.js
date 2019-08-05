@@ -11,7 +11,7 @@ import updateAddress from './updateAddress'
 const config = Object.assign({}, conf.blocks)
 const log = Logger('UserRequests', config.log)
 
-dataSource.then(db => {
+dataSource.then(({ db }) => {
   const collections = getDbBlocksCollections(db)
   const cache = new RequestCache()
   process.on('message', async msg => {

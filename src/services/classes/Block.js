@@ -6,11 +6,11 @@ import { blockQuery, arrayDifference } from '../../lib/utils'
 import { getSummaryId } from '../../lib/ids'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, { nod3, collections, Logger }) {
-    super(nod3, collections)
+  constructor (hashOrNumber, { nod3, nativeContracts, collections, log }) {
+    super({ nod3, nativeContracts, collections })
     this.Blocks = this.collections.Blocks
     this.fetched = false
-    this.log = Logger || console
+    this.log = log || console
     this.hashOrNumber = hashOrNumber
     this.addresses = {}
     this.contracts = {}
@@ -307,7 +307,7 @@ export class Block extends BcThing {
   }
 
   newContract (address, data) {
-    let contract = new Contract(address, data, this.nod3)
+    let contract = new Contract(address, data, this.nod3, this.nativeContracts)
     this.contracts[address] = contract
     return contract
   }

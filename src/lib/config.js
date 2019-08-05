@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs'
-
 import defaultConf from './defaultConfig'
+
 const keys = Object.keys(defaultConf)
 const config = loadConfig()
 for (let key of keys) {
@@ -29,15 +29,7 @@ config.source.url = config.source.url || `${s.protocol}://${s.node}:${s.port}`
 defaultLogs('api')
 defaultLogs('blocks')
 
-// tx addresses
-publicSettings('bridgeAddress')
-publicSettings('remascAddress')
-
 config.api.collectionsNames = config.collectionsNames
-
-function publicSettings (key) {
-  config[key] = config.publicSettings[key] || null
-}
 
 function defaultLogs (key) {
   const dir = config.log.dir

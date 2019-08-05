@@ -2,8 +2,9 @@ import { assert } from 'chai'
 import { ContractParser } from '../../src/lib/ContractParser/ContractParser'
 import { serialize } from '../../src/lib/utils'
 import txs from './txs/txs.expect.js'
+import { nativeContracts } from '../shared'
 
-const parser = new ContractParser()
+const parser = new ContractParser({ nativeContracts })
 
 describe('# decode events', function () {
   for (let t of txs) {
@@ -24,7 +25,7 @@ describe('# decode events', function () {
           it(`should be ${event.event} event`, function () {
             assert.equal(event.event, decoded.event)
           })
-          
+
           it(`should have an abi property`, () => {
             assert.property(decoded, 'abi')
           })

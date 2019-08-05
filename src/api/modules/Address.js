@@ -1,7 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { tokensInterfaces, addrTypes, REMASC_NAME, BRIDGE_NAME, fields } from '../../lib/types'
-import config from '../../lib/config'
-const { bridgeAddress, remascAddress } = config
+import { tokensInterfaces, addrTypes, fields } from '../../lib/types'
 
 export class Address extends DataCollectorItem {
   constructor ({ Addrs }, name) {
@@ -38,11 +36,14 @@ export class Address extends DataCollectorItem {
       getAddress: async params => {
         const { address } = params
         const aData = await this.getOne({ address })
-        if (aData.data) {
-          if (!aData.data.name) {
-            if (address === remascAddress) aData.data.name = REMASC_NAME
-            if (address === bridgeAddress) aData.data.name = BRIDGE_NAME
+        if (aData && aData.data) {
+          let { data } = aData
+          let isNative = this.parent.isNativeContract(address)
+          if (isNative) {
+            if (!data.name) data.name = isNative
+            data.type = addrTypes.CONTRACT
           }
+          aData.data = data
         }
         return aData
       },

@@ -4,6 +4,7 @@ import { Block } from '../../src/services/classes/Block'
 import { BlocksBase } from '../../src/lib/BlocksBase'
 import { nod3 } from '../../src/lib/nod3Connect'
 import datasource from '../../src/lib/dataSource'
+import { nativeContracts } from '../shared'
 
 import blockJson from './block-3516.json'
 const blockSpec = blockJson.block
@@ -17,8 +18,8 @@ describe('Get Block', function () {
   })
   it(`should get block ${blockNumber}`, async function () {
     this.timeout(60000)
-    let db = await datasource
-    let block = new Block(blockNumber, new BlocksBase(db))
+    let { db } = await datasource
+    let block = new Block(blockNumber, new BlocksBase(db, { nativeContracts }))
     await block.fetch()
     blockData = block.getData(true)
     expect(blockData).to.be.an('object')

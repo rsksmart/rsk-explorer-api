@@ -10,7 +10,7 @@ if (!isAddress(contractAddress)) help()
 
 const contract = new Contract(contractAddress, null, nod3)
 
-datasource.then(async db => {
+datasource.then(async ({ db }) => {
   const collection = db.collection('tokensAddresses')
   let accounts = await collection.find({ contract: contractAddress }).toArray()
   let { errors, totalDiff } = await updateBalances(accounts, collection)

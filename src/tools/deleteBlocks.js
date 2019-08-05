@@ -3,7 +3,7 @@ import { deleteBlockDataFromDb, getBlockFromDb } from '../services/classes/Block
 import { BlocksBase } from '../lib/BlocksBase'
 import { info, orange, reset, error, ansiCode } from '../lib/cli'
 
-dataSource.then(async db => {
+dataSource.then(async ({ db }) => {
   const options = new BlocksBase(db)
   const p = path => path.split('/').pop()
   const help = () => {

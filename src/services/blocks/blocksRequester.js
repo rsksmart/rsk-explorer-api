@@ -6,12 +6,10 @@ import { dataSource } from '../../lib/dataSource'
 import Logger from '../../lib/Logger'
 import config from '../../lib/config'
 
-const options = Object.assign({}, config.blocks)
-const log = Logger('Blocks', options.log)
-options.Logger = log
+const log = Logger('Blocks', config.blocks.log)
 
-dataSource.then(db => {
-  let Requester = new RequestBlocks(db, options)
+dataSource.then(({ db, nativeContracts }) => {
+  let Requester = new RequestBlocks(db, { log, nativeContracts })
   const blocksCollection = Requester.collections.Blocks
 
   Requester.updateStatus = function (state) {

@@ -4,12 +4,10 @@ import { CheckBlocks } from '../classes/CheckBlocks'
 import conf from '../../lib/config'
 import Logger from '../../lib/Logger'
 
-const options = Object.assign({}, conf.blocks)
-const log = Logger('Blocks', options.log)
-options.Logger = log
+const log = Logger('Blocks', conf.blocks.log)
 
-dataSource.then(db => {
-  const Checker = new CheckBlocks(db, options)
+dataSource.then(({ db }) => {
+  const Checker = new CheckBlocks(db, { log })
   Checker.start()
   process.on('message', msg => {
     let action = msg.action

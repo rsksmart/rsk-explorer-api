@@ -9,7 +9,8 @@ class Emitter extends EventEmitter { }
 
 export class RequestBlocks extends BlocksBase {
   constructor (db, options) {
-    super(db, options)
+    let { nativeContracts, log } = options
+    super(db, { nativeContracts, log })
     this.queueSize = options.blocksQueueSize || 50
     this.pending = new Set()
     this.requested = new Map()
@@ -89,7 +90,8 @@ export class RequestBlocks extends BlocksBase {
         this.log.debug(`${hashOrNumber}: ${hash}`)
       }
       hash = hash || hashOrNumber
-      let block = await getBlock(this.nod3, this.collections, hash, this.log)
+      const { nod3, collections, log, nativeContracts } = this
+      let block = await getBlock(hash, { nod3, collections, log, nativeContracts })
       return block
     } catch (err) {
       return Promise.reject(err)
@@ -131,13 +133,13 @@ export class RequestBlocks extends BlocksBase {
   }
 }
 
-export async function getBlock (nod3, collections, hashOrNumber, Logger) {
+export async function getBlock (hashOrNumber, { nod3, collections, log, nativeContracts }) {
   if (isBlockHash(hashOrNumber)) {
     let block = await getBlockFromDb(hashOrNumber, collections.Blocks)
     if (block) return { block, key: hashOrNumber }
   }
   try {
-    let newBlock = new Block(hashOrNumber, { nod3, collections, Logger })
+    let newBlock = new Block(hashOrNumber, { nod3, collections, log, nativeContracts })
     let block = await newBlock.save().then(res => {
       if (!res || !res.data) return
       return res.data.block

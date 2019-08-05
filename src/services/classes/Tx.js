@@ -1,15 +1,16 @@
 import { BcThing } from './BcThing'
-import txFormat from '../../lib/txFormat'
 import { formatEvent } from './Event'
 import ContractParser from '../../lib/ContractParser/ContractParser'
-
+import { txTypes } from '../../lib/types'
+import { getTxOrEventId } from '../../lib/ids'
+import { isAddress } from '../../lib/utils'
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { nod3 }) {
+  constructor (hash, timestamp, { nod3, nativeContracts } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super(nod3)
+    super({ nod3, nativeContracts })
     this.hash = hash
     this.timestamp = timestamp
-    this.contractParser = new ContractParser()
+    this.contractParser = new ContractParser({ nativeContracts })
   }
   async fetch () {
     try {
@@ -32,7 +33,7 @@ export class Tx extends BcThing {
       tx.timestamp = this.timestamp
       tx.receipt = receipt
       if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
-      tx = txFormat(tx)
+      tx = this.txFormat(tx)
       return tx
     } catch (err) {
       return Promise.reject(err)
@@ -59,6 +60,16 @@ export class Tx extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+  txFormat (tx) {
+    tx.txType = txTypes.default
+    const receipt = tx.receipt || {}
+    const toIsNative = this.nativeContracts.isNativeContract(tx.to)
+    let nativeType = txTypes[toIsNative]
+    if (nativeType) tx.txType = nativeType
+    if (isAddress(receipt.contractAddress)) tx.txType = txTypes.contract
+    tx._id = getTxOrEventId(tx)
+    return tx
   }
 
   parseLogs (logs) {
