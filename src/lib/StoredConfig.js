@@ -34,11 +34,15 @@ export function StoredConfig (db) {
       return Promise.reject(err)
     }
   }
-  const update = async (_id, doc) => {
+  const update = async (_id, doc, { create } = {}) => {
     try {
       if (!_id) throw new Error(`Missing doc._id`)
       if (isReadOnly(_id)) throw new Error(`The doc with _id ${_id} is read only`)
-      let res = await storage.updateOne({ _id }, { $set: doc })
+      const newDoc = Object.assign({}, doc)
+      newDoc._updated = Date.now()
+      const options = {}
+      if (create) options.upsert = true
+      let res = await storage.updateOne({ _id }, { $set: doc }, options)
       return res
     } catch (err) {
       return Promise.reject(err)

@@ -195,5 +195,10 @@ export default {
       key: { blockNumber: -1 },
       name: 'statsBlockNumber'
     }
+  ],
+  ContractVerification: [
+    {
+      key: { address: 1 }
+    }
   ]
 }

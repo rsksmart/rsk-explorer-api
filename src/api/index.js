@@ -9,6 +9,7 @@ import config from '../lib/config'
 import { HttpServer } from './HttpServer'
 import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
+import { evaluateError } from './lib/evaluateError'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
@@ -114,13 +115,16 @@ dataSource.then(({ db, initConfig, nativeContracts }) => {
         if (delayed && userEvents) {
           const registry = !result.data && delayed.runIfEmpty
           if (payload.getDelayed) {
+            const lastBlock = api.getLastBlock()
+            const block = (lastBlock) ? lastBlock.number : null
             userEvents.send({
               action: delayed.action,
               module: delayed.module,
               params,
               socketId: socket.id,
               payload,
-              block: api.getLastBlock().number
+              block,
+              result
             })
           }
           result.delayed = { fields: delayed.fields, registry }
@@ -128,8 +132,9 @@ dataSource.then(({ db, initConfig, nativeContracts }) => {
         socket.emit('data', formatRes({ module, action, result, req: payload }))
       } catch (err) {
         log.debug(`Action: ${payload.action}: ERROR: ${err}`)
+        log.trace(err)
         socket.emit('Error',
-          formatRes({ result: null, req: payload, error: errors.INVALID_REQUEST })
+          formatRes({ result: null, req: payload, error: evaluateError(err) })
         )
       }
     })
