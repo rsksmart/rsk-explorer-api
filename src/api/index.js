@@ -8,13 +8,7 @@ import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
 import { HttpServer } from './HttpServer'
 import { createChannels } from './channels'
-
-import {
-  errors,
-  formatError,
-  formatRes,
-  publicSettings
-} from './lib/apiTools'
+import { errors, formatError, formatRes } from './lib/apiTools'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
@@ -88,7 +82,7 @@ dataSource.then(({ db, initConfig, nativeContracts }) => {
   })
 
   io.on('connection', socket => {
-    socket.emit('open', { time: Date.now(), settings: publicSettings() })
+    socket.emit('open', { time: Date.now(), settings: api.info() })
     socket.on('message', () => { })
     socket.on('disconnect', () => { })
     socket.on('error', err => {

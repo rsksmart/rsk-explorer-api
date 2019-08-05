@@ -11,7 +11,12 @@ export function StoredConfig (db) {
   const get = async (_id) => {
     try {
       const doc = await storage.findOne({ _id })
-      if (doc) delete doc._id
+      if (doc) {
+        // Remove all underscored properties
+        for (let prop in doc) {
+          if (prop[0] === '_') delete doc[prop]
+        }
+      }
       return doc
     } catch (err) {
       return Promise.reject(err)
@@ -22,6 +27,7 @@ export function StoredConfig (db) {
       if (!id || !isValidId(id)) throw new Error(`Invalid id ${id}`)
       const newDoc = Object.assign({}, doc)
       newDoc._id = id
+      newDoc._created = Date.now()
       const res = await storage.insertOne(newDoc)
       return res
     } catch (err) {

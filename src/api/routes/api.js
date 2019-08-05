@@ -4,10 +4,15 @@ const router = express.Router()
 const Routes = ({ log, api }) => {
   router.use('/', (req, res, next) => {
     try {
-      const { module, action } = req.query
-      if (!module) throw new Error(`invalid module: ${module}`)
-      if (!action) throw new Error(`invalid action: ${action}`)
-      next()
+      const params = req.query
+      if (Object.keys(params).length === 0) {
+        res.send(api.info())
+      } else {
+        const { module, action } = req.query
+        if (!module) throw new Error(`invalid module: ${module}`)
+        if (!action) throw new Error(`invalid action: ${action}`)
+        next()
+      }
     } catch (err) {
       log.debug(err)
       res.status(400).send()

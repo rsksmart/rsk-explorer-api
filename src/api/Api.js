@@ -4,6 +4,7 @@ import { txTypes } from '../lib/types'
 import getCirculatingSupply from './lib/getCirculatingSupply'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
+import config from '../lib/config'
 
 class Api extends DataCollector {
   constructor ({ db, initConfig, nativeContracts }, { modules, collectionsNames, lastBlocks } = {}) {
@@ -55,6 +56,13 @@ class Api extends DataCollector {
       this.log.debug(err)
       return Promise.reject(err)
     }
+  }
+
+  info () {
+    let info = Object.assign({}, this.initConfig)
+    info.txTypes = Object.assign({}, txTypes)
+    info.modules = config.api.modules
+    return info
   }
 
   async setLastBlocks () {
