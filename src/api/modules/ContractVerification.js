@@ -14,7 +14,9 @@ export class ContractVerification extends DataCollectorItem {
           const aData = await this.parent.getModule('Address').run('getCode', { address })
           const { data } = aData
           if (!data) throw new Error400('Unknown address or address is not a contract')
-          if (data.source) throw new Error400('The contract source is already vefified')
+          
+          // TODO Check if is verified
+          // if (data.source) throw new Error400('The contract source is already vefified')
           // TODO Check if have pending verifications
 
           const { creationCode } = data
