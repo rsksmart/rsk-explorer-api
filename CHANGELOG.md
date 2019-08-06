@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+## Added
+
+- API contractVerifier module
+- API extendedStats module
+- API summary module that provides all scrapped and decoded data from one block in one document.
+- Setup module which stores the blockchain configuration on database and checks
+against the node, at start, to avoid inserting data from another blockchain on the same database.  
+- The API now exposes network information  such as the addresses of native contracts (pre configured) and the chainId
+
 ## [0.8.0] - 2019-06-03
 
 ### Added
