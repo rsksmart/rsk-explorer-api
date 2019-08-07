@@ -51,7 +51,8 @@ export class DataCollectorItem {
   }
 
   async getLatest (query, project) {
-    const result = await find(this.db, {}, this.sort, 1)
+    query = query || {}
+    const result = await find(this.db, query, this.sort, 1, project)
     return result.length ? result[0] : null
   }
 
