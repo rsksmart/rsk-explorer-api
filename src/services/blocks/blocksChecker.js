@@ -6,7 +6,7 @@ import Logger from '../../lib/Logger'
 
 const log = Logger('Blocks', conf.blocks.log)
 
-dataSource.then(({ db }) => {
+dataSource().then(({ db }) => {
   const Checker = new CheckBlocks(db, { log })
   Checker.start()
   process.on('message', msg => {

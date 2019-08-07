@@ -1,5 +1,5 @@
 import IO from 'socket.io'
-import dataSource from '../lib/dataSource'
+import { setup } from '../lib/dataSource'
 import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
@@ -14,7 +14,7 @@ import { evaluateError } from './lib/evaluateError'
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
-dataSource.then(({ db, initConfig, nativeContracts }) => {
+setup({ log, skipCheck: true }).then(({ db, initConfig, nativeContracts }) => {
   log.info('Database connected')
 
   // data collectors

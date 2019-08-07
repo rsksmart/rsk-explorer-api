@@ -1,5 +1,5 @@
 
 import Setup from './Setup'
-export const dataSource = Setup().then(setup => setup.start())
-export const setup = (log) => Setup({ log }).then(setup => setup.start())
-export default dataSource
+export const setup = ({ log, skipCheck } = {}) => Setup({ log } = {}).then(setup => setup.start(skipCheck))
+export const dataSource = setup
+export default setup

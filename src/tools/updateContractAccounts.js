@@ -2,7 +2,7 @@ import Contract from '../services/classes/Contract'
 import nod3 from '../lib/nod3Connect'
 import BigNumber from 'bignumber.js'
 import { bigNumberSum, add0x, isAddress } from '../lib/utils'
-import datasource from '../lib/dataSource'
+import dataSource from '../lib/dataSource'
 import { info, warn, error } from '../lib/cli'
 
 const contractAddress = process.argv[2]
@@ -10,7 +10,7 @@ if (!isAddress(contractAddress)) help()
 
 const contract = new Contract(contractAddress, null, nod3)
 
-datasource.then(async ({ db }) => {
+dataSource().then(async ({ db }) => {
   const collection = db.collection('tokensAddresses')
   let accounts = await collection.find({ contract: contractAddress }).toArray()
   let { errors, totalDiff } = await updateBalances(accounts, collection)

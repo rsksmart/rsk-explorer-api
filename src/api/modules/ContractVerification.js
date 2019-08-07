@@ -36,13 +36,22 @@ export class ContractVerification extends DataCollectorItem {
       },
 
       getVerifications: async (params) => {
-        const { address, match } = params
-        const query = (undefined !== match) ? { address, match: !!match } : { address }
+        const query = verificationQuery(params)
         const data = await this.getPageData(query)
         return { data }
+      },
+      getLatestVerification: async (params) => {
+        const query = verificationQuery(params)
+        return this.getLatest(query)
       }
     }
   }
+}
+
+function verificationQuery (params) {
+  const { address, match } = params
+  const query = (undefined !== match) ? { address, match: !!match } : { address }
+  return query
 }
 
 export default ContractVerification

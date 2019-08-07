@@ -18,7 +18,7 @@ describe('Get Block', function () {
   })
   it(`should get block ${blockNumber}`, async function () {
     this.timeout(60000)
-    let { db } = await datasource
+    let { db } = await datasource()
     let block = new Block(blockNumber, new BlocksBase(db, { nativeContracts }))
     await block.fetch()
     blockData = block.getData(true)

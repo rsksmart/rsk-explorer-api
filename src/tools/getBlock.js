@@ -9,7 +9,7 @@ const opt = process.argv[3]
 const save = (opt === '--save')
 const json = (opt === '--json')
 if (!hashOrNumber) help()
-dataSource.then(({ db, nativeContracts }) => {
+dataSource().then(({ db, nativeContracts }) => {
   if (!json) info(`Getting block ${hashOrNumber}`)
   getBlock(hashOrNumber, { db, nativeContracts }).then(block => {
     if (json) console.log(JSON.stringify(block))

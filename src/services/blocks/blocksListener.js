@@ -6,7 +6,7 @@ import Logger from '../../lib/Logger'
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
 
-setup(log).then(({ db }) => {
+setup({ log }).then(({ db }) => {
   config.Logger = log
   const listener = new ListenBlocks(db, { log })
   log.info(`Starting blocks listener`)

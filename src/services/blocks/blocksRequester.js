@@ -8,7 +8,7 @@ import config from '../../lib/config'
 
 const log = Logger('Blocks', config.blocks.log)
 
-dataSource.then(({ db, nativeContracts }) => {
+dataSource().then(({ db, nativeContracts }) => {
   let Requester = new RequestBlocks(db, { log, nativeContracts })
   const blocksCollection = Requester.collections.Blocks
 

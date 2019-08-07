@@ -1,6 +1,6 @@
 import dataSource from '../lib/dataSource.js'
 
-dataSource.then(({ db }) => {
+dataSource({ skipCheck: true }).then(({ db }) => {
   let addresses = db.collection('addresses')
   addresses.find({ type: 'contract' })
     .project({ _id: 0, address: 1 })

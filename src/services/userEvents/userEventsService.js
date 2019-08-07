@@ -10,7 +10,7 @@ import ContractVerifierModule from './ContractVerifierModule'
 const log = Logger('UserRequests', config.blocks.log)
 const verifierConfig = config.api.contractVerifier
 
-dataSource.then(({ db }) => {
+dataSource({ log, skipCheck: true }).then(({ db }) => {
   const collections = getDbBlocksCollections(db)
   const cache = new RequestCache()
   // TODO, conditional creation

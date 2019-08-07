@@ -51,9 +51,12 @@ export async function Setup ({ log } = {}) {
     }
   }
 
-  const start = async () => {
+  const start = async (skipCheck) => {
     try {
-      const initConfig = await checkSetup()
+      let initConfig
+      if (skipCheck) initConfig = await storedConfig.getConfig()
+      else initConfig = await checkSetup()
+      if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
       const nativeContracts = NativeContracts(initConfig)
       return { initConfig, db, nativeContracts }
     } catch (err) {
