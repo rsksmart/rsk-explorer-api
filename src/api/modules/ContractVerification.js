@@ -4,9 +4,9 @@ import { versionsId } from '../../services/userEvents/ContractVerifierModule'
 import { Error404, Error400 } from '../lib/Errors'
 export class ContractVerification extends DataCollectorItem {
   constructor (collections, name) {
-    const { ContractVerification } = collections
+    const { ContractVerification, VerificationsResults } = collections
     super(ContractVerification, name)
-
+    this.verificationsCollection = VerificationsResults
     this.publicActions = {
       verify: async (params) => {
         try {
@@ -35,23 +35,29 @@ export class ContractVerification extends DataCollectorItem {
         return { data }
       },
 
-      getVerifications: async (params) => {
-        const query = verificationQuery(params)
-        const data = await this.getPageData(query)
+      /*  getVerifications: async (params) => {
+         const query = verificationQuery(params)
+         const data = await this.getPageData(query)
+         return { data }
+       },
+       getLatestVerification: async (params) => {
+         const query = verificationQuery(params)
+         return this.getLatest(query)
+       }, */
+
+      isVerified: async (params) => {
+        const { address } = params
+        const data = await this.verificationsCollection.findOne({ address })
         return { data }
-      },
-      getLatestVerification: async (params) => {
-        const query = verificationQuery(params)
-        return this.getLatest(query)
       }
     }
   }
 }
 
-function verificationQuery (params) {
+/* function verificationQuery (params) {
   const { address, match } = params
   const query = (undefined !== match) ? { address, match: !!match } : { address }
   return query
-}
+} */
 
 export default ContractVerification
