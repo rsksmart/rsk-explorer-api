@@ -14,10 +14,10 @@ export class ContractVerification extends DataCollectorItem {
           const aData = await this.parent.getModule('Address').run('getCode', { address })
           const { data } = aData
           if (!data) throw new Error400('Unknown address or address is not a contract')
-          
+
           // TODO Check if is verified
           // if (data.source) throw new Error400('The contract source is already vefified')
-          // TODO Check if have pending verifications
+          // TODO Check if has pending verifications
 
           const { creationCode } = data
           if (!creationCode) throw new Error404('Contract creation data not found')
@@ -32,6 +32,13 @@ export class ContractVerification extends DataCollectorItem {
 
       getVersions: async () => {
         const data = await StoredConfig(this.parent.db).get(versionsId)
+        return { data }
+      },
+
+      getVerifications: async (params) => {
+        const { address, match } = params
+        const query = (undefined !== match) ? { address, match: !!match } : { address }
+        const data = await this.getPageData(query)
         return { data }
       }
     }
