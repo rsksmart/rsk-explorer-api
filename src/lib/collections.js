@@ -200,5 +200,13 @@ export default {
     {
       key: { address: 1 }
     }
+  ],
+  VerificationsResults: [
+    {
+      key: { address: 1 }
+    },
+    {
+      key: { match: 1 }
+    }
   ]
 }

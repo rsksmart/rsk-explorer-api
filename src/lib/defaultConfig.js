@@ -61,6 +61,7 @@ export default {
     PendingTxs: 'transactionsPending',
     Stats: 'stats',
     BlocksSummary: 'blocksSummary',
-    ContractVerification: 'contractsVerifications'
+    ContractVerification: 'contractsVerifications',
+    VerificationsResults: 'verificationResults'
   }
 }

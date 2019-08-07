@@ -6,6 +6,7 @@ import { serialize } from '../../lib/utils'
 import { RequestCache } from './RequestCache'
 import AddressModule from './AddressModule'
 import ContractVerifierModule from './ContractVerifierModule'
+import { errors } from '../../lib/types'
 
 const log = Logger('UserRequests', config.blocks.log)
 const verifierConfig = config.api.contractVerifier
@@ -34,8 +35,15 @@ dataSource({ log, skipCheck: true }).then(({ db }) => {
           case 'ContractVerification':
             const method = verifierModule[action]
             if (!method) throw new Error(`Unknow action ${action}`)
-            msg = await method(msg)
-            sendMessage(msg)
+            try {
+              msg = await method(msg)
+              sendMessage(msg)
+            } catch (err) {
+              log.debug(err)
+              msg.error = errors.TEMPORARILY_UNAVAILABLE
+              sendMessage(msg)
+              throw err
+            }
             break
         }
       }

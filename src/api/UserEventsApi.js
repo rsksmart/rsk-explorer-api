@@ -21,6 +21,7 @@ export const UserEventsApi = (io, api, { log }) => {
       let req = payload
       let error = res.error
       const socket = io.sockets.connected[msg.socketId]
+      log.trace(`Sending message to client ${module}.${action} ${JSON.stringify(error)}`)
       if (socket) socket.emit('data', formatRes({ module, action, result, req, error }))
     } catch (err) {
       log.error(err)

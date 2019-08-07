@@ -14,7 +14,12 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
 
   socket.on('connect', data => {
     // request solc list
+    log.debug(`Requesting solc versions list`)
     socket.emit('data', { action: 'versions' })
+  })
+
+  socket.on('error', err => {
+    log.error(err)
   })
 
   // server responses
@@ -23,21 +28,35 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
       const { data, action, error, request } = msg
       switch (action) {
         case 'versions':
+          log.debug(`Updating solc versions list`)
           versions = Object.assign({}, data)
           storedConfig.update(versionsId, versions, { create: true })
           break
         // verification result
         case 'verify':
           const result = (data) ? data.result : null
-          let { _id } = request
+          let { _id, address } = request
           if (!_id) throw new Error(`Missing _id {$request}`)
           _id = ObjectID(_id)
+          log.debug(`New verification received ${address}`)
           // Update verification
-          const { bytecodeHash, resultBytecodeHash } = result
-          const match = (bytecodeHash.length === 66) && (bytecodeHash === resultBytecodeHash)
+          let match = false
+          if (result) {
+            const { bytecodeHash, resultBytecodeHash } = result
+            match = (bytecodeHash.length === 66) && (bytecodeHash === resultBytecodeHash)
+          }
           log.debug(`Updating verification ${_id}`)
-          const res = await collection.updateOne({ _id }, { $set: { error, verification: result, match } })
+          const res = await collection.updateOne({ _id }, { $set: { error, result, match } })
           if (!res.result.ok) throw new Error(`Error updating verification ${_id}`)
+
+          // store verification positive results
+          if (match && !error) {
+            log.debug(`Saving verification result ${address}`)
+            const doc = { address, match, request, result, timestamp: Date.now() }
+            const inserted = await collections.VerificationsResults.insertOne(doc)
+            if (!inserted.result.ok) throw new Error('Error inserting verification result')
+            log.debug(`Verification result inserted: ${address}/${inserted.result.insertedId}`)
+          }
           break
       }
     } catch (err) {
@@ -65,6 +84,8 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
       const id = res.insertedId
       if (!id) throw new Error(`Error creating pending verification`)
       data._id = id
+      log.debug(`Sending verification to verifier ${JSON.stringify(data)}`)
+      if (!socket.connected) throw new Error('Cannot connect to contract verifier')
       socket.emit('data', { action, params: data })
       msg.module = module
       return msg
