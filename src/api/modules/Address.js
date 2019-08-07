@@ -38,10 +38,10 @@ export class Address extends DataCollectorItem {
         const aData = await this.getOne({ address })
         if (aData && aData.data) {
           let { data } = aData
-          let isNative = this.parent.isNativeContract(address)
-          if (isNative) {
-            if (!data.name) data.name = isNative
-            data.type = addrTypes.CONTRACT
+          if (data.type === addrTypes.CONTRACT) {
+            const verified = await this.parent.getModule('ContractVerification')
+              .run('isVerified', { address, match: true })
+            if (verified) data.verification = verified.data
           }
           aData.data = data
         }
@@ -208,7 +208,7 @@ export class Address extends DataCollectorItem {
       getCode: async params => {
         try {
           const { address } = params
-          const fields = { _id: 0, address: 1, code: 1, createdByTx: 1, name: 1 }
+          const fields = { _id: 0, address: 1, code: 1, createdByTx: 1, contractInterfaces: 1, name: 1 }
           const result = await this.getOne({ address }, fields)
           let { data } = result
           if (!data) throw new Error('Unknown address')
@@ -216,6 +216,7 @@ export class Address extends DataCollectorItem {
           if (!code) throw new Error('The address does not have code')
           if (createdByTx) {
             data.creationCode = createdByTx.input
+            data.created = createdByTx.timestamp
             delete data.createdByTx
           }
           return result
