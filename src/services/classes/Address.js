@@ -1,7 +1,7 @@
 import { BcThing } from './BcThing'
 import { GetTxBalance } from './GetTxBalance'
 import { isBlockObject, isNullData } from '../../lib/utils'
-import { fields } from '../../lib/types'
+import { fields, addrTypes } from '../../lib/types'
 
 export class Address extends BcThing {
   constructor (address, { nod3, nativeContracts, db, collections, block = 'latest' } = {}) {
@@ -12,12 +12,12 @@ export class Address extends BcThing {
     this.codeIsSaved = false
     this.TxsBalance = new GetTxBalance(this.collections.Txs)
     this.data = new Proxy(
-      { address, type: 'account' }, {
+      { address, type: addrTypes.ADDRESS }, {
         set (obj, prop, val) {
           if (prop === 'code') {
             val = val || null
             if (!isNullData(val)) {
-              obj.type = 'contract'
+              obj.type = addrTypes.CONTRACT
               obj.code = val
             }
           } else if (val && prop === fields.LAST_BLOCK_MINED) {
@@ -88,6 +88,15 @@ export class Address extends BcThing {
         code = await this.getCode()
       }
       this.data.code = code
+      const { nativeContracts } = this
+      if (nativeContracts) {
+        const isNative = this.nativeContracts.isNativeContract(this.address)
+        if (isNative) {
+          this.data.isNative = true
+          this.data.name = this.nativeContracts.getNativeContractName(this.address)
+          this.data.type = addrTypes.CONTRACT
+        }
+      }
       return this.getData()
     } catch (err) {
       return Promise.reject(err)

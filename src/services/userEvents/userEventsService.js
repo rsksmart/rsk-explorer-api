@@ -11,12 +11,12 @@ import { errors } from '../../lib/types'
 const log = Logger('UserRequests', config.blocks.log)
 const verifierConfig = config.api.contractVerifier
 
-dataSource({ log, skipCheck: true }).then(({ db }) => {
+dataSource({ log, skipCheck: true }).then(({ db, nativeContracts }) => {
   const collections = getDbBlocksCollections(db)
   const cache = new RequestCache()
   // TODO, conditional creation
   const verifierModule = ContractVerifierModule(db, collections, verifierConfig, { log })
-  const addressModule = AddressModule(db, collections, { log })
+  const addressModule = AddressModule({ db, collections, nativeContracts, log })
 
   process.on('message', async msg => {
     try {

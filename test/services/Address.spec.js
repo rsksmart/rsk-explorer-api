@@ -1,7 +1,11 @@
 import { expect } from 'chai'
 import { randomAddress, randomBlockHash, testCollections } from '../shared'
-import { fields } from '../../src/lib/types'
+import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
+import NativeContracts from '../../src/lib/NativeContracts'
+
+const nativeTestContract = '0x0000000000000000000000000000000001aaaaaa'
+const nativeContracts = NativeContracts({ nativeContracts: { nativeTestContract } })
 
 const options = { collections: { Addr: null } }
 
@@ -132,4 +136,13 @@ describe(`# Address, requires db connection`, function () {
     expect(data[lastBlockMined].number).to.be.equal(block.number)
   })
 
+  it(`should return a native contract address document`, async () => {
+    const collections = await testCollections()
+    const address = new Address(nativeTestContract, { nativeContracts, nod3, collections })
+    await address.fetch()
+    const data = address.getData()
+    expect(data).haveOwnProperty('isNative').equal(true)
+    expect(data.type).to.be.equal(addrTypes.CONTRACT)
+    expect(data.name).to.be.equal('nativeTestContract')
+  })
 })
