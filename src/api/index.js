@@ -113,7 +113,7 @@ setup({ log, skipCheck: true }).then(({ db, initConfig, nativeContracts }) => {
         const res = await api.run(payload)
         const { module, action, params, result, delayed } = res
         if (delayed && userEvents) {
-          const registry = !result.data && delayed.runIfEmpty
+          const registry = delayed.registry || (!result.data && delayed.runIfEmpty)
           if (payload.getDelayed) {
             const lastBlock = api.getLastBlock()
             const block = (lastBlock) ? lastBlock.number : null

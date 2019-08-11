@@ -40,11 +40,7 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
           _id = ObjectID(_id)
           log.debug(`New verification received ${address}`)
           // Update verification
-          let match = false
-          if (result) {
-            const { bytecodeHash, resultBytecodeHash } = result
-            match = (bytecodeHash.length === 66) && (bytecodeHash === resultBytecodeHash)
-          }
+          const match = checkResult(result || {})
           log.debug(`Updating verification ${_id}`)
           const res = await collection.updateOne({ _id }, { $set: { error, result, match } })
           if (!res.result.ok) throw new Error(`Error updating verification ${_id}`)
@@ -88,12 +84,22 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
       if (!socket.connected) throw new Error('Cannot connect to contract verifier')
       socket.emit('data', { action, params: data })
       msg.module = module
+      msg.data = { address, id }
       return msg
     } catch (err) {
       return Promise.reject(err)
     }
   }
+  const checkResult = ({ bytecodeHash, resultBytecodeHash }) => {
+    try {
+      if (!bytecodeHash || bytecodeHash.length !== 66) throw new Error('Invalid bytecodeHash')
+      if (!resultBytecodeHash) throw new Error('resultBytecodeHash is empty')
+      return resultBytecodeHash === bytecodeHash
+    } catch (err) {
+      log.debug(err)
+      return false
+    }
+  }
   return Object.freeze({ getVersions, requestVerification })
 }
-
 export default ContractVerifierModule
