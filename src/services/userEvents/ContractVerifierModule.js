@@ -48,7 +48,9 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
           // store verification positive results
           if (match && !error) {
             log.debug(`Saving verification result ${address}`)
-            const doc = { address, match, request, result, timestamp: Date.now() }
+            const sources = extractUsedSourcesFromRequest(request, result)
+            const { abi } = result
+            const doc = { address, match, request, result, abi, sources, timestamp: Date.now() }
             const inserted = await collections.VerificationsResults.insertOne(doc)
             if (!inserted.result.ok) throw new Error('Error inserting verification result')
             log.debug(`Verification result inserted: ${address}/${inserted.result.insertedId}`)
@@ -102,4 +104,37 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
   }
   return Object.freeze({ getVersions, requestVerification })
 }
+
+export function replaceImport (content, name) {
+  const re = new RegExp(`^import\\s*"([A-Za-z-0-9_\\/\\.]*(/${name}))";$`)
+  return content.replace(re, function (a, b) {
+    return a.replace(b, `./${name}`)
+  })
+}
+
+export function extractUsedSourcesFromRequest ({ source, imports }, { usedSources }) {
+  const sourceData = imports[0]
+  // fix it with hash
+  if (source === sourceData.contents) {
+    sourceData.file = sourceData.name
+    usedSources.unshift(sourceData)
+  }
+  // replaces paths in in imports
+  imports = imports.map(i => {
+    let { name, contents } = i
+    usedSources.forEach(s => {
+      let { file } = s
+      contents = contents.split('\n').map(line => replaceImport(line, file)).join('\n')
+    })
+    return { contents, name }
+  })
+
+  return usedSources.map(s => {
+    let { file: name } = s
+    let imp = imports.find(i => i.name === name)
+    const { contents } = imp
+    return { name, contents }
+  })
+}
+
 export default ContractVerifierModule
