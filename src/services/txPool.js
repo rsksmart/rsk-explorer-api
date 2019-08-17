@@ -7,7 +7,7 @@ const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
 
 setup({ log }).then(({ db }) => {
-  config.Logger = log
+  config.log = log
   const txPool = new TxPool(db, config)
   log.info(`Starting txPool`)
   txPool.start()

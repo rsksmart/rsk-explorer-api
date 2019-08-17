@@ -1,5 +1,5 @@
 import config from './config'
-import dataSource from './dataSource'
+import { setup } from './dataSource'
 
 export const getDbBlocksCollections = (db, names) => {
   names = names || config.collectionsNames
@@ -12,9 +12,10 @@ export const getDbBlocksCollections = (db, names) => {
 
 export const blocksCollections = async () => {
   try {
-    let { db } = await dataSource
+    let { db } = await setup()
     return getDbBlocksCollections(db)
   } catch (err) {
+    console.log(`Error getting collections ${err}`)
     console.log(err)
     process.exit(9)
   }

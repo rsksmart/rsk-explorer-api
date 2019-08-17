@@ -29,8 +29,8 @@ export class BlocksStatus extends BlocksBase {
           return newState
         })
         .catch((err) => {
-          console.log(err)
-          // this.log.error(err)
+          this.log.debug(`Error inserting new status`)
+          this.log.error(err)
         })
     } else {
       return Promise.resolve(this.state)

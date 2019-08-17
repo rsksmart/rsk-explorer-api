@@ -9,7 +9,7 @@ import Setup from '../../lib/Setup'
 
 const config = Object.assign({}, conf.blocks)
 const log = Logger('Blocks', config.log)
-config.Logger = log
+config.log = log
 
 startBlocks()
 
