@@ -77,12 +77,13 @@ export function ContractVerifierModule (db, collections, { url }, { log }) {
       const { data } = result
       const { module, action } = payload
       const { address } = data
+      delete data._id
       if (!address) throw new Error(`Missing address in verification`)
       let res = await collection.insertOne({ address, request: data, timestamp: Date.now() })
       const id = res.insertedId
       if (!id) throw new Error(`Error creating pending verification`)
       data._id = id
-      log.debug(`Sending verification to verifier ${JSON.stringify(data)}`)
+      log.debug(`Sending verification to verifier ID:${id}`)
       if (!socket.connected) throw new Error('Cannot connect to contract verifier')
       socket.emit('data', { action, params: data })
       msg.module = module

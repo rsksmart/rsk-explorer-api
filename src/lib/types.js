@@ -77,4 +77,12 @@ export const fields = {
   LAST_BLOCK_MINED: 'lastBlockMined'
 }
 
+export const EVMversions = [
+  'homestead',
+  'tangerineWhistle',
+  'spuriousDragon',
+  'byzantium',
+  'constantinople',
+  'petersburg']
+
 export default { txTypes, errors, addrTypes, contractsInterfaces }
