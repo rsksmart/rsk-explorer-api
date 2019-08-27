@@ -35,7 +35,7 @@ export class Address extends DataCollectorItem {
 
       getAddress: async params => {
         const { address } = params
-        const aData = await this.getOne({ address })
+        const aData = await this.getOne({ address }, { _id: 0 })
         if (aData && aData.data) {
           let { data } = aData
           if (data.type === addrTypes.CONTRACT) {
