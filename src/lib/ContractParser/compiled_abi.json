@@ -90,6 +90,795 @@
     }
   },
   {
+    "constant": false,
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "renounceOwnership()",
+      "signature": "715018a616b5f2044428f6fadb7deef4ce9ca76ef60ea57978964ad137bbe7ae",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "owner()",
+      "signature": "8da5cb5b36e7f68c1d2e56001220cdbdd3ba2616072f718acfda4a06441a807d",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "isOwner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "isOwner()",
+      "signature": "8f32d59b339b0965093e9a53b00f4400c41d72f026df85c0beaa1d49d97802ef",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "moneyToPayPerBlock",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "moneyToPayPerBlock()",
+      "signature": "94eaa46b6c4a6677c8f49b080d56276204fe453436ffffd2aecf2b68ae319385",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "maxMiners",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "maxMiners()",
+      "signature": "db6fccda07b2e6bad5d478a794d378d354ca434f3c94b1b7fc514a919aed92b9",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "maxBlocksToPayPerCall",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "maxBlocksToPayPerCall()",
+      "signature": "e32683dff52aff29d263721de20831e5fe2d2c748ab6567b6efac21a9bde1823",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "transferOwnership(address)",
+      "signature": "f2fde38b092330466c661fc723d5289b90272a3e580e3187d1d7ef788506c557",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "lastPaidBlock",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "lastPaidBlock()",
+      "signature": "f6aced518ca2df90e95db514f2e0f737010a2ac304bc5c27c911099fab41eda7",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "inputs": [
+      {
+        "name": "_blockInfoProvider",
+        "type": "address"
+      },
+      {
+        "name": "_moneyToPayPerBlock",
+        "type": "uint256"
+      },
+      {
+        "name": "_maxBlocksToPayPerCall",
+        "type": "uint256"
+      },
+      {
+        "name": "_maxMiners",
+        "type": "uint256"
+      },
+      {
+        "name": "_lockupInMonths",
+        "type": "uint256"
+      },
+      {
+        "name": "_dateTimeContract",
+        "type": "address"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "constructor",
+    "__signatureData": {
+      "method": null,
+      "signature": null,
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "miner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "period",
+        "type": "uint256"
+      }
+    ],
+    "name": "PayToMiner",
+    "type": "event",
+    "__signatureData": {
+      "method": "PayToMiner(address,uint256,uint256)",
+      "signature": "95460d5668d84b3e4997ca15219ed0e18bf56a8330e21379e011e771c6a4b05a",
+      "index": [
+        false,
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "miner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "period",
+        "type": "uint256"
+      }
+    ],
+    "name": "PayToMinerFailed",
+    "type": "event",
+    "__signatureData": {
+      "method": "PayToMinerFailed(address,uint256,uint256)",
+      "signature": "c41773826985aa9ab71a9ab07150c777355f4bdc9c86683a5e4fde65825fc6e6",
+      "index": [
+        false,
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "period",
+        "type": "uint256"
+      }
+    ],
+    "name": "PayToMiners",
+    "type": "event",
+    "__signatureData": {
+      "method": "PayToMiners(uint256,uint256)",
+      "signature": "a4790ab3a9e0de65862e8f110f85694b812c416e3b890ca5b8f97253de160ef6",
+      "index": [
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "DonationReceived",
+    "type": "event",
+    "__signatureData": {
+      "method": "DonationReceived()",
+      "signature": "e554fffbd0e5c2a35b0a24fef85d4297554111caf74cc33cb4cc85a117bbe6e0",
+      "index": [],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "InsufficientBalance",
+    "type": "event",
+    "__signatureData": {
+      "method": "InsufficientBalance()",
+      "signature": "f4d678b8ce6b5157126b1484a53523762a93571537a7d5ae97d8014a44715c94",
+      "index": [],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "from",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "to",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "totalBlocksCollected",
+        "type": "uint256"
+      }
+    ],
+    "name": "BlockRangeCollected",
+    "type": "event",
+    "__signatureData": {
+      "method": "BlockRangeCollected(uint256,uint256,uint256)",
+      "signature": "07b5de8b7d8ad88823dc9d5d13a26a58dd5dad9d7431c971916e8a3e545ac2d0",
+      "index": [
+        false,
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "maxBlocks",
+        "type": "uint256"
+      }
+    ],
+    "name": "MaxBlocksToPayPerCallChanged",
+    "type": "event",
+    "__signatureData": {
+      "method": "MaxBlocksToPayPerCallChanged(uint256)",
+      "signature": "f555ad19dea6b98762181791eb417d88f243ecd03499b619a7717cb90d0c45aa",
+      "index": [
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "payPerBlock",
+        "type": "uint256"
+      }
+    ],
+    "name": "MoneyToPayPerBlockChanged",
+    "type": "event",
+    "__signatureData": {
+      "method": "MoneyToPayPerBlockChanged(uint256)",
+      "signature": "9ebb25db5b630f64c0d0d91015131a75ccc571e42d39d0c56235159250c5df53",
+      "index": [
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "maxMiners",
+        "type": "uint256"
+      }
+    ],
+    "name": "MaxMinersChanged",
+    "type": "event",
+    "__signatureData": {
+      "method": "MaxMinersChanged(uint256)",
+      "signature": "8ea7d9e1dc593608262e6b63ccdd384a9c7896b58b6a5d7aa697894f997b6e71",
+      "index": [
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "miner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "releasePeriod",
+        "type": "uint256"
+      }
+    ],
+    "name": "DepositedToMiner",
+    "type": "event",
+    "__signatureData": {
+      "method": "DepositedToMiner(address,uint256,uint256)",
+      "signature": "21d923e6f2fbbc9222c3e08fcd16385f84e92f57e4bf87b4ba7c01e55bba0143",
+      "index": [
+        false,
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "SomethingIsWorkingWrong",
+    "type": "event",
+    "__signatureData": {
+      "method": "SomethingIsWorkingWrong()",
+      "signature": "2639447ed8a758326ec0f5fe15ab74cfd2cb4d50af58738e0e6708cad40bdd8d",
+      "index": [],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "from",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "to",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "totalBlocksSkipped",
+        "type": "uint256"
+      }
+    ],
+    "name": "SkipPayments",
+    "type": "event",
+    "__signatureData": {
+      "method": "SkipPayments(uint256,uint256,uint256)",
+      "signature": "f0a7b16521cf748ba983ff8836c578b6f720adc41be8f24d8077e5e4dff001d5",
+      "index": [
+        false,
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "NothingToPay",
+    "type": "event",
+    "__signatureData": {
+      "method": "NothingToPay()",
+      "signature": "4d63c252538ab708dc54228436ccda748d3924f239d20604ecbd55e56c4f3138",
+      "index": [],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "name": "blockNumber",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "name": "minerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "CollectedBlock",
+    "type": "event",
+    "__signatureData": {
+      "method": "CollectedBlock(uint256,address)",
+      "signature": "92f093463674e24ff71c6c27f365d19218384e825d461f5c464bc7b2d4c868d6",
+      "index": [
+        false,
+        false
+      ],
+      "indexed": 0
+    }
+  },
+  {
+    "anonymous": false,
+    "inputs": [],
+    "name": "NothingToCollect",
+    "type": "event",
+    "__signatureData": {
+      "method": "NothingToCollect()",
+      "signature": "7b2c2feff2da1aeb7690a0c70beceb7ffc6cce3734d3f5b1f282b23bd12dd5f3",
+      "index": [],
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_newMax",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxBlocksToPayPerCall",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "setMaxBlocksToPayPerCall(uint256)",
+      "signature": "3da9f4f0be6d5a05fdd4ae3d265666192154601089c96e51424bf2e08b980f66",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_newPay",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMoneyToPayPerBlock",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "setMoneyToPayPerBlock(uint256)",
+      "signature": "8edf2dff8c8c2a4630befeeb98ac035037bb40ad051b21b800ba2969d3101941",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "_newMax",
+        "type": "uint256"
+      }
+    ],
+    "name": "setMaxMiners",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "setMaxMiners(uint256)",
+      "signature": "a9476edaee14f067c56f60c191ff6cef97c83294bb4a025246e32c9544901458",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getBalance",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getBalance()",
+      "signature": "12065fe058ec54d32b956897063181d660e7d27f9bb883d28d5cc5ab3423e23c",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "collectProfits",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "collectProfits()",
+      "signature": "c958e0d6d36792cce73cee987eb1db14f16672a928568c5e8db3291aaf59bf69",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "addressMiner",
+        "type": "address"
+      }
+    ],
+    "name": "payToMiner",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function",
+    "__signatureData": {
+      "method": "payToMiner(address)",
+      "signature": "ecb8ba13ba7492306cb8a8d48607f34b4ca61cd281ca9ad8cfc29a0b54e52f32",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "addressMiner",
+        "type": "address"
+      },
+      {
+        "name": "month",
+        "type": "uint8"
+      },
+      {
+        "name": "year",
+        "type": "uint16"
+      }
+    ],
+    "name": "payToMinerInPeriod",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "payToMinerInPeriod(address,uint8,uint16)",
+      "signature": "6035635e090457de6c725de5c71f5f51ebd9d23a91cfd8baf037978dd713bbd3",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [],
+    "name": "payToMiners",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function",
+    "__signatureData": {
+      "method": "payToMiners()",
+      "signature": "e033b84e34cd498593f20833ffe7a5e5c96f98962e186331e92913b144764e6e",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": false,
+    "inputs": [
+      {
+        "name": "month",
+        "type": "uint8"
+      },
+      {
+        "name": "year",
+        "type": "uint16"
+      }
+    ],
+    "name": "payToMinersInPeriod",
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "__signatureData": {
+      "method": "payToMinersInPeriod(uint8,uint16)",
+      "signature": "8cab0e8113c4443c80b67441f7273acb8d0acb4dd097cceabc13964ba36822a0",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "minerAddress",
+        "type": "address"
+      }
+    ],
+    "name": "getBalanceForCurrentPeriod",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getBalanceForCurrentPeriod(address)",
+      "signature": "da69cdaf31c9bd523ce88f41e9052aa156c444505eb1b044c109a08dfb90e771",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "minerAddress",
+        "type": "address"
+      },
+      {
+        "name": "month",
+        "type": "uint8"
+      },
+      {
+        "name": "year",
+        "type": "uint16"
+      }
+    ],
+    "name": "getBalanceForPeriod",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function",
+    "__signatureData": {
+      "method": "getBalanceForPeriod(address,uint8,uint16)",
+      "signature": "500e07ea01ee3fe029dfe9b632b4934b74f96e097e4a64aaf0b978288fb00f56",
+      "index": null,
+      "indexed": 0
+    }
+  },
+  {
     "constant": true,
     "inputs": [
       {
