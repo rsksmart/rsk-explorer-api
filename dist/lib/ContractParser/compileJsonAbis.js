@@ -1,11 +1,11 @@
-'use strict';var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
-var _util = require('util');var _util2 = _interopRequireDefault(_util);
-var _path = require('path');var _path2 = _interopRequireDefault(_path);
-var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _fs = _interopRequireDefault(require("fs"));
+var _util = _interopRequireDefault(require("util"));
+var _path = _interopRequireDefault(require("path"));
+var _lib = require("./lib");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const readDir = _util2.default.promisify(_fs2.default.readdir);
-const readFile = _util2.default.promisify(_fs2.default.readFile);
-const writeFile = _util2.default.promisify(_fs2.default.writeFile);
+const readDir = _util.default.promisify(_fs.default.readdir);
+const readFile = _util.default.promisify(_fs.default.readFile);
+const writeFile = _util.default.promisify(_fs.default.writeFile);
 
 const jsonPath = `${__dirname}/jsonAbis`;
 const destinationFile = `${__dirname}/compiled_abi.json`;
@@ -21,7 +21,7 @@ compileAbi().then(abi => {
 async function compileAbi() {
   try {
     let files = await readDir(jsonPath);
-    files = files.filter(file => _path2.default.extname(file) === '.json');
+    files = files.filter(file => _path.default.extname(file) === '.json');
     if (!files || !files.length) throw new Error('No json files');
     let abi = await Promise.all(files.map(file => readJson(`${jsonPath}/${file}`)));
     abi = abi.reduce((a, v, i, array) => v.concat(a));

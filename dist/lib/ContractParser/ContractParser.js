@@ -1,12 +1,11 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.ContractParser = undefined;var _event = require('web3/lib/web3/event.js');var _event2 = _interopRequireDefault(_event);
-var _Abi = require('./Abi');var _Abi2 = _interopRequireDefault(_Abi);
-var _web3Connect = require('../web3Connect');
-var _types = require('../types');
-var _interfacesIds = require('./interfacesIds');var _interfacesIds2 = _interopRequireDefault(_interfacesIds);
-var _utils = require('../../lib/utils');
-var _config = require('../config');var _config2 = _interopRequireDefault(_config);
-var _RemascEvents = require('./RemascEvents');var _RemascEvents2 = _interopRequireDefault(_RemascEvents);
-var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.ContractParser = void 0;var _event = _interopRequireDefault(require("web3/lib/web3/event.js"));
+var _Abi = _interopRequireDefault(require("./Abi"));
+var _web3Connect = require("../web3Connect");
+var _types = require("../types");
+var _interfacesIds = _interopRequireDefault(require("./interfacesIds"));
+var _utils = require("../../lib/utils");
+var _RemascEvents = _interopRequireDefault(require("./RemascEvents"));
+var _lib = require("./lib");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 
 
@@ -16,14 +15,22 @@ var _lib = require('./lib');function _interopRequireDefault(obj) {return obj && 
 
 
 
-const { remascAddress } = _config2.default;
 class ContractParser {
-  constructor(abi, options = {}) {
+  constructor({ abi, log, nativeContracts } = {}) {
+    if (!nativeContracts) throw new Error('Missing native contracts');
     this.abi = null;
-    this.abi = (0, _lib.setAbi)(abi || _Abi2.default);
+    this.abi = (0, _lib.setAbi)(abi || _Abi.default);
     this.eventsAbi = (0, _lib.abiEvents)(this.abi);
     this.web3 = _web3Connect.web3;
-    this.log = options.logger || console;
+    this.log = log || console;
+    this.nativeContracts = nativeContracts;
+  }
+
+  getRemascAddress() {
+    const { nativeContracts } = this;
+    if (nativeContracts) {
+      return nativeContracts.getNativeContractAddress('remasc');
+    }
   }
 
   setAbi(abi) {
@@ -59,7 +66,8 @@ class ContractParser {
   parseTxLogs(logs) {
     return logs.map(log => {
       // non-standard remasc events
-      if (log.address === remascAddress) return _RemascEvents2.default.decode(log);
+      const remascAddress = this.getRemascAddress();
+      if (log.address === remascAddress) return _RemascEvents.default.decode(log);
 
       let back = Object.assign({}, log);
       let decoder = this.getLogDecoder(log.topics || []);
@@ -109,7 +117,7 @@ class ContractParser {
 
   createLogDecoder(abi) {
     abi = Object.assign({}, abi);
-    const event = new _event2.default(null, abi, null);
+    const event = new _event.default(null, abi, null);
     return { abi, event };
   }
 
@@ -136,7 +144,7 @@ class ContractParser {
   async getTokenData(contract) {
     const methods = ['name', 'symbol', 'decimals', 'totalSupply'];
     let [name, symbol, decimals, totalSupply] = await Promise.all(
-    methods.map(m =>
+    methods.map((m) =>
     this.call(m, contract).
     then(res => res).
     catch(err => this.log.debug(`[${contract.address}] Error executing ${m}  Error: ${err}`))));
@@ -145,7 +153,7 @@ class ContractParser {
   }
 
   hasMethodSelector(txInputData, selector) {
-    return selector ? txInputData.includes(selector) : null;
+    return selector && txInputData ? txInputData.includes(selector) : null;
   }
 
   getMethodsBySelectors(txInputData) {
@@ -172,17 +180,17 @@ class ContractParser {
 
   async getInterfacesERC165(contract) {
     let ifaces = {};
-    let keys = Object.keys(_interfacesIds2.default);
+    let keys = Object.keys(_interfacesIds.default);
     for (let i of keys) {
-      ifaces[i] = await this.supportsInterface(contract, _interfacesIds2.default[i].id);
+      ifaces[i] = await this.supportsInterface(contract, _interfacesIds.default[i].id);
     }
     return ifaces;
   }
 
   getInterfacesByMethods(methods, isErc165) {
-    return Object.keys(_interfacesIds2.default).
+    return Object.keys(_interfacesIds.default).
     map(i => {
-      return [i, (0, _utils.includesAll)(methods, _interfacesIds2.default[i].methods)];
+      return [i, (0, _utils.includesAll)(methods, _interfacesIds.default[i].methods)];
     }).
     reduce((obj, value) => {
       obj[value[0]] = value[1];
@@ -199,7 +207,7 @@ class ContractParser {
 
   async implementsErc165(contract) {
     try {
-      let first = await this.supportsInterface(contract, _interfacesIds2.default.ERC165.id);
+      let first = await this.supportsInterface(contract, _interfacesIds.default.ERC165.id);
       if (first === true) {
         let second = await this.supportsInterface(contract, '0xffffffff');
         return !(second === true || second === null);
@@ -208,7 +216,7 @@ class ContractParser {
     } catch (err) {
       return Promise.reject(err);
     }
-  }}exports.ContractParser = ContractParser;exports.default =
+  }}exports.ContractParser = ContractParser;var _default =
 
 
-ContractParser;
+ContractParser;exports.default = _default;

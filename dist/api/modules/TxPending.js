@@ -1,8 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TxPending = undefined;var _DataCollector = require('../lib/DataCollector');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TxPending = void 0;var _DataCollector = require("../lib/DataCollector");
 
 class TxPending extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
-    super(collection, key, parent);
+  constructor(collections, key) {
+    const { PendingTxs } = collections;
+    super(PendingTxs, key);
     this.publicActions = {
 
       getPendingTransaction: params => {
@@ -20,7 +21,7 @@ class TxPending extends _DataCollector.DataCollectorItem {
 
       } };
 
-  }}exports.TxPending = TxPending;exports.default =
+  }}exports.TxPending = TxPending;var _default =
 
 
-TxPending;
+TxPending;exports.default = _default;

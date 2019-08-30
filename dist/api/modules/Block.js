@@ -1,11 +1,12 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Block = undefined;var _DataCollector = require('../lib/DataCollector');
-var _utils = require('../../lib/utils');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Block = void 0;var _DataCollector = require("../lib/DataCollector");
+var _utils = require("../../lib/utils");
 class Block extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
+  constructor(collections, key) {
+    const { Blocks } = collections;
     let cursorField = 'number';
     let sortDir = -1;
     let sortable = { timestamp: -1 };
-    super(collection, key, parent, { sortDir, cursorField, sortable });
+    super(Blocks, key, { sortDir, cursorField, sortable });
     this.publicActions = {
       /**
                             * @swagger
@@ -84,7 +85,7 @@ class Block extends _DataCollector.DataCollectorItem {
         return this.getPageData(query, params);
       } };
 
-  }}exports.Block = Block;exports.default =
+  }}exports.Block = Block;var _default =
 
 
-Block;
+Block;exports.default = _default;

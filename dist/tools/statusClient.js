@@ -1,9 +1,9 @@
-'use strict';var _socket = require('socket.io-client');var _socket2 = _interopRequireDefault(_socket);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _cli = require('../lib/cli');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _socket = _interopRequireDefault(require("socket.io-client"));
+var _config = _interopRequireDefault(require("../lib/config"));
+var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const url = process.env.URL || `ws://localhost:${_config2.default.api.port}`;
-const socket = _socket2.default.connect(url, { reconnect: true });
+const url = process.env.URL || `ws://localhost:${_config.default.api.port}`;
+const socket = _socket.default.connect(url, { reconnect: true });
 let blocksPerSecond;
 let stats = { time: 0, blocks: 0 };
 let mark = '●';

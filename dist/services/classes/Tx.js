@@ -1,15 +1,16 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Tx = undefined;var _BcThing = require('./BcThing');
-var _txFormat = require('../../lib/txFormat');var _txFormat2 = _interopRequireDefault(_txFormat);
-var _Event = require('./Event');
-var _ContractParser = require('../../lib/ContractParser/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Tx = void 0;var _BcThing = require("./BcThing");
+var _Event = require("./Event");
+var _ContractParser = _interopRequireDefault(require("../../lib/ContractParser/ContractParser"));
+var _types = require("../../lib/types");
+var _ids = require("../../lib/ids");
+var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class Tx extends _BcThing.BcThing {
-  constructor(hash, timestamp, { nod3 }) {
+  constructor(hash, timestamp, { nod3, nativeContracts } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`);
-    super(nod3);
+    super({ nod3, nativeContracts });
     this.hash = hash;
     this.timestamp = timestamp;
-    this.contractParser = new _ContractParser2.default();
+    this.contractParser = new _ContractParser.default({ nativeContracts });
   }
   async fetch() {
     try {
@@ -32,7 +33,7 @@ class Tx extends _BcThing.BcThing {
       tx.timestamp = this.timestamp;
       tx.receipt = receipt;
       if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex;
-      tx = (0, _txFormat2.default)(tx);
+      tx = this.txFormat(tx);
       return tx;
     } catch (err) {
       return Promise.reject(err);
@@ -60,13 +61,23 @@ class Tx extends _BcThing.BcThing {
       return Promise.reject(err);
     }
   }
+  txFormat(tx) {
+    tx.txType = _types.txTypes.default;
+    const receipt = tx.receipt || {};
+    const toIsNative = this.nativeContracts.isNativeContract(tx.to);
+    let nativeType = _types.txTypes[toIsNative];
+    if (nativeType) tx.txType = nativeType;
+    if ((0, _utils.isAddress)(receipt.contractAddress)) tx.txType = _types.txTypes.contract;
+    tx._id = (0, _ids.getTxOrEventId)(tx);
+    return tx;
+  }
 
   parseLogs(logs) {
     let parser = this.contractParser;
     return new Promise((resolve, reject) => {
       process.nextTick(() => resolve(parser.parseTxLogs(logs)));
     });
-  }}exports.Tx = Tx;exports.default =
+  }}exports.Tx = Tx;var _default =
 
 
-Tx;
+Tx;exports.default = _default;

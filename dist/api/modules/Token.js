@@ -1,10 +1,10 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TokenAccount = undefined;var _DataCollector = require('../lib/DataCollector');
-var _utils = require('../../lib/utils');
-var _bignumber = require('bignumber.js');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Token = void 0;var _DataCollector = require("../lib/DataCollector");
+var _utils = require("../../lib/utils");
+var _bignumber = require("bignumber.js");
 
-class TokenAccount extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
-    super(collection, key, parent);
+class Token extends _DataCollector.DataCollectorItem {
+  constructor({ TokensAddrs, Addrs }, key) {
+    super(TokensAddrs, key);
     this.publicActions = {
       /**
                             * @swagger
@@ -68,7 +68,7 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
           */
       getTokensByAddress: async params => {
         const address = params.address;
-        const from = this.parent.Address.db.collectionName;
+        const from = this.parent.collectionsNames.Addrs;
         if (address) {
           let aggregate = [
           { $match: { address } },
@@ -206,7 +206,7 @@ class TokenAccount extends _DataCollector.DataCollectorItem {
         return { data };
       } };
 
-  }}exports.TokenAccount = TokenAccount;exports.default =
+  }}exports.Token = Token;var _default =
 
 
-TokenAccount;
+Token;exports.default = _default;

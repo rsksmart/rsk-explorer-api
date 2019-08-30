@@ -1,14 +1,14 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _BcThing = require('./BcThing');
-var _ContractParser = require('../../lib/ContractParser/ContractParser');var _ContractParser2 = _interopRequireDefault(_ContractParser);
-var _types = require('../../lib/types');
-var _TokenAddress = require('./TokenAddress');var _TokenAddress2 = _interopRequireDefault(_TokenAddress);
-var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _BcThing = require("./BcThing");
+var _ContractParser = _interopRequireDefault(require("../../lib/ContractParser/ContractParser"));
+var _types = require("../../lib/types");
+var _TokenAddress = _interopRequireDefault(require("./TokenAddress"));
+var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Contract extends _BcThing.BcThing {
-  constructor(address, creationData, nod3) {
-    super(nod3);
+  constructor(address, creationData, nod3, nativeContracts) {
+    super({ nod3, nativeContracts });
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`);
-    this.parser = new _ContractParser2.default();
+    this.parser = new _ContractParser.default({ nativeContracts });
     this.address = address;
     this.creationData = creationData;
     const createdByTx = creationData && creationData.tx ? creationData.tx : null;
@@ -62,7 +62,7 @@ class Contract extends _BcThing.BcThing {
   }
 
   newAddress(address) {
-    return new _TokenAddress2.default(address, this);
+    return new _TokenAddress.default(address, this);
   }
 
   call(method, params = []) {
@@ -81,6 +81,6 @@ class Contract extends _BcThing.BcThing {
       if (addressData) data.push(addressData);
     }
     return data;
-  }}exports.default =
+  }}var _default =
 
-Contract;
+Contract;exports.default = _default;

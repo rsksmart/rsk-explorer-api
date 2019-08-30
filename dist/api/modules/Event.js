@@ -1,10 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Event = undefined;var _DataCollector = require('../lib/DataCollector');
-var _config = require('../../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const { remascAddress, bridgeAddress } = _config2.default;
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Event = void 0;var _DataCollector = require("../lib/DataCollector");
 class Event extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
+  constructor(collections, key) {
     // const sortable = { timestamp: -1 }
-    super(collection, key, parent);
+    const { Events, Addrs } = collections;
+    super(Events, key);
     this.publicActions = {
       /**
                             * @swagger
@@ -97,7 +96,8 @@ class Event extends _DataCollector.DataCollectorItem {
             // search by events signatures
           };if (Array.isArray(signatures)) {
             // skip remasc & bridge events
-            if (address !== remascAddress && address !== bridgeAddress) {
+            const isNative = this.parent.isNativeContract(address);
+            if (isNative !== 'bridge' || isNative !== 'remasc') {
               query.signature = { $in: signatures };
             }
           }
@@ -108,7 +108,8 @@ class Event extends _DataCollector.DataCollectorItem {
           if (res.data) {
             let addresses = new Set(res.data.map(d => d.address));
             addresses = [...addresses.values()];
-            let addrData = await this.parent.Address.find({ address: { $in: addresses } });
+
+            let addrData = await Addrs.find({ address: { $in: addresses } });
             let { data } = addrData;
             if (data) {
               res.data = res.data.map(d => {
@@ -155,7 +156,7 @@ class Event extends _DataCollector.DataCollectorItem {
         }
       } };
 
-  }}exports.Event = Event;exports.default =
+  }}exports.Event = Event;var _default =
 
 
-Event;
+Event;exports.default = _default;

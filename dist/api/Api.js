@@ -1,71 +1,74 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _DataCollector = require('./lib/DataCollector');
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _types = require('../lib/types');
-var _Block = require('./modules/Block');
-var _Tx = require('./modules/Tx');
-var _Address = require('./modules/Address');
-var _Event = require('./modules/Event');
-var _TokenAccount = require('./modules/TokenAccount');
-var _TxPending = require('./modules/TxPending');
-var _Stats = require('./modules/Stats');
-var _getCirculatingSupply = require('./lib/getCirculatingSupply');var _getCirculatingSupply2 = _interopRequireDefault(_getCirculatingSupply);
-var _apiTools = require('./lib/apiTools');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
-
-
-
-
-const lastLimit = _config2.default.api.lastBlocks || 10;
-const collections = _config2.default.blocks.collections;
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _DataCollector = require("./lib/DataCollector");
+var _modules = require("./modules");
+var _types = require("../lib/types");
+var _getCirculatingSupply = _interopRequireDefault(require("./lib/getCirculatingSupply"));
+var _blocksCollections = require("../lib/blocksCollections");
+var _apiTools = require("./lib/apiTools");
+var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Api extends _DataCollector.DataCollector {
-  constructor(db) {
-    let collectionName = collections.Blocks;
+  constructor({ db, initConfig, nativeContracts }, { modules, collectionsNames, lastBlocks } = {}) {
+    const collectionName = collectionsNames.Blocks;
     super(db, { collectionName });
-    this.lastLimit = lastLimit;
+    this.collectionsNames = collectionsNames;
+    this.collections = (0, _blocksCollections.getDbBlocksCollections)(db);
+    this.lastLimit = lastBlocks || 10;
     this.latest = 0;
     this.lastBlocks = [];
     this.lastTransactions = [];
     this.circulatingSupply = null;
     this.stats = { timestamp: 0 };
-    this.addItem(collections.Blocks, 'Block', _Block.Block);
-    this.addItem(collections.PendingTxs, 'TxPending', _TxPending.TxPending);
-    this.addItem(collections.Txs, 'Tx', _Tx.Tx);
-    this.addItem(collections.Addrs, 'Address', _Address.Address);
-    this.addItem(collections.Events, 'Event', _Event.Event);
-    this.addItem(collections.TokensAddrs, 'Token', _TokenAccount.TokenAccount);
-    this.addItem(collections.Stats, 'Stats', _Stats.Stats);
+    this.loadModules((0, _modules.getEnabledApiModules)(modules));
+    this.initConfig = initConfig;
+    const { isNativeContract } = nativeContracts;
+    this.isNativeContract = isNativeContract;
   }
   tick() {
     this.setLastBlocks();
     this.setCirculatingSupply();
   }
 
+  loadModules(modules) {
+    Object.keys(modules).forEach(name => {
+      const module = new modules[name](this.collections, name);
+      this.log.info(`Loading module ${name}`);
+      this.addModule(module, name);
+    });
+  }
+
   async run(payload) {
     try {
       if (Object.keys(payload).length < 1) throw new Error('invalid request');
-      const action = payload.action;
+      let { module, action, params } = payload;
       if (!action) throw new Error('Missing action');
-      const params = (0, _apiTools.filterParams)(payload.params);
-      const module = (0, _apiTools.getModule)(payload.module);
-      if (!module) throw new Error('Unknown module');
-      const delayed = (0, _apiTools.getDelayedFields)(module, action);
+      const moduleName = _apiTools.MODULES[module];
+      if (!moduleName) throw new Error('Unknown module');
+      const delayed = (0, _apiTools.getDelayedFields)(moduleName, action);
       const time = Date.now();
-      const result = await this.itemPublicAction(module, action, params);
-
+      params = (0, _apiTools.filterParams)(payload.params);
+      const result = await this.getModule(moduleName).run(action, params);
       const queryTime = Date.now() - time;
       const logCmd = queryTime > 1000 ? 'warn' : 'trace';
       this.log[logCmd](`${module}.${action}(${JSON.stringify(params)}) ${queryTime} ms`);
-
-      return { module, action, params, result, delayed };
+      const res = { module, action, params, result, delayed };
+      return res;
     } catch (err) {
+      this.log.debug(err);
       return Promise.reject(err);
     }
   }
 
+  info() {
+    let info = Object.assign({}, this.initConfig);
+    info.txTypes = Object.assign({}, _types.txTypes);
+    info.modules = _config.default.api.modules;
+    return info;
+  }
+
   async setLastBlocks() {
     try {
-      let { collection, lastLimit, Tx } = this;
+      let { collection, lastLimit } = this;
+      const Tx = this.getModule('Tx');
       let blocks = await collection.find().sort({ number: -1 }).limit(lastLimit).toArray();
       let txs = await Tx.db.find({ txType: { $in: [_types.txTypes.default, _types.txTypes.contract] } }).
       sort({ blockNumber: -1, transactionIndex: -1 }).
@@ -80,8 +83,8 @@ class Api extends _DataCollector.DataCollector {
 
   async setCirculatingSupply() {
     try {
-      const collection = this.db.collection(collections.Addrs);
-      let circulating = await (0, _getCirculatingSupply2.default)(collection);
+      const collection = this.collections.Addrs;
+      let circulating = await (0, _getCirculatingSupply.default)(collection, this.initConfig.nativeContracts);
       this.circulatingSupply = Object.assign({}, circulating);
     } catch (err) {
       this.log.debug(err);
@@ -114,7 +117,7 @@ class Api extends _DataCollector.DataCollector {
   }
 
   async getAddress(address) {
-    return this.Address.run('getAddress', { address });
+    return this.getModule('Address').run('getAddress', { address });
   }
 
   async addAddressData(address, data, key = '_addressData') {
@@ -123,15 +126,27 @@ class Api extends _DataCollector.DataCollector {
     return data || account;
   }
 
+  getPendingTransaction(params) {
+    return this.getModule('TxPending').run('getPendingTransaction', params);
+  }
+
   async updateStats() {
     const oldStats = this.stats;
-    const stats = await this.Stats.run('getLatest');
+    const stats = await this.getModule('Stats').run('getLatest');
     if (!stats) return;
+
+    const ExtendedStats = this.getModule('ExtendedStats');
+    if (ExtendedStats) {
+      const blockNumber = parseInt(stats.blockNumber);
+      const extendedStats = await ExtendedStats.getExtendedStats(blockNumber);
+      Object.assign(stats, extendedStats);
+    }
+
     this.stats = Object.assign({}, stats);
     if (stats.timestamp !== oldStats.timestamp) {
       this.events.emit('newStats', this.stats);
     }
-  }}exports.default =
+  }}var _default =
 
 
-Api;
+Api;exports.default = _default;

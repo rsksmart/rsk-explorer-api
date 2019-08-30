@@ -1,11 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });var _config = require('../../lib/config');var _config2 = _interopRequireDefault(_config);
-var _types = require('../../lib/types');
-var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const { bridgeAddress } = _config2.default;exports.default =
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = _default;var _types = require("../../lib/types");
+var _utils = require("../../lib/utils");
 
-async function (collection) {
+async function _default(collection, { bridge }) {
   try {
-    const result = await collection.findOne({ address: bridgeAddress });
+    const result = await collection.findOne({ address: bridge });
     if (!result) throw new Error('Missing bridge account from db');
     let { balance, decimals } = result;
     decimals = decimals || 18;
@@ -15,4 +13,4 @@ async function (collection) {
   } catch (err) {
     return Promise.reject(err);
   }
-};
+}

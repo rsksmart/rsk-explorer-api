@@ -1,15 +1,14 @@
-'use strict';var _dataSource = require('../../lib/dataSource.js');
-var _config = require('../../lib/config');var _config2 = _interopRequireDefault(_config);
-var _ListenBlocks = require('../classes/ListenBlocks');
-var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _dataSource = require("../../lib/dataSource.js");
+var _config = _interopRequireDefault(require("../../lib/config"));
+var _ListenBlocks = require("../classes/ListenBlocks");
+var _Logger = _interopRequireDefault(require("../../lib/Logger"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const config = Object.assign({}, _config2.default.blocks);
-const log = (0, _Logger2.default)('Blocks', config.log);
-_dataSource.dataBase.setLogger(log);
+const config = Object.assign({}, _config.default.blocks);
+const log = (0, _Logger.default)('Blocks', config.log);
 
-_dataSource.dataBase.db().then(db => {
+(0, _dataSource.setup)({ log }).then(({ db }) => {
   config.Logger = log;
-  const listener = new _ListenBlocks.ListenBlocks(db, config);
+  const listener = new _ListenBlocks.ListenBlocks(db, { log });
   log.info(`Starting blocks listener`);
   listener.start();
 });

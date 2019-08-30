@@ -1,12 +1,11 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Tx = undefined;var _DataCollector = require('../lib/DataCollector');
-var _utils = require('../../lib/utils');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Tx = void 0;var _DataCollector = require("../lib/DataCollector");
+var _utils = require("../../lib/utils");
 
 class Tx extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
+  constructor(collections, key) {
+    const { Txs } = collections;
     // const sortable = { timestamp: -1 }
-    super(collection, key, parent);
-    const PendingTxs = this.parent.getItem({ key: 'TxPending' });
-    this.PendingTxs = PendingTxs.publicActions;
+    super(Txs, key);
     this.publicActions = {
       /**
                             * @swagger
@@ -47,7 +46,6 @@ class Tx extends _DataCollector.DataCollectorItem {
       getTransactions: params => {
         let query = {};
         let txType = params.query ? params.query.txType : null;
-        console.log('txTYPE', txType);
         if (txType) {
           query = this.fieldFilterParse('txType', txType);
         }
@@ -84,7 +82,7 @@ class Tx extends _DataCollector.DataCollectorItem {
         if (hash) {
           let tx;
           tx = await this.getPrevNext({ hash }, { hash: 1 });
-          if (!tx || !tx.data) tx = await this.PendingTxs.getPendingTransaction(params);
+          if (!tx || !tx.data) return this.parent.getPendingTransaction(params);
           return tx;
         }
       },
@@ -126,7 +124,7 @@ class Tx extends _DataCollector.DataCollectorItem {
           let addresses = new Set(logs.map(log => log.address));
           addresses.add(tx.from);
           addresses.add(tx.to);
-          let Address = this.parent.Address;
+          let Address = this.parent.getModule('Address');
           let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })));
           if (res) {
             res = res.reduce((v, a, i) => {
@@ -229,7 +227,7 @@ class Tx extends _DataCollector.DataCollectorItem {
     if (blockHash) {
       return this.getPageData({ blockHash }, params);
     }
-  }}exports.Tx = Tx;exports.default =
+  }}exports.Tx = Tx;var _default =
 
 
-Tx;
+Tx;exports.default = _default;

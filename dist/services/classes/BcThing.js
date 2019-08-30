@@ -1,9 +1,10 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports._methodNotImplemented = exports.BcThing = undefined;var _utils = require('../../lib/utils');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports._methodNotImplemented = exports.BcThing = void 0;var _utils = require("../../lib/utils");
 
 class BcThing {
-  constructor(nod3, collections) {
+  constructor({ nod3, nativeContracts, collections } = {}) {
     this.nod3 = nod3;
     this.collections = collections;
+    this.nativeContracts = nativeContracts;
     this.data = {};
   }
   getData(serialize = false) {
@@ -26,8 +27,8 @@ class BcThing {
   }}exports.BcThing = BcThing;
 
 
-const _methodNotImplemented = exports._methodNotImplemented = method => {
+const _methodNotImplemented = method => {
   throw new Error(`Method ${method} is not implemented`);
-};exports.default =
+};exports._methodNotImplemented = _methodNotImplemented;var _default =
 
-BcThing;
+BcThing;exports.default = _default;

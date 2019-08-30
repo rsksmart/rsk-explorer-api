@@ -1,7 +1,7 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TxPool = undefined;var _DataCollector = require('./lib/DataCollector');
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TxPool = void 0;var _DataCollector = require("./lib/DataCollector");
+var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const collectionName = _config2.default.blocks.collections.TxPool;
+const collectionName = _config.default.collectionsNames.TxPool;
 
 class TxPool extends _DataCollector.DataCollector {
   constructor(db) {
@@ -59,7 +59,7 @@ class TxPool extends _DataCollector.DataCollector {
     let state = Object.assign({}, this.state);
     delete state._id;
     return this.formatData(state);
-  }}exports.TxPool = TxPool;exports.default =
+  }}exports.TxPool = TxPool;var _default =
 
 
-TxPool;
+TxPool;exports.default = _default;

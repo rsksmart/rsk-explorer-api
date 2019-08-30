@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Db = undefined;var _mongodb = require('mongodb');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Db = void 0;var _mongodb = require("mongodb");
 
 class Db {
   constructor(config) {
@@ -85,6 +85,6 @@ class Db {
     }
     if (dataType) msg.push(dataType);
     return msg.join(' ');
-  }}exports.Db = Db;exports.default =
+  }}exports.Db = Db;var _default =
 
-Db;
+Db;exports.default = _default;

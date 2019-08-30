@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BlocksStatus = undefined;var _BlocksBase = require('../../lib/BlocksBase');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.BlocksStatus = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 class BlocksStatus extends _BlocksBase.BlocksBase {
   constructor(db, options) {
     super(db, options);
@@ -29,8 +29,8 @@ class BlocksStatus extends _BlocksBase.BlocksBase {
         return newState;
       }).
       catch(err => {
-        console.log(err);
-        // this.log.error(err)
+        this.log.debug(`Error inserting new status`);
+        this.log.error(err);
       });
     } else {
       return Promise.resolve(this.state);

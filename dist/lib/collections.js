@@ -1,4 +1,5 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.default = {
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _default = {
+  Config: [],
   Blocks: [
   {
     key: { number: -1 },
@@ -28,6 +29,18 @@
   {
     key: { _received: -1 },
     name: 'blockReceivedTime' }],
+
+
+  BlocksSummary: [
+  {
+    key: { hash: 1 },
+    unique: true },
+
+  {
+    key: { number: -1 } },
+
+  {
+    key: { timestamp: -1 } }],
 
 
   Txs: [
@@ -180,4 +193,17 @@
 
   {
     key: { blockNumber: -1 },
-    name: 'statsBlockNumber' }] };
+    name: 'statsBlockNumber' }],
+
+
+  ContractVerification: [
+  {
+    key: { address: 1 } }],
+
+
+  VerificationsResults: [
+  {
+    key: { address: 1 } },
+
+  {
+    key: { match: 1 } }] };exports.default = _default;

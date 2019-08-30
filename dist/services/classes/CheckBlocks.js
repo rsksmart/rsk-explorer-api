@@ -1,6 +1,6 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.checkBlocksTransactions = exports.checkBlocksCongruence = exports.CheckBlocks = undefined;var _BlocksBase = require('../../lib/BlocksBase');
-var _Block = require('./Block');
-var _RequestBlocks = require('./RequestBlocks');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.checkBlocksTransactions = exports.checkBlocksCongruence = exports.CheckBlocks = void 0;var _BlocksBase = require("../../lib/BlocksBase");
+var _Block = require("./Block");
+var _RequestBlocks = require("./RequestBlocks");
 
 class CheckBlocks extends _BlocksBase.BlocksBase {
   constructor(db, options) {
@@ -91,7 +91,8 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   async getBlock(hashOrNumber) {
-    return (0, _RequestBlocks.getBlock)(this.nod3, this.collections, hashOrNumber, this.log);
+    const { nod3, collections, log, nativeContracts } = this;
+    return (0, _RequestBlocks.getBlock)(hashOrNumber, { nod3, collections, log, nativeContracts });
   }
 
   getBlockFromDb(hashOrNumber) {
@@ -187,7 +188,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }}exports.CheckBlocks = CheckBlocks;
 
 
-const checkBlocksCongruence = exports.checkBlocksCongruence = async (blocksCollection, lastBlock) => {
+const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     let blocks = {};
     let query = lastBlock ? { number: { $lt: lastBlock } } : {};
@@ -218,9 +219,9 @@ const checkBlocksCongruence = exports.checkBlocksCongruence = async (blocksColle
   } catch (err) {
     return Promise.reject(err);
   }
-};
+};exports.checkBlocksCongruence = checkBlocksCongruence;
 
-const checkBlocksTransactions = exports.checkBlocksTransactions = async (blocksCollection, txsCollection, lastBlock, firstBlock) => {
+const checkBlocksTransactions = async (blocksCollection, txsCollection, lastBlock, firstBlock) => {
   try {
     let missing = {};
     let query = lastBlock || firstBlock ? { number: {} } : {};
@@ -240,6 +241,6 @@ const checkBlocksTransactions = exports.checkBlocksTransactions = async (blocksC
   } catch (err) {
     return Promise.reject(err);
   }
-};exports.default =
+};exports.checkBlocksTransactions = checkBlocksTransactions;var _default =
 
-CheckBlocks;
+CheckBlocks;exports.default = _default;

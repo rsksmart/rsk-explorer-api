@@ -1,19 +1,19 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });const reset = exports.reset = '\x1b[0m';
-const red = exports.red = '\x1b[31m';
-const blue = exports.blue = '\x1b[36m';
-const green = exports.green = '\x1b[32m';
-const orange = exports.orange = '\x1b[33m';
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.progressBar = exports.randomColor = exports.ansiCode = exports.ok = exports.info = exports.warn = exports.error = exports.orange = exports.green = exports.blue = exports.red = exports.reset = void 0;const reset = '\x1b[0m';exports.reset = reset;
+const red = '\x1b[31m';exports.red = red;
+const blue = '\x1b[36m';exports.blue = blue;
+const green = '\x1b[32m';exports.green = green;
+const orange = '\x1b[33m';exports.orange = orange;
 
-const error = exports.error = l => console.log(red, l, reset);
-const warn = exports.warn = l => console.log(orange, l, reset);
-const info = exports.info = l => console.log(blue, l, reset);
-const ok = exports.ok = l => console.log(green, l, reset);
+const error = l => console.log(red, l, reset);exports.error = error;
+const warn = l => console.log(orange, l, reset);exports.warn = warn;
+const info = l => console.log(blue, l, reset);exports.info = info;
+const ok = l => console.log(green, l, reset);exports.ok = ok;
 
-const ansiCode = exports.ansiCode = number => `\x1b[${parseInt(number)}m`;
+const ansiCode = number => `\x1b[${parseInt(number)}m`;exports.ansiCode = ansiCode;
 
-const randomColor = exports.randomColor = () => ansiCode(Math.floor(Math.random() * (40 - 30 + 1)) + 30);
+const randomColor = () => ansiCode(Math.floor(Math.random() * (40 - 30 + 1)) + 30);exports.randomColor = randomColor;
 
-const progressBar = exports.progressBar = (total, value, options = {}) => {
+const progressBar = (total, value, options = {}) => {
   let steps = options.steps || 10;
   let char = options.char || '■';
   let empty = options.empty || ' ';
@@ -23,4 +23,4 @@ const progressBar = exports.progressBar = (total, value, options = {}) => {
   map((v, i) => i * (100 / steps) < percent ? char : empty);
   bars.splice(Math.floor(bars.length / 2), 0, ` ${percent}% `);
   return `${close}${bars.join('')}${close}`;
-};
+};exports.progressBar = progressBar;

@@ -1,17 +1,15 @@
-'use strict';var _RequestBlocks = require('../classes/RequestBlocks');
-var _types = require('../../lib/types');
-var _utils = require('../../lib/utils');
-var _Block = require('../classes/Block');
-var _dataSource = require('../../lib/dataSource');
-var _Logger = require('../../lib/Logger');var _Logger2 = _interopRequireDefault(_Logger);
-var _config = require('../../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _RequestBlocks = require("../classes/RequestBlocks");
+var _types = require("../../lib/types");
+var _utils = require("../../lib/utils");
+var _Block = require("../classes/Block");
+var _dataSource = require("../../lib/dataSource");
+var _Logger = _interopRequireDefault(require("../../lib/Logger"));
+var _config = _interopRequireDefault(require("../../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const options = Object.assign({}, _config2.default.blocks);
-const log = (0, _Logger2.default)('Blocks', options.log);
-options.Logger = log;
+const log = (0, _Logger.default)('Blocks', _config.default.blocks.log);
 
-_dataSource.dataSource.then(db => {
-  let Requester = new _RequestBlocks.RequestBlocks(db, options);
+(0, _dataSource.dataSource)().then(({ db, nativeContracts }) => {
+  let Requester = new _RequestBlocks.RequestBlocks(db, { log, nativeContracts });
   const blocksCollection = Requester.collections.Blocks;
 
   Requester.updateStatus = function (state) {

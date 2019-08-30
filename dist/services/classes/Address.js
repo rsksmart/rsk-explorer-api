@@ -1,30 +1,30 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Address = undefined;var _BcThing = require('./BcThing');
-var _GetTxBalance = require('./GetTxBalance');
-var _utils = require('../../lib/utils');
-var _types = require('../../lib/types');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Address = void 0;var _BcThing = require("./BcThing");
+var _GetTxBalance = require("./GetTxBalance");
+var _utils = require("../../lib/utils");
+var _types = require("../../lib/types");
 
 class Address extends _BcThing.BcThing {
-  constructor(address, { nod3, db, collections, block = 'latest' } = {}) {
-    super(nod3, collections);
+  constructor(address, { nod3, nativeContracts, db, collections, block = 'latest' } = {}) {
+    super({ nod3, nativeContracts, collections });
     if (!this.isAddress(address)) throw new Error(`Invalid address: ${address}`);
     this.address = address;
     this.db = db || this.collections.Addrs;
     this.codeIsSaved = false;
     this.TxsBalance = new _GetTxBalance.GetTxBalance(this.collections.Txs);
     this.data = new Proxy(
-    { address, type: 'account' }, {
+    { address, type: _types.addrTypes.ADDRESS }, {
       set(obj, prop, val) {
         if (prop === 'code') {
           val = val || null;
-          if (val && val !== '0x00') {
-            obj.type = 'contract';
+          if (!(0, _utils.isNullData)(val)) {
+            obj.type = _types.addrTypes.CONTRACT;
             obj.code = val;
           }
-        } else if (prop === _types.fields.LAST_BLOCK_MINED) {
+        } else if (val && prop === _types.fields.LAST_BLOCK_MINED) {
           const lastBlock = obj[_types.fields.LAST_BLOCK_MINED] || {};
           let number = lastBlock.number || -1;
           if (val.miner === obj.address && val.number > number) {
-            obj[prop] = val;
+            obj[prop] = Object.assign({}, val);
           }
         } else {
           obj[prop] = val;
@@ -55,35 +55,52 @@ class Address extends _BcThing.BcThing {
   }
 
   getBalance() {
-    return this.nod3.eth.getBalance(this.address, this.block);
+    return this.nod3.eth.getBalance(this.address, 'latest'); // rskj 1.0.1 returns 500 with blockNumbers
   }
 
   getCode() {
-    return this.nod3.eth.getCode(this.address, this.block);
+    return this.nod3.eth.getCode(this.address, 'latest'); // rskj 1.0.1 returns 500 with blockNumbers
   }
 
   async fetch() {
-    let balance = await this.getBalance().
-    catch(err => {
-      return new Error(`Address: error getting balance of ${this.address} ${err}`);
-    });
-    balance = balance || 0;
-    this.data.balance = balance;
+    try {
+      let balance = await this.getBalance().
+      catch(err => {
+        throw new Error(`Address: error getting balance of ${this.address} ${err}`);
+      });
+      balance = balance || 0;
+      this.data.balance = balance;
 
-    let code = null;
-    let dbData = await this.getFromDb();
-    this.dbData = dbData;
+      let code = null;
+      let dbData = await this.getFromDb();
+      this.dbData = dbData;
 
-    if (dbData && dbData.code) {
-      code = dbData.code;
-      this.codeIsSaved = true;
+      if (dbData) {
+        if (dbData.code) {
+          code = dbData.code;
+          this.codeIsSaved = true;
+        }
+        // Update lastBlockMined to highest block number
+        this.setData(_types.fields.LAST_BLOCK_MINED, dbData[_types.fields.LAST_BLOCK_MINED]);
+      }
+
+      if (undefined === code || code === null) {
+        code = await this.getCode();
+      }
+      this.data.code = code;
+      const { nativeContracts } = this;
+      if (nativeContracts) {
+        const isNative = this.nativeContracts.isNativeContract(this.address);
+        if (isNative) {
+          this.data.isNative = true;
+          this.data.name = this.nativeContracts.getNativeContractName(this.address);
+          this.data.type = _types.addrTypes.CONTRACT;
+        }
+      }
+      return this.getData();
+    } catch (err) {
+      return Promise.reject(err);
     }
-
-    if (undefined === code || code === null) {
-      code = await this.getCode();
-    }
-    this.data.code = code;
-    return this.getData();
   }
 
   getFromDb() {
@@ -113,7 +130,7 @@ class Address extends _BcThing.BcThing {
     }
   }
   resetTxBalance() {
-    this.setData('txBalance', '0x0');
+    this.setData('txBalance', '0x00');
   }
   update(data) {
     let address = data.address || this.address;
@@ -128,7 +145,7 @@ class Address extends _BcThing.BcThing {
     } catch (err) {
       return Promise.reject(err);
     }
-  }}exports.Address = Address;exports.default =
+  }}exports.Address = Address;var _default =
 
 
-Address;
+Address;exports.default = _default;

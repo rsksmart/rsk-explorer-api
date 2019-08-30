@@ -1,18 +1,18 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.createChannels = exports.CHANNELS = undefined;
-var _Channel = require('./lib/Channel');var _Channel2 = _interopRequireDefault(_Channel);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.createChannels = exports.CHANNELS = void 0;
+var _Channel = _interopRequireDefault(require("./lib/Channel"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const CHANNELS = exports.CHANNELS = {
+const CHANNELS = {
   blocksChannel: 'blocks',
   statusChannel: 'status',
   txPoolChannel: 'txpool',
-  statsChannel: 'stats' };
+  statsChannel: 'stats' };exports.CHANNELS = CHANNELS;
 
 
-const createChannels = exports.createChannels = io => {
+const createChannels = io => {
   const channels = {};
   Object.keys(CHANNELS).forEach(channel => {
     const name = CHANNELS[channel];
-    channels[channel] = (0, _Channel2.default)(name, io);
+    channels[channel] = (0, _Channel.default)(name, io);
   });
 
   const getChannel = name => {
@@ -33,6 +33,6 @@ const createChannels = exports.createChannels = io => {
   };
 
   return Object.freeze({ channels, subscribe, unsubscribe });
-};exports.default =
+};exports.createChannels = createChannels;var _default =
 
-createChannels;
+createChannels;exports.default = _default;

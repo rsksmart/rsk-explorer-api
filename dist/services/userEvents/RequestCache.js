@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });class RequestCache {
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.RequestCache = void 0;class RequestCache {
   constructor() {
     this.requested = {};
     this.block = null;
@@ -19,7 +19,7 @@
   }
   makeKey(args) {
     return args.join('-');
-  }}exports.RequestCache = RequestCache;exports.default =
+  }}exports.RequestCache = RequestCache;var _default =
 
 
-RequestCache;
+RequestCache;exports.default = _default;

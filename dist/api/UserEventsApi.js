@@ -1,14 +1,14 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.UserEventsApi = undefined;var _path = require('path');var _path2 = _interopRequireDefault(_path);
-var _child_process = require('child_process');
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _apiTools = require('./lib/apiTools');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.UserEventsApi = void 0;var _path = _interopRequireDefault(require("path"));
+var _child_process = require("child_process");
+var _config = _interopRequireDefault(require("../lib/config"));
+var _apiTools = require("./lib/apiTools");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 function UserEventsSocket() {
-  return (0, _child_process.fork)(_path2.default.resolve(__dirname, '../services/userEvents/userEventsService.js'));
+  return (0, _child_process.fork)(_path.default.resolve(__dirname, '../services/userEvents/userEventsService.js'));
 }
 
-const UserEventsApi = exports.UserEventsApi = (io, api, { log }) => {
-  if (!_config2.default.api.allowUserEvents) return;
+const UserEventsApi = (io, api, { log }) => {
+  if (!_config.default.api.allowUserEvents) return;
   log = log || console;
   const userEvents = UserEventsSocket();
 
@@ -21,6 +21,7 @@ const UserEventsApi = exports.UserEventsApi = (io, api, { log }) => {
       let req = payload;
       let error = res.error;
       const socket = io.sockets.connected[msg.socketId];
+      log.trace(`Sending message to client ${module}.${action} error:${JSON.stringify(error)}`);
       if (socket) socket.emit('data', (0, _apiTools.formatRes)({ module, action, result, req, error }));
     } catch (err) {
       log.error(err);
@@ -28,7 +29,7 @@ const UserEventsApi = exports.UserEventsApi = (io, api, { log }) => {
     }
   });
   return Object.freeze(userEvents);
-};
+};exports.UserEventsApi = UserEventsApi;
 
 async function processMsg(msg, api) {
   let data, error;
@@ -44,6 +45,6 @@ async function processMsg(msg, api) {
     data = msg.result;
   }
   return { data, error };
-}exports.default =
+}var _default =
 
-UserEventsApi;
+UserEventsApi;exports.default = _default;

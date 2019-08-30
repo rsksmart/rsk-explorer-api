@@ -1,45 +1,40 @@
-'use strict';var _socket = require('socket.io');var _socket2 = _interopRequireDefault(_socket);
-var _dataSource = require('../lib/dataSource');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _Api = require('./Api');var _Api2 = _interopRequireDefault(_Api);
-var _Status = require('./Status');var _Status2 = _interopRequireDefault(_Status);
-var _TxPool = require('./TxPool');var _TxPool2 = _interopRequireDefault(_TxPool);
-var _log = require('./lib/log');var _log2 = _interopRequireDefault(_log);
-var _UserEventsApi = require('./UserEventsApi');var _UserEventsApi2 = _interopRequireDefault(_UserEventsApi);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _HttpServer = require('./HttpServer');
-var _channels = require('./channels');
+"use strict";var _socket = _interopRequireDefault(require("socket.io"));
+var _dataSource = require("../lib/dataSource");
+var _Api = _interopRequireDefault(require("./Api"));
+var _Status = _interopRequireDefault(require("./Status"));
+var _TxPool = _interopRequireDefault(require("./TxPool"));
+var _log = _interopRequireDefault(require("./lib/log"));
+var _UserEventsApi = _interopRequireDefault(require("./UserEventsApi"));
+var _config = _interopRequireDefault(require("../lib/config"));
+var _HttpServer = require("./HttpServer");
+var _channels = require("./channels");
+var _apiTools = require("./lib/apiTools");
+var _evaluateError = require("./lib/evaluateError");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-var _apiTools = require('./lib/apiTools');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+const port = _config.default.api.port || '3003';
+const address = _config.default.api.address || 'localhost';
 
-
-
-
-
-
-const port = _config2.default.api.port || '3003';
-const address = _config2.default.api.address || 'localhost';
-
-_dataSource2.default.then(db => {
-  _log2.default.info('Database connected');
+(0, _dataSource.setup)({ log: _log.default, skipCheck: true }).then(({ db, initConfig, nativeContracts }) => {
+  _log.default.info('Database connected');
 
   // data collectors
-  const api = new _Api2.default(db);
-  const status = new _Status2.default(db);
-  const txPool = new _TxPool2.default(db);
+  const api = new _Api.default({ db, initConfig, nativeContracts }, _config.default.api);
+  const status = new _Status.default(db);
+  const txPool = new _TxPool.default(db);
   api.start();
   status.start();
   txPool.start();
 
   // http server
-  const httpServer = (0, _HttpServer.HttpServer)({ api, status, log: _log2.default });
+  const httpServer = (0, _HttpServer.HttpServer)({ api, status, log: _log.default });
   httpServer.listen(port, address);
-  const io = new _socket2.default(httpServer);
+  const io = new _socket.default(httpServer);
 
   // start userEvents api
-  const userEvents = (0, _UserEventsApi2.default)(io, api, { log: _log2.default });
+  const userEvents = (0, _UserEventsApi.default)(io, api, { log: _log.default });
 
   io.httpServer.on('listening', () => {
-    _log2.default.info(`Server listening on: ${address || '0.0.0.0'}:${port}`);
+    _log.default.info(`Server listening on: ${address || '0.0.0.0'}:${port}`);
   });
 
   // create channels
@@ -88,11 +83,11 @@ _dataSource2.default.then(db => {
   });
 
   io.on('connection', socket => {
-    socket.emit('open', { time: Date.now(), settings: (0, _apiTools.publicSettings)() });
+    socket.emit('open', { time: Date.now(), settings: api.info() });
     socket.on('message', () => {});
     socket.on('disconnect', () => {});
     socket.on('error', err => {
-      _log2.default.debug('Socket Error: ' + err);
+      _log.default.debug('Socket Error: ' + err);
     });
 
     // subscribe to room
@@ -103,7 +98,7 @@ _dataSource2.default.then(db => {
         const error = _apiTools.errors.INVALID_REQUEST;
         error.error = err.message;
         socket.emit('Error', (0, _apiTools.formatError)(error));
-        _log2.default.debug(err);
+        _log.default.debug(err);
       }
     });
 
@@ -115,26 +110,31 @@ _dataSource2.default.then(db => {
     // data handler
     socket.on('data', async payload => {
       try {
-        const { module, action, params, result, delayed } = await api.run(payload);
+        const res = await api.run(payload);
+        const { module, action, params, result, delayed } = res;
         if (delayed && userEvents) {
-          const registry = !result.data && delayed.runIfEmpty;
+          const registry = delayed.registry || !result.data && delayed.runIfEmpty;
           if (payload.getDelayed) {
+            const lastBlock = api.getLastBlock();
+            const block = lastBlock ? lastBlock.number : null;
             userEvents.send({
               action: delayed.action,
               module: delayed.module,
               params,
               socketId: socket.id,
               payload,
-              block: api.getLastBlock().number });
+              block,
+              result });
 
           }
           result.delayed = { fields: delayed.fields, registry };
         }
         socket.emit('data', (0, _apiTools.formatRes)({ module, action, result, req: payload }));
       } catch (err) {
-        _log2.default.debug(`Action: ${payload.action}: ERROR: ${err}`);
+        _log.default.debug(`Action: ${payload.action}: ERROR: ${err}`);
+        _log.default.trace(err);
         socket.emit('Error',
-        (0, _apiTools.formatRes)({ result: null, req: payload, error: _apiTools.errors.INVALID_REQUEST }));
+        (0, _apiTools.formatRes)({ result: null, req: payload, error: (0, _evaluateError.evaluateError)(err) }));
 
       }
     });
@@ -142,6 +142,6 @@ _dataSource2.default.then(db => {
 });
 
 process.on('unhandledRejection', err => {
-  _log2.default.error(err);
+  _log.default.error(err);
   // process.exit(1)
 });

@@ -1,7 +1,7 @@
-'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const config = Object.assign({}, _config2.default.blocks);
-_dataSource2.default.then(async db => {
+"use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
+var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+const config = Object.assign({}, _config.default.blocks);
+(0, _dataSource.default)({ skipCheck: true }).then(async ({ db }) => {
   try {
     const Addrs = db.collection(config.collections.Addrs);
     let result = await Addrs.find({ createdByTx: { $exists: true }, type: 'account' }).

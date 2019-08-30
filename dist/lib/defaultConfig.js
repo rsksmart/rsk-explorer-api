@@ -1,12 +1,19 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;
 
 
 
-var _types = require('./types');
-var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRequireDefault(_delayedFields);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
-                                                                                                                                                                                                            *  This file provides default values,
-                                                                                                                                                                                                            *  use /config.json, to overwrite settings
-                                                                                                                                                                                                            */exports.default = { source: {
+var _types = require("./types");
+var _delayedFields = _interopRequireDefault(require("./delayedFields"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
+                                                                                                                                                                       *  This file provides default values,
+                                                                                                                                                                       *  use /config.json, to overwrite settings
+                                                                                                                                                                       */const setAllModules = (status) => Object.keys(_types.MODULES).
+reduce((a, v, i) => {
+  a[v] = status;
+  return a;
+}, {});var _default =
+
+{
+  source: {
     protocol: 'http',
     node: 'localhost',
     port: 4444,
@@ -14,7 +21,7 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
 
   log: {
     dir: '/var/log/rsk-explorer',
-    level: 'error' },
+    level: 'info' },
 
   db: {
     server: 'localhost',
@@ -31,26 +38,28 @@ var _delayedFields = require('./delayedFields');var _delayedFields2 = _interopRe
     MAX_PAGES: 10,
     allowUserEvents: true,
     exposeDoc: false,
-    delayedFields: _delayedFields2.default },
-
-  publicSettings: {
-    bridgeAddress: '0x0000000000000000000000000000000001000006',
-    remascAddress: '0x0000000000000000000000000000000001000008',
-    txTypes: _types.txTypes },
+    // All modules are enabled as default
+    modules: setAllModules(true),
+    delayedFields: _delayedFields.default },
 
   blocks: {
     blocksQueueSize: 100,
     validateCollections: false,
     bcTipSize: 12,
-    batchRequestSize: 20,
-    collections: {
-      Blocks: 'blocks',
-      Txs: 'transactions',
-      Addrs: 'addresses',
-      Status: 'status',
-      Events: 'events',
-      TokensAddrs: 'tokensAddresses',
-      OrphanBlocks: 'orphanBlocks',
-      TxPool: 'txPool',
-      PendingTxs: 'transactionsPending',
-      Stats: 'stats' } } };
+    batchRequestSize: 20 },
+
+  collectionsNames: {
+    Config: 'config',
+    Blocks: 'blocks',
+    Txs: 'transactions',
+    Addrs: 'addresses',
+    Status: 'status',
+    Events: 'events',
+    TokensAddrs: 'tokensAddresses',
+    OrphanBlocks: 'orphanBlocks',
+    TxPool: 'txPool',
+    PendingTxs: 'transactionsPending',
+    Stats: 'stats',
+    BlocksSummary: 'blocksSummary',
+    ContractVerification: 'contractsVerifications',
+    VerificationsResults: 'verificationResults' } };exports.default = _default;

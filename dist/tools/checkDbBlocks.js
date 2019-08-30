@@ -1,12 +1,12 @@
-'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);
-var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
-var _util = require('util');var _util2 = _interopRequireDefault(_util);
-var _CheckBlocks = require('../services/classes/CheckBlocks');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const config = Object.assign({}, _config2.default.blocks);
-const writeFile = _util2.default.promisify(_fs2.default.writeFile);
+"use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
+var _config = _interopRequireDefault(require("../lib/config"));
+var _fs = _interopRequireDefault(require("fs"));
+var _util = _interopRequireDefault(require("util"));
+var _CheckBlocks = require("../services/classes/CheckBlocks");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+const config = Object.assign({}, _config.default.blocks);
+const writeFile = _util.default.promisify(_fs.default.writeFile);
 const outFile = process.argv[2] || '/tmp/blocksLog.json';
-_dataSource2.default.then(async db => {
+(0, _dataSource.default)({ skipCheck: true }).then(async ({ db }) => {
   try {
     const Blocks = db.collection(config.collections.Blocks);
     const Txs = db.collection(config.collections.Txs);

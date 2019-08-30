@@ -1,16 +1,15 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Status = undefined;var _DataCollector = require('./lib/DataCollector');
-var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
-const statusCollection = _config2.default.blocks.collections.Status;
-const blocksCollection = _config2.default.blocks.collections.Blocks;
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Status = void 0;var _DataCollector = require("./lib/DataCollector/");
+var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+const { collectionsNames } = _config.default;
 
 class Status extends _DataCollector.DataCollector {
   constructor(db) {
-    super(db, { statusCollection });
+    const collectionName = collectionsNames.Status;
+    super(db, { collectionName });
     this.tickDelay = 5000;
     this.state = {};
-    this.addItem(statusCollection, 'Status', null, true);
-    this.addItem(blocksCollection, 'Blocks', null, true);
+    this.addModule(new _DataCollector.DataCollectorItem(db.collection(collectionsNames.Status), 'Status'));
+    this.addModule(new _DataCollector.DataCollectorItem(db.collection(collectionsNames.Blocks), 'Blocks'));
   }
   tick() {
     this.updateState().then(newState => {
@@ -23,7 +22,8 @@ class Status extends _DataCollector.DataCollector {
     return this.formatData(this.state);
   }
   getBlocksServiceStatus() {
-    return this.Status.find({}, { timestamp: -1 }, 1).
+    const Status = this.getModule('Status');
+    return Status.find({}, { timestamp: -1 }, 1).
     then(res => {
       res = res.data[0];
       delete res._id;
@@ -72,14 +72,14 @@ class Status extends _DataCollector.DataCollector {
   }
 
   getHighestBlock() {
-    return this.Blocks.db.findOne({}, { sort: { number: -1 }, limit: 1 });
+    return this.getModule('Blocks').db.findOne({}, { sort: { number: -1 }, limit: 1 });
   }
   getLastblockReceived() {
-    return this.Blocks.db.findOne({}, { sort: { _received: -1 }, limit: 1 });
+    return this.getModule('Blocks').db.findOne({}, { sort: { _received: -1 }, limit: 1 });
   }
   getTotalBlocks() {
-    return this.Blocks.db.countDocuments({});
-  }}exports.Status = Status;exports.default =
+    return this.getModule('Blocks').db.countDocuments({});
+  }}exports.Status = Status;var _default =
 
 
-Status;
+Status;exports.default = _default;

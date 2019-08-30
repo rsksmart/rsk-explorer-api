@@ -1,9 +1,9 @@
-'use strict';var _socket = require('socket.io-client');var _socket2 = _interopRequireDefault(_socket);
-var _cli = require('../lib/cli');var c = _interopRequireWildcard(_cli);
-var _fs = require('fs');var _fs2 = _interopRequireDefault(_fs);
-var _util = require('util');var _util2 = _interopRequireDefault(_util);function _interopRequireWildcard(obj) {if (obj && obj.__esModule) {return obj;} else {var newObj = {};if (obj != null) {for (var key in obj) {if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key];}}newObj.default = obj;return newObj;}}function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _socket = _interopRequireDefault(require("socket.io-client"));
+var c = _interopRequireWildcard(require("../lib/cli"));
+var _fs = _interopRequireDefault(require("fs"));
+var _util = _interopRequireDefault(require("util"));function _interopRequireWildcard(obj) {if (obj && obj.__esModule) {return obj;} else {var newObj = {};if (obj != null) {for (var key in obj) {if (Object.prototype.hasOwnProperty.call(obj, key)) {var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {};if (desc.get || desc.set) {Object.defineProperty(newObj, key, desc);} else {newObj[key] = obj[key];}}}}newObj.default = obj;return newObj;}}function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const writeFile = _util2.default.promisify(_fs2.default.writeFile);
+const writeFile = _util.default.promisify(_fs.default.writeFile);
 const url = process.env.url || 'http://localhost:3003';
 const outDir = process.env.outDir || '/tmp';
 
@@ -15,7 +15,7 @@ if (!payload.module || !payload.action || !payload.params) help();
 
 const outFile = `${outDir}/${payload.module}-${payload.action}.json`;
 
-const socket = _socket2.default.connect(url, { reconnect: true });
+const socket = _socket.default.connect(url, { reconnect: true });
 let results = [];
 const key = `${payload.module}${payload.action}${Date.now()}${Math.round(Math.random())}`;
 payload.key = key;

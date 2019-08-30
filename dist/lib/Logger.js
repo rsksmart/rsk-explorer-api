@@ -1,10 +1,11 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Logger = undefined;var _bunyan = require('bunyan');var _bunyan2 = _interopRequireDefault(_bunyan);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Logger = void 0;var _bunyan = _interopRequireDefault(require("bunyan"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const Logger = exports.Logger = (name, options) => {
+const Logger = (name, options) => {
   options = options || {};
-  const log = _bunyan2.default.createLogger({
+  let level = options.level || 'trace';
+  const log = _bunyan.default.createLogger({
     name,
-    level: 'trace' });
+    level });
 
 
   if (options.file) {
@@ -18,6 +19,6 @@ const Logger = exports.Logger = (name, options) => {
     console.error('Log error ', err);
   });
   return log;
-};exports.default =
+};exports.Logger = Logger;var _default =
 
-Logger;
+Logger;exports.default = _default;

@@ -1,10 +1,10 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.TokenAddress = undefined;var _BcThing = require('./BcThing');
-var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TokenAddress = void 0;var _BcThing = require("./BcThing");
+var _Contract = _interopRequireDefault(require("./Contract"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class TokenAddress extends _BcThing.BcThing {
   constructor(address, contract) {
     super();
-    if (!(contract instanceof _Contract2.default)) {
+    if (!(contract instanceof _Contract.default)) {
       throw new Error('contract is not instance of Contract');
     }
     if (!this.isAddress(address)) {
@@ -29,7 +29,7 @@ class TokenAddress extends _BcThing.BcThing {
   }
   getBalance() {
     return this.Contract.call('balanceOf', [this.address]);
-  }}exports.TokenAddress = TokenAddress;exports.default =
+  }}exports.TokenAddress = TokenAddress;var _default =
 
 
-TokenAddress;
+TokenAddress;exports.default = _default;

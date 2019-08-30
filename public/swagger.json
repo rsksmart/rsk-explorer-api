@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "0.7.4",
+    "version": "1.0.0",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",
@@ -211,6 +211,46 @@
             "enum": [
               "getCirculatingSupply"
             ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=addresses&action=getCode": {
+      "get": {
+        "description": "get contract code",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "addresses"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getCode"
+            ]
+          },
+          {
+            "$ref": "#/parameters/address"
           }
         ],
         "responses": {
@@ -483,6 +523,141 @@
         }
       }
     },
+    "/api?module=extendedStats&action=getExtendedStats": {
+      "get": {
+        "description": "get extended stats",
+        "tags": [
+          "extendedStats"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "extendedStats"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getExtendedStats"
+            ]
+          },
+          {
+            "name": "blockNumber",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=extendedStats&action=getHashrates": {
+      "get": {
+        "description": "get hashrates",
+        "tags": [
+          "extendedStats"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "extendedStats"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getHashrates"
+            ]
+          },
+          {
+            "name": "blockNumber",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=extendedStats&action=getDifficulties": {
+      "get": {
+        "description": "get difficulties",
+        "tags": [
+          "extendedStats"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "extendedStats"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getDifficulties"
+            ]
+          },
+          {
+            "name": "blockNumber",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api?module=stats&action=getStats": {
       "get": {
         "description": "get stats",
@@ -556,6 +731,98 @@
         "responses": {
           "200": {
             "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=summary&action=getSummary": {
+      "get": {
+        "description": "get block summary",
+        "tags": [
+          "summary"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "summary"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getSummary"
+            ]
+          },
+          {
+            "name": "hash",
+            "description": "block hash",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "example": null
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=summary&action=getSummaries": {
+      "get": {
+        "description": "get list of summaries",
+        "tags": [
+          "summary"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "summary"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "getSummaries"
+            ]
+          },
+          {
+            "$ref": "#/parameters/limit"
+          },
+          {
+            "$ref": "#/parameters/next"
+          },
+          {
+            "$ref": "#/parameters/prev"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/ResponseList"
           },
           "400": {
             "$ref": "#/responses/BadRequest"

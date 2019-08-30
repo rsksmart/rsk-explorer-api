@@ -1,10 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.DataCollector = undefined;var _events = require('events');
-var _timers = require('timers');
-var _utils = require('../../../lib/utils');
-var _apiTools = require('../apiTools');
-var _mongodb = require('mongodb');
-var _DataCollectorItem = require('./DataCollectorItem');var _DataCollectorItem2 = _interopRequireDefault(_DataCollectorItem);
-var _log = require('../log');var _log2 = _interopRequireDefault(_log);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.DataCollector = void 0;var _events = require("events");
+var _timers = require("timers");
+var _utils = require("../../../lib/utils");
+var _apiTools = require("../apiTools");
+var _mongodb = require("mongodb");
+var _log = _interopRequireDefault(require("../log"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Emitter extends _events.EventEmitter {}
 const emitter = new Emitter();
@@ -18,11 +17,11 @@ class DataCollector {
     this._keyName = options.keyName || '_id';
     this.events = emitter;
     this._interval = null;
-    this.items = {};
+    this.modules = {};
     this.setCollection(options.collectionName);
     this.tickDelay = 1000;
     this.serialize = _utils.serialize;
-    this.log = options.log || _log2.default;
+    this.log = options.log || _log.default;
   }
   tick() {}
   stop() {
@@ -45,54 +44,26 @@ class DataCollector {
     }
   }
 
-  getItem(params) {
-    let key = params.key || params[this._keyName];
-    if (key) return this.items[key];
-  }
-
   run() {}
 
-  itemPublicAction(moduleName, action, params) {
-    return new Promise((resolve, reject) => {
-      if (!action || !params) reject(new Error(`Mising arguments action:${action}`));
-      let module = this[moduleName] || this.getItem(params);
-      if (action && module) {
-        let method = module.publicActions[action];
-        if (method) {
-          resolve(method(this.filterParams(params)));
-        } else {
-          return reject(new Error(`Unknown method ${action}`));
-        }
-      }
-      return reject(new Error(`Unknown action or bad params requested, module: ${module} action: ${action}`));
-    });
-  }
-
-  searchItemByAction(action) {
-    for (let i in this.items) {
-      let item = this.items[i];
-      if (item.publicActions[action]) return item;
+  addModule(module, name) {
+    try {
+      name = name || module.getName();
+      if (!name) throw new Error(`Invalid module name ${name}`);
+      if (this.modules[name]) throw new Error(`The module: ${name} already exists`);
+      module.serialize = this.serialize;
+      module.parent = this;
+      this.modules[name] = module;
+    } catch (err) {
+      this.log.warn(err);
+      throw err;
     }
   }
 
-  addItem(collectionName, key, ItemClass, addToRoot = true) {
-    if (collectionName && key) {
-      ItemClass = ItemClass || _DataCollectorItem2.default;
-      if (!this.items[key]) {
-        let collection = this.db.collection(collectionName);
-        if (collection) {
-          let item = new ItemClass(collection, key, this);
-          item.serialize = this.serialize;
-          this.items[key] = item;
-          if (addToRoot) {
-            if (!this[key]) this[key] = item;else
-            this.log.warn(`Error key: ${key} exists`);
-          }
-        }
-      } else {
-        this.log.warn('Error the key: ' + key + ' already exists');
-      }
-    }
+  getModule(name) {
+    const module = this.modules[name];
+    // if (!module) throw new Error(`Unknown module ${name}`)
+    return module;
   }
 
   filterParams(params) {
@@ -101,7 +72,7 @@ class DataCollector {
 
   formatData(data) {
     return { data: data };
-  }}exports.DataCollector = DataCollector;exports.default =
+  }}exports.DataCollector = DataCollector;var _default =
 
 
-DataCollector;
+DataCollector;exports.default = _default;

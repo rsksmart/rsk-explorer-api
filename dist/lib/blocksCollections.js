@@ -1,23 +1,24 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.blocksCollections = exports.getDbBlocksCollections = undefined;var _config = require('./config');var _config2 = _interopRequireDefault(_config);
-var _dataSource = require('./dataSource');var _dataSource2 = _interopRequireDefault(_dataSource);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.blocksCollections = exports.getDbBlocksCollections = void 0;var _config = _interopRequireDefault(require("./config"));
+var _dataSource = require("./dataSource");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const getDbBlocksCollections = exports.getDbBlocksCollections = (db, names) => {
-  names = names || _config2.default.blocks.collections;
+const getDbBlocksCollections = (db, names) => {
+  names = names || _config.default.collectionsNames;
   let collections = {};
   for (let n in names) {
     collections[n] = db.collection(names[n]);
   }
   return collections;
-};
+};exports.getDbBlocksCollections = getDbBlocksCollections;
 
-const blocksCollections = exports.blocksCollections = async () => {
+const blocksCollections = async () => {
   try {
-    let db = await _dataSource2.default;
+    let { db } = await (0, _dataSource.setup)();
     return getDbBlocksCollections(db);
   } catch (err) {
+    console.log(`Error getting collections ${err}`);
     console.log(err);
     process.exit(9);
   }
-};exports.default =
+};exports.blocksCollections = blocksCollections;var _default =
 
-blocksCollections;
+blocksCollections;exports.default = _default;

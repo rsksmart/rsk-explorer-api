@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.GetTxBalance = undefined;var _utils = require('../../lib/utils');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.GetTxBalance = void 0;var _utils = require("../../lib/utils");
 class GetTxBalance {
   constructor(txCollection) {
     this.txCollection = txCollection;

@@ -1,6 +1,6 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.Channel = Channel;exports.default = void 0;var _apiTools = require("./apiTools");
 
-Channel = Channel;var _apiTools = require('./apiTools');function Channel(channelName, io) {
+function Channel(channelName, io) {
   const events = {
     join: undefined,
     leave: undefined };
@@ -50,6 +50,6 @@ Channel = Channel;var _apiTools = require('./apiTools');function Channel(channel
     events[event] = cb;
   };
   return Object.freeze({ name: channelName, join, leave, on, emit });
-}exports.default =
+}var _default =
 
-Channel;
+Channel;exports.default = _default;

@@ -1,15 +1,16 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.missmatchBlockTransactions = exports.Block = undefined;var _BcThing = require('./BcThing');
-var _Tx = require('./Tx');var _Tx2 = _interopRequireDefault(_Tx);
-var _Address = require('./Address');var _Address2 = _interopRequireDefault(_Address);
-var _Contract = require('./Contract');var _Contract2 = _interopRequireDefault(_Contract);
-var _utils = require('../../lib/utils');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.missmatchBlockTransactions = exports.Block = void 0;var _BcThing = require("./BcThing");
+var _Tx = _interopRequireDefault(require("./Tx"));
+var _Address = _interopRequireDefault(require("./Address"));
+var _Contract = _interopRequireDefault(require("./Contract"));
+var _utils = require("../../lib/utils");
+var _ids = require("../../lib/ids");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Block extends _BcThing.BcThing {
-  constructor(hashOrNumber, { nod3, collections, Logger }) {
-    super(nod3, collections);
+  constructor(hashOrNumber, { nod3, nativeContracts, collections, log }) {
+    super({ nod3, nativeContracts, collections });
     this.Blocks = this.collections.Blocks;
     this.fetched = false;
-    this.log = Logger || console;
+    this.log = log || console;
     this.hashOrNumber = hashOrNumber;
     this.addresses = {};
     this.contracts = {};
@@ -38,7 +39,7 @@ class Block extends _BcThing.BcThing {
       this.addAddress(blockData.miner, blockData);
 
       let { transactions, timestamp } = blockData;
-      let txs = transactions.map(hash => new _Tx2.default(hash, timestamp, this));
+      let txs = transactions.map(hash => new _Tx.default(hash, timestamp, this));
       let txsData = await this.fetchItems(txs);
       this.data.txs = txsData.map(d => d.tx);
       this.data.txs.forEach(tx => this.addTxAddresses(tx));
@@ -95,6 +96,9 @@ class Block extends _BcThing.BcThing {
       // clean db
       block = await this.removeOldBlockData(block, txs);
 
+      // save block summary
+      await this.saveBlockSummary(data);
+
       // insert block
       result.block = await this.insertBlock(block);
 
@@ -138,6 +142,22 @@ class Block extends _BcThing.BcThing {
     }
   }
 
+  async saveBlockSummary(data) {
+    try {
+      const { hash, number, timestamp } = data.block;
+      const collection = this.collections.BlocksSummary;
+      if (!hash) throw new Error(`Missing block hash`);
+      const old = await collection.findOne({ hash }, { _id: 1 });
+      const _id = old ? old._id : (0, _ids.getSummaryId)(data.block);
+      const summary = { _id, hash, number, timestamp, data };
+      const res = await collection.updateOne({ _id }, { $set: summary }, { upsert: true });
+      return res;
+    } catch (err) {
+      this.log.error(`Error saving block summary`);
+      this.log.debug(err);
+      return Promise.resolve();
+    }
+  }
   async getOldBlockData(block) {
     try {
       if (!block || !block.hash) throw new Error('Block data is empty');
@@ -267,8 +287,8 @@ class Block extends _BcThing.BcThing {
 
   addAddress(address, block) {
     if (!this.isAddress(address) || this.addresses[address]) return;
-    let { nod3, collections } = this;
-    const Addr = new _Address2.default(address, { collections, nod3, block });
+    let { nod3, collections, nativeContracts } = this;
+    const Addr = new _Address.default(address, { nativeContracts, collections, nod3, block });
     this.addresses[address] = Addr;
   }
 
@@ -287,7 +307,7 @@ class Block extends _BcThing.BcThing {
   }
 
   newContract(address, data) {
-    let contract = new _Contract2.default(address, data, this.nod3);
+    let contract = new _Contract.default(address, data, this.nod3, this.nativeContracts);
     this.contracts[address] = contract;
     return contract;
   }
@@ -348,20 +368,20 @@ class Block extends _BcThing.BcThing {
   }}exports.Block = Block;
 
 
-const missmatchBlockTransactions = exports.missmatchBlockTransactions = (block, transactions) => {
+const missmatchBlockTransactions = (block, transactions) => {
   let diff = (0, _utils.arrayDifference)(block.transactions, transactions.map(tx => tx.hash));
   if (diff.length) return diff;
   let blockHash = block.hash;
   return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash);
-};
+};exports.missmatchBlockTransactions = missmatchBlockTransactions;
 
-const getBlockFromDb = exports.getBlockFromDb = async (blockHashOrNumber, collection) => {
+const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = (0, _utils.blockQuery)(blockHashOrNumber);
   if (query) return collection.findOne(query);
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`));
-};
+};exports.getBlockFromDb = getBlockFromDb;
 
-const deleteBlockDataFromDb = exports.deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
+const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
   try {
     if (!blockHash) throw new Error(`Empty block hash`);
     let hash = blockHash;
@@ -389,6 +409,6 @@ const deleteBlockDataFromDb = exports.deleteBlockDataFromDb = async (blockHash, 
   } catch (err) {
     return Promise.reject(err);
   }
-};exports.default =
+};exports.deleteBlockDataFromDb = deleteBlockDataFromDb;var _default =
 
-Block;
+Block;exports.default = _default;

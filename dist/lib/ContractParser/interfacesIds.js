@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.interfacesIds = undefined;var _lib = require('./lib');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.interfacesIds = void 0;var _lib = require("./lib");
 
 const erc20methods = [
 'totalSupply()',
@@ -13,7 +13,7 @@ const erc677Methods = erc20methods.concat([
 'transferAndCall(address,uint256,bytes)']);
 
 
-const interfacesIds = exports.interfacesIds = {
+const interfacesIds = {
   ERC20: makeInterface(erc20methods),
   ERC677: makeInterface(erc677Methods),
   ERC165: makeInterface(['supportsInterface(bytes4)']),
@@ -39,13 +39,13 @@ const interfacesIds = exports.interfacesIds = {
   'tokenURI(uint256)']),
 
   ERC721Exists: makeInterface([
-  'exists(uint256)']) };
+  'exists(uint256)']) };exports.interfacesIds = interfacesIds;
 
 
 
 function makeInterface(methods) {
   let id = (0, _lib.erc165IdFromMethods)(methods);
   return { methods, id };
-}exports.default =
+}var _default =
 
-interfacesIds;
+interfacesIds;exports.default = _default;

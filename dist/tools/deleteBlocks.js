@@ -1,9 +1,9 @@
-'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _Block = require('../services/classes/Block');
-var _BlocksBase = require('../lib/BlocksBase');
-var _cli = require('../lib/cli');function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
+var _Block = require("../services/classes/Block");
+var _BlocksBase = require("../lib/BlocksBase");
+var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-_dataSource2.default.then(async db => {
+(0, _dataSource.default)({ skipCheck: true }).then(async ({ db }) => {
   const options = new _BlocksBase.BlocksBase(db);
   const p = path => path.split('/').pop();
   const help = () => {

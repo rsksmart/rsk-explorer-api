@@ -1,4 +1,4 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.BcStats = undefined;var _BlocksBase = require('../../lib/BlocksBase');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.BcStats = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 
 class BcStats extends _BlocksBase.BlocksBase {
   constructor(db, options) {

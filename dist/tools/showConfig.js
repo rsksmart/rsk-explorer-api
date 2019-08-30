@@ -1,2 +1,2 @@
-'use strict';var _config = require('../lib/config');var _config2 = _interopRequireDefault(_config);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-console.log(JSON.stringify(_config2.default, null, 2));
+"use strict";var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+console.log(JSON.stringify(_config.default, null, 2));

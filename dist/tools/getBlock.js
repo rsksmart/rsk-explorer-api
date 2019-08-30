@@ -1,20 +1,20 @@
-'use strict';var _dataSource = require('../lib/dataSource.js');var _dataSource2 = _interopRequireDefault(_dataSource);
-var _Block = require('../services/classes/Block');var _Block2 = _interopRequireDefault(_Block);
-var _BlocksBase = require('../lib/BlocksBase');var _BlocksBase2 = _interopRequireDefault(_BlocksBase);
-var _cli = require('../lib/cli');
-var _util = require('util');var _util2 = _interopRequireDefault(_util);function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
+var _Block = _interopRequireDefault(require("../services/classes/Block"));
+var _BlocksBase = _interopRequireDefault(require("../lib/BlocksBase"));
+var _cli = require("../lib/cli");
+var _util = _interopRequireDefault(require("util"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const hashOrNumber = process.argv[2];
 const opt = process.argv[3];
 const save = opt === '--save';
 const json = opt === '--json';
 if (!hashOrNumber) help();
-_dataSource2.default.then(db => {
+(0, _dataSource.default)().then(({ db, nativeContracts }) => {
   if (!json) (0, _cli.info)(`Getting block ${hashOrNumber}`);
-  getBlock(db, hashOrNumber).then(block => {
+  getBlock(hashOrNumber, { db, nativeContracts }).then(block => {
     if (json) console.log(JSON.stringify(block));else
     {
-      console.log(_util2.default.inspect(block, { showHidden: false, depth: null, colors: true }));
+      console.log(_util.default.inspect(block, { showHidden: false, depth: null, colors: true }));
       console.log('');
       (0, _cli.info)(` Get time: ${block.time}ms`);
       if (save) (0, _cli.info)(` Save time: ${block.saved}ms`);
@@ -23,11 +23,11 @@ _dataSource2.default.then(db => {
   });
 });
 
-async function getBlock(db, hashOrNumber) {
+async function getBlock(hashOrNumber, { db, nativeContracts }) {
   try {
     let time = getTime();
     let saved = null;
-    let block = new _Block2.default(hashOrNumber, new _BlocksBase2.default(db));
+    let block = new _Block.default(hashOrNumber, new _BlocksBase.default(db, { nativeContracts }));
     await block.fetch();
     let blockData = block.getData(true);
     time = getTime(time);

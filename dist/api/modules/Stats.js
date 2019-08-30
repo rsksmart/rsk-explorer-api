@@ -1,8 +1,9 @@
-'use strict';Object.defineProperty(exports, "__esModule", { value: true });exports.Stats = undefined;var _DataCollector = require('../lib/DataCollector');
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Stats = void 0;var _DataCollector = require("../lib/DataCollector");
 
 class Stats extends _DataCollector.DataCollectorItem {
-  constructor(collection, key, parent) {
-    super(collection, key, parent);
+  constructor(collections, key) {
+    const { Stats } = collections;
+    super(Stats, key);
     this.publicActions = {
       /**
                             * @swagger
@@ -59,10 +60,10 @@ class Stats extends _DataCollector.DataCollectorItem {
           *          $ref: '#/responses/NotFound'
           */
       getLatest: () => {
-        return this.getOne();
+        return this.getLatest();
       } };
 
-  }}exports.Stats = Stats;exports.default =
+  }}exports.Stats = Stats;var _default =
 
 
-Stats;
+Stats;exports.default = _default;
