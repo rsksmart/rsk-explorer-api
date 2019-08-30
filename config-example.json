@@ -14,7 +14,10 @@
     "port": 3003,
     "lastBlocks": 30,
     "allowUserEvents": true,
-    "exposeDoc": false
+    "exposeDoc": false,
+    "contractVerifier": {
+      "url": "ws://localhost:3008"
+    }
   },
   "blocks": {}
 }

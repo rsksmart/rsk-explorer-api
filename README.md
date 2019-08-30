@@ -1,11 +1,12 @@
 # Rsk explorer api
 
 ## Description
+  
+  Rsk blockchain explorer
 
 ## Components
 
 ### Api server
-
 
 ### Blocks service
   Imports blockchain data from rsk node to db.
@@ -17,7 +18,7 @@
 ## Requisites
 
 - mongodb > 4
-- node > 8
+- node >= 10.16.0
 
 ## Install
 
@@ -79,7 +80,7 @@ Production build to ./dist folder
   Use:
   
   ```shell
-  node dist/tools/showConfig.js 
+  node dist/tools/showConfig.js
   ```
 
   to check current configuration
@@ -102,6 +103,18 @@ Production build to ./dist folder
   }
 
   ```
+
+The contractVerifier module requires a connection to a [rsk-contract-verifier](https://github.com/rsksmart/rsk-contract-verifier)
+instance. The url must be provided on api section:
+
+```javascript
+"api":{
+  "contractVerifier": {
+      "url": "ws://localhost:3008"
+    }
+}
+
+```
 
 ### Source
 
