@@ -18,7 +18,7 @@ class Db {
     this.connect();
   }
   connect() {
-    if (!this.client) this.client = _mongodb.MongoClient.connect(this.url, { useNewUrlParser: true });
+    if (!this.client) this.client = _mongodb.MongoClient.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true });
     return this.client;
   }
 

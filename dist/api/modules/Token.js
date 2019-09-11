@@ -197,10 +197,10 @@ class Token extends _DataCollector.DataCollectorItem {
         let accountsBalance = (0, _utils.bigNumberSum)(accounts.map(account => account.balance));
         totalSupply = new _bignumber.BigNumber(totalSupply);
         let balance = accountsBalance ? totalSupply.minus(accountsBalance) : totalSupply;
-        let data = { balance, accountsBalance, totalSupply, decimals
+        let data = { balance, accountsBalance, totalSupply, decimals };
 
-          // send accounts
-        };if (addresses) data.accounts = accounts;
+        // send accounts
+        if (addresses) data.accounts = accounts;
 
         data = this.serialize(data);
         return { data };

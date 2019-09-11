@@ -2,7 +2,7 @@
 var _hashrateCalculator = require("../lib/hashrateCalculator");
 var _difficultyCalculator = require("../lib/difficultyCalculator");
 
-// 1 hour bucket size
+
 const DIFFICULTY_BUCKET_SIZE = 3600000;
 
 const PERIODS = {

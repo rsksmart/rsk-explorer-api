@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1] - 2019-09-11
+
+## Changed
+
+- Mongodb client to 3.3.2
+- Express to 4.17.1
+- MongoClient connection options
+
 ## [1.0.0] - 2019-08-30
 
 ## Removed

@@ -91,10 +91,10 @@ class Event extends _DataCollector.DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params;
         if (address) {
-          let query = { args: address
+          let query = { args: address };
 
-            // search by events signatures
-          };if (Array.isArray(signatures)) {
+          // search by events signatures
+          if (Array.isArray(signatures)) {
             // skip remasc & bridge events
             const isNative = this.parent.isNativeContract(address);
             if (isNative !== 'bridge' || isNative !== 'remasc') {
