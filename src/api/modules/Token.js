@@ -3,7 +3,7 @@ import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
 
 export class Token extends DataCollectorItem {
-  constructor ({ TokensAddrs, Addrs }, key) {
+  constructor ({ TokensAddrs }, key) {
     super(TokensAddrs, key)
     this.publicActions = {
       /**
