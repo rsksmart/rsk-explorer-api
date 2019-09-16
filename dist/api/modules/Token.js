@@ -3,7 +3,7 @@ var _utils = require("../../lib/utils");
 var _bignumber = require("bignumber.js");
 
 class Token extends _DataCollector.DataCollectorItem {
-  constructor({ TokensAddrs, Addrs }, key) {
+  constructor({ TokensAddrs }, key) {
     super(TokensAddrs, key);
     this.publicActions = {
       /**

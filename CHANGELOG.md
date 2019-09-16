@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2019-09-16
+
+### Fixed
+
+- api/modules/Event.getEventsByAddress, addressData
+
 ## [1.0.1] - 2019-09-11
 
 ## Changed

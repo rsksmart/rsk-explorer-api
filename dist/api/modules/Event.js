@@ -2,7 +2,7 @@
 class Event extends _DataCollector.DataCollectorItem {
   constructor(collections, key) {
     // const sortable = { timestamp: -1 }
-    const { Events, Addrs } = collections;
+    const { Events } = collections;
     super(Events, key);
     this.publicActions = {
       /**
@@ -108,14 +108,16 @@ class Event extends _DataCollector.DataCollectorItem {
           if (res.data) {
             let addresses = new Set(res.data.map(d => d.address));
             addresses = [...addresses.values()];
-
-            let addrData = await Addrs.find({ address: { $in: addresses } });
-            let { data } = addrData;
-            if (data) {
-              res.data = res.data.map(d => {
-                d._addressData = data.find(a => a.address === d.address);
-                return d;
-              });
+            let AddressModule = this.parent.getModule('Address');
+            if (AddressModule) {
+              let addrData = await AddressModule.find({ address: { $in: addresses } });
+              let { data } = addrData;
+              if (data) {
+                res.data = res.data.map(d => {
+                  d._addressData = data.find(a => a.address === d.address);
+                  return d;
+                });
+              }
             }
           }
           return res;
