@@ -4,7 +4,7 @@ import { web3 } from '../web3Connect'
 import { contractsInterfaces } from '../types'
 import interfacesIds from './interfacesIds'
 import { includesAll } from '../../lib/utils'
-import remascEvents from './RemascEvents'
+import * as nativeContractsEvents from './NativeContractsEvents'
 import {
   ABI_SIGNATURE,
   setAbi,
@@ -26,10 +26,10 @@ export class ContractParser {
     this.nativeContracts = nativeContracts
   }
 
-  getRemascAddress () {
+  getNativeContractAddress (name) {
     const { nativeContracts } = this
     if (nativeContracts) {
-      return nativeContracts.getNativeContractAddress('remasc')
+      return nativeContracts.getNativeContractAddress(name)
     }
   }
 
@@ -65,9 +65,9 @@ export class ContractParser {
 
   parseTxLogs (logs) {
     return logs.map(log => {
-      // non-standard remasc events
-      const remascAddress = this.getRemascAddress()
-      if (log.address === remascAddress) return remascEvents.decode(log)
+      // non-standard remasc & bridge events
+      const remascAddress = this.getNativeContractAddress('remasc')
+      if (log.address === remascAddress) return nativeContractsEvents.decodeLog(log)
 
       let back = Object.assign({}, log)
       let decoder = this.getLogDecoder(log.topics || [])
