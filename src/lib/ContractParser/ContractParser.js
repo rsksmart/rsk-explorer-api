@@ -9,7 +9,7 @@ import {
   ABI_SIGNATURE,
   setAbi,
   abiEvents,
-  removeAbiSignaureData,
+  removeAbiSignatureData,
   abiSignatureData,
   soliditySelector,
   soliditySignature
@@ -77,7 +77,7 @@ export class ContractParser {
       if (decoder) {
         let signature = Object.assign({}, decoder.abi[ABI_SIGNATURE])
         decoded.signature = signature.signature
-        decoded.abi = removeAbiSignaureData(decoder.abi)
+        decoded.abi = removeAbiSignatureData(decoder.abi)
         // convert args object to array to remove properties names
         if (decoded.args) {
           let inputs = decoded.abi.inputs || []
@@ -165,7 +165,7 @@ export class ContractParser {
   async getContractInfo (txInputData, contract) {
     let methods = this.getMethodsBySelectors(txInputData)
     let isErc165 = false
-    //  skip non-erc165 conrtacts
+    //  skip non-erc165 contracts
     if (includesAll(methods, ['supportsInterface(bytes4)'])) {
       isErc165 = await this.implementsErc165(contract)
     }

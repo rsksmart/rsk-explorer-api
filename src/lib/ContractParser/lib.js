@@ -20,7 +20,7 @@ export const solidityName = abi => {
   return (name) ? `${name}(${inputs.join(',')})` : null
 }
 
-export const removeAbiSignaureData = (abi) => {
+export const removeAbiSignatureData = (abi) => {
   if (undefined !== abi[ABI_SIGNATURE]) delete abi[ABI_SIGNATURE]
   return abi
 }
