@@ -25,9 +25,9 @@ export function AddressModule ({ db, collections, nativeContracts, log }) {
         const newBalance = (result.balance) ? result.balance.toString() : 0
         const dbData = Addr.dbData || {}
         const { balance, txBalance } = dbData
-        if (newBalance > 0 || balance) {
+        const code = dbData.code || Addr.data.code
+        if (newBalance > 0 || balance || code) {
           if (!parseInt(txBalance)) await Addr.updateTxBalance()
-
           await Addr.save().catch(err => {
             log.error(`Error saving address ${address}, ${err}`)
             return msg
