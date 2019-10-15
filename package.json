@@ -28,6 +28,7 @@
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
     "bignumber.js": "^7.2.1",
+    "bs58": "^4.0.1",
     "bunyan": "^2.0.2",
     "express": "^4.17.1",
     "keccak": "^1.4.0",
@@ -35,6 +36,7 @@
     "nod3": "git+https://github.com/rsksmart/nod3.git",
     "rlp": "^2.2.2",
     "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",
+    "secp256k1": "^3.7.1",
     "socket.io": "^2.2.0",
     "web3": "^0.20.7"
   },
