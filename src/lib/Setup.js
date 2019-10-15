@@ -16,7 +16,7 @@ export async function Setup ({ log } = {}) {
 
   const createCollections = async () => {
     const names = config.collectionsNames
-    const validate = config.validateCollections
+    const validate = config.blocks.validateCollections
     return dataBase.createCollections(collections, { names, validate })
   }
 
