@@ -6,8 +6,8 @@ import { blockQuery, arrayDifference } from '../../lib/utils'
 import { getSummaryId } from '../../lib/ids'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, { nod3, nativeContracts, collections, log }) {
-    super({ nod3, nativeContracts, collections })
+  constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
+    super({ nod3, collections, initConfig })
     this.Blocks = this.collections.Blocks
     this.fetched = false
     this.log = log || console
@@ -24,6 +24,7 @@ export class Block extends BcThing {
       events: []
     }
   }
+
   async fetch (forceFetch) {
     if (this.fetched && !forceFetch) {
       return Promise.resolve(this.getData())
@@ -287,8 +288,8 @@ export class Block extends BcThing {
 
   addAddress (address, block) {
     if (!this.isAddress(address) || this.addresses[address]) return
-    let { nod3, collections, nativeContracts } = this
-    const Addr = new Address(address, { nativeContracts, collections, nod3, block })
+    let { nod3, collections, initConfig } = this
+    const Addr = new Address(address, { initConfig, collections, nod3, block })
     this.addresses[address] = Addr
   }
 
@@ -307,7 +308,8 @@ export class Block extends BcThing {
   }
 
   newContract (address, data) {
-    let contract = new Contract(address, data, this.nod3, this.nativeContracts)
+    const { nod3, initConfig } = this
+    let contract = new Contract(address, data, { nod3, initConfig })
     this.contracts[address] = contract
     return contract
   }

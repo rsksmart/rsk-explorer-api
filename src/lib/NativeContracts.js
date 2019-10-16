@@ -1,6 +1,5 @@
-export function NativeContracts ({ nativeContracts }) {
-  if (Object.keys(nativeContracts) < 1) throw new Error(`nativeContracts is empty`)
-
+export function NativeContracts ({ nativeContracts } = {}) {
+  if (!nativeContracts) return null
   const names = Object.keys(nativeContracts)
 
   const getNativeContractAddress = contractName => {

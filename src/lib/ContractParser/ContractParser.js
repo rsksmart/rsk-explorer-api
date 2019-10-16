@@ -1,10 +1,11 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import compiledAbi from './Abi'
 import { web3 } from '../web3Connect'
-import { contractsInterfaces } from '../types'
+import { contractsInterfaces, bitcoinRskNetWorks } from '../types'
 import interfacesIds from './interfacesIds'
 import { includesAll } from '../../lib/utils'
-import * as nativeContractsEvents from './NativeContractsEvents'
+import NativeContractsEvents from './NativeContractsEvents'
+import NativeContracts from '../NativeContracts'
 import {
   ABI_SIGNATURE,
   setAbi,
@@ -16,14 +17,20 @@ import {
 } from './lib'
 
 export class ContractParser {
-  constructor ({ abi, log, nativeContracts } = {}) {
-    if (!nativeContracts) throw new Error('Missing native contracts')
+  constructor ({ abi, log, initConfig } = {}) {
+    initConfig = initConfig || {}
+    const { net } = initConfig
+    this.netId = (net) ? net.id : undefined
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
     this.eventsAbi = abiEvents(this.abi)
     this.web3 = web3
     this.log = log || console
-    this.nativeContracts = nativeContracts
+    this.nativeContracts = NativeContracts(initConfig)
+    if (this.netId) {
+      let bitcoinNetwork = bitcoinRskNetWorks[this.netId]
+      this.nativeContractsEvents = (bitcoinNetwork) ? NativeContractsEvents({ bitcoinNetwork }) : undefined
+    }
   }
 
   getNativeContractAddress (name) {
@@ -67,7 +74,13 @@ export class ContractParser {
     return logs.map(log => {
       // non-standard remasc & bridge events
       const remascAddress = this.getNativeContractAddress('remasc')
-      if (log.address === remascAddress) return nativeContractsEvents.decodeLog(log)
+      const bridgeAddress = this.getNativeContractAddress('bridge')
+      if (log.address === remascAddress || log.address === bridgeAddress) {
+        if (!this.nativeContracts || !this.nativeContractsEvents) {
+          throw new Error(`Native contracts decoder is missing, check the value of netId:${this.netId}`)
+        }
+        return this.nativeContractsEvents.decodeLog(log)
+      }
 
       let back = Object.assign({}, log)
       let decoder = this.getLogDecoder(log.topics || [])

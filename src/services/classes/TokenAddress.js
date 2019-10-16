@@ -3,10 +3,11 @@ import Contract from './Contract'
 
 export class TokenAddress extends BcThing {
   constructor (address, contract) {
-    super()
     if (!(contract instanceof Contract)) {
       throw new Error('contract is not instance of Contract')
     }
+    const { initConfig } = contract
+    super({ initConfig })
     if (!this.isAddress(address)) {
       throw new Error(`TokenAddress: invalid address: ${address}`)
     }

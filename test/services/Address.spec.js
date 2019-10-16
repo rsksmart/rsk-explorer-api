@@ -2,12 +2,11 @@ import { expect } from 'chai'
 import { randomAddress, randomBlockHash, testCollections } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
-import NativeContracts from '../../src/lib/NativeContracts'
+import initConfig from '../../src/lib/initialConfiguration'
 
 const nativeTestContract = '0x0000000000000000000000000000000001aaaaaa'
-const nativeContracts = NativeContracts({ nativeContracts: { nativeTestContract } })
 
-const options = { collections: { Addr: null } }
+const options = { collections: { Addr: null }, initConfig }
 
 describe(`# Address`, function () {
   describe(`address type`, function () {
@@ -89,20 +88,20 @@ describe(`# Address, requires db connection`, function () {
       }
     }
   }
-
+  const options2 = { nod3, initConfig }
   const lastBlockMined = fields.LAST_BLOCK_MINED
 
   it(`should set ${lastBlockMined} and save the address`, async () => {
-    const collections = await testCollections()
-    const address = new Address(a, { nod3, collections })
+    options2.collections = await testCollections()
+    const address = new Address(a, options2)
     address.setBlock(block)
     expect(address.getData()[lastBlockMined].number).to.be.equal(block.number)
     await address.save()
   })
 
   it(`${lastBlockMined} should be the highest block mined`, async () => {
-    const collections = await testCollections()
-    const address = new Address(a, { nod3, collections })
+    options2.collections = await testCollections()
+    const address = new Address(a, options2)
     await address.fetch()
     expect(address.getData()[lastBlockMined].number).to.be.equal(block.number)
     block.number = 14
@@ -113,8 +112,8 @@ describe(`# Address, requires db connection`, function () {
   })
 
   it(`${lastBlockMined} should not be replaced by a lower block`, async () => {
-    const collections = await testCollections()
-    const address = new Address(a, { nod3, collections })
+    options2.collections = await testCollections()
+    const address = new Address(a, options2)
     await address.fetch()
     expect(address.getData()[lastBlockMined].number).to.be.equal(block.number)
     block.number = 10
@@ -126,8 +125,8 @@ describe(`# Address, requires db connection`, function () {
   })
 
   it(`${lastBlockMined} should be replaced by a higher block`, async () => {
-    const collections = await testCollections()
-    const address = new Address(a, { nod3, collections })
+    options2.collections = await testCollections()
+    const address = new Address(a, options2)
     block.number = 300
     address.setBlock(block)
     await address.fetch()
@@ -138,7 +137,8 @@ describe(`# Address, requires db connection`, function () {
 
   it(`should return a native contract address document`, async () => {
     const collections = await testCollections()
-    const address = new Address(nativeTestContract, { nativeContracts, nod3, collections })
+
+    const address = new Address(nativeTestContract, { collections, nod3, initConfig: { nativeContracts: { nativeTestContract } } })
     await address.fetch()
     const data = address.getData()
     expect(data).haveOwnProperty('isNative').equal(true)

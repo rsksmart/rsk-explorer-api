@@ -4,9 +4,17 @@ import DB from './Db.js'
 import { StoredConfig } from './StoredConfig'
 import nod3 from './nod3Connect'
 import initConfig from './initialConfiguration'
-import NativeContracts from './NativeContracts'
 
 export const dataBase = new DB(config.db)
+
+export async function getNetInfo (nod3) {
+  try {
+    let net = await nod3.net.version()
+    return net
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
 
 export async function Setup ({ log } = {}) {
   log = log || console
@@ -26,7 +34,7 @@ export async function Setup ({ log } = {}) {
         log.debug(err)
         throw new Error(`Cannot connect to the node`)
       })
-      const net = await nod3.net.version()
+      const net = await getNetInfo(nod3)
       return Object.assign(initConfig, { net })
     } catch (err) {
       return Promise.reject(err)
@@ -57,14 +65,13 @@ export async function Setup ({ log } = {}) {
       if (skipCheck) initConfig = await storedConfig.getConfig()
       else initConfig = await checkSetup()
       if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
-      const nativeContracts = NativeContracts(initConfig)
-      return { initConfig, db, nativeContracts }
+      return { initConfig, db }
     } catch (err) {
       log.error(err)
       process.exit(9)
     }
   }
-  return Object.freeze({ start, createCollections, checkSetup })
+  return Object.freeze({ start, createCollections, checkSetup, getInitConfig })
 }
 
 export default Setup

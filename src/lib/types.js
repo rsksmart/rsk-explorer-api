@@ -85,4 +85,14 @@ export const EVMversions = [
   'constantinople',
   'petersburg']
 
+export const bitcoinNetworks = {
+  TESTNET: 'testnet',
+  MAINNET: 'mainnet'
+}
+
+export const bitcoinRskNetWorks = {
+  31: bitcoinNetworks.TESTNET,
+  30: bitcoinNetworks.MAINNET
+}
+
 export default { txTypes, errors, addrTypes, contractsInterfaces }

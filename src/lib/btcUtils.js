@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import * as bs58 from 'bs58'
 import { remove0x, add0x, keccak256 } from './utils'
 import secp256k1 from 'secp256k1'
+
 const PREFIXES = {
   mainnet: {
     pubKeyHash: '00',
@@ -24,18 +25,18 @@ export const sha256 = (val, from, to) => createHash('sha256', remove0x(val), fro
 
 export const h160 = (val, from, to) => createHash('ripemd160', remove0x(val), from, to)
 
-export const h160toAddress = (hash160, { netWork, prefixKey }) => {
-  netWork = netWork || 'mainnet'
+export const h160toAddress = (hash160, { network, prefixKey }) => {
+  network = network || 'mainnet'
   prefixKey = prefixKey || 'pubKeyHash'
-  const prefix = getNetPrefix(netWork)[prefixKey]
+  const prefix = getNetPrefix(network)[prefixKey]
   hash160 = (Buffer.isBuffer(hash160)) ? hash160.toString('hex') : remove0x(hash160)
   hash160 = `${prefix}${hash160}`
   let check = sha256(sha256(hash160)).slice(0, 8)
   return bs58.encode(Buffer.from(`${hash160}${check}`, 'hex'))
 }
 
-export const pubToAddress = (pub, netWork) => {
-  return h160toAddress(h160(sha256(remove0x(pub))), { netWork })
+export const pubToAddress = (pub, network) => {
+  return h160toAddress(h160(sha256(remove0x(pub))), { network })
 }
 
 export const parsePublic = (pub, compressed) => {

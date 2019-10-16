@@ -4,7 +4,7 @@ import { Block } from '../../src/services/classes/Block'
 import { BlocksBase } from '../../src/lib/BlocksBase'
 import { nod3 } from '../../src/lib/nod3Connect'
 import datasource from '../../src/lib/dataSource'
-import { nativeContracts } from '../shared'
+import initConfig from '../../src/lib/initialConfiguration'
 
 describe('Test token', function () {
   let blockData, contract
@@ -15,7 +15,7 @@ describe('Test token', function () {
   it(' contract', async function () {
     this.timeout(60000)
     let { db } = await datasource()
-    let block = new Block(8308, new BlocksBase(db, { nativeContracts }))
+    let block = new Block(8308, new BlocksBase(db, { initConfig }))
     await block.fetch()
     blockData = block.getData(true)
     expect(blockData.contracts).to.be.an('array')

@@ -5,12 +5,12 @@ import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
 import { isAddress } from '../../lib/utils'
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { nod3, nativeContracts } = {}) {
+  constructor (hash, timestamp, { nod3, initConfig } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super({ nod3, nativeContracts })
+    super({ nod3, initConfig })
     this.hash = hash
     this.timestamp = timestamp
-    this.contractParser = new ContractParser({ nativeContracts })
+    this.contractParser = new ContractParser({ initConfig })
   }
   async fetch () {
     try {

@@ -5,10 +5,10 @@ import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
 
 class Contract extends BcThing {
-  constructor (address, creationData, nod3, nativeContracts) {
-    super({ nod3, nativeContracts })
+  constructor (address, creationData, { nod3, initConfig }) {
+    super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
-    this.parser = new ContractParser({ nativeContracts })
+    this.parser = new ContractParser({ initConfig })
     this.address = address
     this.creationData = creationData
     const createdByTx = (creationData && creationData.tx) ? creationData.tx : null

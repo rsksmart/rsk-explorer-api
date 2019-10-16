@@ -6,7 +6,6 @@ import NativeContracts from '../src/lib/NativeContracts'
 import initConfig from '../src/lib/initialConfiguration'
 
 export const nativeContracts = NativeContracts(initConfig)
-
 const testDatabase = 'dbToTest'
 
 export const testDb = () => {

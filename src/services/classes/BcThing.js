@@ -1,10 +1,13 @@
 import { isAddress, serialize, isBlockHash } from '../../lib/utils'
+import NativeContracts from '../../lib/NativeContracts'
 
 export class BcThing {
-  constructor ({ nod3, nativeContracts, collections } = {}) {
+  constructor ({ nod3, initConfig, collections } = {}) {
+    if (!initConfig) throw new Error('missing init config')
+    this.initConfig = initConfig
     this.nod3 = nod3
     this.collections = collections
-    this.nativeContracts = nativeContracts
+    this.nativeContracts = NativeContracts(initConfig)
     this.data = {}
   }
   getData (serialize = false) {

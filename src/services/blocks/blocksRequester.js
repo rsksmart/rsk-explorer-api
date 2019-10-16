@@ -8,8 +8,8 @@ import config from '../../lib/config'
 
 const log = Logger('Blocks', config.blocks.log)
 
-dataSource().then(({ db, nativeContracts }) => {
-  let Requester = new RequestBlocks(db, { log, nativeContracts })
+dataSource().then(({ db, initConfig }) => {
+  let Requester = new RequestBlocks(db, { log, initConfig })
   const blocksCollection = Requester.collections.Blocks
 
   Requester.updateStatus = function (state) {

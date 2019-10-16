@@ -4,15 +4,16 @@ import { isBlockObject, isNullData } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, nativeContracts, db, collections, block = 'latest' } = {}) {
-    super({ nod3, nativeContracts, collections })
+  constructor (address, { nod3, initConfig, db, collections, block = 'latest' } = {}) {
+    super({ nod3, initConfig, collections })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
     this.db = db || this.collections.Addrs
     this.codeIsSaved = false
     this.TxsBalance = new GetTxBalance(this.collections.Txs)
     this.data = new Proxy(
-      { address, type: addrTypes.ADDRESS }, {
+      { address, type: addrTypes.ADDRESS },
+      {
         set (obj, prop, val) {
           if (prop === 'code') {
             val = val || null

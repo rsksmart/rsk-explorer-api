@@ -5,9 +5,10 @@ import getCirculatingSupply from './lib/getCirculatingSupply'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
+import NativeContracts from '../lib/NativeContracts'
 
 class Api extends DataCollector {
-  constructor ({ db, initConfig, nativeContracts }, { modules, collectionsNames, lastBlocks } = {}) {
+  constructor ({ db, initConfig }, { modules, collectionsNames, lastBlocks } = {}) {
     const collectionName = collectionsNames.Blocks
     super(db, { collectionName })
     this.collectionsNames = collectionsNames
@@ -20,7 +21,7 @@ class Api extends DataCollector {
     this.stats = { timestamp: 0 }
     this.loadModules(getEnabledApiModules(modules))
     this.initConfig = initConfig
-    const { isNativeContract } = nativeContracts
+    const { isNativeContract } = NativeContracts(initConfig)
     this.isNativeContract = isNativeContract
   }
   tick () {
@@ -84,7 +85,8 @@ class Api extends DataCollector {
   async setCirculatingSupply () {
     try {
       const collection = this.collections.Addrs
-      let circulating = await getCirculatingSupply(collection, this.initConfig.nativeContracts)
+      const { nativeContracts } = this.initConfig
+      let circulating = await getCirculatingSupply(collection, nativeContracts)
       this.circulatingSupply = Object.assign({}, circulating)
     } catch (err) {
       this.log.debug(err)

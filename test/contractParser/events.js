@@ -1,13 +1,14 @@
 import { assert } from 'chai'
 import { ContractParser } from '../../src/lib/ContractParser/ContractParser'
 import { serialize } from '../../src/lib/utils'
-import txs from './txs/txs.expect.js'
-import { nativeContracts } from '../shared'
-
-const parser = new ContractParser({ nativeContracts })
+import txs from './txs/'
+import initConfig from '../../src/lib/initialConfiguration'
 
 describe('# decode events', function () {
   for (let t of txs) {
+    let id = t.netId || 31
+    initConfig.net = { id }
+    let parser = new ContractParser({ initConfig })
     let tx = t.tx
     let e = t.expect
     describe(`TX: ${tx.transactionHash}`, function () {
@@ -40,12 +41,11 @@ describe('# decode events', function () {
           for (let a in event.args) {
             let arg = event.args[a]
             it(`should have: ${a} arg with value: ${arg}`, function () {
-              assert.propertyVal(decoded.args, keys.indexOf(a), arg)
+              assert.deepEqual(decoded.args[keys.indexOf(a)], arg)
             })
           }
         })
       }
-
     })
   }
 })
