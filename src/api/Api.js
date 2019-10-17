@@ -72,7 +72,7 @@ class Api extends DataCollector {
       const Tx = this.getModule('Tx')
       let blocks = await collection.find().sort({ number: -1 }).limit(lastLimit).toArray()
       let txs = await Tx.db.find({ txType: { $in: [txTypes.default, txTypes.contract] } })
-        .sort({ blockNumber: -1, transactionIndex: -1 })
+        .sort({ _id: -1 })
         .limit(this.lastLimit)
         .toArray()
 
