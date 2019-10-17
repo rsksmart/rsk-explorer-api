@@ -53,6 +53,10 @@ export default {
       name: 'txBlockNumberIndex'
     },
     {
+      key: { transactionIndex: -1 },
+      name: 'txIndex'
+    },
+    {
       key: { blockHash: 1 },
       name: 'txBlockHashIndex'
     },
