@@ -4,12 +4,14 @@ import { isBlockHash } from '../../lib/utils'
 import { getBlockFromDb } from '../classes/Block'
 import { dataSource } from '../../lib/dataSource'
 import Logger from '../../lib/Logger'
-import config from '../../lib/config'
+import conf from '../../lib/config'
 
-const log = Logger('Blocks', config.blocks.log)
+const config = Object.assign({}, conf.blocks)
+
+const log = Logger('Blocks', config.log)
 
 dataSource().then(({ db, initConfig }) => {
-  let Requester = new RequestBlocks(db, { log, initConfig })
+  let Requester = new RequestBlocks(db, Object.assign(config, { log, initConfig }))
   const blocksCollection = Requester.collections.Blocks
 
   Requester.updateStatus = function (state) {
