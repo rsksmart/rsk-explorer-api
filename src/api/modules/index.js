@@ -6,11 +6,11 @@ import { Token } from './Token'
 import { TxPending } from './TxPending'
 import { Stats } from './Stats'
 import { Summary } from './Summary'
-import { ExtendedStats } from './ExtendedStats'
+// import { ExtendedStats } from './ExtendedStats'
 import { ContractVerification } from './ContractVerification'
 import { getModulesNames, getEnabledModules } from '../lib/apiTools'
 
-const apiModules = { Block, Tx, Address, Event, Token, TxPending, Stats, Summary, ExtendedStats, ContractVerification }
+const apiModules = { Block, Tx, Address, Event, Token, TxPending, Stats, Summary, ContractVerification }
 
 export const getEnabledApiModules = modules => {
   const enabled = getModulesNames(getEnabledModules(modules))
