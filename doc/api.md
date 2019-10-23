@@ -82,7 +82,7 @@ Response:
 }
 ```
 
-A detailed **request object** definition can be found under **definitions/Request** in [swagger.json](public/swagger.json)
+A detailed **request object** definition can be found under **definitions/Request** in [swagger.json](/public/swagger.json)
 
 ### The response objects
 
@@ -100,7 +100,7 @@ A detailed **request object** definition can be found under **definitions/Reques
 }
 ```
 
-A detailed **single response object** definition can be found under **definitions/Response** in [swagger.json](public/swagger.json)
+A detailed **single response object** definition can be found under **definitions/Response** in [swagger.json](/public/swagger.json)
 
 #### List response
 
@@ -114,7 +114,7 @@ A detailed **single response object** definition can be found under **definition
 }
 ```
 
-A detailed **list response object** definition can be found under **definitions/ResponseList** in [swagger.json](public/swagger.json)
+A detailed **list response object** definition can be found under **definitions/ResponseList** in [swagger.json](/public/swagger.json)
 
 ### Pagination
 
