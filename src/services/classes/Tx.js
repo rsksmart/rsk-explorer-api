@@ -5,12 +5,13 @@ import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
 import { isAddress } from '../../lib/utils'
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { nod3, initConfig } = {}) {
+  constructor (hash, timestamp, { txData, nod3, initConfig } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
     super({ nod3, initConfig })
     this.hash = hash
     this.timestamp = timestamp
     this.contractParser = new ContractParser({ initConfig })
+    this.txData = txData
   }
   async fetch () {
     try {
@@ -26,7 +27,8 @@ export class Tx extends BcThing {
   async getTx () {
     try {
       let txHash = this.hash
-      let tx = await this.getTransactionByHash(txHash)
+      let tx = this.txData
+      if (!this.isTxData(tx)) tx = await this.getTransactionByHash(txHash)
       if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`)
       let receipt = await this.getTxReceipt(txHash)
       if (!receipt) throw new Error(`The Tx ${txHash} .receipt is: ${receipt} `)
@@ -77,6 +79,10 @@ export class Tx extends BcThing {
     return new Promise((resolve, reject) => {
       process.nextTick(() => resolve(parser.parseTxLogs(logs)))
     })
+  }
+  isTxData (data) {
+    if (!data || typeof data !== 'object') return
+    return data.hash && data.blockHash && data.input
   }
 }
 

@@ -35,12 +35,13 @@ export class Block extends BcThing {
       return Promise.reject(new Error('nod3 is not connected'))
     }
     try {
-      let blockData = await this.getBlock(this.hashOrNumber)
+      let blockData = await this.getBlock(this.hashOrNumber, true)
+      const { transactions, timestamp } = blockData
+      blockData.transactions = transactions.map(tx => tx.hash)
       this.data.block = blockData
       this.addAddress(blockData.miner, blockData)
-
-      let { transactions, timestamp } = blockData
-      let txs = transactions.map(hash => new Tx(hash, timestamp, this))
+      const { nod3, initConfig } = this
+      let txs = transactions.map(txData => new Tx(txData.hash, timestamp, { txData, nod3, initConfig }))
       let txsData = await this.fetchItems(txs)
       this.data.txs = txsData.map(d => d.tx)
       this.data.txs.forEach(tx => this.addTxAddresses(tx))
