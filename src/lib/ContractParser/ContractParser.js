@@ -71,6 +71,29 @@ export class ContractParser {
   }
 
   parseTxLogs (logs) {
+    return this.decodeLogs(logs).map(event => this.addEventAddresses(event))
+  }
+
+  addEventAddresses (event) {
+    const { abi, args } = event
+    let _addresses = event._addresses || []
+    if (abi && args) {
+      let inputs = abi.inputs || []
+      inputs.forEach((v, i) => {
+        if (v.type === 'address') {
+          _addresses.push(args[i])
+        }
+        if (v.type === 'address[]') {
+          let value = args[i] || []
+          value.forEach(v => _addresses.push(v))
+        }
+      })
+      event._addresses = [...new Set(_addresses)]
+    }
+    return event
+  }
+
+  decodeLogs (logs) {
     return logs.map(log => {
       // non-standard remasc & bridge events
       const remascAddress = this.getNativeContractAddress('remasc')

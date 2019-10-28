@@ -133,12 +133,12 @@ export default {
       name: 'eventBlockHashIndex'
     },
     {
-      key: { args: 1 },
-      name: 'eventsArgsIndex'
-    },
-    {
       key: { signature: 1 },
       name: 'eventSignatureIndex'
+    },
+    {
+      key: { _addresses: 1 },
+      name: 'eventAddressesIndex'
     }
   ],
   TokensAddrs: [

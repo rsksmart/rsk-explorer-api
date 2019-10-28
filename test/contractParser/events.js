@@ -31,6 +31,24 @@ describe('# decode events', function () {
             assert.property(decoded, 'abi')
           })
 
+          it(`should have an addresses property`, () => {
+            assert.property(decoded, '_addresses')
+            assert.typeOf(decoded._addresses, 'array')
+          })
+
+          it(`address field must contain all addresses`, () => {
+            const { abi, args, _addresses } = decoded
+            abi.inputs.forEach((v, i) => {
+              const { type } = v
+              if (type === 'address') {
+                assert.include(_addresses, args[i])
+              }
+              if (type === 'address[]') {
+                assert.includeMembers(_addresses, args[i])
+              }
+            })
+          })
+
           let argsLength = Object.keys(event.args).length
           it(`should have: ${argsLength} arguments`, function () {
             assert.equal(argsLength, Object.keys(decoded.args).length)
