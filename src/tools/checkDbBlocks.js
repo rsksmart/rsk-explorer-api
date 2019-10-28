@@ -1,15 +1,13 @@
 import dataSource from '../lib/dataSource.js'
-import conf from '../lib/config'
+import { getDbBlocksCollections } from '../lib/blocksCollections'
 import fs from 'fs'
 import util from 'util'
 import { checkBlocksCongruence, checkBlocksTransactions } from '../services/classes/CheckBlocks'
-const config = Object.assign({}, conf.blocks)
 const writeFile = util.promisify(fs.writeFile)
 const outFile = process.argv[2] || '/tmp/blocksLog.json'
 dataSource({ skipCheck: true }).then(async ({ db }) => {
   try {
-    const Blocks = db.collection(config.collections.Blocks)
-    const Txs = db.collection(config.collections.Txs)
+    const { Blocks, Txs } = getDbBlocksCollections(db)
     console.log('Getting blocks....')
     let res = await checkBlocksCongruence(Blocks)
     res.missingTxs = await checkBlocksTransactions(Blocks, Txs)
