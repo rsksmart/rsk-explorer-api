@@ -1,15 +1,15 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
-import config from '../lib/config'
-const { collectionsNames } = config
+import { getDbBlocksCollections } from '../lib/blocksCollections'
 
 export class Status extends DataCollector {
   constructor (db) {
-    const collectionName = collectionsNames.Status
-    super(db, { collectionName })
+    const collections = getDbBlocksCollections(db)
+    const { Status, Blocks } = collections
+    super(db, { collectionName: 'Status' })
     this.tickDelay = 5000
     this.state = {}
-    this.addModule(new DataCollectorItem(db.collection(collectionsNames.Status), 'Status'))
-    this.addModule(new DataCollectorItem(db.collection(collectionsNames.Blocks), 'Blocks'))
+    this.addModule(new DataCollectorItem(Status, 'Status'))
+    this.addModule(new DataCollectorItem(Blocks, 'Blocks'))
   }
   tick () {
     this.updateState().then((newState) => {
