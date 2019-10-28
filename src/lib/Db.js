@@ -32,13 +32,12 @@ export class Db {
     this.log = log
   }
 
-  async createCollection (collectionName, indexes, options) {
+  async createCollection (collectionName, { indexes, options }, { dropIndexes, validate } = {}) {
     try {
       const db = await this.db()
       if (!collectionName) throw new Error('Invalid collection name')
-      let collection = db.collection(collectionName)
-
-      if (options.dropIndexes) {
+      let collection = await db.createCollection(collectionName, options)
+      if (dropIndexes) {
         this.log.info(`Removing indexes from ${collectionName}`)
         await collection.dropIndexes()
       }
@@ -46,7 +45,7 @@ export class Db {
         this.log.info(`Creating indexes to ${collectionName}`)
         await collection.createIndexes(indexes)
       }
-      if (options.validate) {
+      if (validate) {
         this.log.info(`Validating collection: ${collectionName}`)
         await db.admin().validateCollection(collectionName)
       }
@@ -56,13 +55,12 @@ export class Db {
     }
   }
 
-  createCollections (collections, options) {
+  createCollections (collections, creationOptions = {}) {
     let queue = []
-    let names = options.names || {}
+    let names = creationOptions.names || {}
     for (let c in collections) {
       let name = names[c] || c
-      let indexes = collections[c]
-      queue.push(this.createCollection(name, indexes, options)
+      queue.push(this.createCollection(name, collections[c], creationOptions)
         .then(collection => {
           this.log.info(`Created collection ${name}`)
           return collection
