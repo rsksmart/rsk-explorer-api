@@ -22,13 +22,23 @@ export default {
           inputs: [
             {
               indexed: false,
-              name: 'oldFederationData',
-              type: 'string[]'
+              name: 'oldFederationAddress',
+              type: 'string'
             },
             {
               indexed: false,
-              name: 'newFederationData',
-              type: 'string[]'
+              name: 'oldFederationMembers',
+              type: 'address[]'
+            },
+            {
+              indexed: false,
+              name: 'newFederationAddress',
+              type: 'string'
+            },
+            {
+              indexed: false,
+              name: 'newFederationMembers',
+              type: 'address[]'
             },
             {
               indexed: false,
@@ -40,45 +50,42 @@ export default {
           type: 'event'
         },
         args: [
+          '3Q3z9MD1CAcSkup6ehczYkStZtyUhgQbCg',
           [
-            '3Q3z9MD1CAcSkup6ehczYkStZtyUhgQbCg',
-            [
-              '0x1888fa870b97a4845a6a1f7eee4ebb507dbe0967',
-              '0x530aad5be57e9be2084881b1d84f2a30e896ae36',
-              '0x0474f314fef5373fd2afaafdcd7a8bdec1ab4309',
-              '0x1e01385c6d522583575f60fee384f30405ffae01',
-              '0xe4945372d758650275e23fa90f754d0f67fa66e2',
-              '0xabb1d944a0dc0ead5a36b31087bd1fc31726e674',
-              '0x32c865f2dbf36ce6f4cfcb624b559ef98b33a2d1',
-              '0x7b197517908e9a434c0c69e8d42e8b74f8b86992',
-              '0xf006f6202e0c29ef2e3b1532d2307427864ed77a',
-              '0x67af698c927ae574fb43d45a50522c207f81100f',
-              '0x49f10f59d693f0c7f3d2449da03e8f75f1535c68',
-              '0x0a1d7f3c50dae072b019eff0f306ae1613b56b3c',
-              '0x088cc4c0294db72221e448b1c194c1544e1b4581',
-              '0x99c804ce247f3ed392313976de97fc733e699bc1',
-              '0xf74b7e0d5bdd14eaedf725bb1549ce14abeb71dd'
-            ]
+            '0x1888fa870b97a4845a6a1f7eee4ebb507dbe0967',
+            '0x530aad5be57e9be2084881b1d84f2a30e896ae36',
+            '0x0474f314fef5373fd2afaafdcd7a8bdec1ab4309',
+            '0x1e01385c6d522583575f60fee384f30405ffae01',
+            '0xe4945372d758650275e23fa90f754d0f67fa66e2',
+            '0xabb1d944a0dc0ead5a36b31087bd1fc31726e674',
+            '0x32c865f2dbf36ce6f4cfcb624b559ef98b33a2d1',
+            '0x7b197517908e9a434c0c69e8d42e8b74f8b86992',
+            '0xf006f6202e0c29ef2e3b1532d2307427864ed77a',
+            '0x67af698c927ae574fb43d45a50522c207f81100f',
+            '0x49f10f59d693f0c7f3d2449da03e8f75f1535c68',
+            '0x0a1d7f3c50dae072b019eff0f306ae1613b56b3c',
+            '0x088cc4c0294db72221e448b1c194c1544e1b4581',
+            '0x99c804ce247f3ed392313976de97fc733e699bc1',
+            '0xf74b7e0d5bdd14eaedf725bb1549ce14abeb71dd'
           ],
+
+          '3JYaMbjuKXkURNpLpDDDWMzUcNMt2GreNc',
           [
-            '3JYaMbjuKXkURNpLpDDDWMzUcNMt2GreNc',
-            [
-              '0x1888fa870b97a4845a6a1f7eee4ebb507dbe0967',
-              '0xd6d5610e6b4b61ecfdcf983b76f57977bb50c857',
-              '0x1e01385c6d522583575f60fee384f30405ffae01',
-              '0x304660d1beeb0918b7b3f7657d8418686cb578b1',
-              '0xe4945372d758650275e23fa90f754d0f67fa66e2',
-              '0xabb1d944a0dc0ead5a36b31087bd1fc31726e674',
-              '0x32c865f2dbf36ce6f4cfcb624b559ef98b33a2d1',
-              '0x7b197517908e9a434c0c69e8d42e8b74f8b86992',
-              '0xf006f6202e0c29ef2e3b1532d2307427864ed77a',
-              '0x67af698c927ae574fb43d45a50522c207f81100f',
-              '0x49f10f59d693f0c7f3d2449da03e8f75f1535c68',
-              '0x0a1d7f3c50dae072b019eff0f306ae1613b56b3c',
-              '0x088cc4c0294db72221e448b1c194c1544e1b4581',
-              '0xcf0111a3fa940cac8b0c152b706802b46ffbfcf5',
-              '0x99c804ce247f3ed392313976de97fc733e699bc1'
-            ]
+            '0x1888fa870b97a4845a6a1f7eee4ebb507dbe0967',
+            '0xd6d5610e6b4b61ecfdcf983b76f57977bb50c857',
+            '0x1e01385c6d522583575f60fee384f30405ffae01',
+            '0x304660d1beeb0918b7b3f7657d8418686cb578b1',
+            '0xe4945372d758650275e23fa90f754d0f67fa66e2',
+            '0xabb1d944a0dc0ead5a36b31087bd1fc31726e674',
+            '0x32c865f2dbf36ce6f4cfcb624b559ef98b33a2d1',
+            '0x7b197517908e9a434c0c69e8d42e8b74f8b86992',
+            '0xf006f6202e0c29ef2e3b1532d2307427864ed77a',
+            '0x67af698c927ae574fb43d45a50522c207f81100f',
+            '0x49f10f59d693f0c7f3d2449da03e8f75f1535c68',
+            '0x0a1d7f3c50dae072b019eff0f306ae1613b56b3c',
+            '0x088cc4c0294db72221e448b1c194c1544e1b4581',
+            '0xcf0111a3fa940cac8b0c152b706802b46ffbfcf5',
+            '0x99c804ce247f3ed392313976de97fc733e699bc1'
           ],
           '833737'
         ]

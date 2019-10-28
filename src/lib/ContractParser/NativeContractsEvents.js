@@ -3,7 +3,6 @@ import { remove0x, add0x } from '../utils'
 import * as btcUtils from '../btcUtils'
 
 export function NativeContractsEvents ({ bitcoinNetwork } = {}) {
-
   const network = bitcoinNetwork || 'testnet'
   const decodeAddress = address => {
     address = Buffer.from(remove0x(address), 'hex')
@@ -44,10 +43,10 @@ export function NativeContractsEvents ({ bitcoinNetwork } = {}) {
   const commitFederationDecoder = data => {
     const decoded = rlp.decode(data)
     let [oldData, newData, block] = decoded
-    oldData = decodeFederationData(oldData)
-    newData = decodeFederationData(newData)
+    let [oldFederationAddress, oldFederationMembers] = decodeFederationData(oldData)
+    let [newFederationAddress, newFederationMembers] = decodeFederationData(newData)
     block = block.toString('ascii')
-    return [oldData, newData, block]
+    return [oldFederationAddress, oldFederationMembers, newFederationAddress, newFederationMembers, block]
   }
   const fakeAbi = Object.freeze([
     { // Remasc events
@@ -125,13 +124,23 @@ export function NativeContractsEvents ({ bitcoinNetwork } = {}) {
       inputs: [
         {
           indexed: false,
-          name: 'oldFederationData',
-          type: 'string[]'
+          name: 'oldFederationAddress',
+          type: 'string'
         },
         {
           indexed: false,
-          name: 'newFederationData',
-          type: 'string[]'
+          name: 'oldFederationMembers',
+          type: 'address[]'
+        },
+        {
+          indexed: false,
+          name: 'newFederationAddress',
+          type: 'string'
+        },
+        {
+          indexed: false,
+          name: 'newFederationMembers',
+          type: 'address[]'
         },
         {
           indexed: false,
