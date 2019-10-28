@@ -110,6 +110,11 @@ export default {
     ]
   },
   Status: {
+    options: {
+      capped: true,
+      size: 262144,
+      max: 100
+    },
     indexes: [
       {
         key: { timestamp: -1 },
