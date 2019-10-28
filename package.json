@@ -32,7 +32,7 @@
     "bunyan": "^2.0.2",
     "express": "^4.17.1",
     "keccak": "^1.4.0",
-    "mongodb": "^3.3.2",
+    "mongodb": "^3.3.3",
     "nod3": "git+https://github.com/rsksmart/nod3.git",
     "rlp": "^2.2.2",
     "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",
@@ -57,8 +57,6 @@
     "eslint-plugin-standard": "^3.1.0",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.10",
-    "redoc": "^2.0.0-rc.8-1",
-    "redoc-cli": "^0.8.4",
     "swagger-jsdoc": "^3.2.9",
     "swagger-markdown": "^1.1.7"
   }
