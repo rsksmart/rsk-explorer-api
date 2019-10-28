@@ -4,7 +4,7 @@ import nod3 from './nod3Connect'
 import NativeContracts from './NativeContracts'
 
 export class BlocksBase {
-  constructor (db, { log, initConfig }) {
+  constructor (db, { log, initConfig } = {}) {
     this.initConfig = initConfig || {}
     this.db = db
     this.collections = (db) ? getDbBlocksCollections(db) : undefined
