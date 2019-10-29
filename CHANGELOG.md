@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- Decode bridge events
+
+## Changed
+
+- Indexes of events arguments, add field _addresses
+- ContractParser, remove web3 dependency
+
 ## [1.0.2] - 2019-09-16
 
 ### Fixed

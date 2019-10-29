@@ -10,7 +10,7 @@ export class Tx extends BcThing {
     super({ nod3, initConfig })
     this.hash = hash
     this.timestamp = timestamp
-    this.contractParser = new ContractParser({ initConfig })
+    this.contractParser = new ContractParser({ initConfig, nod3 })
     this.txData = txData
   }
   async fetch () {

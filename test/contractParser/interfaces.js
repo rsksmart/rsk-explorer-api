@@ -26,7 +26,7 @@ const addresses = {
   '0x7974f2971e0b5d68f30513615fafec5c451da4d1': ['ERC20', 'ERC677']
 }
 
-const parser = new ContractParser()
+const parser = new ContractParser({ nod3 })
 
 describe('# Network', function () {
   it('should be connected to RSK testnet', async function () {

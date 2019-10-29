@@ -198,3 +198,12 @@ export const isNullData = value => {
   if (sumDigits(test) === 0) return true
   return (test === '') ? true : !test
 }
+
+export const toBuffer = (value, encoding = 'hex') => {
+  if (Buffer.isBuffer(value)) return value
+  if (typeof value === 'number') value = value.toString()
+  value = remove0x(value)
+  return Buffer.from(value, encoding)
+}
+
+export const toAscii = hexString => toBuffer(remove0x(hexString), 'hex').toString('ascii').replace(/\0/g, '')

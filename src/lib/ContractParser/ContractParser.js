@@ -1,11 +1,12 @@
 import SolidityEvent from 'web3/lib/web3/event.js'
 import compiledAbi from './Abi'
-import { web3 } from '../web3Connect'
 import { contractsInterfaces, bitcoinRskNetWorks } from '../types'
 import interfacesIds from './interfacesIds'
-import { includesAll } from '../../lib/utils'
+import { includesAll, toAscii } from '../../lib/utils'
 import NativeContractsEvents from './NativeContractsEvents'
 import NativeContracts from '../NativeContracts'
+import Contract from './Contract'
+
 import {
   ABI_SIGNATURE,
   setAbi,
@@ -17,20 +18,24 @@ import {
 } from './lib'
 
 export class ContractParser {
-  constructor ({ abi, log, initConfig } = {}) {
+  constructor ({ abi, log, initConfig, nod3 } = {}) {
     initConfig = initConfig || {}
     const { net } = initConfig
     this.netId = (net) ? net.id : undefined
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
     this.eventsAbi = abiEvents(this.abi)
-    this.web3 = web3
     this.log = log || console
+    this.nod3 = nod3
     this.nativeContracts = NativeContracts(initConfig)
     if (this.netId) {
       let bitcoinNetwork = bitcoinRskNetWorks[this.netId]
       this.nativeContractsEvents = (bitcoinNetwork) ? NativeContractsEvents({ bitcoinNetwork }) : undefined
     }
+  }
+
+  setNod3 (nod3) {
+    this.nod3 = nod3
   }
 
   getNativeContractAddress (name) {
@@ -45,9 +50,6 @@ export class ContractParser {
     this.eventsAbi = abiEvents(this.abi)
   }
 
-  setWeb3 (web3) {
-    if (web3) this.web3 = web3
-  }
   getMethodsSelectors () {
     let selectors = {}
     let methods = this.getAbiMethods()
@@ -127,7 +129,7 @@ export class ContractParser {
       if (abi && abi.inputs) {
         abi.inputs.forEach(param => {
           if (param.type === 'bytes32') {
-            log.args[param.name] = this.web3.toAscii(log.args[param.name])
+            log.args[param.name] = toAscii(log.args[param.name])
           }
         })
       }
@@ -159,22 +161,30 @@ export class ContractParser {
 
   makeContract (address, abi) {
     abi = abi || this.abi
-    return this.web3.eth.contract(abi).at(address)
+    let { nod3 } = this
+    return Contract(abi, { address, nod3 })
   }
 
-  call (method, contract, params = []) {
-    return new Promise((resolve, reject) => {
-      if (!Array.isArray(params)) reject(new Error(`Params must be an array`))
-      contract[method].call(...params, (err, res) => {
-        if (err !== null) {
-          this.log.warn(`Method ${method} call ${err}`)
-          resolve(null)
-          // return reject(err)
-        } else {
-          resolve(res)
-        }
-      })
-    })
+  async call (method, contract, params = [], options = {}) {
+    try {
+      const res = await contract.call(method, params, options)
+      return res
+    } catch (err) {
+      this.log.warn(`Method ${method} call ${err}`)
+      return null
+    }
+    /*     return new Promise((resolve, reject) => {
+          if (!Array.isArray(params)) reject(new Error(`Params must be an array`))
+          contract[method].call(...params, (err, res) => {
+            if (err !== null) {
+              this.log.warn(`Method ${method} call ${err}`)
+              resolve(null)
+              // return reject(err)
+            } else {
+              resolve(res)
+            }
+          })
+        }) */
   }
 
   async getTokenData (contract) {
@@ -236,8 +246,8 @@ export class ContractParser {
 
   async supportsInterface (contract, interfaceId) {
     // fixed gas to prevent infinite loops
-    let options = { gas: 30000 }
-    let res = await this.call('supportsInterface', contract, [interfaceId, options])
+    let options = { gas: '0x7530' }
+    let res = await this.call('supportsInterface', contract, [interfaceId], options)
     return res
   }
 

@@ -8,7 +8,7 @@ class Contract extends BcThing {
   constructor (address, creationData, { nod3, initConfig }) {
     super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
-    this.parser = new ContractParser({ initConfig })
+    this.parser = new ContractParser({ initConfig, nod3 })
     this.address = address
     this.creationData = creationData
     const createdByTx = (creationData && creationData.tx) ? creationData.tx : null
