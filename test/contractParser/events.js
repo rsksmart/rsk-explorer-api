@@ -29,11 +29,13 @@ describe('# decode events', function () {
 
           it(`should have an abi property`, () => {
             assert.property(decoded, 'abi')
+            if (event.abi) assert.deepEqual(event.abi, decoded.abi)
           })
 
           it(`should have an addresses property`, () => {
             assert.property(decoded, '_addresses')
             assert.typeOf(decoded._addresses, 'array')
+            if (event._addresses) assert.deepEqual(event._addresses, decoded._addresses)
           })
 
           it(`address field must contain all addresses`, () => {

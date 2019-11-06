@@ -1,16 +1,15 @@
-import SolidityEvent from 'web3/lib/web3/event.js'
 import compiledAbi from './Abi'
 import { contractsInterfaces, bitcoinRskNetWorks } from '../types'
 import interfacesIds from './interfacesIds'
-import { includesAll, toAscii } from '../../lib/utils'
+import { includesAll } from '../../lib/utils'
 import NativeContractsEvents from './NativeContractsEvents'
 import NativeContracts from '../NativeContracts'
 import Contract from './Contract'
+import EventDecoder from './EventDecoder'
 
 import {
   ABI_SIGNATURE,
   setAbi,
-  abiEvents,
   removeAbiSignatureData,
   abiSignatureData,
   soliditySelector,
@@ -24,7 +23,6 @@ export class ContractParser {
     this.netId = (net) ? net.id : undefined
     this.abi = null
     this.abi = setAbi(abi || compiledAbi)
-    this.eventsAbi = abiEvents(this.abi)
     this.log = log || console
     this.nod3 = nod3
     this.nativeContracts = NativeContracts(initConfig)
@@ -47,7 +45,6 @@ export class ContractParser {
 
   setAbi (abi) {
     this.abi = setAbi(abi)
-    this.eventsAbi = abiEvents(this.abi)
   }
 
   getMethodsSelectors () {
@@ -73,7 +70,11 @@ export class ContractParser {
   }
 
   parseTxLogs (logs) {
-    return this.decodeLogs(logs).map(event => this.addEventAddresses(event))
+    return this.decodeLogs(logs).map(event => {
+      this.addEventAddresses(event)
+      event.abi = removeAbiSignatureData(event.abi)
+      return event
+    })
   }
 
   addEventAddresses (event) {
@@ -95,68 +96,26 @@ export class ContractParser {
     return event
   }
 
-  decodeLogs (logs) {
-    return logs.map(log => {
-      // non-standard remasc & bridge events
-      const remascAddress = this.getNativeContractAddress('remasc')
-      const bridgeAddress = this.getNativeContractAddress('bridge')
-      if (log.address === remascAddress || log.address === bridgeAddress) {
-        if (!this.nativeContracts || !this.nativeContractsEvents) {
-          throw new Error(`Native contracts decoder is missing, check the value of netId:${this.netId}`)
-        }
-        return this.nativeContractsEvents.decodeLog(log)
-      }
-
-      let back = Object.assign({}, log)
-      let decoder = this.getLogDecoder(log.topics || [])
-      let decoded = (decoder) ? decoder.event.decode(log) : log
-      decoded.topics = back.topics
-      decoded.data = back.data
-      if (decoder) {
-        let signature = Object.assign({}, decoder.abi[ABI_SIGNATURE])
-        decoded.signature = signature.signature
-        decoded.abi = removeAbiSignatureData(decoder.abi)
-        // convert args object to array to remove properties names
-        if (decoded.args) {
-          let inputs = decoded.abi.inputs || []
-          let args = inputs.map(i => i.name).map(i => decoded.args[i])
-          decoded.args = args
-        }
-      }
-      return decoded
-    }).map(log => {
-      let abi = log.abi
-      if (abi && abi.inputs) {
-        abi.inputs.forEach(param => {
-          if (param.type === 'bytes32') {
-            log.args[param.name] = toAscii(log.args[param.name])
-          }
-        })
-      }
-      return log
-    })
-  }
-
-  getLogDecoder (topics) {
-    if (!topics.length) return null
-    let events = this.eventsAbi
-    let signature = topics[0].slice(2)
-    let indexed = topics.length - 1
-    let decoders = events
-      .filter(e => {
-        let s = e[ABI_SIGNATURE]
-        return s.signature === signature && s.indexed === indexed
-      })
-    if (decoders.length) {
-      if (decoders[1]) this.log.error(`ERROR, dupplicated event: ${decoders[0].name}`)
-      return this.createLogDecoder(decoders[0])
+  getNativeContractsEvents () {
+    if (!this.nativeContracts || !this.nativeContractsEvents) {
+      throw new Error(`Native contracts decoder is missing, check the value of netId:${this.netId}`)
     }
+    return this.nativeContractsEvents
   }
 
-  createLogDecoder (abi) {
-    abi = Object.assign({}, abi)
-    const event = new SolidityEvent(null, abi, null)
-    return { abi, event }
+  decodeLogs (logs, abi) {
+    abi = abi || this.abi
+    const eventDecoder = EventDecoder(abi)
+    if (!this.nativeContracts || !this.nativeContractsEvents) {
+      throw new Error(`Native contracts decoder is missing, check the value of netId:${this.netId}`)
+    }
+    const { isNativeContract } = this.nativeContracts
+    const { nativeContractsEvents } = this
+    return logs.map(log => {
+      const { address } = log
+      const decoder = (isNativeContract(address)) ? nativeContractsEvents : eventDecoder
+      return decoder.decodeLog(log)
+    })
   }
 
   makeContract (address, abi) {
@@ -173,18 +132,6 @@ export class ContractParser {
       this.log.warn(`Method ${method} call ${err}`)
       return null
     }
-    /*     return new Promise((resolve, reject) => {
-          if (!Array.isArray(params)) reject(new Error(`Params must be an array`))
-          contract[method].call(...params, (err, res) => {
-            if (err !== null) {
-              this.log.warn(`Method ${method} call ${err}`)
-              resolve(null)
-              // return reject(err)
-            } else {
-              resolve(res)
-            }
-          })
-        }) */
   }
 
   async getTokenData (contract) {

@@ -38,8 +38,7 @@
     "rlp": "^2.2.2",
     "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",
     "secp256k1": "^3.7.1",
-    "socket.io": "^2.2.0",
-    "web3": "^0.20.7"
+    "socket.io": "^2.2.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.0",
