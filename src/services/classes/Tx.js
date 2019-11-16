@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import { formatEvent } from './Event'
-import ContractParser from '../../lib/ContractParser/ContractParser'
+import ContractParser from 'rsk-contract-parser'
 import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
 import { isAddress } from '../../lib/utils'
@@ -22,6 +22,7 @@ export class Tx extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
+
   }
 
   async getTx () {

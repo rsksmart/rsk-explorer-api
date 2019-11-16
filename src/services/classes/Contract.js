@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import ContractParser from '../../lib/ContractParser/ContractParser'
+import ContractParser from 'rsk-contract-parser'
 import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
