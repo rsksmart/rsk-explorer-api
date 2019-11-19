@@ -31,9 +31,12 @@ class Api extends DataCollector {
 
   loadModules (modules) {
     Object.keys(modules).forEach(name => {
-      const module = new modules[name](this.collections, name)
-      this.log.info(`Loading module ${name}`)
-      this.addModule(module, name)
+      const constructor = modules[name]
+      if (typeof constructor === 'function') {
+        const module = new constructor(this.collections, name)
+        this.log.info(`Loading module ${name}`)
+        this.addModule(module, name)
+      }
     })
   }
 
