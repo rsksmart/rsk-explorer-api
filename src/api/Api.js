@@ -137,7 +137,9 @@ class Api extends DataCollector {
 
   async updateStats () {
     const oldStats = this.stats
-    const stats = await this.getModule('Stats').run('getLatest')
+    const Stats = await this.getModule('Stats')
+    if (!Stats) return
+    const stats = await Stats.run('getLatest')
     if (!stats) return
 
     const ExtendedStats = this.getModule('ExtendedStats')
