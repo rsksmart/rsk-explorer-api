@@ -1,9 +1,11 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
   constructor (collections, key) {
-    // const sortable = { timestamp: -1 }
+    const sortable = { eventId: -1 }
     const { Events } = collections
-    super(Events, key)
+    let cursorField = 'eventId'
+    let sortDir = -1
+    super(Events, key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger
@@ -21,7 +23,7 @@ export class Event extends DataCollectorItem {
        *          in: query
        *          required: true
        *          enum: [getEvent]
-       *        - name: _id
+       *        - name: eventId
        *          in: query
        *          schema:
        *            type: string
@@ -35,10 +37,10 @@ export class Event extends DataCollectorItem {
        */
       getEvent: async params => {
         try {
-          const { _id } = params
-          if (!_id) throw new Error('invalid _id')
-          let data = await this.getOne({ _id })
-          if (!data || !data.data) throw new Error(`Event ${_id} does not exist`)
+          const { eventId } = params
+          if (!eventId) throw new Error('invalid eventId')
+          let data = await this.getOne({ eventId })
+          if (!data || !data.data) throw new Error(`Event ${eventId} does not exist`)
           const address = data.data.address
           data = await this.parent.addAddressData(address, data)
           return data

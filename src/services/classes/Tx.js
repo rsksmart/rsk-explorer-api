@@ -52,12 +52,11 @@ export class Tx extends BcThing {
   }
   async parseEvents (tx) {
     try {
-      let topics = await this.parseLogs(tx.receipt.logs)
-      return topics.map(topic => {
-        topic = formatEvent(topic, tx)
-        let event = Object.assign({}, topic)
-        delete event.eventId
-        delete topic._id
+      let logs = await this.parseLogs(tx.receipt.logs)
+      return logs.map(l => {
+        l = formatEvent(l, tx)
+        let event = Object.assign({}, l)
+        delete l._id
         return event
       })
     } catch (err) {
@@ -71,7 +70,7 @@ export class Tx extends BcThing {
     let nativeType = txTypes[toIsNative]
     if (nativeType) tx.txType = nativeType
     if (isAddress(receipt.contractAddress)) tx.txType = txTypes.contract
-    tx._id = getTxOrEventId(tx)
+    tx.txId = getTxOrEventId(tx)
     return tx
   }
 

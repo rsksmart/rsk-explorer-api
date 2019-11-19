@@ -52,6 +52,10 @@ export default {
   Txs: {
     indexes: [
       {
+        key: { txId: -1 },
+        unique: true
+      },
+      {
         key: { hash: 1 },
         unique: true
       },
@@ -126,6 +130,10 @@ export default {
   },
   Events: {
     indexes: [
+      {
+        key: { eventId: -1 },
+        unique: true
+      },
       {
         key: { address: 1 },
         name: 'eventAddressIndex'
