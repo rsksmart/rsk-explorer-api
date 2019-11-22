@@ -5,11 +5,24 @@
 ### Added
 
 - Decode bridge events
+- Indexed _addresses field to events collection
 
 ## Changed
 
-- Indexes of events arguments, add field _addresses
 - ContractParser, remove web3 dependency
+- Refactor ContractParser as rsk-contract-parser
+- Refactor utils as rsk-utils
+- Status collection to capped collection
+
+## Fixed
+
+- Indexed ids on events and transactions, that produced errors in some queries
+- tools/getBlock
+- swagger.json url
+
+## Removed
+
+- ExtendedStats module
 
 ## [1.0.2] - 2019-09-16
 
