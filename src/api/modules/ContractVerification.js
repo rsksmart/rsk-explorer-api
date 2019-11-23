@@ -12,6 +12,26 @@ export class ContractVerification extends DataCollectorItem {
     this.verificationsCollection = VerificationsResults
     this.publicActions = {
       /**
+     * @swagger
+     * /api?module=contractVerifier&action=getVerifiedContracts:
+     *    get:
+     *      description: Gets a list of verified contracts addresses
+     *      tags:
+     *        - contract verifier
+     *      responses:
+     *        200:
+     *          $ref: '#/definitions/Response'
+     *        400:
+     *          $ref: '#/responses/BadRequest'
+     *        404:
+     *          $ref: '#/responses/NotFound'
+     */
+      getVerifiedContracts: (params) => {
+        params.fields = ['address']
+        let query = { match: true }
+        return this.getPageData(query, params)
+      },
+      /**
        * @swagger
        * /api?module=contractVerifier&action=verify:
        *    get:
