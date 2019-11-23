@@ -80,7 +80,10 @@ export class DataCollectorItem {
     let sortDir = this.sortDir
 
     let { limit, next, prev, fields, count, countOnly, page, getPages } = params
+
+    fields = parseFields(fields)
     if (!fields) fields = this.getDefaultsFields()
+
     sort = filterSort(sort, sortable, defaultSort)
     return { sort, sortable, defaultSort, sortDir, limit, next, prev, fields, count, countOnly, page, getPages }
   }
