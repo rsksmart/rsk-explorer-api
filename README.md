@@ -19,6 +19,9 @@
 
 - mongodb > 4
 - node >= 10.16.0
+- access to JSON/RPC interface of a rskj node v1.0.2
+
+through
 
 ## Install
 
