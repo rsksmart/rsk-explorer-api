@@ -1,9 +1,9 @@
 import { missmatchBlockTransactions } from '../../src/services/classes/Block'
 import { assert } from 'chai'
 
-import blockA from './block-1234.json'
-import blockB from './block-4567.json'
-import badBlock from './block-badTxs.json'
+import blockA from './blockData/block-1234.json'
+import blockB from './blockData/block-4567.json'
+import badBlock from './blockData/block-badTxs.json'
 
 import one from './01.json'
 import two from './02.json'

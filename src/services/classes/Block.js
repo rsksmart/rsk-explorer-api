@@ -40,8 +40,8 @@ export class Block extends BcThing {
       blockData.transactions = transactions.map(tx => tx.hash)
       this.data.block = blockData
       this.addAddress(blockData.miner, blockData)
-      const { nod3, initConfig } = this
-      let txs = transactions.map(txData => new Tx(txData.hash, timestamp, { txData, nod3, initConfig }))
+      const { nod3, initConfig, collections } = this
+      let txs = transactions.map(txData => new Tx(txData.hash, timestamp, { txData, nod3, initConfig, collections }))
       let txsData = await this.fetchItems(txs)
       this.data.txs = txsData.map(d => d.tx)
       this.data.txs.forEach(tx => this.addTxAddresses(tx))

@@ -4,27 +4,39 @@ import ContractParser from 'rsk-contract-parser'
 import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
 import { isAddress } from '../../lib/utils'
+import Address from './Address'
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { txData, nod3, initConfig } = {}) {
+  constructor (hash, timestamp, { txData, nod3, initConfig, collections } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super({ nod3, initConfig })
+    super({ nod3, initConfig, collections })
     this.hash = hash
     this.timestamp = timestamp
-    this.contractParser = new ContractParser({ initConfig, nod3 })
     this.txData = txData
+    this.toAddress = undefined
   }
   async fetch () {
     try {
       let tx = await this.getTx()
+      await this.setToAddress(tx)
+      tx = this.txFormat(tx)
       let events = await this.parseEvents(tx)
-      this.data = { tx, events }
+      let addresses = [this.toAddress]
+      this.data = { tx, events, addresses }
       return this.getData()
     } catch (err) {
       return Promise.reject(err)
     }
-
   }
 
+  async setToAddress ({ to }) {
+    if (!isAddress(to)) return
+    this.toAddress = this.newAddress(to)
+    await this.toAddress.fetch()
+  }
+  newAddress (address) {
+    let { nod3, initConfig, collections } = this
+    return new Address(address, { nod3, initConfig, collections })
+  }
   async getTx () {
     try {
       let txHash = this.hash
@@ -36,7 +48,6 @@ export class Tx extends BcThing {
       tx.timestamp = this.timestamp
       tx.receipt = receipt
       if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
-      tx = this.txFormat(tx)
       return tx
     } catch (err) {
       return Promise.reject(err)
@@ -64,18 +75,22 @@ export class Tx extends BcThing {
     }
   }
   txFormat (tx) {
-    tx.txType = txTypes.default
+    let type = txTypes.default
     const receipt = tx.receipt || {}
+    let { toAddress } = this
+    if (toAddress && toAddress.isContract()) type = txTypes.call
     const toIsNative = this.nativeContracts.isNativeContract(tx.to)
     let nativeType = txTypes[toIsNative]
-    if (nativeType) tx.txType = nativeType
-    if (isAddress(receipt.contractAddress)) tx.txType = txTypes.contract
+    if (nativeType) type = nativeType
+    if (isAddress(receipt.contractAddress)) type = txTypes.contract
+    tx.txType = type
     tx.txId = getTxOrEventId(tx)
     return tx
   }
 
   parseLogs (logs) {
-    let parser = this.contractParser
+    const { nod3, initConfig } = this
+    let parser = new ContractParser({ initConfig, nod3 })
     return new Promise((resolve, reject) => {
       process.nextTick(() => resolve(parser.parseTxLogs(logs)))
     })

@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { isBlockObject } from '../../src/lib/utils'
 
-import block1 from '../services/block-1234.json'
+import block1 from '../services/blockData/block-1234.json'
 
 const block = block1.block.block
 

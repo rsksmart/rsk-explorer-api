@@ -4,7 +4,8 @@ export const txTypes = {
   default: 'normal',
   remasc: 'remasc',
   bridge: 'bridge',
-  contract: 'contract deploy'
+  contract: 'contract deploy',
+  call: 'contract call'
 }
 
 export const errors = apiErrors(

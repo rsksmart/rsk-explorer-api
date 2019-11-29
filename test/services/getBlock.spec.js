@@ -5,7 +5,7 @@ import { BlocksBase } from '../../src/lib/BlocksBase'
 import { nod3 } from '../../src/lib/nod3Connect'
 import datasource from '../../src/lib/dataSource'
 
-import blockJson from './block-3516.json'
+import blockJson from './blockData/block-3516.json'
 const blockSpec = blockJson.block
 
 describe('Get Block', function () {
