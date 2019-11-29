@@ -1,4 +1,4 @@
-import { isAddress, serialize, isBlockHash } from '../../lib/utils'
+import { isAddress, serialize, isTxOrBlockHash, isBlockHash } from '../../lib/utils'
 import NativeContracts from '../../lib/NativeContracts'
 
 export class BcThing {
@@ -24,6 +24,9 @@ export class BcThing {
   }
   save () {
     return _methodNotImplemented('save')
+  }
+  isTxOrBlockHash (str) {
+    return isTxOrBlockHash(str)
   }
   isBlockHash (hashOrNumber) {
     return isBlockHash(hashOrNumber)

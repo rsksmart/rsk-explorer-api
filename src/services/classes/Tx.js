@@ -3,12 +3,12 @@ import { formatEvent } from './Event'
 import ContractParser from 'rsk-contract-parser'
 import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
-import { isAddress } from '../../lib/utils'
 import Address from './Address'
 export class Tx extends BcThing {
   constructor (hash, timestamp, { txData, nod3, initConfig, collections } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
     super({ nod3, initConfig, collections })
+    if (!this.isTxOrBlockHash(hash)) throw new Error(`Tx, ${hash} is not a tx hash`)
     this.hash = hash
     this.timestamp = timestamp
     this.txData = txData
@@ -29,7 +29,7 @@ export class Tx extends BcThing {
   }
 
   async setToAddress ({ to }) {
-    if (!isAddress(to)) return
+    if (!this.isAddress(to)) return
     this.toAddress = this.newAddress(to)
     await this.toAddress.fetch()
   }
@@ -82,7 +82,7 @@ export class Tx extends BcThing {
     const toIsNative = this.nativeContracts.isNativeContract(tx.to)
     let nativeType = txTypes[toIsNative]
     if (nativeType) type = nativeType
-    if (isAddress(receipt.contractAddress)) type = txTypes.contract
+    if (this.isAddress(receipt.contractAddress)) type = txTypes.contract
     tx.txType = type
     tx.txId = getTxOrEventId(tx)
     return tx
