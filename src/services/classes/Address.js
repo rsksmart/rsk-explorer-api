@@ -147,6 +147,10 @@ export class Address extends BcThing {
       return Promise.reject(err)
     }
   }
+  isContract () {
+    let data = this.getData()
+    return data.type === addrTypes.CONTRACT
+  }
 }
 
 export default Address
