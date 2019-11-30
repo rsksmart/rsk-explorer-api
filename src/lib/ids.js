@@ -1,4 +1,4 @@
-import { isBlockHash } from './utils'
+import { isTxOrBlockHash, isBlockHash } from './utils'
 
 const checkNumbers = payload => {
   for (let name in payload) {
@@ -9,24 +9,41 @@ const checkNumbers = payload => {
 
 const padBlockNumber = number => number.toString(16).padStart(7, 0)
 
-export const getTxOrEventId = ({ blockNumber, transactionIndex, blockHash, logIndex }) => {
+/**
+ * Generates sortable and immutable ids for txs and events
+ * id structure:
+ * [blockNumber](24b)
+ * [txIndex][16b]
+ * [index](optional)(16b)
+ * [blockHash|txHash][72b]
+ */
+
+export const generateId = ({ blockNumber, transactionIndex, hash, index }) => {
   try {
+    if (!hash) throw new Error(`Invalid hash ${hash}`)
+    hash = hash.toLowerCase()
     checkNumbers({ blockNumber, transactionIndex })
-    if (!isBlockHash(blockHash)) throw new Error('blockHash is not a block hash')
+    if (!isTxOrBlockHash(hash)) throw new Error('blockHash is not a block hash')
 
     let block = padBlockNumber(blockNumber)
     let txI = transactionIndex.toString(16).padStart(3, 0)
-    let hash = blockHash.substr(-19, 19)
-    let id = `${block}${txI}`
-    if (undefined !== logIndex) {
-      if (logIndex) checkNumbers({ logIndex })
-      id += logIndex.toString(16).padStart(3, 0)
-    }
-    id = `${id}${hash}`
+    let hashBit = hash.substr(-19, 19)
+    index = parseInt(index)
+    index = (isNaN(index)) ? '' : index.toString(16).padStart(3, 0)
+    let id = `${block}${txI}${index}${hashBit}`
     return id
   } catch (err) {
+    console.error(err)
     return err
   }
+}
+
+export const getTxOrEventId = ({ blockNumber, transactionIndex, blockHash: hash, logIndex: index }) => {
+  return generateId({ blockNumber, transactionIndex, hash, index })
+}
+
+export const getInternalTxId = ({ blockNumber, transactionPosition: transactionIndex, transactionHash: hash, _index: index }) => {
+  return generateId({ blockNumber, transactionIndex, hash, index })
 }
 
 export const getSummaryId = ({ hash, number, timestamp }) => {
@@ -43,7 +60,4 @@ export const getSummaryId = ({ hash, number, timestamp }) => {
   }
 }
 
-export const eventId = (event) => {
-  let id = getTxOrEventId(event)
-  return id
-}
+export const getEventId = (event) => getTxOrEventId(event)
