@@ -62,6 +62,7 @@ export default {
     Stats: 'statsCollection',
     BlocksSummary: 'blocksSummary',
     ContractVerification: 'contractsVerifications',
-    VerificationsResults: 'verificationResults'
+    VerificationsResults: 'verificationResults',
+    InternalTransactions: 'internalTransactions'
   }
 }

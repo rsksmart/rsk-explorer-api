@@ -255,5 +255,13 @@ export default {
         key: { match: 1 }
       }
     ]
+  },
+  InternalTransactions: {
+    indexes: [
+      {
+        key: { internalTxId: -1 },
+        unique: true
+      }
+    ]
   }
 }
