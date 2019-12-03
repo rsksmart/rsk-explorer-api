@@ -1,5 +1,5 @@
 {
-  "time": 5805,
+  "time": 5930,
   "saved": null,
   "block": {
     "block": {
@@ -32,7 +32,7 @@
       "bitcoinMergedMiningMerkleProof": "0xad4e5f8177a420e5cb62cd68c91ccd50e6d876f02075384b0796c8a59010da7f614a3c1761d8bd0eed44d4fd09969a05947059d87709c1a5eee637622483499498cee3db291fc427170694cc0aee67f82150685018219c6b58c667891b38400908977c06756ce3f54cfda00be3bec61f1dc918bc6c50bc4e6ddb505b516d60f4752c669b4bdf74cbc0aec624cd8c072d9251b287b60f7ff43eb35413a5dfa819aa7ed14107ca2f61c0e3bcb49663869199d8fd9bcbdf761224ddf2a0b18098b916631ed3f15518efce737225b93632c8a49372d1229beb6524091eeb740a62c0",
       "hashForMergedMining": "0x947abed9f00830dff0e8d22b7c77c4118667807707189c4c15c9cc3600000dbc",
       "paidFees": "0x0",
-      "_received": 1575055114073
+      "_received": 1575401463019
     },
     "txs": [
       {
@@ -73,6 +73,7 @@
                 "0x000000000000000000000000dabadabadabadabadabadabadabadabadaba0003"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -119,6 +120,7 @@
                 "0x0000000000000000000000004495768e683423a4299d6a7f02a0689a6ff5a0a4"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -165,6 +167,7 @@
                 "0x0000000000000000000000000345174501d5f6fc7926377b63317c4ad7215905"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -211,6 +214,7 @@
                 "0x00000000000000000000000013bcf2c2342b6eaa24119f9690aca0d718f384ff"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -257,6 +261,7 @@
                 "0x0000000000000000000000009a3bfdea2245738dd5f25453d13742350a4f1c6e"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -303,6 +308,7 @@
                 "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -349,6 +355,7 @@
                 "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -395,6 +402,7 @@
                 "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
               ],
               "event": "mining_fee_topic",
+              "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
               "abi": {
                 "anonymous": false,
                 "inputs": [
@@ -481,12 +489,12 @@
           "paidFees": "0x64a8349d300",
           "_received": 1574184573713
         },
-        "balance": "0x7b758e9b5b3b6f17"
+        "balance": "0x7c1709e1e788ba90"
       },
       {
         "address": "0x0000000000000000000000000000000001000008",
         "type": "contract",
-        "balance": "0x3f2ae1382fc51a8",
+        "balance": "0x4085db52acc7f2c",
         "lastBlockMined": null,
         "isNative": true,
         "name": "remasc"
@@ -500,31 +508,31 @@
       {
         "address": "0xdabadabadabadabadabadabadabadabadaba0003",
         "type": "account",
-        "balance": "0x2a73256bda8ee035",
+        "balance": "0x2c8be1aff1db28d8",
         "lastBlockMined": null
       },
       {
         "address": "0x4495768e683423a4299d6a7f02a0689a6ff5a0a4",
         "type": "account",
-        "balance": "0x1b46c5ed58a88815",
+        "balance": "0x1b4c23f84417c16d",
         "lastBlockMined": null
       },
       {
         "address": "0x0345174501d5f6fc7926377b63317c4ad7215905",
         "type": "account",
-        "balance": "0x1b4e4669ff02ee3d",
+        "balance": "0x1b53a474ea843acd",
         "lastBlockMined": null
       },
       {
         "address": "0x13bcf2c2342b6eaa24119f9690aca0d718f384ff",
         "type": "account",
-        "balance": "0x6cabe4eb243c61",
+        "balance": "0x7209efd6e4ebed",
         "lastBlockMined": null
       },
       {
         "address": "0x9a3bfdea2245738dd5f25453d13742350a4f1c6e",
         "type": "account",
-        "balance": "0x1b2752e1a23207ba",
+        "balance": "0x1b2cb0ec8db03977",
         "lastBlockMined": null
       }
     ],
@@ -575,6 +583,7 @@
           "0x000000000000000000000000dabadabadabadabadabadabadabadabadaba0003"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -621,6 +630,7 @@
           "0x0000000000000000000000004495768e683423a4299d6a7f02a0689a6ff5a0a4"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -667,6 +677,7 @@
           "0x0000000000000000000000000345174501d5f6fc7926377b63317c4ad7215905"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -713,6 +724,7 @@
           "0x00000000000000000000000013bcf2c2342b6eaa24119f9690aca0d718f384ff"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -759,6 +771,7 @@
           "0x0000000000000000000000009a3bfdea2245738dd5f25453d13742350a4f1c6e"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -805,6 +818,7 @@
           "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -851,6 +865,7 @@
           "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
@@ -897,6 +912,7 @@
           "0x0000000000000000000000001fab9a0e24ffc209b01faa5a61ad4366982d0b7f"
         ],
         "event": "mining_fee_topic",
+        "signature": "506114e72bdeedc28d1e8ef76209591bdb58c97abc9c054859ae002f1382372a",
         "abi": {
           "anonymous": false,
           "inputs": [
