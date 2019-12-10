@@ -49,7 +49,10 @@ class Contract extends BcThing {
   }
 
   getTokenData () {
-    return this.parser.getTokenData(this.contract)
+    let { contractMethods } = this.data
+    let methods = ['name', 'symbol', 'decimals', 'totalSupply']
+    methods = methods.filter(m => contractMethods.includes(`${m}()`))
+    return this.parser.getTokenData(this.contract, { methods })
   }
 
   addAddress (address) {
