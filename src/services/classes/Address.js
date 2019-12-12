@@ -1,40 +1,54 @@
 import { BcThing } from './BcThing'
-import { GetTxBalance } from './GetTxBalance'
 import { isBlockObject, isNullData } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 
+function createAddressData ({ address, isNative, name }) {
+  const type = (isNative) ? addrTypes.CONTRACT : addrTypes.ADDRESS
+
+  const dataHandler = {
+    set: function (data, prop, val) {
+      let protectedProperties = ['address', 'type', 'isNative']
+      if (protectedProperties.includes(prop)) return
+      switch (prop) {
+        case 'code':
+          val = val || null
+          if (!isNullData(val)) {
+            data.type = addrTypes.CONTRACT
+            data.code = val
+          }
+          break
+
+        case fields.LAST_BLOCK_MINED:
+          const lastBlock = data[fields.LAST_BLOCK_MINED] || {}
+          let number = lastBlock.number || -1
+          if (val && val.miner === data.address && val.number > number) {
+            data[prop] = Object.assign({}, val)
+          }
+          break
+
+        default:
+          data[prop] = val
+          break
+      }
+      return true
+    }
+  }
+  return new Proxy({ address, type, name, isNative }, dataHandler)
+}
+
 export class Address extends BcThing {
-  constructor (address, { nod3, initConfig, db, collections, block = 'latest' } = {}) {
-    super({ nod3, initConfig, collections })
+  constructor (address, { dbData, nod3, initConfig, block = 'latest' } = {}) {
+    super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.address = address
-    this.db = db || this.collections.Addrs
-    this.codeIsSaved = false
-    this.TxsBalance = new GetTxBalance(this.collections.Txs)
-    this.data = new Proxy(
-      { address, type: addrTypes.ADDRESS },
-      {
-        set (obj, prop, val) {
-          if (prop === 'code') {
-            val = val || null
-            if (!isNullData(val)) {
-              obj.type = addrTypes.CONTRACT
-              obj.code = val
-            }
-          } else if (val && prop === fields.LAST_BLOCK_MINED) {
-            const lastBlock = obj[fields.LAST_BLOCK_MINED] || {}
-            let number = lastBlock.number || -1
-            if (val.miner === obj.address && val.number > number) {
-              obj[prop] = Object.assign({}, val)
-            }
-          } else {
-            obj[prop] = val
-          }
-          return true
-        }
-      })
+    this.fetched = false
+    this.data = createAddressData(this)
+    this.dbData = dbData
+    this.contract = undefined
     this.block = 'latest'
-    this.dbData = null
+    let { nativeContracts } = this
+    this.isNative = (nativeContracts) ? nativeContracts.getNativeContractName(address) : false
+    this.name = this.isNative || null
     this.setBlock(block)
   }
 
@@ -47,69 +61,59 @@ export class Address extends BcThing {
   }
 
   setLastBlock (block) {
-    this.setData(fields.LAST_BLOCK_MINED, block)
+    this.data[fields.LAST_BLOCK_MINED] = block
   }
 
-  setData (prop, value) {
-    if (prop === 'address') return
-    this.data[prop] = value
-  }
-
-  getBalance () {
-    return this.nod3.eth.getBalance(this.address, 'latest') // rskj 1.0.1 returns 500 with blockNumbers
+  async getBalance (blockNumber = 'latest') {
+    try {
+      let { nod3, address } = this
+      // rskj 1.0.1 returns 500 with blockNumbers
+      let balance = await nod3.eth.getBalance(address, blockNumber)
+      return balance
+    } catch (err) {
+      this.log.debug(err)
+      return Promise.reject(new Error(`Address: error getting balance of ${this.address} ${err}`))
+    }
   }
 
   getCode () {
     return this.nod3.eth.getCode(this.address, this.block)
   }
 
-  async fetch () {
+  async fetch (forceFetch) {
     try {
-      let balance = await this.getBalance()
-        .catch(err => {
-          throw new Error(`Address: error getting balance of ${this.address} ${err}`)
-        })
+      if (this.fetched && !forceFetch) return this.getData()
+      this.fetched = false
+      let balance = await this.getBalance('latest')
+      let { block } = this
       balance = balance || 0
       this.data.balance = balance
-
+      if (block !== 'latest') this.data.blockBalance = await this.getBalance(block)
       let code = null
-      let dbData = await this.getFromDb()
-      this.dbData = dbData
-
+      let { dbData } = this
       if (dbData) {
         if (dbData.code) {
           code = dbData.code
           this.codeIsSaved = true
         }
         // Update lastBlockMined to highest block number
-        this.setData(fields.LAST_BLOCK_MINED, dbData[fields.LAST_BLOCK_MINED])
+        this.data[fields.LAST_BLOCK_MINED] = dbData[fields.LAST_BLOCK_MINED]
       }
 
       if (undefined === code || code === null) {
         code = await this.getCode()
       }
       this.data.code = code
-      const { nativeContracts } = this
-      if (nativeContracts) {
-        const isNative = this.nativeContracts.isNativeContract(this.address)
-        if (isNative) {
-          this.data.isNative = true
-          this.data.name = this.nativeContracts.getNativeContractName(this.address)
-          this.data.type = addrTypes.CONTRACT
-        }
-      }
+      this.fetched = true
       return this.getData()
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
-  getFromDb () {
-    return this.db.findOne({ address: this.address })
-  }
   getData (serialize) {
     let data = Object.assign(this.data)
-    if (this.codeIsSaved) delete data.code
+    // if (this.codeIsSaved) delete data.code
     return (serialize) ? this.serialize(data) : data
   }
   async save () {
@@ -121,32 +125,7 @@ export class Address extends BcThing {
       return Promise.reject(err)
     }
   }
-  async updateTxBalance () {
-    try {
-      let txBalance = await this.getBalanceFromTxs()
-      if (txBalance) this.setData('txBalance', txBalance)
-      return txBalance
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-  resetTxBalance () {
-    this.setData('txBalance', '0x00')
-  }
-  update (data) {
-    let address = data.address || this.address
-    return this.db.updateOne({ address }, { $set: data }, { upsert: true })
-  }
 
-  async getBalanceFromTxs () {
-    let address = this.address
-    try {
-      let balance = await this.TxsBalance.getBalanceFromTx(address)
-      if (balance) return this.serialize(balance)
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
   isContract () {
     let data = this.getData()
     return data.type === addrTypes.CONTRACT
