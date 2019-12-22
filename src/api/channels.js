@@ -3,6 +3,7 @@ import Channel from './lib/Channel'
 
 export const CHANNELS = {
   blocksChannel: 'blocks',
+  txsChannel: 'transactions',
   statusChannel: 'status',
   txPoolChannel: 'txpool',
   statsChannel: 'stats'

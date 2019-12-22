@@ -71,7 +71,7 @@ export class DataCollector {
   }
 
   formatData (data) {
-    return { data: data }
+    return { data }
   }
 }
 
