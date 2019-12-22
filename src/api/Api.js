@@ -13,10 +13,10 @@ class Api extends DataCollector {
     super(db, { collectionName })
     this.collectionsNames = collectionsNames
     this.collections = getDbBlocksCollections(db)
-    this.lastLimit = lastBlocks || 10
+    this.lastLimit = lastBlocks || 100
     this.latest = 0
-    this.lastBlocks = []
-    this.lastTransactions = []
+    this.lastBlocks = {}
+    this.lastTransactions = {}
     this.circulatingSupply = null
     this.stats = { timestamp: 0 }
     this.loadModules(getEnabledApiModules(modules))
@@ -71,15 +71,13 @@ class Api extends DataCollector {
 
   async setLastBlocks () {
     try {
-      let { collection, lastLimit } = this
+      const Block = this.getModule('Block')
       const Tx = this.getModule('Tx')
-      let blocks = await collection.find().sort({ number: -1 }).limit(lastLimit).toArray()
-      let txs = await Tx.db.find({ txType: { $in: [txTypes.default, txTypes.contract] } })
-        .sort({ _id: -1 })
-        .limit(this.lastLimit)
-        .toArray()
-
-      this.updateLastBlocks(blocks, txs)
+      let limit = this.lastLimit
+      let blocks = await Block.run('getBlocks', { limit, addMetadata: true })
+      let query = { txType: [txTypes.default, txTypes.contract] }
+      let transactions = await Tx.run('getTransactions', { query, limit })
+      this.updateLastBlocks(blocks, transactions)
     } catch (err) {
       this.log.debug(err)
     }
@@ -100,23 +98,29 @@ class Api extends DataCollector {
   }
 
   getLastBlocks () {
-    let blocks = this.lastBlocks
-    let transactions = this.lastTransactions
-    return this.formatData({ blocks, transactions })
+    let data = this.lastBlocks
+    return this.formatData(data)
+  }
+
+  getLastTransactions () {
+    let data = this.lastTransactions
+    return this.formatData(data)
   }
 
   getLastBlock () {
-    return this.lastBlocks[0] || null
+    let { data } = this.lastBlocks
+    return data[0] || null
   }
 
   updateLastBlocks (blocks, transactions) {
+    let blockData = blocks.data
     this.lastBlocks = blocks
     this.lastTransactions = transactions
     let latest
-    if (blocks && blocks[0]) latest = blocks[0].number
+    if (blockData && blockData[0]) latest = blockData[0].number
     if (latest !== this.latest) {
       this.latest = latest
-      this.events.emit('newBlocks', this.formatData({ blocks, transactions }))
+      this.events.emit('newBlocks', this.getLastBlocks())
       this.updateStats()
     }
   }
