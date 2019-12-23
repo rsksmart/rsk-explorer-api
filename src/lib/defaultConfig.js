@@ -59,7 +59,7 @@ export default {
     OrphanBlocks: 'orphanBlocks',
     TxPool: 'txPool',
     PendingTxs: 'transactionsPending',
-    Stats: 'stats',
+    Stats: 'statsCollection',
     BlocksSummary: 'blocksSummary',
     ContractVerification: 'contractsVerifications',
     VerificationsResults: 'verificationResults'
