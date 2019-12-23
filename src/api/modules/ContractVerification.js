@@ -54,7 +54,7 @@ export class ContractVerification extends DataCollectorItem {
       },
       /**
        * @swagger
-       * /api?module=contractVerifier&action=getSolcVersions
+       * /api?module=contractVerifier&action=getSolcVersions:
        *    get:
        *      description: Gets solidity compiler versions
        *      tags:
