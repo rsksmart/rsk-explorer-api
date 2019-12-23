@@ -1,10 +1,22 @@
 import { BlocksBase } from '../../lib/BlocksBase'
+import getCirculatingSupply from '../../api/lib/getCirculatingSupply'
 
 export class BcStats extends BlocksBase {
   constructor (db, options) {
     super(db, options)
     this.collection = this.collections.Stats
     this.stats = { blockHash: undefined, blockNumber: undefined }
+  }
+
+  async getCirculating () {
+    try {
+      const collection = this.collections.Addrs
+      const { nativeContracts } = this.initConfig
+      let circulating = await getCirculatingSupply(collection, nativeContracts)
+      return circulating
+    } catch (err) {
+      this.log.debug(err)
+    }
   }
 
   async getStats (blockHash, blockNumber) {
@@ -16,8 +28,9 @@ export class BcStats extends BlocksBase {
       }
       if (this.skip(blockHash, blockNumber)) return
       const hashRate = await this.nod3.eth.netHashrate()
+      const circulatingSupply = await this.getCirculating()
       const timestamp = Date.now()
-      return { hashRate, timestamp, blockHash, blockNumber }
+      return { hashRate, timestamp, blockHash, blockNumber, circulatingSupply }
     } catch (err) {
       this.log.error(err)
       return Promise.reject(err)
@@ -36,7 +49,7 @@ export class BcStats extends BlocksBase {
 
   async save (stats) {
     try {
-      const result = this.collection.insertOne(stats)
+      const result = await this.collection.insertOne(stats)
       return result
     } catch (err) {
       return Promise.reject(err)

@@ -16,7 +16,8 @@ startBlocks()
 async function startBlocks () {
   const setup = await Setup({ log })
   await setup.createCollections()
-  const { db } = await setup.start()
+  const { db, initConfig } = await setup.start()
+  config.initConfig = initConfig
   const Status = new BlocksStatus(db, config)
   const Stats = new BcStats(db, config)
   const listenToMessage = (msg, service) => {
