@@ -6,6 +6,8 @@
 
 - Decode bridge events
 - Indexed _addresses field to events collection
+- _metadata field to blocks that includes: txDensity, hashrate and time
+- Transactions channel
 
 ## Changed
 
@@ -13,6 +15,8 @@
 - Refactor ContractParser as rsk-contract-parser
 - Refactor utils as rsk-utils
 - Status collection to capped collection
+- Remove transactions from blocks channel
+- Remove disabled modules from API interactive documentation
 
 ## Fixed
 
