@@ -101,15 +101,15 @@ export class DataCollectorItem {
 
   async getPrevNext (query, project, data) {
     try {
-      let { cursorField } = this
+      let { cursorField, db } = this
       project = project || this.getDefaultsFields()
       if (!data) data = (await this.getOne(query))
       if (data) data = data.data
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
-      let prev = (await find(this.db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0]
-      let next = (await find(this.db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0]
+      let prev = (await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0]
+      let next = (await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0]
       return { prev, data, next }
     } catch (err) {
       return Promise.reject(err)
