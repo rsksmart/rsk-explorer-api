@@ -67,6 +67,11 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
     txsChannel.emit('newTransactions', api.getLastTransactions())
   })
 
+  // send stats on join
+  statsChannel.on('join', socket => {
+    socket.emit('data', formatRes({ action: 'stats', result: api.getStats() }))
+  })
+
   // send status to channel
   status.events.on('newStatus', result => {
     statusChannel.emit('dbStatus', result)

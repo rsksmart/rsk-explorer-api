@@ -1,11 +1,12 @@
 import { DataCollector } from './lib/DataCollector'
 import { getEnabledApiModules } from './modules'
 import { txTypes } from '../lib/types'
-import getCirculatingSupply from './lib/getCirculatingSupply'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
 import NativeContracts from '../lib/NativeContracts'
+// It is used only in case Stats cannot provide the circulating supply
+import getCirculatingSupply from './lib/getCirculatingSupply'
 
 class Api extends DataCollector {
   constructor ({ db, initConfig }, { modules, collectionsNames, lastBlocks } = {}) {
@@ -23,10 +24,10 @@ class Api extends DataCollector {
     this.initConfig = initConfig
     const { isNativeContract } = NativeContracts(initConfig)
     this.isNativeContract = isNativeContract
+    this.tick()
   }
   tick () {
     this.setLastBlocks()
-    this.setCirculatingSupply()
   }
 
   loadModules (modules) {
@@ -82,16 +83,8 @@ class Api extends DataCollector {
       this.log.debug(err)
     }
   }
-
-  async setCirculatingSupply () {
-    try {
-      const collection = this.collections.Addrs
-      const { nativeContracts } = this.initConfig
-      let circulating = await getCirculatingSupply(collection, nativeContracts)
-      this.circulatingSupply = Object.assign({}, circulating)
-    } catch (err) {
-      this.log.debug(err)
-    }
+  getStats () {
+    return this.formatData(this.stats)
   }
   getCirculatingSupply () {
     return this.formatData(this.circulatingSupply)
@@ -146,16 +139,28 @@ class Api extends DataCollector {
     const stats = await Stats.run('getLatest')
     if (!stats) return
 
-    const ExtendedStats = this.getModule('ExtendedStats')
-    if (ExtendedStats) {
-      const blockNumber = parseInt(stats.blockNumber)
-      const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
-      Object.assign(stats, extendedStats)
-    }
-
+    /*     const ExtendedStats = this.getModule('ExtendedStats')
+        if (ExtendedStats) {
+          const blockNumber = parseInt(stats.blockNumber)
+          const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+          Object.assign(stats, extendedStats)
+        } */
+    let circulatingSupply = stats.circulatingSupply || await this.getCirculatingSupplyFromDb()
+    this.circulatingSupply = circulatingSupply
     this.stats = Object.assign({}, stats)
-    if (stats.timestamp !== oldStats.timestamp) {
-      this.events.emit('newStats', this.stats)
+    let timestamp = stats.timestamp || 0
+    if (timestamp > oldStats.timestamp) {
+      this.events.emit('newStats', this.getStats())
+    }
+  }
+  async getCirculatingSupplyFromDb () {
+    try {
+      const collection = this.collections.Addrs
+      const { nativeContracts } = this.initConfig
+      let circulating = await getCirculatingSupply(collection, nativeContracts)
+      return circulating
+    } catch (err) {
+      this.log.debug(err)
     }
   }
 }

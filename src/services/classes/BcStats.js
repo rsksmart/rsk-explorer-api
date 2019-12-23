@@ -30,7 +30,7 @@ export class BcStats extends BlocksBase {
       const hashRate = await this.nod3.eth.netHashrate()
       const circulatingSupply = await this.getCirculating()
       const timestamp = Date.now()
-      return { hashRate, timestamp, blockHash, blockNumber, circulatingSupply }
+      return Object.assign(circulatingSupply, { hashRate, timestamp, blockHash, blockNumber })
     } catch (err) {
       this.log.error(err)
       return Promise.reject(err)
