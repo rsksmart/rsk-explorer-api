@@ -1,5 +1,6 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import getCirculatingSupply from '../../api/lib/getCirculatingSupply'
+import getActiveAccounts from '../../api/lib/getActiveAccounts'
 
 export class BcStats extends BlocksBase {
   constructor (db, options) {
@@ -27,10 +28,11 @@ export class BcStats extends BlocksBase {
         blockNumber = block.number
       }
       if (this.skip(blockHash, blockNumber)) return
-      const hashRate = await this.nod3.eth.netHashrate()
+      const hashrate = await this.nod3.eth.netHashrate()
       const circulatingSupply = await this.getCirculating()
+      let activeAccounts = await getActiveAccounts(this.collections)
       const timestamp = Date.now()
-      return Object.assign(circulatingSupply, { hashRate, timestamp, blockHash, blockNumber })
+      return Object.assign(circulatingSupply, { activeAccounts, hashrate, timestamp, blockHash, blockNumber })
     } catch (err) {
       this.log.error(err)
       return Promise.reject(err)
