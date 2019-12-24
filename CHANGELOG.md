@@ -8,6 +8,8 @@
 - Indexed _addresses field to events collection
 - _metadata field to blocks that includes: txDensity, hashrate and time
 - Transactions channel
+- CirculatingSupply to stats
+- ActiveAccounts to stats
 
 ## Changed
 
