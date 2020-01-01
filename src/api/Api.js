@@ -15,9 +15,9 @@ class Api extends DataCollector {
     this.collectionsNames = collectionsNames
     this.collections = getDbBlocksCollections(db)
     this.lastLimit = lastBlocks || 100
-    this.latest = 0
-    this.lastBlocks = {}
-    this.lastTransactions = {}
+    this.latest = undefined
+    this.lastBlocks = { data: [] }
+    this.lastTransactions = { data: [] }
     this.circulatingSupply = null
     this.stats = { timestamp: 0 }
     this.loadModules(getEnabledApiModules(modules))

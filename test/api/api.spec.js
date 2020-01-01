@@ -34,6 +34,7 @@ describe(`# API`, function () {
     let lb = api.getLastBlocks()
     api.tick()
     expect(lb.data.data.length).to.be.equal(1)
+    expect(lb.data.data[0]).to.be.deep.equal(block)
     // expect(newBlocksEvents.length).to.be.equal(1)
   })
 })
@@ -41,5 +42,6 @@ describe(`# API`, function () {
 function testDataObject (obj) {
   expect(typeof obj).to.be.equal('object')
   expect(obj).to.haveOwnProperty('data')
-  expect(obj.data).to.be.deep.equal({})
+  let { data } = obj
+  expect(data.data).to.be.deep.equal([])
 }
