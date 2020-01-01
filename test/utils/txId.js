@@ -62,7 +62,7 @@ describe('# events ids', () => {
 
 async function storeAndSort (collectionName, data, sort) {
   try {
-    let db = await dataBase.db()
+    let db = await dataBase.getDb()
     let coll = db.collection(collectionName)
     await coll.deleteMany({})
     await coll.insertMany(data, { ordered: true })

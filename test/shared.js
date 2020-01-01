@@ -8,21 +8,22 @@ import initConfig from '../src/lib/initialConfiguration'
 export const nativeContracts = NativeContracts(initConfig)
 const testDatabase = 'dbToTest'
 
-export const testDb = () => {
-  const database = testDatabase
-  const dbConf = Object.assign(config.db, { database })
-  return new DB(dbConf)
-}
-
-export const dropTestDb = async () => {
-  const database = testDb()
-  const db = await database.db()
-  await db.dropDatabase()
+export const testDb = ({ dbName } = {}) => {
+  dbName = dbName || testDatabase
+  const dbConf = Object.assign(config.db, { database: dbName })
+  const database = new DB(dbConf)
+  let db
+  const getDb = async () => {
+    if (!db) db = await database.db()
+    return db
+  }
+  const dropDb = () => getDb().then(db => db.dropDatabase())
+  return Object.freeze({ getDb, dropDb })
 }
 
 export const testCollections = async () => {
   const database = testDb()
-  const db = await database.db()
+  const db = await database.getDb()
   const collections = await getDbBlocksCollections(db)
   return collections
 }

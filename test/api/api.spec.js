@@ -1,4 +1,4 @@
-import { testDb, dropTestDb } from '../shared'
+import { testDb } from '../shared'
 import Api from '../../src/api/Api'
 import { createConfig } from '../../src/lib/config'
 import initConfig from '../../src/lib/initialConfiguration'
@@ -11,8 +11,8 @@ describe(`# API`, function () {
   let newBlocksEvents = []
 
   before(async function () {
-    await dropTestDb()
-    db = await dataBase.db()
+    await dataBase.dropDb()
+    db = await dataBase.getDb()
     api = new Api({ db, initConfig }, config.api)
     api.events.on('newBlocks', (data) => {
       newBlocksEvents.push(data)

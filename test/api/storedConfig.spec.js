@@ -1,4 +1,4 @@
-import { testDb, dropTestDb } from '../shared'
+import { testDb } from '../shared'
 import StoredConfig from '../../src/lib/StoredConfig'
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
@@ -16,12 +16,12 @@ describe(`Stored config`, function () {
   let db, storedConfig
 
   before(async function () {
-    db = await dataBase.db()
+    db = await dataBase.getDb()
     storedConfig = StoredConfig(db)
   })
 
   it(`should store init config`, async () => {
-    await dropTestDb()
+    await dataBase.dropDb()
     let res = await storedConfig.saveConfig(config())
     expect(res).to.haveOwnProperty('result')
     expect(res.result).to.haveOwnProperty('ok').equal(1)
