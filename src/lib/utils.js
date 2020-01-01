@@ -52,11 +52,8 @@ export const bigNumberDifference = (a, b) => {
 
 export const newBigNumber = value => isBigNumber(value) ? value : new BigNumber(value)
 
-const isObj = (value) => {
-  if (undefined === value || value === null) return false
-  let is = (typeof value === 'object')
-  is = (is) ? (value instanceof Array === false) : is
-  return is
+export const isObj = (value) => {
+  return !Array.isArray(value) && typeof value === 'object' && value !== null
 }
 
 export const serialize = (obj) => {
