@@ -1,18 +1,9 @@
 import { errors, MODULES } from '../../lib/types'
 import config from '../../lib/config'
+import { isObj } from '../../lib/utils'
 
 const delayedFields = config.api.delayedFields || {}
 const { MAX_LIMIT, LIMIT, MIN_LIMIT } = config.api
-
-export const filterParams = (params) => {
-  params = params || {}
-  let { limit, sort, fields, query } = params
-  params.limit = getLimit(limit)
-  params.query = filterQuery(query)
-  params.sort = filterSort(sort)
-  params.fields = filterFields(fields)
-  return params
-}
 
 export const getLimit = (limit) => {
   limit = limit || LIMIT
@@ -55,17 +46,29 @@ export const filterSort = (sort) => {
   return retFiltered(filtered)
 }
 
-const sanitizeQuery = (query) => {
+export const sanitizeQuery = (query) => {
   let filtered = {}
   for (let p in query) {
-    let k = remove$(p)
-    if (k === p) filtered[k] = query[p]
+    if (p.replace('$') === p) {
+      let value = query[p]
+      filtered[p] = (isObj(value)) ? sanitizeQuery(value) : value
+    }
   }
   return retFiltered(filtered)
 }
 
 const retFiltered = (filtered) => {
   return (filtered && Object.keys(filtered).length > 0) ? filtered : null
+}
+
+export const filterParams = (params) => {
+  params = params || {}
+  let { limit, sort, fields, query } = params
+  params.limit = getLimit(limit)
+  params.query = filterQuery(query)
+  params.sort = filterSort(sort)
+  params.fields = filterFields(fields)
+  return params
 }
 
 export const remove$ = value => value.replace('$', '')
