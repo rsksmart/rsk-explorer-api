@@ -12,9 +12,9 @@ export function addMetadataToBlocks (blocks) {
     let time = block.timestamp - prevBlock.timestamp
     let txDensity = block.transactions.length / time
     let { difficulty } = block
-    let hashrate = newBigNumber(difficulty).dividedBy(newBigNumber(time))
-    hashrate = add0x(hashrate.dp(0).toString(16))
-    block[BLOCK_METADATA_FIELD] = { time, txDensity, hashrate }
+    let blockHashrate = newBigNumber(difficulty).dividedBy(newBigNumber(time))
+    blockHashrate = add0x(blockHashrate.dp(0).toString(16))
+    block[BLOCK_METADATA_FIELD] = { time, txDensity, blockHashrate }
     return block
   })
   return newBlocks
