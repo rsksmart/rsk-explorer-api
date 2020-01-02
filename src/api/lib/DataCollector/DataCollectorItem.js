@@ -1,5 +1,5 @@
 import { Collection, ObjectID } from 'mongodb'
-import { find, findPages, aggregatePages } from './pagination'
+import { find, findPages, aggregatePages, countDocuments } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
 export class DataCollectorItem {
   constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
@@ -35,6 +35,12 @@ export class DataCollectorItem {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  async count (query) {
+    let collection = this.db
+    let data = await countDocuments(collection, query)
+    return { data }
   }
 
   async find (query, sort, limit, project) {
@@ -84,10 +90,9 @@ export class DataCollectorItem {
   }
 
   async setCursorData () {
-    const cursorField = this.cursorField
+    let { cursorField } = this
     const types = await this.getFieldsTypes()
-    const cursorType = types[cursorField]
-    this.cursorData = { cursorField, cursorType, fields: types }
+    this.cursorData = await getCursorData(this.db, cursorField, types)
     return this.cursorData
   }
 
@@ -185,6 +190,12 @@ export function fieldFilterParse (field, value, query) {
   if (ninArr.length) fieldQuery['$nin'] = ninArr
   if (fieldQuery) query[field] = fieldQuery
   return query
+}
+
+export async function getCursorData (collection, cursorField, types) {
+  types = types || await getFieldsTypes(collection)
+  const cursorType = types[cursorField]
+  return { cursorField, cursorType, fields: types }
 }
 
 export default DataCollectorItem

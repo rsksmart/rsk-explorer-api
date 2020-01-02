@@ -4,6 +4,16 @@ import config from '../../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
 const SEPARATOR = '__'
 
+export async function countDocuments (collection, query) {
+  query = query || {}
+  try {
+    let result = await collection.countDocuments(query)
+    return result
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 export function generateCursorQuery ({ cursorField, sortDir, value, sortField }) {
   if (!value) return
   const op = (sortDir === -1) ? '$lt' : '$gt'
@@ -113,7 +123,7 @@ export async function findPages (collection, cursorData, query, params) {
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
     let data = (!countOnly) ? await find(collection, $query, $sort, queryLimit + 1, fields) : null
-    let total = (count) ? (await collection.countDocuments(query)) : null
+    let total = (count) ? (await countDocuments(collection, query)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)
