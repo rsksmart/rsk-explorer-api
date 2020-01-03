@@ -1,11 +1,9 @@
-import DB from '../../src/lib/Db'
 import DataCollectorItem from '../../src/api/lib/DataCollector/DataCollectorItem'
 import { serialize } from '../../src/lib/utils'
-import config from '../../src/lib/config'
 import { assert } from 'chai'
+import { testDb } from '../shared'
 
-const dbConf = Object.assign(config.db, { database: 'paginationTest' })
-const dataBase = new DB(dbConf)
+const dataBase = testDb({ dbName: 'paginationTest' })
 const collectionName = 'pagination'
 const total = 100
 const testData = [...new Array(total)].map((v, i) => { return { number: i + 1 } })
@@ -16,7 +14,7 @@ describe('# Pagination', () => {
   let db, collection, collector, storedData, data, pages, field
 
   it(`should insert ${total} regs in the db`, async function () {
-    db = await dataBase.db()
+    db = await dataBase.getDb()
     collection = db.collection(collectionName)
     collector = new DataCollectorItem(collection)
     field = collector.cursorField
@@ -39,7 +37,7 @@ describe('# Pagination', () => {
     assert.isUndefined(data.number)
   })
 
-  it('should return data and pagination data', async function () {
+  it(`should return data and pagination data`, async function () {
     ({ data, pages } = await getResult(collector, params))
     assert.isArray(data)
     assert.containsAllKeys(pages, ['sort',
@@ -47,7 +45,7 @@ describe('# Pagination', () => {
       'limit', 'next', 'prev',
       'total'], 'pages keys')
   })
-  it('Test #1 page results', async function () {
+  it(`Test #1 page results`, async function () {
     assert.equal(total, pages.total, 'pages.total must be equal to total')
     assert.equal(total, data[0].number, 'First item')
     assert.equal(pages.next, storedData[limit - 1][field], 'next')
@@ -56,6 +54,18 @@ describe('# Pagination', () => {
       params.next = pages.next
       testPages(collector, params, data)
     }
+  })
+  it(`should get paginated results using aggregate`, async () => {
+    let limit = 10
+    let first = 60
+    let params = { limit }
+    let $match = { number: { $lte: first } }
+    let result = await collector.getAggPageData([{ $match }], params)
+    testResult(result, first)
+    params.next = result.pages.next
+    let { sortDir } = result.pages
+    let res2 = await collector.getAggPageData([{ $match }], params)
+    testResult(res2, first + (limit * sortDir))
   })
 })
 
@@ -86,4 +96,13 @@ async function getResult (collector, params, query = {}) {
   } catch (err) {
     console.log(err)
   }
+}
+
+function testResult (result, first) {
+  assert.property(result, 'data')
+  assert.property(result, 'pages')
+  let { pages, data } = result
+  assert.property(pages, 'next')
+  assert.typeOf(data, 'array')
+  assert.equal(data[0].number, first)
 }
