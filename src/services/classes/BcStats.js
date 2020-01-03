@@ -29,10 +29,10 @@ export class BcStats extends BlocksBase {
       }
       if (this.skip(blockHash, blockNumber)) return
       const hashrate = await this.nod3.eth.netHashrate()
-      const circulatingSupply = await this.getCirculating()
+      const circulating = await this.getCirculating()
       let activeAccounts = await getActiveAccounts(this.collections)
       const timestamp = Date.now()
-      return Object.assign(circulatingSupply, { activeAccounts, hashrate, timestamp, blockHash, blockNumber })
+      return Object.assign({}, { circulating, activeAccounts, hashrate, timestamp, blockHash, blockNumber })
     } catch (err) {
       this.log.error(err)
       return Promise.reject(err)
