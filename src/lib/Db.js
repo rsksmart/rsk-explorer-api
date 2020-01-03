@@ -1,5 +1,7 @@
 import { MongoClient } from 'mongodb'
 
+
+const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true }
 export class Db {
   constructor (config) {
     config = config || {}
@@ -17,15 +19,25 @@ export class Db {
     this.log = config.Logger || console
     this.connect()
   }
-  connect () {
-    if (!this.client) this.client = MongoClient.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true })
-    return this.client
+  async connect () {
+    try {
+      if (!this.client) {
+        this.client = await MongoClient.connect(this.url, connectionOptions)
+      }
+      return this.client
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   async db () {
-    let client = await this.connect()
-    let db = await client.db(this.dbName)
-    return db
+    try {
+      let client = await this.connect()
+      let db = client.db(this.dbName)
+      return db
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   setLogger (log) {
