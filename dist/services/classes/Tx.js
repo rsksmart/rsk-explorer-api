@@ -22,6 +22,7 @@ class Tx extends _BcThing.BcThing {
     } catch (err) {
       return Promise.reject(err);
     }
+
   }
 
   async getTx() {
