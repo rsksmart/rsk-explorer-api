@@ -113,7 +113,7 @@ export class Address extends DataCollectorItem {
         let query = {}
         const lbMined = fields.LAST_BLOCK_MINED
         let { fromBlock } = params
-        query[lbMined] = { $exists: true }
+        query[lbMined] = { $exists: true, $ne: null }
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
           query[`${lbMined}.number`] = { $gt: fromBlock }
