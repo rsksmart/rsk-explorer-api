@@ -223,6 +223,37 @@ export class Address extends DataCollectorItem {
         } catch (err) {
           return Promise.reject(err)
         }
+      },
+      /**
+       * @swagger
+       * /api?module=addresses&action=findAddresses:
+       *    get:
+       *      description: find addresses by name
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *        - name: name
+       *          required: true
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
+      findAddresses: async params => {
+        let { name } = params
+        params.field = 'name'
+        params.sort = { _id: 1 }
+        return this.textSearch(name, params)
       }
     }
   }

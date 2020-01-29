@@ -110,6 +110,10 @@ export default {
       {
         key: { 'createdByTx.timestamp': -1 },
         name: 'contractCreated'
+      },
+      {
+        key: { name: 'text' },
+        name: 'addrTextIndex'
       }
     ]
   },
