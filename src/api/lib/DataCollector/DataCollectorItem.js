@@ -1,6 +1,8 @@
 import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages, countDocuments } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
+import { generateTextQuery } from './textSearch'
+
 export class DataCollectorItem {
   constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     if (!(collection instanceof Collection)) {
@@ -129,6 +131,16 @@ export class DataCollectorItem {
       let args = [this.db, cursorData, query, pages]
       let result = (aggregate) ? await aggregatePages(...args) : await findPages(...args)
       return formatResponse(result, pages)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async textSearch (value, params) {
+    try {
+      if (typeof value !== 'string') throw new Error('The text search requires an string value')
+      let query = generateTextQuery(value, params)
+      return this.find(query)
     } catch (err) {
       return Promise.reject(err)
     }
