@@ -122,6 +122,22 @@ export class DataCollectorItem {
       return Promise.reject(err)
     }
   }
+  /**
+   *  Resolves item query parsing params
+   * @param {*} query 
+   * @param {*} params 
+   */
+  async getItem (query, { fields, getPrevNext }) {
+    try {
+      let data = await this.getOne(query, fields)
+      if (getPrevNext) {
+        data = await this.getPrevNext(query, fields, data)
+      }
+      return data
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
 
   async getPages ({ aggregate, query, params }) {
     try {
