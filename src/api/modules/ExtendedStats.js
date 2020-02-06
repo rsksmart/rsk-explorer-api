@@ -3,17 +3,17 @@ import { HashrateCalculator } from '../lib/hashrateCalculator'
 import { DifficultyCalculator } from '../lib/difficultyCalculator'
 
 // 1 hour bucket size
-const DIFFICULTY_BUCKET_SIZE = 3600000
+const DIFFICULTY_BUCKET_SIZE = 3600
 
 export const PERIODS = {
   '1w': {
-    timeLimit: 604800000
+    timeSpan: 604800
   },
   '1d': {
-    timeLimit: 86400000
+    timeSpan: 86400
   },
   '1h': {
-    timeLimit: 3600000
+    timeSpan: 3600
   }
 }
 
