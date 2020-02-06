@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js'
 
 export const DECIMALS = 3
-export const EXA = new BigNumber('1e50')
+export const EXA = new BigNumber('1e18')
 
 export class HashrateCalculator {
   difficultyPerMiner (blocks) {

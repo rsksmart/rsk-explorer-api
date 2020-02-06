@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js'
 import { HashrateCalculator } from '../../src/api/lib/hashrateCalculator.js'
 
 describe('hashrateCalculator', () => {
-  const exa = (n) => new BigNumber(`${n}e50`)
+  const exa = (n) => new BigNumber(`${n}e18`)
 
   context('hashratePercentagePerMiner', () => {
     it('returns an empty object when argument is not an array', () => {

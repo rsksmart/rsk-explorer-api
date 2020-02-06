@@ -5,7 +5,7 @@ import { DifficultyCalculator } from '../../src/api/lib/difficultyCalculator.js'
 
 describe('difficultyCalculator', () => {
   const minutes = (m) => m * 60 * 1000
-  const exa = (n) => new BigNumber(`${n}e50`)
+  const exa = (n) => new BigNumber(`${n}e18`)
   const epoch = (dateString) => +new Date(dateString)
 
   context('difficulties, 10 minute buckets', () => {
