@@ -4,6 +4,7 @@ import { HashrateCalculator } from '../../src/api/lib/hashrateCalculator.js'
 
 describe('hashrateCalculator', () => {
   const exa = (n) => new BigNumber(`${n}e18`)
+  const hexExa = (n) => `0x${new BigNumber(`${n}e18`).toString(16)}`
 
   context('hashratePercentagePerMiner', () => {
     it('returns an empty object when argument is not an array', () => {
@@ -137,7 +138,7 @@ describe('hashrateCalculator', () => {
     it('returns an empty object when argument is not an array', () => {
       const calc = new HashrateCalculator()
 
-      const hashrate = calc.hashratePerMiner()
+      const hashrate = calc.hashratePerMiner(0)
 
       assert.deepEqual(hashrate, {})
     })
@@ -145,7 +146,7 @@ describe('hashrateCalculator', () => {
     it('returns an empty object when no blocks', () => {
       const calc = new HashrateCalculator()
 
-      const hashrate = calc.hashratePerMiner([])
+      const hashrate = calc.hashratePerMiner([], 0)
 
       assert.deepEqual(hashrate, {})
     })
@@ -156,7 +157,7 @@ describe('hashrateCalculator', () => {
       const blocks = [
         { miner: '0x0a', difficulty: exa(1), timestamp: START }
       ]
-      const hashrate = calc.hashratePerMiner(blocks)
+      const hashrate = calc.hashratePerMiner(blocks, 0)
 
       assert.deepEqual(hashrate, {
         '0x0a': '1.000 EHs'
@@ -173,7 +174,7 @@ describe('hashrateCalculator', () => {
         { miner: '0x0a', difficulty: exa(1), timestamp: START + 3 },
         { miner: '0x0a', difficulty: exa(1), timestamp: START + 4 }
       ]
-      const hashrate = calc.hashratePerMiner(blocks)
+      const hashrate = calc.hashratePerMiner(blocks, (START + 4) - START)
 
       assert.deepEqual(hashrate, {
         '0x0a': '1.250 EHs'
@@ -196,7 +197,7 @@ describe('hashrateCalculator', () => {
         { miner: '0x0c', difficulty: exa(10), timestamp: START + 9 },
         { miner: '0x0c', difficulty: exa(11), timestamp: START + 10 }
       ]
-      const hashrate = calc.hashratePerMiner(blocks)
+      const hashrate = calc.hashratePerMiner(blocks, (START + 10) - START)
 
       assert.deepEqual(hashrate, {
         '0x0a': '2.600 EHs', // 26
@@ -226,7 +227,34 @@ describe('hashrateCalculator', () => {
         { miner: '0x0c', difficulty: exa(10), timestamp: START + 9 },
         { miner: '0x0c', difficulty: exa(11), timestamp: START + 10 }
       ]
-      const hashrate = calc.hashrates(blocks)
+      const hashrate = calc.hashrates(blocks, (START + 10) - START)
+
+      assert.deepEqual(hashrate, {
+        '0x0a': { avg: '2.600 EHs', perc: 0.394 }, // 26
+        '0x0b': { avg: '1.000 EHs', perc: 0.152 }, // 10
+        '0x0c': { avg: '2.500 EHs', perc: 0.379 }, // 25
+        '0x0d': { avg: '0.500 EHs', perc: 0.076 } // 5
+      })
+    })
+
+    it('returns the cumulative diff divided the time elapsed between first and last block for multiple miners' +
+        'when the difficulties are hexadecimal strings', () => {
+      const calc = new HashrateCalculator()
+
+      const blocks = [
+        { miner: '0x0a', difficulty: hexExa(1), timestamp: START },
+        { miner: '0x0b', difficulty: hexExa(2), timestamp: START + 1 },
+        { miner: '0x0a', difficulty: hexExa(3), timestamp: START + 2 },
+        { miner: '0x0c', difficulty: hexExa(4), timestamp: START + 3 },
+        { miner: '0x0d', difficulty: hexExa(5), timestamp: START + 4 },
+        { miner: '0x0a', difficulty: hexExa(6), timestamp: START + 5 },
+        { miner: '0x0a', difficulty: hexExa(7), timestamp: START + 6 },
+        { miner: '0x0b', difficulty: hexExa(8), timestamp: START + 7 },
+        { miner: '0x0a', difficulty: hexExa(9), timestamp: START + 8 },
+        { miner: '0x0c', difficulty: hexExa(10), timestamp: START + 9 },
+        { miner: '0x0c', difficulty: hexExa(11), timestamp: START + 10 }
+      ]
+      const hashrate = calc.hashrates(blocks, (START + 10) - START)
 
       assert.deepEqual(hashrate, {
         '0x0a': { avg: '2.600 EHs', perc: 0.394 }, // 26

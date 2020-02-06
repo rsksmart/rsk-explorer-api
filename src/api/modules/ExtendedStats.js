@@ -138,14 +138,14 @@ export class ExtendedStats extends DataCollectorItem {
     const end = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
-      const timeLimit = PERIODS[period].timeLimit
-      const start = end - timeLimit
+      const timeSpan = PERIODS[period].timeSpan
+      const start = end - timeSpan
 
       const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
         .project({ _id: 0, miner: 1, timestamp: 1, difficulty: 1 })
         .toArray()
 
-      extendedStats.hashrates[period] = this.hashrateCalculator.hashrates(blocks)
+      extendedStats.hashrates[period] = this.hashrateCalculator.hashrates(blocks, timeSpan)
       extendedStats.difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE)
     }
 
@@ -159,13 +159,13 @@ export class ExtendedStats extends DataCollectorItem {
     const blockDate = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
-      const timeLimit = PERIODS[period].timeLimit
+      const timeSpan = PERIODS[period].timeSpan
 
-      const blocks = await this.db.find({ timestamp: { $gte: blockDate - timeLimit, $lte: blockDate } })
+      const blocks = await this.db.find({ timestamp: { $gte: blockDate - timeSpan, $lte: blockDate } })
         .project({ _id: 0, miner: 1, difficulty: 1 })
         .toArray()
 
-      hashrates[period] = this.hashrateCalculator.hashrates(blocks)
+      hashrates[period] = this.hashrateCalculator.hashrates(blocks, timeSpan)
     }
 
     return hashrates
@@ -178,8 +178,8 @@ export class ExtendedStats extends DataCollectorItem {
     const end = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
-      const timeLimit = PERIODS[period].timeLimit
-      const start = end - timeLimit
+      const timeSpan = PERIODS[period].timeSpan
+      const start = end - timeSpan
 
       const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
         .project({ _id: 0, timestamp: 1, difficulty: 1 })

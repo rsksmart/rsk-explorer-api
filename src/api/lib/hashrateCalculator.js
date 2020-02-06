@@ -35,7 +35,7 @@ export class HashrateCalculator {
     return percPerMiner
   }
 
-  hashratePerMiner (blocks) {
+  hashratePerMiner (blocks, timeSpan) {
     if (!Array.isArray(blocks)) {
       return {}
     }
@@ -46,12 +46,12 @@ export class HashrateCalculator {
 
     let diffPerMiner = this.difficultyPerMiner(blocks)
 
-    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner)
+    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner, timeSpan)
 
     return hashratePerMiner
   }
 
-  hashrates (blocks) {
+  hashrates (blocks, timeSpan) {
     if (!Array.isArray(blocks)) {
       return {}
     }
@@ -62,7 +62,7 @@ export class HashrateCalculator {
 
     let diffPerMiner = this.difficultyPerMiner(blocks)
 
-    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner)
+    let hashratePerMiner = this.innerHashratePerMiner(blocks, diffPerMiner, timeSpan)
     let percPerMiner = this.innerHashratePercentagePerMiner(diffPerMiner)
 
     let hashrates = {}
@@ -88,14 +88,14 @@ export class HashrateCalculator {
     return percPerMiner
   }
 
-  innerHashratePerMiner (blocks, diffPerMiner) {
-    const start = new BigNumber(blocks[0].timestamp)
-    const end = new BigNumber(blocks[blocks.length - 1].timestamp)
-    const timeDiff = end.isGreaterThan(start) ? end.minus(start) : new BigNumber(1)
+  innerHashratePerMiner (blocks, diffPerMiner, timeSpan) {
+    if (timeSpan <= 0)
+      timeSpan = 1;
 
     let hashratePerMiner = {}
     for (const m of Object.keys(diffPerMiner)) {
-      const val = diffPerMiner[m].dividedBy(timeDiff).dividedBy(EXA).toFixed(DECIMALS)
+      const val = diffPerMiner[m].dividedBy(timeSpan).dividedBy(EXA).toFixed(DECIMALS)
+
       hashratePerMiner[m] = `${val} EHs`
     }
 
