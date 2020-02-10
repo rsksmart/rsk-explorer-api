@@ -42,12 +42,12 @@ describe('hashrateCalculator', () => {
     })  
   })
 
-  context('hashratePercentagePerMiner, cummulativeDifficulty', () => {
+  context('hashratePercentagePerMiner, cumulativeDifficulty', () => {
     it('returns 1 for only one miner and 1 block', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -60,8 +60,8 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0b', cummulativeDifficulty: '0x11f36beaf6690ac7e6' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0b', cumulativeDifficulty: '0x11f36beaf6690ac7e6' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -75,10 +75,10 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e3' },
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e2' },
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e1' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e3' },
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e2' },
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e1' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -91,10 +91,10 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0b', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0c', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0d', cummulativeDifficulty: '0x11f36beaf6690ac7e6' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0b', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0c', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0d', cumulativeDifficulty: '0x11f36beaf6690ac7e6' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -110,10 +110,10 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0b', cummulativeDifficulty: '0x13b768fb4f683f5fd5' },
-        { miner: '0x0c', cummulativeDifficulty: '0x0f54a7810c212d7df0' },
-        { miner: '0x0d', cummulativeDifficulty: '0x0f54a7810c212d7df0' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0b', cumulativeDifficulty: '0x13b768fb4f683f5fd5' },
+        { miner: '0x0c', cumulativeDifficulty: '0x0f54a7810c212d7df0' },
+        { miner: '0x0d', cumulativeDifficulty: '0x0f54a7810c212d7df0' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -129,17 +129,17 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0b', cummulativeDifficulty: '0x13b768fb4f683f5fd5' },
-        { miner: '0x0a', cummulativeDifficulty: '0x13b768fb4f683f5fd5' },
-        { miner: '0x0c', cummulativeDifficulty: '0x10050a0cc225820cdd' },
-        { miner: '0x0d', cummulativeDifficulty: '0x10050a0cc225820cdd' },
-        { miner: '0x0d', cummulativeDifficulty: '0x0f54a7810c212d7df0' },
-        { miner: '0x0a', cummulativeDifficulty: '0x11f36beaf6690ac7e6' },
-        { miner: '0x0d', cummulativeDifficulty: '0x0f54a7810c212d7d00' },
-        { miner: '0x0c', cummulativeDifficulty: '0x10050a0cc225820cdd' },
-        { miner: '0x0b', cummulativeDifficulty: '0x10050a0cc225820fff' },
-        { miner: '0x0d', cummulativeDifficulty: '0x11f36beaf6690ac7e6' }
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0b', cumulativeDifficulty: '0x13b768fb4f683f5fd5' },
+        { miner: '0x0a', cumulativeDifficulty: '0x13b768fb4f683f5fd5' },
+        { miner: '0x0c', cumulativeDifficulty: '0x10050a0cc225820cdd' },
+        { miner: '0x0d', cumulativeDifficulty: '0x10050a0cc225820cdd' },
+        { miner: '0x0d', cumulativeDifficulty: '0x0f54a7810c212d7df0' },
+        { miner: '0x0a', cumulativeDifficulty: '0x11f36beaf6690ac7e6' },
+        { miner: '0x0d', cumulativeDifficulty: '0x0f54a7810c212d7d00' },
+        { miner: '0x0c', cumulativeDifficulty: '0x10050a0cc225820cdd' },
+        { miner: '0x0b', cumulativeDifficulty: '0x10050a0cc225820fff' },
+        { miner: '0x0d', cumulativeDifficulty: '0x11f36beaf6690ac7e6' }
       ]
       const hashrate = calc.hashratePercentagePerMiner(blocks)
 
@@ -152,14 +152,14 @@ describe('hashrateCalculator', () => {
     })
   })
 
-  context('hashratePerMiner, cummulativeDifficulty', () => {
+  context('hashratePerMiner, cumulativeDifficulty', () => {
     const START = 1
 
     it('returns the same diff as hashrate for one block', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START }
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START }
       ]
       const hashrate = calc.hashratePerMiner(blocks, 0)
 
@@ -172,11 +172,11 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START },
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START + 1 },
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START + 2 },
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START + 3 },
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START + 4 }
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START },
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START + 1 },
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START + 2 },
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START + 3 },
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START + 4 }
       ]
       const hashrate = calc.hashratePerMiner(blocks, (START + 4) - START)
 
@@ -189,17 +189,17 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START },
-        { miner: '0x0b', cummulativeDifficulty: exa(2), timestamp: START + 1 },
-        { miner: '0x0a', cummulativeDifficulty: exa(3), timestamp: START + 2 },
-        { miner: '0x0c', cummulativeDifficulty: exa(4), timestamp: START + 3 },
-        { miner: '0x0d', cummulativeDifficulty: exa(5), timestamp: START + 4 },
-        { miner: '0x0a', cummulativeDifficulty: exa(6), timestamp: START + 5 },
-        { miner: '0x0a', cummulativeDifficulty: exa(7), timestamp: START + 6 },
-        { miner: '0x0b', cummulativeDifficulty: exa(8), timestamp: START + 7 },
-        { miner: '0x0a', cummulativeDifficulty: exa(9), timestamp: START + 8 },
-        { miner: '0x0c', cummulativeDifficulty: exa(10), timestamp: START + 9 },
-        { miner: '0x0c', cummulativeDifficulty: exa(11), timestamp: START + 10 }
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START },
+        { miner: '0x0b', cumulativeDifficulty: exa(2), timestamp: START + 1 },
+        { miner: '0x0a', cumulativeDifficulty: exa(3), timestamp: START + 2 },
+        { miner: '0x0c', cumulativeDifficulty: exa(4), timestamp: START + 3 },
+        { miner: '0x0d', cumulativeDifficulty: exa(5), timestamp: START + 4 },
+        { miner: '0x0a', cumulativeDifficulty: exa(6), timestamp: START + 5 },
+        { miner: '0x0a', cumulativeDifficulty: exa(7), timestamp: START + 6 },
+        { miner: '0x0b', cumulativeDifficulty: exa(8), timestamp: START + 7 },
+        { miner: '0x0a', cumulativeDifficulty: exa(9), timestamp: START + 8 },
+        { miner: '0x0c', cumulativeDifficulty: exa(10), timestamp: START + 9 },
+        { miner: '0x0c', cumulativeDifficulty: exa(11), timestamp: START + 10 }
       ]
       const hashrate = calc.hashratePerMiner(blocks, (START + 10) - START)
 
@@ -219,17 +219,17 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: exa(1), timestamp: START },
-        { miner: '0x0b', cummulativeDifficulty: exa(2), timestamp: START + 1 },
-        { miner: '0x0a', cummulativeDifficulty: exa(3), timestamp: START + 2 },
-        { miner: '0x0c', cummulativeDifficulty: exa(4), timestamp: START + 3 },
-        { miner: '0x0d', cummulativeDifficulty: exa(5), timestamp: START + 4 },
-        { miner: '0x0a', cummulativeDifficulty: exa(6), timestamp: START + 5 },
-        { miner: '0x0a', cummulativeDifficulty: exa(7), timestamp: START + 6 },
-        { miner: '0x0b', cummulativeDifficulty: exa(8), timestamp: START + 7 },
-        { miner: '0x0a', cummulativeDifficulty: exa(9), timestamp: START + 8 },
-        { miner: '0x0c', cummulativeDifficulty: exa(10), timestamp: START + 9 },
-        { miner: '0x0c', cummulativeDifficulty: exa(11), timestamp: START + 10 }
+        { miner: '0x0a', cumulativeDifficulty: exa(1), timestamp: START },
+        { miner: '0x0b', cumulativeDifficulty: exa(2), timestamp: START + 1 },
+        { miner: '0x0a', cumulativeDifficulty: exa(3), timestamp: START + 2 },
+        { miner: '0x0c', cumulativeDifficulty: exa(4), timestamp: START + 3 },
+        { miner: '0x0d', cumulativeDifficulty: exa(5), timestamp: START + 4 },
+        { miner: '0x0a', cumulativeDifficulty: exa(6), timestamp: START + 5 },
+        { miner: '0x0a', cumulativeDifficulty: exa(7), timestamp: START + 6 },
+        { miner: '0x0b', cumulativeDifficulty: exa(8), timestamp: START + 7 },
+        { miner: '0x0a', cumulativeDifficulty: exa(9), timestamp: START + 8 },
+        { miner: '0x0c', cumulativeDifficulty: exa(10), timestamp: START + 9 },
+        { miner: '0x0c', cumulativeDifficulty: exa(11), timestamp: START + 10 }
       ]
       const hashrate = calc.hashrates(blocks, (START + 10) - START)
 
@@ -246,17 +246,17 @@ describe('hashrateCalculator', () => {
       const calc = new HashrateCalculator()
 
       const blocks = [
-        { miner: '0x0a', cummulativeDifficulty: hexExa(1), timestamp: START },
-        { miner: '0x0b', cummulativeDifficulty: hexExa(2), timestamp: START + 1 },
-        { miner: '0x0a', cummulativeDifficulty: hexExa(3), timestamp: START + 2 },
-        { miner: '0x0c', cummulativeDifficulty: hexExa(4), timestamp: START + 3 },
-        { miner: '0x0d', cummulativeDifficulty: hexExa(5), timestamp: START + 4 },
-        { miner: '0x0a', cummulativeDifficulty: hexExa(6), timestamp: START + 5 },
-        { miner: '0x0a', cummulativeDifficulty: hexExa(7), timestamp: START + 6 },
-        { miner: '0x0b', cummulativeDifficulty: hexExa(8), timestamp: START + 7 },
-        { miner: '0x0a', cummulativeDifficulty: hexExa(9), timestamp: START + 8 },
-        { miner: '0x0c', cummulativeDifficulty: hexExa(10), timestamp: START + 9 },
-        { miner: '0x0c', cummulativeDifficulty: hexExa(11), timestamp: START + 10 }
+        { miner: '0x0a', cumulativeDifficulty: hexExa(1), timestamp: START },
+        { miner: '0x0b', cumulativeDifficulty: hexExa(2), timestamp: START + 1 },
+        { miner: '0x0a', cumulativeDifficulty: hexExa(3), timestamp: START + 2 },
+        { miner: '0x0c', cumulativeDifficulty: hexExa(4), timestamp: START + 3 },
+        { miner: '0x0d', cumulativeDifficulty: hexExa(5), timestamp: START + 4 },
+        { miner: '0x0a', cumulativeDifficulty: hexExa(6), timestamp: START + 5 },
+        { miner: '0x0a', cumulativeDifficulty: hexExa(7), timestamp: START + 6 },
+        { miner: '0x0b', cumulativeDifficulty: hexExa(8), timestamp: START + 7 },
+        { miner: '0x0a', cumulativeDifficulty: hexExa(9), timestamp: START + 8 },
+        { miner: '0x0c', cumulativeDifficulty: hexExa(10), timestamp: START + 9 },
+        { miner: '0x0c', cumulativeDifficulty: hexExa(11), timestamp: START + 10 }
       ]
       const hashrate = calc.hashrates(blocks, (START + 10) - START)
 
@@ -366,7 +366,7 @@ describe('hashrateCalculator', () => {
     })
   })
 
-  context('hashratePerMiner, cummulativeDifficulty', () => {
+  context('hashratePerMiner, cumulativeDifficulty', () => {
     const START = 1
 
     it('returns the same diff as hashrate for one block', () => {
