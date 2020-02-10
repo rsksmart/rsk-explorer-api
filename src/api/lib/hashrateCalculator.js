@@ -12,7 +12,11 @@ export class HashrateCalculator {
         diffPerMiner[block.miner] = new BigNumber(0)
       }
 
-      const bnDiff = new BigNumber(block.difficulty)
+      // cummulativeDifficulty = block.diff + sum(uncle.diff)
+      // If no cummulativeDifficulty is present, use an estimation under the supposition that the block diff
+      // is similar to its uncles' difficulty.
+      const bnDiff = block.cummulativeDifficulty ? new BigNumber(block.cummulativeDifficulty) :
+                                                   new BigNumber(block.difficulty).multipliedBy((block.uncles ? block.uncles.length : 0) + 1)
       diffPerMiner[block.miner] = diffPerMiner[block.miner].plus(bnDiff)
     }
 

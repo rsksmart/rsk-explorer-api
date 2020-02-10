@@ -142,7 +142,7 @@ export class ExtendedStats extends DataCollectorItem {
       const start = end - timeSpan
 
       const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
-        .project({ _id: 0, miner: 1, timestamp: 1, difficulty: 1 })
+        .project({ _id: 0, miner: 1, timestamp: 1, difficulty: 1, cummulativeDifficulty: 1, uncles: 1 })
         .toArray()
 
       extendedStats.hashrates[period] = this.hashrateCalculator.hashrates(blocks, timeSpan)
@@ -162,7 +162,7 @@ export class ExtendedStats extends DataCollectorItem {
       const timeSpan = PERIODS[period].timeSpan
 
       const blocks = await this.db.find({ timestamp: { $gte: blockDate - timeSpan, $lte: blockDate } })
-        .project({ _id: 0, miner: 1, difficulty: 1 })
+        .project({ _id: 0, miner: 1, difficulty: 1, cummulativeDifficulty: 1, uncles: 1 })
         .toArray()
 
       hashrates[period] = this.hashrateCalculator.hashrates(blocks, timeSpan)
@@ -182,7 +182,7 @@ export class ExtendedStats extends DataCollectorItem {
       const start = end - timeSpan
 
       const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
-        .project({ _id: 0, timestamp: 1, difficulty: 1 })
+        .project({ _id: 0, timestamp: 1, difficulty: 1, cummulativeDifficulty: 1, uncles: 1 })
         .toArray()
 
       difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE)
