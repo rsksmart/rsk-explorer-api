@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.4] - 2019-02-27
+
+### Added
+
+- Search addresses by name
+- Buckets queries
+- Array support to field filters
+
+### Changed
+
+- tools/wsGet, add file stream to support big exports
+- Rename circulating fields
+
+### Fixed
+
+- API/Address.getMiners
+
 ## [1.0.3] - 2019-01-03
 
 ### Added
@@ -11,7 +28,7 @@
 - CirculatingSupply to stats
 - ActiveAccounts to stats
 
-## Changed
+### Changed
 
 - ContractParser, remove web3 dependency
 - Refactor ContractParser as rsk-contract-parser
@@ -20,13 +37,13 @@
 - Remove transactions from blocks channel
 - Remove disabled modules from API interactive documentation
 
-## Fixed
+### Fixed
 
 - Indexed ids on events and transactions, that produced errors in some queries
 - tools/getBlock
 - swagger.json url
 
-## Removed
+### Removed
 
 - ExtendedStats module
 
@@ -38,7 +55,7 @@
 
 ## [1.0.1] - 2019-09-11
 
-## Changed
+### Changed
 
 - Mongodb client to 3.3.2
 - Express to 4.17.1
@@ -46,11 +63,11 @@
 
 ## [1.0.0] - 2019-08-30
 
-## Removed
+### Removed
 
 - config.publicSettings
 
-## Added
+### Added
 
 - Optional configuration file: initial-config.json
 - ABI of PoolBlockReward
