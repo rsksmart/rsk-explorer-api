@@ -47,7 +47,7 @@ class Block extends _DataCollector.DataCollectorItem {
         } else {
           query = { number: parseInt(hashOrNumber) };
         }
-        let result = await this.getPrevNext(query, {});
+        let result = await this.getItem(query, params);
         if (result) {
           let { prev, data, next } = result;
           if (prev) {

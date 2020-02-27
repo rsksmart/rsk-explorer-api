@@ -83,7 +83,7 @@ class Tx extends _DataCollector.DataCollectorItem {
         const hash = params.hash;
         if (hash) {
           let tx;
-          tx = await this.getPrevNext({ hash }, { hash: 1 });
+          tx = await this.getItem({ hash }, params);
           if (!tx || !tx.data) return this.parent.getPendingTransaction(params);
           return tx;
         }

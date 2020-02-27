@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",
@@ -251,6 +251,44 @@
           },
           {
             "$ref": "#/parameters/address"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=addresses&action=findAddresses": {
+      "get": {
+        "description": "find addresses by name",
+        "tags": [
+          "addresses"
+        ],
+        "parameters": [
+          {
+            "name": "module",
+            "in": "query",
+            "required": true,
+            "enum": [
+              "addresses"
+            ]
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "required": true
+          },
+          {
+            "name": "name",
+            "required": true
           }
         ],
         "responses": {

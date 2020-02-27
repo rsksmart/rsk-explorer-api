@@ -109,7 +109,11 @@
 
     {
       key: { 'createdByTx.timestamp': -1 },
-      name: 'contractCreated' }] },
+      name: 'contractCreated' },
+
+    {
+      key: { name: 'text' },
+      name: 'addrTextIndex' }] },
 
 
 

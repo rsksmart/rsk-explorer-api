@@ -13,7 +13,14 @@ const getLimit = limit => {
 };exports.getLimit = getLimit;
 
 const filterFields = fields => {
-  if (!fields) return;
+  if (typeof fields !== 'object') return;
+  // convert array to object
+  if (Array.isArray(fields)) {
+    fields = fields.reduce((v, a) => {
+      v[a] = 1;
+      return v;
+    }, {});
+  }
   let filtered = {};
   for (let p in fields) {
     let k = remove$(p);

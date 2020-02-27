@@ -1,6 +1,8 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.formatResponse = formatResponse;exports.getFieldsTypes = getFieldsTypes;exports.filterSort = filterSort;exports.fieldFilterParse = fieldFilterParse;exports.getCursorData = getCursorData;exports.default = exports.DataCollectorItem = void 0;var _mongodb = require("mongodb");
 var _pagination = require("./pagination");
 var _types = require("../../../lib/types");
+var _textSearch = require("./textSearch");
+
 class DataCollectorItem {
   constructor(collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     if (!(collection instanceof _mongodb.Collection)) {
@@ -120,6 +122,22 @@ class DataCollectorItem {
       return Promise.reject(err);
     }
   }
+  /**
+     *  Resolves item query parsing params
+     * @param {*} query 
+     * @param {*} params 
+     */
+  async getItem(query, { fields, getPrevNext }) {
+    try {
+      let data = await this.getOne(query, fields);
+      if (getPrevNext) {
+        data = await this.getPrevNext(query, fields, data);
+      }
+      return data;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
 
   async getPages({ aggregate, query, params }) {
     try {
@@ -129,6 +147,16 @@ class DataCollectorItem {
       let args = [this.db, cursorData, query, pages];
       let result = aggregate ? await (0, _pagination.aggregatePages)(...args) : await (0, _pagination.findPages)(...args);
       return formatResponse(result, pages);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async textSearch(value, params) {
+    try {
+      if (typeof value !== 'string') throw new Error('The text search requires an string value');
+      let query = (0, _textSearch.generateTextQuery)(value, params);
+      return this.find(query);
     } catch (err) {
       return Promise.reject(err);
     }
