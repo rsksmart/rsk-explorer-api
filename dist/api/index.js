@@ -14,11 +14,11 @@ var _evaluateError = require("./lib/evaluateError");function _interopRequireDefa
 const port = _config.default.api.port || '3003';
 const address = _config.default.api.address || 'localhost';
 
-(0, _dataSource.setup)({ log: _log.default, skipCheck: true }).then(({ db, initConfig, nativeContracts }) => {
+(0, _dataSource.setup)({ log: _log.default, skipCheck: true }).then(({ db, initConfig }) => {
   _log.default.info('Database connected');
 
   // data collectors
-  const api = new _Api.default({ db, initConfig, nativeContracts }, _config.default.api);
+  const api = new _Api.default({ db, initConfig }, _config.default.api);
   const status = new _Status.default(db);
   const txPool = new _TxPool.default(db);
   api.start();
@@ -39,7 +39,7 @@ const address = _config.default.api.address || 'localhost';
 
   // create channels
   const channels = (0, _channels.createChannels)(io);
-  const { blocksChannel, statusChannel, txPoolChannel, statsChannel } = channels.channels;
+  const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel } = channels.channels;
 
   // send blocks on join
   blocksChannel.on('join', socket => {
@@ -57,9 +57,19 @@ const address = _config.default.api.address || 'localhost';
     socket.emit('data', (0, _apiTools.formatRes)({ action: 'txPoolChart', result: txPool.getPoolChart() }));
   });
 
-  // send new blocks to channel
+  // send transactions on join
+  txsChannel.on('join', socket => {
+    socket.emit('data', (0, _apiTools.formatRes)({ action: 'newTransactions', result: api.getLastTransactions() }));
+  });
+  // send new blocks & transactions to channels
   api.events.on('newBlocks', result => {
     blocksChannel.emit('newBlocks', result);
+    txsChannel.emit('newTransactions', api.getLastTransactions());
+  });
+
+  // send stats on join
+  statsChannel.on('join', socket => {
+    socket.emit('data', (0, _apiTools.formatRes)({ action: 'stats', result: api.getStats() }));
   });
 
   // send status to channel

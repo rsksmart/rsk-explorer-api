@@ -1,9 +1,11 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Event = void 0;var _DataCollector = require("../lib/DataCollector");
 class Event extends _DataCollector.DataCollectorItem {
   constructor(collections, key) {
-    // const sortable = { timestamp: -1 }
+    const sortable = { eventId: -1 };
     const { Events } = collections;
-    super(Events, key);
+    let cursorField = 'eventId';
+    let sortDir = -1;
+    super(Events, key, { cursorField, sortDir, sortable });
     this.publicActions = {
       /**
                             * @swagger
@@ -21,7 +23,7 @@ class Event extends _DataCollector.DataCollectorItem {
                             *          in: query
                             *          required: true
                             *          enum: [getEvent]
-                            *        - name: _id
+                            *        - name: eventId
                             *          in: query
                             *          schema:
                             *            type: string
@@ -35,10 +37,10 @@ class Event extends _DataCollector.DataCollectorItem {
                             */
       getEvent: async params => {
         try {
-          const { _id } = params;
-          if (!_id) throw new Error('invalid _id');
-          let data = await this.getOne({ _id });
-          if (!data || !data.data) throw new Error(`Event ${_id} does not exist`);
+          const { eventId } = params;
+          if (!eventId) throw new Error('invalid eventId');
+          let data = await this.getOne({ eventId });
+          if (!data || !data.data) throw new Error(`Event ${eventId} does not exist`);
           const address = data.data.address;
           data = await this.parent.addAddressData(address, data);
           return data;
@@ -91,7 +93,7 @@ class Event extends _DataCollector.DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params;
         if (address) {
-          let query = { args: address };
+          let query = { _addresses: address };
 
           // search by events signatures
           if (Array.isArray(signatures)) {
@@ -154,7 +156,7 @@ class Event extends _DataCollector.DataCollectorItem {
       getAllEventsByAddress: async params => {
         const { address } = params;
         if (address) {
-          return this.getPageData({ $or: [{ address }, { args: address }] }, params);
+          return this.getPageData({ $or: [{ address }, { _addresses: address }] }, params);
         }
       } };
 

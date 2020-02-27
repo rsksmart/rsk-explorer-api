@@ -1,38 +1,43 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _DataCollector = require("./lib/DataCollector");
 var _modules = require("./modules");
 var _types = require("../lib/types");
-var _getCirculatingSupply = _interopRequireDefault(require("./lib/getCirculatingSupply"));
 var _blocksCollections = require("../lib/blocksCollections");
 var _apiTools = require("./lib/apiTools");
-var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _config = _interopRequireDefault(require("../lib/config"));
+var _NativeContracts = _interopRequireDefault(require("../lib/NativeContracts"));
+
+var _getCirculatingSupply = _interopRequireDefault(require("./lib/getCirculatingSupply"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} // It is used only in case Stats cannot provide the circulating supply
 
 class Api extends _DataCollector.DataCollector {
-  constructor({ db, initConfig, nativeContracts }, { modules, collectionsNames, lastBlocks } = {}) {
+  constructor({ db, initConfig }, { modules, collectionsNames, lastBlocks } = {}) {
     const collectionName = collectionsNames.Blocks;
     super(db, { collectionName });
     this.collectionsNames = collectionsNames;
     this.collections = (0, _blocksCollections.getDbBlocksCollections)(db);
-    this.lastLimit = lastBlocks || 10;
-    this.latest = 0;
-    this.lastBlocks = [];
-    this.lastTransactions = [];
+    this.lastLimit = lastBlocks || 100;
+    this.latest = undefined;
+    this.lastBlocks = { data: [] };
+    this.lastTransactions = { data: [] };
     this.circulatingSupply = null;
     this.stats = { timestamp: 0 };
     this.loadModules((0, _modules.getEnabledApiModules)(modules));
     this.initConfig = initConfig;
-    const { isNativeContract } = nativeContracts;
+    const { isNativeContract } = (0, _NativeContracts.default)(initConfig);
     this.isNativeContract = isNativeContract;
+    this.tick();
   }
   tick() {
     this.setLastBlocks();
-    this.setCirculatingSupply();
   }
 
   loadModules(modules) {
     Object.keys(modules).forEach(name => {
-      const module = new modules[name](this.collections, name);
-      this.log.info(`Loading module ${name}`);
-      this.addModule(module, name);
+      const constructor = modules[name];
+      if (typeof constructor === 'function') {
+        const module = new constructor(this.collections, name);
+        this.log.info(`Loading module ${name}`);
+        this.addModule(module, name);
+      }
     });
   }
 
@@ -67,51 +72,48 @@ class Api extends _DataCollector.DataCollector {
 
   async setLastBlocks() {
     try {
-      let { collection, lastLimit } = this;
+      const Block = this.getModule('Block');
       const Tx = this.getModule('Tx');
-      let blocks = await collection.find().sort({ number: -1 }).limit(lastLimit).toArray();
-      let txs = await Tx.db.find({ txType: { $in: [_types.txTypes.default, _types.txTypes.contract] } }).
-      sort({ blockNumber: -1, transactionIndex: -1 }).
-      limit(this.lastLimit).
-      toArray();
-
-      this.updateLastBlocks(blocks, txs);
+      let limit = this.lastLimit;
+      let blocks = await Block.run('getBlocks', { limit, addMetadata: true });
+      let query = { txType: [_types.txTypes.default, _types.txTypes.contract] };
+      let transactions = await Tx.run('getTransactions', { query, limit });
+      this.updateLastBlocks(blocks, transactions);
     } catch (err) {
       this.log.debug(err);
     }
   }
-
-  async setCirculatingSupply() {
-    try {
-      const collection = this.collections.Addrs;
-      let circulating = await (0, _getCirculatingSupply.default)(collection, this.initConfig.nativeContracts);
-      this.circulatingSupply = Object.assign({}, circulating);
-    } catch (err) {
-      this.log.debug(err);
-    }
+  getStats() {
+    return this.formatData(this.stats);
   }
   getCirculatingSupply() {
     return this.formatData(this.circulatingSupply);
   }
 
   getLastBlocks() {
-    let blocks = this.lastBlocks;
-    let transactions = this.lastTransactions;
-    return this.formatData({ blocks, transactions });
+    let data = this.lastBlocks;
+    return this.formatData(data);
+  }
+
+  getLastTransactions() {
+    let data = this.lastTransactions;
+    return this.formatData(data);
   }
 
   getLastBlock() {
-    return this.lastBlocks[0] || null;
+    let { data } = this.lastBlocks;
+    return data[0] || null;
   }
 
   updateLastBlocks(blocks, transactions) {
+    let blockData = blocks.data;
     this.lastBlocks = blocks;
     this.lastTransactions = transactions;
     let latest;
-    if (blocks && blocks[0]) latest = blocks[0].number;
+    if (blockData && blockData[0]) latest = blockData[0].number;
     if (latest !== this.latest) {
       this.latest = latest;
-      this.events.emit('newBlocks', this.formatData({ blocks, transactions }));
+      this.events.emit('newBlocks', this.getLastBlocks());
       this.updateStats();
     }
   }
@@ -132,19 +134,33 @@ class Api extends _DataCollector.DataCollector {
 
   async updateStats() {
     const oldStats = this.stats;
-    const stats = await this.getModule('Stats').run('getLatest');
+    const Stats = await this.getModule('Stats');
+    if (!Stats) return;
+    const stats = await Stats.run('getLatest');
     if (!stats) return;
 
-    const ExtendedStats = this.getModule('ExtendedStats');
-    if (ExtendedStats) {
-      const blockNumber = parseInt(stats.blockNumber);
-      const extendedStats = await ExtendedStats.getExtendedStats(blockNumber);
-      Object.assign(stats, extendedStats);
-    }
-
+    /*     const ExtendedStats = this.getModule('ExtendedStats')
+                            if (ExtendedStats) {
+                              const blockNumber = parseInt(stats.blockNumber)
+                              const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+                              Object.assign(stats, extendedStats)
+                            } */
+    let circulatingSupply = stats.circulatingSupply || (await this.getCirculatingSupplyFromDb());
+    this.circulatingSupply = circulatingSupply;
     this.stats = Object.assign({}, stats);
-    if (stats.timestamp !== oldStats.timestamp) {
-      this.events.emit('newStats', this.stats);
+    let timestamp = stats.timestamp || 0;
+    if (timestamp > oldStats.timestamp) {
+      this.events.emit('newStats', this.getStats());
+    }
+  }
+  async getCirculatingSupplyFromDb() {
+    try {
+      const collection = this.collections.Addrs;
+      const { nativeContracts } = this.initConfig;
+      let circulating = await (0, _getCirculatingSupply.default)(collection, nativeContracts);
+      return circulating;
+    } catch (err) {
+      this.log.debug(err);
     }
   }}var _default =
 

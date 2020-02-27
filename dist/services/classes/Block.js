@@ -6,8 +6,8 @@ var _utils = require("../../lib/utils");
 var _ids = require("../../lib/ids");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Block extends _BcThing.BcThing {
-  constructor(hashOrNumber, { nod3, nativeContracts, collections, log }) {
-    super({ nod3, nativeContracts, collections });
+  constructor(hashOrNumber, { nod3, collections, log, initConfig }) {
+    super({ nod3, collections, initConfig });
     this.Blocks = this.collections.Blocks;
     this.fetched = false;
     this.log = log || console;
@@ -24,6 +24,7 @@ class Block extends _BcThing.BcThing {
       events: [] };
 
   }
+
   async fetch(forceFetch) {
     if (this.fetched && !forceFetch) {
       return Promise.resolve(this.getData());
@@ -34,12 +35,13 @@ class Block extends _BcThing.BcThing {
       return Promise.reject(new Error('nod3 is not connected'));
     }
     try {
-      let blockData = await this.getBlock(this.hashOrNumber);
+      let blockData = await this.getBlock(this.hashOrNumber, true);
+      const { transactions, timestamp } = blockData;
+      blockData.transactions = transactions.map(tx => tx.hash);
       this.data.block = blockData;
       this.addAddress(blockData.miner, blockData);
-
-      let { transactions, timestamp } = blockData;
-      let txs = transactions.map(hash => new _Tx.default(hash, timestamp, this));
+      const { nod3, initConfig } = this;
+      let txs = transactions.map(txData => new _Tx.default(txData.hash, timestamp, { txData, nod3, initConfig }));
       let txsData = await this.fetchItems(txs);
       this.data.txs = txsData.map(d => d.tx);
       this.data.txs.forEach(tx => this.addTxAddresses(tx));
@@ -120,7 +122,7 @@ class Block extends _BcThing.BcThing {
       // insert events
       await Promise.all(
       events.map(e => db.Events.updateOne(
-      { _id: e._id },
+      { eventId: e.eventId },
       { $set: e },
       { upsert: true }))).
       then(res => {result.events = res;});
@@ -287,8 +289,8 @@ class Block extends _BcThing.BcThing {
 
   addAddress(address, block) {
     if (!this.isAddress(address) || this.addresses[address]) return;
-    let { nod3, collections, nativeContracts } = this;
-    const Addr = new _Address.default(address, { nativeContracts, collections, nod3, block });
+    let { nod3, collections, initConfig } = this;
+    const Addr = new _Address.default(address, { initConfig, collections, nod3, block });
     this.addresses[address] = Addr;
   }
 
@@ -307,7 +309,8 @@ class Block extends _BcThing.BcThing {
   }
 
   newContract(address, data) {
-    let contract = new _Contract.default(address, data, this.nod3, this.nativeContracts);
+    const { nod3, initConfig } = this;
+    let contract = new _Contract.default(address, data, { nod3, initConfig });
     this.contracts[address] = contract;
     return contract;
   }

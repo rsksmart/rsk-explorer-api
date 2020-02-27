@@ -362,6 +362,122 @@
         }
       }
     },
+    "/api?module=contractVerifier&action=verify": {
+      "get": {
+        "description": "Verify contract source",
+        "tags": [
+          "contract verifier"
+        ],
+        "parameters": [
+          {
+            "name": "request",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=contractVerifier&action=getSolcVersions": {
+      "get": {
+        "description": "Gets solidity compiler versions",
+        "tags": [
+          "contract verifier"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=contractVerifier&action=getEvmVersions": {
+      "get": {
+        "description": "Gets evm versions",
+        "tags": [
+          "contract verifier"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=contractVerifier&action=getVersificationResult": {
+      "get": {
+        "description": "Gets the result of source code verification",
+        "tags": [
+          "contract verifier"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=contractVerifier&action=isVerified": {
+      "get": {
+        "description": "Checks if a contract was verified",
+        "tags": [
+          "contract verifier"
+        ],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api?module=events&action=getEvent": {
       "get": {
         "description": "get event data",
@@ -386,7 +502,7 @@
             ]
           },
           {
-            "name": "_id",
+            "name": "eventId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -1317,6 +1433,14 @@
             },
             "next": {
               "type": "string"
+            },
+            "fields": {
+              "type": {
+                "oneOf": [
+                  "array",
+                  "object"
+                ]
+              }
             }
           }
         }

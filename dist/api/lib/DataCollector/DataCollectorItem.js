@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.formatResponse = formatResponse;exports.getFieldsTypes = getFieldsTypes;exports.filterSort = filterSort;exports.fieldFilterParse = fieldFilterParse;exports.default = exports.DataCollectorItem = void 0;var _mongodb = require("mongodb");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.formatResponse = formatResponse;exports.getFieldsTypes = getFieldsTypes;exports.filterSort = filterSort;exports.fieldFilterParse = fieldFilterParse;exports.getCursorData = getCursorData;exports.default = exports.DataCollectorItem = void 0;var _mongodb = require("mongodb");
 var _pagination = require("./pagination");
 var _types = require("../../../lib/types");
 class DataCollectorItem {
@@ -35,6 +35,12 @@ class DataCollectorItem {
     } catch (err) {
       return Promise.reject(err);
     }
+  }
+
+  async count(query) {
+    let collection = this.db;
+    let data = await (0, _pagination.countDocuments)(collection, query);
+    return { data };
   }
 
   async find(query, sort, limit, project) {
@@ -84,10 +90,9 @@ class DataCollectorItem {
   }
 
   async setCursorData() {
-    const cursorField = this.cursorField;
+    let { cursorField } = this;
     const types = await this.getFieldsTypes();
-    const cursorType = types[cursorField];
-    this.cursorData = { cursorField, cursorType, fields: types };
+    this.cursorData = await getCursorData(this.db, cursorField, types);
     return this.cursorData;
   }
 
@@ -101,15 +106,15 @@ class DataCollectorItem {
 
   async getPrevNext(query, project, data) {
     try {
-      let { cursorField } = this;
+      let { cursorField, db } = this;
       project = project || this.getDefaultsFields();
       if (!data) data = await this.getOne(query);
       if (data) data = data.data;
       if (!data) return;
       let value = query[cursorField] || data[cursorField];
       if (undefined === value) throw new Error(`Missing ${cursorField} value`);
-      let prev = (await (0, _pagination.find)(this.db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0];
-      let next = (await (0, _pagination.find)(this.db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0];
+      let prev = (await (0, _pagination.find)(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0];
+      let next = (await (0, _pagination.find)(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0];
       return { prev, data, next };
     } catch (err) {
       return Promise.reject(err);
@@ -185,6 +190,12 @@ function fieldFilterParse(field, value, query) {
   if (ninArr.length) fieldQuery['$nin'] = ninArr;
   if (fieldQuery) query[field] = fieldQuery;
   return query;
+}
+
+async function getCursorData(collection, cursorField, types) {
+  types = types || (await getFieldsTypes(collection));
+  const cursorType = types[cursorField];
+  return { cursorField, cursorType, fields: types };
 }var _default =
 
 DataCollectorItem;exports.default = _default;

@@ -27,6 +27,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
 
   async checkDb(checkOrphans, lastBlock, firstBlock) {
     if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock();
+    if (!lastBlock) return;
     lastBlock = lastBlock.number;
     let blocks = await this.countDbBlocks();
 

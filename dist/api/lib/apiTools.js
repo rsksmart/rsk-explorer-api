@@ -1,18 +1,9 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });Object.defineProperty(exports, "errors", { enumerable: true, get: function () {return _types.errors;} });Object.defineProperty(exports, "MODULES", { enumerable: true, get: function () {return _types.MODULES;} });exports.getModulesNames = exports.getEnabledModules = exports.getModuleKey = exports.getDelayedFields = exports.formatError = exports.formatRes = exports.remove$ = exports.filterSort = exports.filterQuery = exports.filterFields = exports.getLimit = exports.filterParams = void 0;var _types = require("../../lib/types");
-var _config = _interopRequireDefault(require("../../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });Object.defineProperty(exports, "errors", { enumerable: true, get: function () {return _types.errors;} });Object.defineProperty(exports, "MODULES", { enumerable: true, get: function () {return _types.MODULES;} });exports.getModulesNames = exports.getEnabledModules = exports.getModuleKey = exports.getDelayedFields = exports.formatError = exports.formatRes = exports.remove$ = exports.filterParams = exports.sanitizeQuery = exports.filterSort = exports.filterQuery = exports.filterFields = exports.getLimit = void 0;var _types = require("../../lib/types");
+var _config = _interopRequireDefault(require("../../lib/config"));
+var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const delayedFields = _config.default.api.delayedFields || {};
 const { MAX_LIMIT, LIMIT, MIN_LIMIT } = _config.default.api;
-
-const filterParams = params => {
-  params = params || {};
-  let { limit, sort, fields, query } = params;
-  params.limit = getLimit(limit);
-  params.query = filterQuery(query);
-  params.sort = filterSort(sort);
-  params.fields = filterFields(fields);
-  return params;
-};exports.filterParams = filterParams;
 
 const getLimit = limit => {
   limit = limit || LIMIT;
@@ -58,15 +49,27 @@ const filterSort = sort => {
 const sanitizeQuery = query => {
   let filtered = {};
   for (let p in query) {
-    let k = remove$(p);
-    if (k === p) filtered[k] = query[p];
+    if (p.replace('$') === p) {
+      let value = query[p];
+      filtered[p] = (0, _utils.isObj)(value) ? sanitizeQuery(value) : value;
+    }
   }
   return retFiltered(filtered);
-};
+};exports.sanitizeQuery = sanitizeQuery;
 
 const retFiltered = filtered => {
   return filtered && Object.keys(filtered).length > 0 ? filtered : null;
 };
+
+const filterParams = params => {
+  params = params || {};
+  let { limit, sort, fields, query } = params;
+  params.limit = getLimit(limit);
+  params.query = filterQuery(query);
+  params.sort = filterSort(sort);
+  params.fields = filterFields(fields);
+  return params;
+};exports.filterParams = filterParams;
 
 const remove$ = value => value.replace('$', '');exports.remove$ = remove$;
 

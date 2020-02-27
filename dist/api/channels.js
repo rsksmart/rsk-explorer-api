@@ -3,6 +3,7 @@ var _Channel = _interopRequireDefault(require("./lib/Channel"));function _intero
 
 const CHANNELS = {
   blocksChannel: 'blocks',
+  txsChannel: 'transactions',
   statusChannel: 'status',
   txPoolChannel: 'txpool',
   statsChannel: 'stats' };exports.CHANNELS = CHANNELS;

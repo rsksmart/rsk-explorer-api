@@ -71,7 +71,7 @@ class DataCollector {
   }
 
   formatData(data) {
-    return { data: data };
+    return { data };
   }}exports.DataCollector = DataCollector;var _default =
 
 

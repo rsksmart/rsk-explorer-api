@@ -1,6 +1,5 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.NativeContracts = NativeContracts;exports.default = void 0;function NativeContracts({ nativeContracts }) {
-  if (Object.keys(nativeContracts) < 1) throw new Error(`nativeContracts is empty`);
-
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.NativeContracts = NativeContracts;exports.default = void 0;function NativeContracts({ nativeContracts } = {}) {
+  if (!nativeContracts) return null;
   const names = Object.keys(nativeContracts);
 
   const getNativeContractAddress = contractName => {

@@ -9,9 +9,9 @@ const opt = process.argv[3];
 const save = opt === '--save';
 const json = opt === '--json';
 if (!hashOrNumber) help();
-(0, _dataSource.default)().then(({ db, nativeContracts }) => {
+(0, _dataSource.default)().then(({ db, initConfig }) => {
   if (!json) (0, _cli.info)(`Getting block ${hashOrNumber}`);
-  getBlock(hashOrNumber, { db, nativeContracts }).then(block => {
+  getBlock(hashOrNumber, { db, initConfig }).then(block => {
     if (json) console.log(JSON.stringify(block));else
     {
       console.log(_util.default.inspect(block, { showHidden: false, depth: null, colors: true }));
@@ -23,11 +23,11 @@ if (!hashOrNumber) help();
   });
 });
 
-async function getBlock(hashOrNumber, { db, nativeContracts }) {
+async function getBlock(hashOrNumber, { db, initConfig }) {
   try {
     let time = getTime();
     let saved = null;
-    let block = new _Block.default(hashOrNumber, new _BlocksBase.default(db, { nativeContracts }));
+    let block = new _Block.default(hashOrNumber, new _BlocksBase.default(db, { initConfig }));
     await block.fetch();
     let blockData = block.getData(true);
     time = getTime(time);

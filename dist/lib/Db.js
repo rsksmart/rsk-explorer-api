@@ -1,5 +1,7 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Db = void 0;var _mongodb = require("mongodb");
 
+
+const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 class Db {
   constructor(config) {
     config = config || {};
@@ -17,28 +19,37 @@ class Db {
     this.log = config.Logger || console;
     this.connect();
   }
-  connect() {
-    if (!this.client) this.client = _mongodb.MongoClient.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true });
-    return this.client;
+  async connect() {
+    try {
+      if (!this.client) {
+        this.client = await _mongodb.MongoClient.connect(this.url, connectionOptions);
+      }
+      return this.client;
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   async db() {
-    let client = await this.connect();
-    let db = await client.db(this.dbName);
-    return db;
+    try {
+      let client = await this.connect();
+      let db = client.db(this.dbName);
+      return db;
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   setLogger(log) {
     this.log = log;
   }
 
-  async createCollection(collectionName, indexes, options) {
+  async createCollection(collectionName, { indexes, options }, { dropIndexes, validate } = {}) {
     try {
       const db = await this.db();
       if (!collectionName) throw new Error('Invalid collection name');
-      let collection = db.collection(collectionName);
-
-      if (options.dropIndexes) {
+      let collection = await db.createCollection(collectionName, options);
+      if (dropIndexes) {
         this.log.info(`Removing indexes from ${collectionName}`);
         await collection.dropIndexes();
       }
@@ -46,7 +57,7 @@ class Db {
         this.log.info(`Creating indexes to ${collectionName}`);
         await collection.createIndexes(indexes);
       }
-      if (options.validate) {
+      if (validate) {
         this.log.info(`Validating collection: ${collectionName}`);
         await db.admin().validateCollection(collectionName);
       }
@@ -56,13 +67,12 @@ class Db {
     }
   }
 
-  createCollections(collections, options) {
+  createCollections(collections, creationOptions = {}) {
     let queue = [];
-    let names = options.names || {};
+    let names = creationOptions.names || {};
     for (let c in collections) {
       let name = names[c] || c;
-      let indexes = collections[c];
-      queue.push(this.createCollection(name, indexes, options).
+      queue.push(this.createCollection(name, collections[c], creationOptions).
       then(collection => {
         this.log.info(`Created collection ${name}`);
         return collection;

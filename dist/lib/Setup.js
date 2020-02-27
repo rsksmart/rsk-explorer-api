@@ -1,12 +1,20 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.Setup = Setup;exports.default = exports.dataBase = void 0;var _collections = _interopRequireDefault(require("./collections"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.getNetInfo = getNetInfo;exports.Setup = Setup;exports.default = exports.dataBase = void 0;var _collections = _interopRequireDefault(require("./collections"));
 var _config = _interopRequireDefault(require("./config"));
 var _Db = _interopRequireDefault(require("./Db.js"));
 var _StoredConfig = require("./StoredConfig");
 var _nod3Connect = _interopRequireDefault(require("./nod3Connect"));
-var _initialConfiguration = _interopRequireDefault(require("./initialConfiguration"));
-var _NativeContracts = _interopRequireDefault(require("./NativeContracts"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _initialConfiguration = _interopRequireDefault(require("./initialConfiguration"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const dataBase = new _Db.default(_config.default.db);exports.dataBase = dataBase;
+
+async function getNetInfo(nod3) {
+  try {
+    let net = await nod3.net.version();
+    return net;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
 
 async function Setup({ log } = {}) {
   log = log || console;
@@ -16,7 +24,7 @@ async function Setup({ log } = {}) {
 
   const createCollections = async () => {
     const names = _config.default.collectionsNames;
-    const validate = _config.default.validateCollections;
+    const validate = _config.default.blocks.validateCollections;
     return dataBase.createCollections(_collections.default, { names, validate });
   };
 
@@ -26,7 +34,7 @@ async function Setup({ log } = {}) {
         log.debug(err);
         throw new Error(`Cannot connect to the node`);
       });
-      const net = await _nod3Connect.default.net.version();
+      const net = await getNetInfo(_nod3Connect.default);
       return Object.assign(_initialConfiguration.default, { net });
     } catch (err) {
       return Promise.reject(err);
@@ -57,14 +65,13 @@ async function Setup({ log } = {}) {
       if (skipCheck) initConfig = await storedConfig.getConfig();else
       initConfig = await checkSetup();
       if (!initConfig) throw new Error(`invalid init config, run checkSetup first`);
-      const nativeContracts = (0, _NativeContracts.default)(initConfig);
-      return { initConfig, db, nativeContracts };
+      return { initConfig, db };
     } catch (err) {
       log.error(err);
       process.exit(9);
     }
   };
-  return Object.freeze({ start, createCollections, checkSetup });
+  return Object.freeze({ start, createCollections, checkSetup, getInitConfig });
 }var _default =
 
 Setup;exports.default = _default;

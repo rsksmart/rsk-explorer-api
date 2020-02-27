@@ -11,12 +11,12 @@ var _types = require("../../lib/types");function _interopRequireDefault(obj) {re
 const log = (0, _Logger.default)('UserRequests', _config.default.blocks.log);
 const verifierConfig = _config.default.api.contractVerifier;
 
-(0, _dataSource.default)({ log, skipCheck: true }).then(({ db, nativeContracts }) => {
+(0, _dataSource.default)({ log, skipCheck: true }).then(({ db, initConfig }) => {
   const collections = (0, _blocksCollections.getDbBlocksCollections)(db);
   const cache = new _RequestCache.RequestCache();
   // TODO, conditional creation
   const verifierModule = (0, _ContractVerifierModule.default)(db, collections, verifierConfig, { log });
-  const addressModule = (0, _AddressModule.default)({ db, collections, nativeContracts, log });
+  const addressModule = (0, _AddressModule.default)({ db, collections, initConfig, log });
 
   process.on('message', async msg => {
     try {

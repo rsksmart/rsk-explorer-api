@@ -1,44 +1,8 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.isNullData = exports.sumDigits = exports.isBlockObject = exports.isValidBlockNumber = exports.jsonDecode = exports.jsonEncode = exports.keccak256 = exports.applyDecimals = exports.base64toHex = exports.btoa = exports.atob = exports.includesAll = exports.hasValue = exports.arraySymmetricDifference = exports.arrayDifference = exports.arrayIntersection = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.newBigNumber = exports.bigNumberDifference = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = exports.isValidAddress = exports.isAddress = exports.remove0x = exports.add0x = exports.isHexString = void 0;var _bignumber = require("bignumber.js");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });var _exportNames = { bigNumberDoc: true, isBigNumber: true, serializeBigNumber: true, isSerializedBigNumber: true, unSerializeBigNumber: true, bigNumberToSring: true, bigNumberSum: true, bigNumberDifference: true, newBigNumber: true, isObj: true, serialize: true, checkBlockHash: true, isBlockHash: true, blockQuery: true, getBestBlock: true, applyDecimals: true, isValidBlockNumber: true, isBlockObject: true, toAscii: true };exports.toAscii = exports.isBlockObject = exports.isValidBlockNumber = exports.applyDecimals = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.isObj = exports.newBigNumber = exports.bigNumberDifference = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = void 0;var _bignumber = require("bignumber.js");
 var _types = require("./types");
 var _mongodb = require("mongodb");
-var _keccak = _interopRequireDefault(require("keccak"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-
-const isHexString = str => {
-  str = str.substring(0, 2) === '0x' ? str.substring(2) : str;
-  return /^[0-9a-f]+$/i.test(str);
-};exports.isHexString = isHexString;
-
-const add0x = str => {
-  let s = str;
-  let prefix = s[0] === '-' ? '-' : '';
-  if (prefix) s = s.substring(prefix.length);
-  if (isHexString(s) && s.substring(0, 2) !== '0x') {
-    return `${prefix}0x${s}`;
-  }
-  return str;
-};exports.add0x = add0x;
-
-const remove0x = value => {
-  if (!value) return value;
-  if (typeof value === 'object') return value;
-  if (typeof value === 'boolean') return value;
-  if (value === '0x') return '';
-  let s = `${value}`;
-  let prefix = s[0] === '-' ? '-' : '';
-  if (prefix) s = s.substring(prefix.length);
-  if (isHexString(s)) {
-    if (s.substring(0, 2) === '0x') return prefix + s.substr(2);
-  }
-  return value;
-};exports.remove0x = remove0x;
-
-const isAddress = address => {
-  return /^(0x)?[0-9a-f]{40}$/i.test(address);
-};exports.isAddress = isAddress;
-
-const isValidAddress = address => {
-  throw new Error('Not impemented');
-};exports.isValidAddress = isValidAddress;
+var _rskUtils = require("rsk-utils");
+Object.keys(_rskUtils).forEach(function (key) {if (key === "default" || key === "__esModule") return;if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;Object.defineProperty(exports, key, { enumerable: true, get: function () {return _rskUtils[key];} });});
 
 const bigNumberDoc = bigNumber => {
   return '0x' + bigNumber.toString(16);
@@ -89,11 +53,8 @@ const bigNumberDifference = (a, b) => {
 const newBigNumber = value => isBigNumber(value) ? value : new _bignumber.BigNumber(value);exports.newBigNumber = newBigNumber;
 
 const isObj = value => {
-  if (undefined === value || value === null) return false;
-  let is = typeof value === 'object';
-  is = is ? value instanceof Array === false : is;
-  return is;
-};
+  return !Array.isArray(value) && typeof value === 'object' && value !== null;
+};exports.isObj = isObj;
 
 const serialize = obj => {
   if (typeof obj !== 'object') return obj;
@@ -147,28 +108,6 @@ const getBestBlock = blocks => {
   return blocks[0];
 };exports.getBestBlock = getBestBlock;
 
-const arrayIntersection = (a, b) => a.filter(v => b.includes(v));exports.arrayIntersection = arrayIntersection;
-
-const arrayDifference = (a, b) => a.filter(x => !b.includes(x));exports.arrayDifference = arrayDifference;
-
-const arraySymmetricDifference = (a, b) => arrayDifference(a, b).concat(b.filter(x => !a.includes(x)));exports.arraySymmetricDifference = arraySymmetricDifference;
-
-const hasValue = (arr, search) => arrayIntersection(arr, search).length > 0;exports.hasValue = hasValue;
-
-const includesAll = (arr, search) => !search.map(t => arr.indexOf(t)).filter(i => i < 0).length;exports.includesAll = includesAll;
-
-const atob = str => Buffer.from(str, 'base64').toString('binary');exports.atob = atob;
-
-const btoa = base64 => Buffer.from(base64, 'binary').toString('base64');exports.btoa = btoa;
-
-const base64toHex = base64 => {
-  let raw = atob(base64);
-  return '0x' + [...new Array(raw.length)].map((c, i) => {
-    let h = raw.charCodeAt(i).toString(16);
-    return h.length === 2 ? h : `0${h}`;
-  }).join('').toLowerCase();
-};exports.base64toHex = base64toHex;
-
 const applyDecimals = (value, decimals = 18) => {
   value = newBigNumber(value);
   const divisor = new _bignumber.BigNumber(10).exponentiatedBy(parseInt(decimals));
@@ -176,25 +115,13 @@ const applyDecimals = (value, decimals = 18) => {
   return result;
 };exports.applyDecimals = applyDecimals;
 
-const keccak256 = (input, format = 'hex') => (0, _keccak.default)('keccak256').update(input).digest(format);exports.keccak256 = keccak256;
-
-const jsonEncode = value => btoa(JSON.stringify(value));exports.jsonEncode = jsonEncode;
-
-const jsonDecode = value => JSON.parse(atob(value));exports.jsonDecode = jsonDecode;
-
 const isValidBlockNumber = number => parseInt(number) === number && number >= 0;exports.isValidBlockNumber = isValidBlockNumber;
 
 const isBlockObject = block => {
   if (typeof block !== 'object') return false;
   const { hash, number, transactions, miner } = block;
   if (!transactions) return false;
-  return isBlockHash(hash) && isAddress(miner) && isValidBlockNumber(number);
+  return isBlockHash(hash) && (0, _rskUtils.isAddress)(miner) && isValidBlockNumber(number);
 };exports.isBlockObject = isBlockObject;
 
-const sumDigits = value => `${value}`.split('').map(Number).reduce((a, b) => a + b, 0);exports.sumDigits = sumDigits;
-
-const isNullData = value => {
-  const test = value && remove0x(value);
-  if (sumDigits(test) === 0) return true;
-  return test === '' ? true : !test;
-};exports.isNullData = isNullData;
+const toAscii = hexString => (0, _rskUtils.toBuffer)((0, _rskUtils.remove0x)(hexString), 'hex').toString('ascii').replace(/\0/g, '');exports.toAscii = toAscii;

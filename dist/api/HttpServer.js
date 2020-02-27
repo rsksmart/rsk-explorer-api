@@ -10,13 +10,17 @@ const HttpServer = ({ api, status, log }) => {
   app.set('etag', false);
   app.set('x-powered-by', false);
 
+  // status
   app.get('/status', (req, res) => {
     const data = status.getState().data;
     res.send(data);
   });
 
-  app.get('/circulating', (req, res) => {
-    const data = api.getCirculatingSupply().data;
+  // circulating supply
+  app.get('/circulating/:field?', (req, res) => {
+    let { field } = req.params;
+    let { data } = api.getCirculatingSupply();
+    data = field ? `${data[field]}` : data;
     res.send(data);
   });
 

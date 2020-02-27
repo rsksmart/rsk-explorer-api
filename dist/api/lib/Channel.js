@@ -28,12 +28,12 @@ function Channel(channelName, io) {
     }
   };
 
-  const confirmSubsctption = socket => {
+  const confirmSubscription = socket => {
     socket.emit('subscription', { channel: channelName });
   };
   const join = socket => {
     channelEvent('join', socket);
-    confirmSubsctption(socket);
+    confirmSubscription(socket);
   };
 
   const leave = socket => {

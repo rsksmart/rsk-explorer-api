@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Block = void 0;var _DataCollector = require("../lib/DataCollector");
 var _utils = require("../../lib/utils");
+var _blocksMetadata = require("../lib/blocksMetadata");
 class Block extends _DataCollector.DataCollectorItem {
   constructor(collections, key) {
     const { Blocks } = collections;
@@ -38,7 +39,7 @@ class Block extends _DataCollector.DataCollectorItem {
                             *          $ref: '#/responses/NotFound'
                             */
 
-      getBlock: params => {
+      getBlock: async params => {
         const hashOrNumber = params.hashOrNumber || params.hash || params.number;
         let query = {};
         if ((0, _utils.isBlockHash)(hashOrNumber)) {
@@ -46,7 +47,16 @@ class Block extends _DataCollector.DataCollectorItem {
         } else {
           query = { number: parseInt(hashOrNumber) };
         }
-        return this.getPrevNext(query, { number: 1 });
+        let result = await this.getPrevNext(query, {});
+        if (result) {
+          let { prev, data, next } = result;
+          if (prev) {
+            result.data = (0, _blocksMetadata.addMetadataToBlocks)([prev, data]).pop();
+            result.prev = filterBlockFields(prev);
+          }
+          if (next) result.next = filterBlockFields(next);
+        }
+        return result;
       },
       /**
           * @swagger
@@ -79,13 +89,39 @@ class Block extends _DataCollector.DataCollectorItem {
           *          $ref: '#/responses/NotFound'
           */
 
-      getBlocks: params => {
-        const { miner } = params;
+      getBlocks: async params => {
+        let { miner, addMetadata } = params;
         const query = miner ? { miner } : {};
-        return this.getPageData(query, params);
+        let result = await this.getPageData(query, params);
+        // add blocks metadata
+        if (result.data && addMetadata) {
+          try {
+            let reverse = result.pages.sortDir === -1;
+            let data = result.data.slice();
+            if (reverse) data.reverse();
+            let { number } = data[0];
+            let { prev } = await this.getPrevNext({ number }, {});
+            let topBlock = data[0];
+            // insert block at begin to compute first block metadata
+            if (prev) result.data.unshift(prev);
+            data = (0, _blocksMetadata.addMetadataToBlocks)(data);
+            // restore first block without metadata
+            if (!prev) data.unshift(topBlock);
+            if (reverse) data.reverse();
+            result.data = data;
+          } catch (err) {
+            return result;
+          }
+        }
+        return result;
       } };
 
-  }}exports.Block = Block;var _default =
+  }}exports.Block = Block;
 
+
+function filterBlockFields(block) {
+  let { number, _id } = block;
+  return { number, _id };
+}var _default =
 
 Block;exports.default = _default;

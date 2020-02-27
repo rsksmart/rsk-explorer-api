@@ -9,8 +9,8 @@ class Emitter extends _events.EventEmitter {}
 
 class RequestBlocks extends _BlocksBase.BlocksBase {
   constructor(db, options) {
-    let { nativeContracts, log } = options;
-    super(db, { nativeContracts, log });
+    let { log, initConfig } = options;
+    super(db, { log, initConfig });
     this.queueSize = options.blocksQueueSize || 50;
     this.pending = new Set();
     this.requested = new Map();
@@ -90,8 +90,8 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
         this.log.debug(`${hashOrNumber}: ${hash}`);
       }
       hash = hash || hashOrNumber;
-      const { nod3, collections, log, nativeContracts } = this;
-      let block = await getBlock(hash, { nod3, collections, log, nativeContracts });
+      const { nod3, collections, log, initConfig } = this;
+      let block = await getBlock(hash, { nod3, collections, log, initConfig });
       return block;
     } catch (err) {
       return Promise.reject(err);
@@ -133,13 +133,13 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
   }}exports.RequestBlocks = RequestBlocks;
 
 
-async function getBlock(hashOrNumber, { nod3, collections, log, nativeContracts }) {
+async function getBlock(hashOrNumber, { nod3, collections, log, initConfig }) {
   if ((0, _utils.isBlockHash)(hashOrNumber)) {
     let block = await (0, _Block.getBlockFromDb)(hashOrNumber, collections.Blocks);
     if (block) return { block, key: hashOrNumber };
   }
   try {
-    let newBlock = new _Block.Block(hashOrNumber, { nod3, collections, log, nativeContracts });
+    let newBlock = new _Block.Block(hashOrNumber, { nod3, collections, log, initConfig });
     let block = await newBlock.save().then(res => {
       if (!res || !res.data) return;
       return res.data.block;

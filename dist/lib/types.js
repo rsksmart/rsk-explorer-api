@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.EVMversions = exports.fields = exports.TOTAL_SUPPLY = exports.OBJECT_ID = exports.BIG_NUMBER = exports.MODULES = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = void 0;var _errors = require("../lib/errors");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.bitcoinRskNetWorks = exports.bitcoinNetworks = exports.EVMversions = exports.fields = exports.TOTAL_SUPPLY = exports.OBJECT_ID = exports.BIG_NUMBER = exports.MODULES = exports.actions = exports.events = exports.tokensInterfaces = exports.contractsInterfaces = exports.addrTypes = exports.errors = exports.txTypes = void 0;var _errors = require("../lib/errors");
 
 const txTypes = {
   default: 'normal',
@@ -83,6 +83,16 @@ const EVMversions = [
 'spuriousDragon',
 'byzantium',
 'constantinople',
-'petersburg'];exports.EVMversions = EVMversions;var _default =
+'petersburg'];exports.EVMversions = EVMversions;
+
+const bitcoinNetworks = {
+  TESTNET: 'testnet',
+  MAINNET: 'mainnet' };exports.bitcoinNetworks = bitcoinNetworks;
+
+
+const bitcoinRskNetWorks = {
+  31: bitcoinNetworks.TESTNET,
+  30: bitcoinNetworks.MAINNET };exports.bitcoinRskNetWorks = bitcoinRskNetWorks;var _default =
+
 
 { txTypes, errors, addrTypes, contractsInterfaces };exports.default = _default;

@@ -68,6 +68,14 @@ definitions:
             type: integer
           next:
             type: string
+          fields:
+            type:
+              oneOf:
+                - array
+                - object
+
+
+
 
   Response:
     type: object

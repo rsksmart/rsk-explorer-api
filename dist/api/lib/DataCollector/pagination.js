@@ -1,8 +1,18 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.generateCursorQuery = generateCursorQuery;exports.formatSearchValue = formatSearchValue;exports.generateSort = generateSort;exports.generateQuery = generateQuery;exports.parseParams = parseParams;exports.findPages = findPages;exports.aggregatePages = aggregatePages;exports.modifyAggregate = modifyAggregate;exports.getAggregateTotal = getAggregateTotal;exports.paginationResponse = paginationResponse;exports.find = find;exports.encodeValue = encodeValue;exports.generateCursor = generateCursor;var _types = require("../../../lib/types");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.countDocuments = countDocuments;exports.generateCursorQuery = generateCursorQuery;exports.formatSearchValue = formatSearchValue;exports.generateSort = generateSort;exports.generateQuery = generateQuery;exports.parseParams = parseParams;exports.findPages = findPages;exports.aggregatePages = aggregatePages;exports.modifyAggregate = modifyAggregate;exports.getAggregateTotal = getAggregateTotal;exports.paginationResponse = paginationResponse;exports.find = find;exports.encodeValue = encodeValue;exports.generateCursor = generateCursor;var _types = require("../../../lib/types");
 var _mongodb = require("mongodb");
 var _config = _interopRequireDefault(require("../../../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const { MAX_LIMIT, MAX_PAGES } = _config.default.api;
 const SEPARATOR = '__';
+
+async function countDocuments(collection, query) {
+  query = query || {};
+  try {
+    let result = await collection.countDocuments(query);
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
 
 function generateCursorQuery({ cursorField, sortDir, value, sortField }) {
   if (!value) return;
@@ -113,7 +123,7 @@ async function findPages(collection, cursorData, query, params) {
     const $query = generateQuery(params, query);
     const $sort = generateSort(params);
     let data = !countOnly ? await find(collection, $query, $sort, queryLimit + 1, fields) : null;
-    let total = count ? await collection.countDocuments(query) : null;
+    let total = count ? await countDocuments(collection, query) : null;
     return paginationResponse(params, data, total);
   } catch (err) {
     return Promise.reject(err);

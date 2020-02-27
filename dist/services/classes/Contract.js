@@ -1,14 +1,14 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _BcThing = require("./BcThing");
-var _ContractParser = _interopRequireDefault(require("../../lib/ContractParser/ContractParser"));
+var _rskContractParser = _interopRequireDefault(require("rsk-contract-parser"));
 var _types = require("../../lib/types");
 var _TokenAddress = _interopRequireDefault(require("./TokenAddress"));
 var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Contract extends _BcThing.BcThing {
-  constructor(address, creationData, nod3, nativeContracts) {
-    super({ nod3, nativeContracts });
+  constructor(address, creationData, { nod3, initConfig }) {
+    super({ nod3, initConfig });
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`);
-    this.parser = new _ContractParser.default({ nativeContracts });
+    this.parser = new _rskContractParser.default({ initConfig, nod3 });
     this.address = address;
     this.creationData = creationData;
     const createdByTx = creationData && creationData.tx ? creationData.tx : null;

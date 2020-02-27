@@ -3,10 +3,11 @@ var _Contract = _interopRequireDefault(require("./Contract"));function _interopR
 
 class TokenAddress extends _BcThing.BcThing {
   constructor(address, contract) {
-    super();
     if (!(contract instanceof _Contract.default)) {
       throw new Error('contract is not instance of Contract');
     }
+    const { initConfig } = contract;
+    super({ initConfig });
     if (!this.isAddress(address)) {
       throw new Error(`TokenAddress: invalid address: ${address}`);
     }

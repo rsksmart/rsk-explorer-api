@@ -1,10 +1,13 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports._methodNotImplemented = exports.BcThing = void 0;var _utils = require("../../lib/utils");
+var _NativeContracts = _interopRequireDefault(require("../../lib/NativeContracts"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class BcThing {
-  constructor({ nod3, nativeContracts, collections } = {}) {
+  constructor({ nod3, initConfig, collections } = {}) {
+    if (!initConfig) throw new Error('missing init config');
+    this.initConfig = initConfig;
     this.nod3 = nod3;
     this.collections = collections;
-    this.nativeContracts = nativeContracts;
+    this.nativeContracts = (0, _NativeContracts.default)(initConfig);
     this.data = {};
   }
   getData(serialize = false) {

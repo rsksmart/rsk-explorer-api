@@ -1,15 +1,15 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Status = void 0;var _DataCollector = require("./lib/DataCollector/");
-var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const { collectionsNames } = _config.default;
+var _blocksCollections = require("../lib/blocksCollections");
 
 class Status extends _DataCollector.DataCollector {
   constructor(db) {
-    const collectionName = collectionsNames.Status;
-    super(db, { collectionName });
+    const collections = (0, _blocksCollections.getDbBlocksCollections)(db);
+    const { Status, Blocks } = collections;
+    super(db, { collectionName: 'Status' });
     this.tickDelay = 5000;
     this.state = {};
-    this.addModule(new _DataCollector.DataCollectorItem(db.collection(collectionsNames.Status), 'Status'));
-    this.addModule(new _DataCollector.DataCollectorItem(db.collection(collectionsNames.Blocks), 'Blocks'));
+    this.addModule(new _DataCollector.DataCollectorItem(Status, 'Status'));
+    this.addModule(new _DataCollector.DataCollectorItem(Blocks, 'Blocks'));
   }
   tick() {
     this.updateState().then(newState => {

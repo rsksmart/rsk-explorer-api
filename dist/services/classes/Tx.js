@@ -1,16 +1,17 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Tx = void 0;var _BcThing = require("./BcThing");
 var _Event = require("./Event");
-var _ContractParser = _interopRequireDefault(require("../../lib/ContractParser/ContractParser"));
+var _rskContractParser = _interopRequireDefault(require("rsk-contract-parser"));
 var _types = require("../../lib/types");
 var _ids = require("../../lib/ids");
 var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 class Tx extends _BcThing.BcThing {
-  constructor(hash, timestamp, { nod3, nativeContracts } = {}) {
+  constructor(hash, timestamp, { txData, nod3, initConfig } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`);
-    super({ nod3, nativeContracts });
+    super({ nod3, initConfig });
     this.hash = hash;
     this.timestamp = timestamp;
-    this.contractParser = new _ContractParser.default({ nativeContracts });
+    this.contractParser = new _rskContractParser.default({ initConfig, nod3 });
+    this.txData = txData;
   }
   async fetch() {
     try {
@@ -21,12 +22,14 @@ class Tx extends _BcThing.BcThing {
     } catch (err) {
       return Promise.reject(err);
     }
+
   }
 
   async getTx() {
     try {
       let txHash = this.hash;
-      let tx = await this.getTransactionByHash(txHash);
+      let tx = this.txData;
+      if (!this.isTxData(tx)) tx = await this.getTransactionByHash(txHash);
       if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`);
       let receipt = await this.getTxReceipt(txHash);
       if (!receipt) throw new Error(`The Tx ${txHash} .receipt is: ${receipt} `);
@@ -49,12 +52,11 @@ class Tx extends _BcThing.BcThing {
   }
   async parseEvents(tx) {
     try {
-      let topics = await this.parseLogs(tx.receipt.logs);
-      return topics.map(topic => {
-        topic = (0, _Event.formatEvent)(topic, tx);
-        let event = Object.assign({}, topic);
-        delete event.eventId;
-        delete topic._id;
+      let logs = await this.parseLogs(tx.receipt.logs);
+      return logs.map(l => {
+        l = (0, _Event.formatEvent)(l, tx);
+        let event = Object.assign({}, l);
+        delete l._id;
         return event;
       });
     } catch (err) {
@@ -68,7 +70,7 @@ class Tx extends _BcThing.BcThing {
     let nativeType = _types.txTypes[toIsNative];
     if (nativeType) tx.txType = nativeType;
     if ((0, _utils.isAddress)(receipt.contractAddress)) tx.txType = _types.txTypes.contract;
-    tx._id = (0, _ids.getTxOrEventId)(tx);
+    tx.txId = (0, _ids.getTxOrEventId)(tx);
     return tx;
   }
 
@@ -77,6 +79,10 @@ class Tx extends _BcThing.BcThing {
     return new Promise((resolve, reject) => {
       process.nextTick(() => resolve(parser.parseTxLogs(logs)));
     });
+  }
+  isTxData(data) {
+    if (!data || typeof data !== 'object') return;
+    return data.hash && data.blockHash && data.input;
   }}exports.Tx = Tx;var _default =
 
 
