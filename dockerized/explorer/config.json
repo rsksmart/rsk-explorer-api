@@ -4,7 +4,8 @@
   },
   "api": {
     "address": "0.0.0.0",
-    "port": 3003
+    "port": 3003,
+    "exposeDoc": true
   },
   "db": {
     "server": "mongod01"
