@@ -101,6 +101,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   getBlocks (check) {
+    check = check || {}
     try {
       let segments = check.missingSegments || []
       let invalid = check.invalid || []
