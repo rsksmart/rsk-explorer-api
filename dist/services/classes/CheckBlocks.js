@@ -101,6 +101,7 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   getBlocks(check) {
+    check = check || {};
     try {
       let segments = check.missingSegments || [];
       let invalid = check.invalid || [];

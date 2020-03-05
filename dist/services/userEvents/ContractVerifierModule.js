@@ -5,7 +5,7 @@ var _mongodb = require("mongodb");function _interopRequireDefault(obj) {return o
 
 const versionsId = '_contractVerifierVersions';exports.versionsId = versionsId;
 
-function ContractVerifierModule(db, collections, { url }, { log }) {
+function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
   log = log || console;
   const storedConfig = (0, _StoredConfig.StoredConfig)(db);
   const socket = _socket.default.connect(url, { reconnect: true });

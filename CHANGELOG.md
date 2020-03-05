@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.5] - 2019-03-05
+
+### Fixed
+
+- Blocks service: Db error on the first run
+- Errors when running against a regtest node
+
+### Changed
+
+- Docker: expose api documentation
+
 ## [1.0.4] - 2019-02-27
 
 ### Added

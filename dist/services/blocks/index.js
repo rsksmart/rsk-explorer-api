@@ -1,4 +1,4 @@
-"use strict";var _path = _interopRequireDefault(require("path"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.setupBlocks = setupBlocks;var _path = _interopRequireDefault(require("path"));
 var _child_process = require("child_process");
 var _config = _interopRequireDefault(require("../../lib/config"));
 var _Logger = _interopRequireDefault(require("../../lib/Logger"));
@@ -13,9 +13,14 @@ config.log = log;
 
 startBlocks();
 
-async function startBlocks() {
+async function setupBlocks() {
   const setup = await (0, _Setup.default)({ log });
   await setup.createCollections();
+  return setup;
+}
+
+async function startBlocks() {
+  const setup = await setupBlocks();
   const { db, initConfig } = await setup.start();
   config.initConfig = initConfig;
   const Status = new _BlocksStatus.BlocksStatus(db, config);
