@@ -1,12 +1,12 @@
 version: "3"
 services:
-  explorer01:
+  explorer-api:
     build: .
-    image: explorer01:latest
+    image: explorer-api01:latest
     depends_on:
       - rsk-node
       - mongod
-    container_name: explorer01
+    container_name: explorer-api01
     ports:
       - "3003:3003"
     networks:
