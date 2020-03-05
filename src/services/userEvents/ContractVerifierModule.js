@@ -5,7 +5,7 @@ import { ObjectID } from 'mongodb'
 // id to store solc versions list on Config collection
 export const versionsId = '_contractVerifierVersions'
 
-export function ContractVerifierModule (db, collections, { url }, { log }) {
+export function ContractVerifierModule (db, collections, { url } = {}, { log } = {}) {
   log = log || console
   const storedConfig = StoredConfig(db)
   const socket = io.connect(url, { reconnect: true })
