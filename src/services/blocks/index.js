@@ -13,9 +13,14 @@ config.log = log
 
 startBlocks()
 
-async function startBlocks () {
+export async function setupBlocks () {
   const setup = await Setup({ log })
   await setup.createCollections()
+  return setup
+}
+
+async function startBlocks () {
+  const setup = await setupBlocks()
   const { db, initConfig } = await setup.start()
   config.initConfig = initConfig
   const Status = new BlocksStatus(db, config)
