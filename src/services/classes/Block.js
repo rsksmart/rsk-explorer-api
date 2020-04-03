@@ -309,8 +309,9 @@ export class Block extends BcThing {
   }
 
   newContract (address, data) {
-    const { nod3, initConfig } = this
-    let contract = new Contract(address, data, { nod3, initConfig })
+    let { nod3, initConfig } = this
+    let { block } = this.data
+    let contract = new Contract(address, data, { nod3, initConfig, block })
     this.contracts[address] = contract
     return contract
   }
