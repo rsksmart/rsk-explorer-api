@@ -22,7 +22,6 @@ export class Tx extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
-
   }
 
   async getTx () {

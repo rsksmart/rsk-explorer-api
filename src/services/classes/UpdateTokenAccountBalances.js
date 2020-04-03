@@ -25,7 +25,6 @@ export async function updateTokenAccountBalances (block, { nod3, collections, lo
         return Promise.reject(err)
       }
     })
-
   } catch (err) {
     return Promise.reject(err)
   }
