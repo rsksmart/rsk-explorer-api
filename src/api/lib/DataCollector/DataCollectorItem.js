@@ -127,8 +127,8 @@ export class DataCollectorItem {
   }
   /**
    *  Resolves item query parsing params
-   * @param {*} query 
-   * @param {*} params 
+   * @param {*} query
+   * @param {*} params
    */
   async getItem (query, { fields, getPrevNext }) {
     try {

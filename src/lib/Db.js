@@ -1,6 +1,5 @@
 import { MongoClient } from 'mongodb'
 
-
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true }
 export class Db {
   constructor (config) {
