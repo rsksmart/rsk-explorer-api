@@ -4,6 +4,7 @@ import { BlocksBase } from '../../lib/BlocksBase'
 import { events as et } from '../../lib/types'
 import { getBlockFromDb, Block } from './Block'
 import { isBlockHash } from '../../lib/utils'
+import { updateTokenAccountBalances } from './UpdateTokenAccountBalances'
 
 class Emitter extends EventEmitter { }
 
@@ -140,9 +141,11 @@ export async function getBlock (hashOrNumber, { nod3, collections, log, initConf
   }
   try {
     let newBlock = new Block(hashOrNumber, { nod3, collections, log, initConfig })
-    let block = await newBlock.save().then(res => {
+    let block = await newBlock.save().then(async res => {
       if (!res || !res.data) return
-      return res.data.block
+      let block = res.data.block
+      await updateTokenAccountBalances(block, { nod3, collections, initConfig, log })
+      return block
     })
     return { block, key: hashOrNumber }
   } catch (error) {
