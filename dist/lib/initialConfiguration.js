@@ -2,9 +2,9 @@
 var _fs = _interopRequireDefault(require("fs"));
 var _utils = require("./utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-
-
-
+/**
+                                                                                                                               *
+                                                                                                                               */
 
 const defaultConfig = {
   nativeContracts: {

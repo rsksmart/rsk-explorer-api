@@ -2,7 +2,7 @@
 var _StoredConfig = require("../../lib/StoredConfig");
 var _mongodb = require("mongodb");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-
+// id to store solc versions list on Config collection
 const versionsId = '_contractVerifierVersions';exports.versionsId = versionsId;
 
 function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {

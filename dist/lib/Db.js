@@ -1,6 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Db = void 0;var _mongodb = require("mongodb");
 
-
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true };
 class Db {
   constructor(config) {

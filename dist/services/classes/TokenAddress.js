@@ -1,10 +1,15 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TokenAddress = void 0;var _BcThing = require("./BcThing");
-var _Contract = _interopRequireDefault(require("./Contract"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _Contract = _interopRequireDefault(require("./Contract"));
+var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class TokenAddress extends _BcThing.BcThing {
   constructor(address, contract) {
     if (!(contract instanceof _Contract.default)) {
       throw new Error('contract is not instance of Contract');
+    }
+    let { block } = contract;
+    if (!(0, _utils.isBlockObject)(block)) {
+      throw new Error(`Block must be a block object`);
     }
     const { initConfig } = contract;
     super({ initConfig });
@@ -13,10 +18,12 @@ class TokenAddress extends _BcThing.BcThing {
     }
     this.Contract = contract;
     this.address = address;
+    let { number, hash } = block;
     this.data = {
       address,
       contract: this.Contract.address,
-      balance: null };
+      balance: null,
+      block: { number, hash } };
 
   }
   async fetch() {
