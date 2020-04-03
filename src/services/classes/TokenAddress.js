@@ -1,10 +1,15 @@
 import { BcThing } from './BcThing'
 import Contract from './Contract'
+import { isBlockObject } from '../../lib/utils'
 
 export class TokenAddress extends BcThing {
   constructor (address, contract) {
     if (!(contract instanceof Contract)) {
       throw new Error('contract is not instance of Contract')
+    }
+    let { block } = contract
+    if (!isBlockObject(block)) {
+      throw new Error(`Block must be a block object`)
     }
     const { initConfig } = contract
     super({ initConfig })
@@ -13,10 +18,12 @@ export class TokenAddress extends BcThing {
     }
     this.Contract = contract
     this.address = address
+    let { number, hash } = block
     this.data = {
       address,
       contract: this.Contract.address,
-      balance: null
+      balance: null,
+      block: { number, hash }
     }
   }
   async fetch () {
