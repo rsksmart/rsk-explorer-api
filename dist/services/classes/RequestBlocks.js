@@ -4,6 +4,7 @@ var _BlocksBase = require("../../lib/BlocksBase");
 var _types = require("../../lib/types");
 var _Block = require("./Block");
 var _utils = require("../../lib/utils");
+var _UpdateTokenAccountBalances = require("./UpdateTokenAccountBalances");
 
 class Emitter extends _events.EventEmitter {}
 
@@ -140,9 +141,11 @@ async function getBlock(hashOrNumber, { nod3, collections, log, initConfig }) {
   }
   try {
     let newBlock = new _Block.Block(hashOrNumber, { nod3, collections, log, initConfig });
-    let block = await newBlock.save().then(res => {
+    let block = await newBlock.save().then(async res => {
       if (!res || !res.data) return;
-      return res.data.block;
+      let block = res.data.block;
+      await (0, _UpdateTokenAccountBalances.updateTokenAccountBalances)(block, { nod3, collections, initConfig, log });
+      return block;
     });
     return { block, key: hashOrNumber };
   } catch (error) {

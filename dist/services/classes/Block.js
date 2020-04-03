@@ -309,8 +309,9 @@ class Block extends _BcThing.BcThing {
   }
 
   newContract(address, data) {
-    const { nod3, initConfig } = this;
-    let contract = new _Contract.default(address, data, { nod3, initConfig });
+    let { nod3, initConfig } = this;
+    let { block } = this.data;
+    let contract = new _Contract.default(address, data, { nod3, initConfig, block });
     this.contracts[address] = contract;
     return contract;
   }
@@ -386,6 +387,8 @@ const getBlockFromDb = async (blockHashOrNumber, collection) => {
 
 const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
   try {
+    blockNumber = parseInt(blockNumber);
+    if (blockNumber < 1) throw new Error(`The blockNumber is wrong`);
     if (!blockHash) throw new Error(`Empty block hash`);
     let hash = blockHash;
     let result = {};

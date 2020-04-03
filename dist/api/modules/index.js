@@ -8,7 +8,7 @@ var _Stats = require("./Stats");
 var _Summary = require("./Summary");
 
 var _ContractVerification = require("./ContractVerification");
-var _apiTools = require("../lib/apiTools");
+var _apiTools = require("../lib/apiTools"); // import { ExtendedStats } from './ExtendedStats'
 
 const apiModules = { Block: _Block.Block, Tx: _Tx.Tx, Address: _Address.Address, Event: _Event.Event, Token: _Token.Token, TxPending: _TxPending.TxPending, Stats: _Stats.Stats, Summary: _Summary.Summary, ContractVerification: _ContractVerification.ContractVerification };
 
