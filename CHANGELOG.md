@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.6] - 2019-04-03
+
+### Added
+
+- Update the balances of the token accounts, recovered in the previous block, when a new block is saved.
+
 ## [1.0.5] - 2019-03-05
 
 ### Fixed
