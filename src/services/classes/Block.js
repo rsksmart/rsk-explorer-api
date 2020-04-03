@@ -387,6 +387,8 @@ export const getBlockFromDb = async (blockHashOrNumber, collection) => {
 
 export const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
   try {
+    blockNumber = parseInt(blockNumber)
+    if (blockNumber < 1) throw new Error(`The blockNumber is wrong`)
     if (!blockHash) throw new Error(`Empty block hash`)
     let hash = blockHash
     let result = {}
