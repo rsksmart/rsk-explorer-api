@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.7] - 2019-04-08
+
+### Fixed
+
+- Include event decoded fields in tx.receipt.logs
+
 ## [1.0.6] - 2019-04-03
 
 ### Added
