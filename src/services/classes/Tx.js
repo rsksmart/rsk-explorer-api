@@ -117,7 +117,6 @@ export class Tx extends BcThing {
   getTxReceipt (txHash) {
     return this.nod3.eth.getTransactionReceipt(txHash)
   }
-
   txFormat (tx) {
     let type = txTypes.default
     const receipt = tx.receipt || {}
