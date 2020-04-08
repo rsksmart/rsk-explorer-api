@@ -52,6 +52,7 @@ export class Tx extends BcThing {
   async parseEvents (tx) {
     try {
       let logs = await this.parseLogs(tx.receipt.logs)
+      tx.receipt.logs = logs
       return logs.map(l => {
         l = formatEvent(l, tx)
         let event = Object.assign({}, l)
