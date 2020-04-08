@@ -52,6 +52,7 @@ class Tx extends _BcThing.BcThing {
   async parseEvents(tx) {
     try {
       let logs = await this.parseLogs(tx.receipt.logs);
+      tx.receipt.logs = logs;
       return logs.map(l => {
         l = (0, _Event.formatEvent)(l, tx);
         let event = Object.assign({}, l);
