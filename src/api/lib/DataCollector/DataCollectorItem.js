@@ -81,7 +81,7 @@ export class DataCollectorItem {
 
     let { limit, next, prev, fields, count, countOnly, page, getPages } = params
 
-    fields = parseFields(fields)
+    // fields = parseFields(fields)
     if (!fields) fields = this.getDefaultsFields()
 
     sort = filterSort(sort, sortable, defaultSort)
