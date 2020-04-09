@@ -2,7 +2,8 @@ import Address from './Address'
 import { isAddress } from '../../lib/utils'
 
 export class Addresses {
-  constructor ({ nod3, initConfig }) {
+  constructor ({ nod3, initConfig, collections }) {
+    this.collections = collections
     this.nod3 = nod3
     this.initConfig = initConfig
     this.addresses = {}
@@ -11,8 +12,8 @@ export class Addresses {
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
     if (!this.addresses[address]) {
       options = options || {}
-      let { nod3, initConfig } = this
-      options = Object.assign(options, { nod3, initConfig })
+      let { nod3, initConfig, collections } = this
+      options = Object.assign(options, { nod3, initConfig, collections })
       this.addresses[address] = new Address(address, options)
     }
     return this.addresses[address]

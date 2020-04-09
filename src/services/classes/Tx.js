@@ -7,16 +7,16 @@ import { getTxOrEventId } from '../../lib/ids'
 import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { addresses, txData, blockTrace, traceData, nod3, initConfig, notTrace } = {}) {
+  constructor (hash, timestamp, { addresses, txData, blockTrace, traceData, nod3, initConfig, collections, notTrace } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super({ nod3, initConfig })
+    super({ nod3, initConfig, collections })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`Tx, ${hash} is not a tx hash`)
     this.hash = hash
     this.timestamp = timestamp
     this.txData = txData
     this.toAddress = undefined
     if (blockTrace) traceData = this.getTraceDataFromBlock(blockTrace)
-    this.addresses = addresses || new Addresses({ nod3, initConfig })
+    this.addresses = addresses || new Addresses({ nod3, initConfig, collections })
     this.trace = (!notTrace) ? new TxTrace(hash, { traceData, nod3, initConfig }) : undefined
   }
   getTraceDataFromBlock (blockTrace) {
