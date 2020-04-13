@@ -46,11 +46,11 @@ export class TxTrace extends BcThing {
     try {
       data = data || this.getData()
       let iTxs = await this.createInternalTransactions(data)
-      let internalTxs = iTxs.map(i => i.getData())
+      let internalTransactions = iTxs.map(i => i.getData())
       let addresses = iTxs.map(i => i.getAddresses())
       // merge addresses arrays
       addresses = [].concat.apply([], addresses)
-      return { internalTxs, addresses }
+      return { internalTransactions, addresses }
     } catch (err) {
       return Promise.reject(err)
     }
