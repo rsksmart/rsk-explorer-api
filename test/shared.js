@@ -60,3 +60,16 @@ export const fakeTx = (transactionIndex, { hash, number }) => {
 }
 
 export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`
+
+export function Spy (obj, method) {
+  let spy = {
+    args: []
+  }
+  let org = obj[method]
+  obj[method] = function () {
+    let args = [].slice.apply(arguments)
+    spy.args.push(args)
+    return org.call(obj, args)
+  }
+  return Object.freeze(spy)
+}
