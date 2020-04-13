@@ -75,7 +75,9 @@ export const OBJECT_ID = 'ObjectID'
 export const TOTAL_SUPPLY = 21 * 10 ** 6
 
 export const fields = {
-  LAST_BLOCK_MINED: 'lastBlockMined'
+  LAST_BLOCK_MINED: 'lastBlockMined',
+  DEPLOYED_CODE: 'deployedCode',
+  CREATED_BY_TX: 'createdByTx'
 }
 
 export const EVMversions = [

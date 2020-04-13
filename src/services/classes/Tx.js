@@ -62,8 +62,8 @@ export class Tx extends BcThing {
       if (tx.hash !== txHash) throw new Error(`Error getting tx: ${txHash}, hash received:${tx.hash}`)
       let receipt = await this.getTxReceipt(txHash)
       if (!receipt) throw new Error(`The Tx ${txHash} .receipt is: ${receipt} `)
-      tx.timestamp = this.timestamp
-      tx.receipt = receipt
+      let { timestamp } = this
+      tx = createTxObject(tx, { timestamp, receipt })
       let { contractAddress } = receipt
       if (contractAddress) this.addresses.add(contractAddress)
       if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
@@ -118,6 +118,15 @@ export class Tx extends BcThing {
     if (!data || typeof data !== 'object') return
     return data.hash && data.blockHash && data.input
   }
+}
+
+export function createTxObject (tx, { timestamp, receipt }) {
+  if (!Object.keys(tx).length) throw new Error('invalid tx')
+  if (!Object.keys(receipt).length) throw new Error('invalid tx receipt')
+  // TODO check timestamp
+  tx.timestamp = timestamp
+  tx.receipt = receipt
+  return tx
 }
 
 export default Tx

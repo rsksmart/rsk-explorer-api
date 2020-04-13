@@ -2,9 +2,9 @@ import Addresses from './Addresses'
 import { isBlockObject } from '../../lib/utils'
 
 export class BlockAddresses extends Addresses {
-  constructor (nod3, initConfig, blockData) {
+  constructor (blockData, { nod3, initConfig, collections }) {
     if (!isBlockObject(blockData)) throw new Error('Invalid blockData')
-    super({ nod3, initConfig })
+    super({ nod3, initConfig, collections })
     this.block = blockData
   }
   add (address, options) {
