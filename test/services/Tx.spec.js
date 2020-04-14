@@ -8,9 +8,9 @@ import Address from '../../src/services/classes/Address'
 describe(`#Tx`, function () {
   for (let blockData of blocks) {
     let { block } = blockData
-    let { txs } = block
+    let { transactions } = block
     let { number: blockNumber, timestamp } = block.block
-    for (let txe of txs) {
+    for (let txe of transactions) {
       let { hash } = txe
       describe(`Tx: ${hash} / ${blockNumber} `, function () {
         this.timeout(60000)

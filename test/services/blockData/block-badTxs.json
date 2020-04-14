@@ -31,7 +31,7 @@
       "minimumGasPrice": "0",
       "_received": 1542691932196
     },
-    "txs": [
+    "transactions": [
       {
         "hash": "0x6898b883b8e03206145c746c3bfbd2e5f6967a465ff900d5bd3dc8dccd9bde04",
         "nonce": 1233,
@@ -161,7 +161,7 @@
         "balance": "0x38d7ea4c680"
       }
     ],
-    "contracts": [],
+
     "tokenAddresses": [],
     "events": []
   }

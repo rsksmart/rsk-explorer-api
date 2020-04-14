@@ -31,7 +31,7 @@
       "paidFees": "0x0",
       "_received": 1575401301588
     },
-    "txs": [
+    "transactions": [
       {
         "hash": "0xc8660b9472e6c40e047ed722a3b7b96e633e208573ea6ea7a6c199e998997055",
         "nonce": 4566,
@@ -439,39 +439,8 @@
         "lastBlockMined": null
       }
     ],
-    "contracts": [],
-    "tokenAddresses": [
-      {
-        "address": "0xdabadabadabadabadabadabadabadabadaba0003",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x4495768e683423a4299d6a7f02a0689a6ff5a0a4",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x0345174501d5f6fc7926377b63317c4ad7215905",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x13bcf2c2342b6eaa24119f9690aca0d718f384ff",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x9a3bfdea2245738dd5f25453d13742350a4f1c6e",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x1fab9a0e24ffc209b01faa5a61ad4366982d0b7f",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      }
-    ],
+
+    "tokenAddresses": [],
     "events": [
       {
         "logIndex": 0,

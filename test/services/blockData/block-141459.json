@@ -32,7 +32,7 @@
       "paidFees": "0x8a7051012600",
       "_received": 1575401337563
     },
-    "txs": [
+    "transactions": [
       {
         "hash": "0x97039b31341f23f0c42205f7de8c99ecaa970425aaae13ae46667428aaa55481",
         "nonce": 945,
@@ -324,7 +324,7 @@
         "lastBlockMined": null
       }
     ],
-    "contracts": [],
+
     "tokenAddresses": [
       {
         "address": "0xd5e6bfc7e5d982c1f7bac4d9c7e769beb0a6f626",
@@ -334,16 +334,6 @@
       {
         "address": "0x60cf4b68b65c87dcfa7550e712f6c469b7aec266",
         "contract": "0xebea27d994371cd0cb9896ae4c926bc5221f6317",
-        "balance": "0x0"
-      },
-      {
-        "address": "0xdabadabadabadabadabadabadabadabadaba0003",
-        "contract": "0x0000000000000000000000000000000001000008",
-        "balance": "0x0"
-      },
-      {
-        "address": "0x42c0444f96f2716c0b77548aca74ec32a00aeb8d",
-        "contract": "0x0000000000000000000000000000000001000008",
         "balance": "0x0"
       }
     ],
