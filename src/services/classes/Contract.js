@@ -18,6 +18,7 @@ class Contract extends BcThing {
     this.contract = undefined
     this.abi = abi
     this.parser = undefined
+    this.isToken = false
     if (dbData) this.setData(dbData)
   }
 
@@ -34,14 +35,12 @@ class Contract extends BcThing {
         if (methods) this.setData({ contractMethods: methods })
       }
       let { contractInterfaces, tokenData } = this.data
-      let isToken = this.isToken(contractInterfaces)
-      if (isToken && !tokenData) {
-        let tokenData = await this.getTokenData()
+      this.isToken = hasValue(contractInterfaces || [], tokensInterfaces)
+      if (this.isToken && !tokenData) {
+        let tokenData = await this.getToken()
         // if (tokenData) this.data = Object.assign(this.data, tokenData)
         if (tokenData) this.setData(tokenData)
       }
-      let addresses = await this.fetchAddresses()
-      this.setData({ addresses })
       let data = this.getData()
       this.fetched = true
       return data
@@ -91,7 +90,7 @@ class Contract extends BcThing {
     }
   }
 
-  getTokenData () {
+  getToken () {
     let { contractMethods } = this.data
     let { parser, contract } = this
     let methods = ['name', 'symbol', 'decimals', 'totalSupply']
@@ -118,12 +117,11 @@ class Contract extends BcThing {
     return parser.call(method, contract, params)
   }
 
-  isToken (interfaces) {
-    return hasValue(interfaces, tokensInterfaces)
-  }
   async fetchAddresses () {
+    if (!this.fetched) await this.fetch()
     let data = []
     let { addresses } = this
+    if (!this.isToken) return data
     for (let a in addresses) {
       let Address = addresses[a]
       let addressData = await Address.fetch()
