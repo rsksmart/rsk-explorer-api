@@ -34,6 +34,16 @@ export class Addresses {
       return Promise.reject(err)
     }
   }
+  async save () {
+    try {
+      await this.fetch()
+      let addresses = this.list()
+      let result = await Promise.all([...addresses.map(a => a.save())])
+      return result
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
 }
 
 export default Addresses

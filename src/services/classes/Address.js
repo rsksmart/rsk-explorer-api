@@ -51,7 +51,7 @@ export class Address extends BcThing {
     try {
       let { code } = this.getData()
       let { nod3, address, block } = this
-      if (code) return code
+      if (code !== undefined) return code
       code = await nod3.eth.getCode(address, block)
       code = (isNullData(code)) ? null : code
       this.setData({ code })
@@ -63,7 +63,7 @@ export class Address extends BcThing {
 
   async fetch (forceFetch) {
     try {
-      if (this.fetched && !forceFetch) return this.getData()
+      if (this.fetched && !forceFetch) return this.getData(true)
       this.fetched = false
       let dbData = await this.getFromDb()
       this.setData(dbData)
@@ -98,7 +98,7 @@ export class Address extends BcThing {
         this.setData(contractData)
       }
       this.fetched = true
-      return this.getData()
+      return this.getData(true)
     } catch (err) {
       return Promise.reject(err)
     }
@@ -156,25 +156,28 @@ export class Address extends BcThing {
     return (serialize) ? this.serialize(data) : data
   }
   async save () {
+    let { address } = this
     try {
+      await this.fetch()
       let data = this.getData(true)
-      let { address, collection, dbData } = this
+      let { collection, dbData } = this
       // Optimization
       for (let p in dbData) {
         if (data[p] === dbData[p]) delete data[p]
       }
-      if (Object.keys(data) === 0) return
+      if (Object.keys(data).length < 1) return
       let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true })
       return result
     } catch (err) {
+      this.log.error(`Error updating address ${address}`)
       return Promise.reject(err)
     }
   }
 
   isContract () {
     let { code, type } = this.getData()
-    let { isNative } = this
-    if (undefined === code && !isNative) throw new Error(`Run getCode first`)
+    let { isNative, address } = this
+    if (undefined === code && !isNative) throw new Error(`Run getCode first ${address}`)
     return type === addrTypes.CONTRACT
   }
 
@@ -211,11 +214,12 @@ function createAddressData ({ address, isNative, name }) {
       if (protectedProperties.includes(prop)) return true
       switch (prop) {
         case 'code':
-          val = val || null
-          if (!isNullData(val)) {
+          if (isNullData(val)) val = null
+          if (val) {
             data.type = addrTypes.CONTRACT
-            data.code = val
           }
+          // Fix to support suicide
+          data.code = val
           break
 
         case fields.LAST_BLOCK_MINED:

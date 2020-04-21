@@ -4,6 +4,7 @@ import config from '../src/lib/config'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
 import NativeContracts from '../src/lib/NativeContracts'
 import initConfig from '../src/lib/initialConfiguration'
+import { addrTypes } from '../src/lib/types'
 
 export const nativeContracts = NativeContracts(initConfig)
 const testDatabase = 'dbToTest'
@@ -60,6 +61,17 @@ export const fakeTx = (transactionIndex, { hash, number }) => {
 }
 
 export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`
+
+export const randomBalance = () => `0x${crypto.randomBytes(4).toString('hex')}`
+
+export const fakeAddress = () => {
+  let address = randomAddress()
+  let balance = randomBalance()
+  let type = addrTypes.ADDRESS
+  let name
+  let isNative = false
+  return { address, balance, name, isNative, type }
+}
 
 export function Spy (obj, method) {
   let spy = {
