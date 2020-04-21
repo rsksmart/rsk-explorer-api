@@ -56,7 +56,6 @@ export default {
     Status: 'status',
     Events: 'events',
     TokensAddrs: 'tokensAddresses',
-    OrphanBlocks: 'orphanBlocks',
     TxPool: 'txPool',
     PendingTxs: 'transactionsPending',
     Stats: 'statsCollection',

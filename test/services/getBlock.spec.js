@@ -28,6 +28,24 @@ describe('Get Block', function () {
     expect(Object.keys(blockData)).to.be.deep.equal(Object.keys(blockSpec))
   })
 
+  for (let p of ['transactions', 'internalTransactions', 'addresses']) {
+    it(`${p} length`, () => {
+      expect(blockData[p].length).to.be.deep.equal(blockSpec[p].length)
+    })
+  }
+
+  for (let p of ['addresses', 'transactions', 'internalTransactions']) {
+    it(`${p} should have expected addresses`, () => {
+      expect(getAddresses(blockSpec[p])).to.be.deep.equal(getAddresses(blockData[p]))
+    })
+  }
+
+  for (let p of ['transactions', 'internalTransactions']) {
+    it(`${p} should be equal to expected`, () => {
+      expect(blockSpec[p]).to.be.deep.equal(blockData[p])
+    })
+  }
+
   it(`tokenAddresses`, function () {
     expect(blockData.tokenAddresses.length).to.be.equal(blockSpec.tokenAddresses.length)
   })
@@ -45,3 +63,7 @@ describe('Get Block', function () {
     }
   }
 })
+
+function getAddresses (arr) {
+  return arr.map(({ address }) => address)
+}

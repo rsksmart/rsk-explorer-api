@@ -3,6 +3,7 @@ import BlockSummary from '../../src/services/classes/BlockSummary'
 import blocks from './blockData'
 import { nod3 } from '../../src/lib/nod3Connect'
 import datasource from '../../src/lib/dataSource'
+import { isHexString } from 'rsk-utils'
 
 describe(`# BlockSummary fetch`, function () {
   for (let { block } of blocks) {
@@ -39,6 +40,10 @@ describe(`# BlockSummary fetch`, function () {
         let ba = getAddresses(block.tokenAddresses)
         let sa = getAddresses(summaryData.tokenAddresses)
         expect(sa).to.include.members(ba)
+        for (let { balance } of summaryData.tokenAddresses) {
+          expect(typeof balance).to.be.equal('string')
+          expect(isHexString(balance)).to.be.equal(true)
+        }
       })
 
       it('events', () => {

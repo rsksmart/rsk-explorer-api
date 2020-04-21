@@ -192,23 +192,6 @@ export default {
 
     ]
   },
-  OrphanBlocks: {
-    indexes: [
-      {
-        key: {
-          hash: 1
-        },
-        unique: true
-      }
-    ],
-    TxPool: [
-      {
-        key: {
-          timestamp: -1
-        }
-      }
-    ]
-  },
   PendingTxs: {
     indexes: [
       {

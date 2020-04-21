@@ -23,7 +23,7 @@ export class TokenAddress extends BcThing {
     try {
       let balance = await this.getBalance()
       this.data.balance = balance
-      return this.getData()
+      return this.getData(true)
     } catch (err) {
       return Promise.reject(err)
     }

@@ -124,7 +124,8 @@ class Contract extends BcThing {
     if (!this.isToken) return data
     for (let a in addresses) {
       let Address = addresses[a]
-      let addressData = await Address.fetch()
+      await Address.fetch()
+      let addressData = Address.getData(true)
       if (addressData) data.push(addressData)
     }
     return data

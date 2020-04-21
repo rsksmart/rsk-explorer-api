@@ -12,6 +12,7 @@ export class BlockSummary extends BcThing {
     this.log = log || console
     this.hashOrNumber = hashOrNumber
     this.collection = (collections) ? collections[BlocksSummaryCollection] : undefined
+    this.Addresses = undefined
     this.data = {
       block: null,
       transactions: [],
@@ -43,6 +44,7 @@ export class BlockSummary extends BcThing {
       let addresses = await Addresses.fetch()
       this.setData({ transactions, internalTransactions, events, addresses, tokenAddresses })
       this.checkTransactions()
+      this.Addresses = Addresses
       this.fetched = true
       return this.getData()
     } catch (err) {
@@ -73,6 +75,10 @@ export class BlockSummary extends BcThing {
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
   }
+  getAddresses () {
+    return this.Addresses
+  }
+
   async save () {
     try {
       let data = await this.fetch()
@@ -93,12 +99,18 @@ export const mismatchBlockTransactions = (block, transactions) => {
   return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash)
 }
 
-export function saveBlockSummary (data, collections) {
-  const collection = collections[BlocksSummaryCollection]
+export async function saveBlockSummary (data, collections) {
   const { hash, number, timestamp } = data.block
-  const _id = getSummaryId(data.block)
-  const summary = { _id, hash, number, timestamp, data }
-  return collection.updateOne({ _id }, { $set: summary }, { upsert: true })
+  try {
+    const collection = collections[BlocksSummaryCollection]
+    const _id = getSummaryId(data.block)
+    const summary = { _id, hash, number, timestamp, data }
+    let result = await collection.updateOne({ _id }, { $set: summary }, { upsert: true })
+    return result
+  } catch (err) {
+    this.log.error(`Error saving Block Summary ${hash}`)
+    return Promise.reject(err)
+  }
 }
 
 export default BlockSummary
