@@ -65,7 +65,8 @@ export const MODULES = {
   summary: 'Summary',
   txPending: 'TxPending',
   extendedStats: 'ExtendedStats',
-  contractVerifier: 'ContractVerification'
+  contractVerifier: 'ContractVerification',
+  internalTransactions: 'InternalTx'
 }
 
 export const BIG_NUMBER = 'BigNumber'
