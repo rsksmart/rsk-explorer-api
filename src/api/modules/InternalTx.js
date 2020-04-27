@@ -11,6 +11,43 @@ export class InternalTx extends DataCollectorItem {
     this.publicActions = {
       /**
       * @swagger
+      * /api?module=internalTransactions&action=getInternalTransaction:
+      *    get:
+      *      description: get internal transaction
+      *      tags:
+      *        - internal transactions
+      *      produces:
+      *        - application/json
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [internalTransactions]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getInternalTransaction]
+      *        - name: eventId
+      *          in: query
+      *          schema:
+      *            type: string
+      *        - $ref: '#/parameters/limit'
+      *        - $ref: '#/parameters/next'
+      *        - $ref: '#/parameters/prev'
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/ResponseList'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+     */
+      getInternalTransaction: params => {
+        let { internalTxId } = params
+        return this.getItem({ internalTxId }, params)
+      },
+      /**
+      * @swagger
       * /api?module=internalTransactions&action=getInternalTransactions:
       *    get:
       *      description: get internal transactions

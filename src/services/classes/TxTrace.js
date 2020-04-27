@@ -1,12 +1,15 @@
 import { BcThing } from './BcThing'
 import { InternalTx } from './InternalTx'
+import { getTimestampFromBlock } from './Tx'
 
 export class TxTrace extends BcThing {
-  constructor (hash, { traceData, nod3, initConfig } = {}) {
+  constructor (hash, { traceData, timestamp, nod3, initConfig } = {}) {
     super({ nod3, initConfig })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`TxTrace, ${hash} is not a tx hash`)
     this.hash = hash
     this.data = undefined
+    this.traceData = traceData
+    this.timestamp = timestamp
     if (traceData) this.setData(traceData)
   }
   setData (trace) {
@@ -18,11 +21,14 @@ export class TxTrace extends BcThing {
   }
   async fetch (force) {
     try {
-      let data = this.getData()
-      if (data && !force) return data
-      let { nod3, hash } = this
-      let trace = await nod3.trace.transaction(hash)
-      this.setData(trace)
+      let { fetched, nod3, hash, traceData, timestamp } = this
+      if (fetched && !force) return this.getData()
+      if (!traceData) traceData = await nod3.trace.transaction(hash)
+      if (!timestamp) timestamp = await getTimestampFromBlock(traceData, nod3)
+      this.traceData = traceData
+      this.timestamp = timestamp
+      this.setData(traceData)
+      this.fetched = true
       return this.getData()
     } catch (err) {
       return Promise.reject(err)
@@ -36,14 +42,15 @@ export class TxTrace extends BcThing {
   }
   async createInternalTransactions (data) {
     try {
-      let { nod3, initConfig } = this
-      return data.map(d => new InternalTx(d, { nod3, initConfig }))
+      let { initConfig, timestamp } = this
+      return data.map(d => new InternalTx(Object.assign(d, { timestamp }), { initConfig }))
     } catch (err) {
       return Promise.reject(err)
     }
   }
   async getInternalTransactionsData (data) {
     try {
+      await this.fetch()
       data = data || this.getData()
       let iTxs = await this.createInternalTransactions(data)
       let internalTransactions = iTxs.map(i => i.getData())

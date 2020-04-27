@@ -11,11 +11,13 @@ const REQUIRED_FIELDS = [
   'subtraces',
   'traceAddress',
   'result',
-  'action']
+  'action',
+  'timestamp'
+]
 
 export class InternalTx extends BcThing {
-  constructor (data, { nod3, initConfig } = {}) {
-    super({ nod3, initConfig })
+  constructor (data, { initConfig }) {
+    super({ initConfig })
     this.setData(data)
   }
 

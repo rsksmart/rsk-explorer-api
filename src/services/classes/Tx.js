@@ -19,7 +19,7 @@ export class Tx extends BcThing {
     if (blockTrace) traceData = getTraceDataFromBlock(hash, blockTrace)
     addresses = addresses || new Addresses({ nod3, initConfig, collections })
     this.addresses = addresses
-    this.trace = (!notTrace) ? new TxTrace(hash, { traceData, nod3, initConfig }) : undefined
+    this.trace = (!notTrace) ? new TxTrace(hash, { traceData, timestamp, nod3, initConfig }) : undefined
     this.data = {
       tx: {},
       events: [],
@@ -101,6 +101,7 @@ export class Tx extends BcThing {
       }
       this.receipt = receipt
       let { timestamp } = this
+      if (!timestamp) timestamp = await getTimestampFromBlock(txData, this.nod3)
       let tx = createTxObject(txData, { timestamp, receipt })
       if (!tx.transactionIndex) tx.transactionIndex = receipt.transactionIndex
       return tx
@@ -150,6 +151,16 @@ export function getTraceDataFromBlock (hash, blockTrace) {
   if (!Array.isArray(blockTrace)) return
   let key = blockTrace.findIndex(v => Array.isArray(v) && v[0].transactionHash === hash)
   return blockTrace[key]
+}
+
+export async function getTimestampFromBlock ({ blockHash }, nod3) {
+  try {
+    let data = await nod3.eth.getBlok(blockHash)
+    let { timestamp } = data
+    return timestamp
+  } catch (err) {
+    return Promise.reject(err)
+  }
 }
 
 export function parseLogs (tx, parser) {

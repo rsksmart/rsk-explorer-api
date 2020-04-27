@@ -463,6 +463,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 8,
+        "timestamp": 1562445531,
         "traceAddress": [],
         "result": {
           "gasUsed": "0x0",
@@ -486,6 +487,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           0
         ],
@@ -511,6 +513,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           1
         ],
@@ -536,6 +539,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           2
         ],
@@ -561,6 +565,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           3
         ],
@@ -586,6 +591,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           4
         ],
@@ -611,6 +617,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           5
         ],
@@ -636,6 +643,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           6
         ],
@@ -661,6 +669,7 @@
         "transactionPosition": 0,
         "type": "call",
         "subtraces": 0,
+        "timestamp": 1562445531,
         "traceAddress": [
           7
         ],
