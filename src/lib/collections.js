@@ -244,6 +244,21 @@ export default {
       {
         key: { internalTxId: -1 },
         unique: true
+      },
+      {
+        key: { blockHash: 1 }
+      },
+      {
+        key: { blockNumber: -1 }
+      },
+      {
+        key: { transactionHash: 1 }
+      },
+      {
+        key: { 'action.from': 1 }
+      },
+      {
+        key: { 'action.to': 1 }
       }
     ]
   }
