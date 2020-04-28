@@ -1,8 +1,7 @@
 import { BcThing } from './BcThing'
-import { getInternalTxId } from '../../lib/ids'
+import { generateId } from '../../lib/ids'
 
 const REQUIRED_FIELDS = [
-  '_index',
   'blockHash',
   'blockNumber',
   'transactionHash',
@@ -47,6 +46,10 @@ export class InternalTx extends BcThing {
         return name !== 'balance' && isAddress(value)
       }).map(v => v[1])
   }
+}
+
+export function getInternalTxId ({ blockNumber, transactionPosition: transactionIndex, transactionHash: hash, _index: index }) {
+  return generateId({ blockNumber, transactionIndex, hash, index })
 }
 
 export default InternalTx

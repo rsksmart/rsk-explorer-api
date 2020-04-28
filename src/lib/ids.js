@@ -42,10 +42,6 @@ export const getTxOrEventId = ({ blockNumber, transactionIndex, blockHash: hash,
   return generateId({ blockNumber, transactionIndex, hash, index })
 }
 
-export const getInternalTxId = ({ blockNumber, transactionPosition: transactionIndex, transactionHash: hash, _index: index }) => {
-  return generateId({ blockNumber, transactionIndex, hash, index })
-}
-
 export const getSummaryId = ({ hash, number, timestamp }) => {
   try {
     checkNumbers({ number, timestamp })

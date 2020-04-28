@@ -15,7 +15,6 @@ export class TxTrace extends BcThing {
   setData (trace) {
     if (!Array.isArray(trace)) throw new Error('Invalid trace data')
     trace = trace.filter(d => d.transactionHash === this.hash)
-    trace = this.addTraceIndexes(trace)
     this.data = trace
     return this.getData()
   }
@@ -33,12 +32,6 @@ export class TxTrace extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
-  }
-  addTraceIndexes (trace) {
-    return trace.map((t, i) => {
-      t._index = i
-      return t
-    })
   }
   async createInternalTransactions (data) {
     try {
