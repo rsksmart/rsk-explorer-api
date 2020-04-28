@@ -4,6 +4,7 @@ import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
 import { createTxObject } from './Tx'
+import { InternalTx } from './InternalTx'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, collections, tx, block = 'latest', log } = {}) {
@@ -129,7 +130,9 @@ export class Address extends BcThing {
         tx = createTxObject(data.tx, data)
       } else {
         let { timestamp } = data
-        tx = Object.assign({ timestamp }, data.internalTx)
+        let { initConfig } = this
+        let itx = new InternalTx(Object.assign({ timestamp }, data.internalTx), { initConfig })
+        tx = itx.getData()
       }
       return { tx, deployedCode: getDeployedCode(tx, address) }
     } catch (err) {
