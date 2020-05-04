@@ -38,13 +38,13 @@ export class Tx extends BcThing {
       if (contractAddress) this.addresses.add(contractAddress)
       tx = this.txFormat(tx)
       let { nod3, initConfig } = this
-      let { contract, isNative } = this.toAddress || {}
-      let parser
-      if (contract) parser = await contract.getParser()
-      if (isNative) parser = new ContractParser({ nod3, initConfig })
+      let { contract } = this.toAddress || {}
+      const parser = (contract) ? await contract.getParser() : new ContractParser({ nod3, initConfig })
       if (parser) {
         tx.receipt.logs = parseLogs(tx, parser)
-        let events = parseEvents(tx, parser)
+        let events = formatEvents(tx, parser)
+        if (tx.receipt.logs.length !== events.length) throw new Error(`logs error ${this.hash}`)
+        tx.receipt.logs = events
         let eventAddresses = [].concat(...events.filter(e => e._addresses).map(({ _addresses }) => _addresses))
         eventAddresses.forEach(address => this.addresses.add(address))
         this.setData({ events })
@@ -166,7 +166,7 @@ export async function getTimestampFromBlock ({ blockHash }, nod3) {
 export function parseLogs (tx, parser) {
   return parser.parseTxLogs(tx.receipt.logs)
 }
-export function parseEvents (tx, parser) {
+export function formatEvents (tx) {
   return tx.receipt.logs.map(l => {
     l = formatEvent(l, tx)
     let event = Object.assign({}, l)
