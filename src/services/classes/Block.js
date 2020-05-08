@@ -4,7 +4,7 @@ import { blockQuery, isBlockHash } from '../../lib/utils'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
-    super({ nod3, collections, initConfig })
+    super({ nod3, collections, initConfig, log })
     this.Blocks = this.collections.Blocks
     this.fetched = false
     this.log = log || console

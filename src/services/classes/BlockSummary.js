@@ -8,8 +8,7 @@ export const BlocksSummaryCollection = 'BlocksSummary'
 
 export class BlockSummary extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
-    super({ nod3, collections, initConfig })
-    this.log = log || console
+    super({ nod3, collections, initConfig, log })
     this.hashOrNumber = hashOrNumber
     this.collection = (collections) ? collections[BlocksSummaryCollection] : undefined
     this.Addresses = undefined

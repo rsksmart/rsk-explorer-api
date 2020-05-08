@@ -8,9 +8,8 @@ import { InternalTx } from './InternalTx'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, collections, tx, block = 'latest', log } = {}) {
-    super({ nod3, initConfig, collections })
+    super({ nod3, initConfig, collections, log })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
-    this.log = log || console
     this.bcSearch = BcSearch(nod3)
     this.address = address
     this.fetched = false

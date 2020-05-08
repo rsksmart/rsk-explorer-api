@@ -7,9 +7,9 @@ import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
 
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { addresses, txData, blockTrace, traceData, nod3, initConfig, collections, notTrace, receipt } = {}) {
+  constructor (hash, timestamp, { addresses, txData, blockTrace, traceData, nod3, initConfig, collections, notTrace, receipt, log } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super({ nod3, initConfig, collections })
+    super({ nod3, initConfig, collections, log })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`Tx, ${hash} is not a tx hash`)
     this.hash = hash
     this.timestamp = timestamp
@@ -19,7 +19,7 @@ export class Tx extends BcThing {
     if (blockTrace) traceData = getTraceDataFromBlock(hash, blockTrace)
     addresses = addresses || new Addresses({ nod3, initConfig, collections })
     this.addresses = addresses
-    this.trace = (!notTrace) ? new TxTrace(hash, { traceData, timestamp, nod3, initConfig }) : undefined
+    this.trace = (!notTrace) ? new TxTrace(hash, { traceData, timestamp, nod3, initConfig, log }) : undefined
     this.data = {
       tx: {},
       events: [],

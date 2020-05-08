@@ -3,8 +3,8 @@ import { InternalTx } from './InternalTx'
 import { getTimestampFromBlock } from './Tx'
 
 export class TxTrace extends BcThing {
-  constructor (hash, { traceData, timestamp, nod3, initConfig } = {}) {
-    super({ nod3, initConfig })
+  constructor (hash, { traceData, timestamp, nod3, initConfig, log } = {}) {
+    super({ nod3, initConfig, log })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`TxTrace, ${hash} is not a tx hash`)
     this.hash = hash
     this.data = undefined
@@ -22,8 +22,14 @@ export class TxTrace extends BcThing {
     try {
       let { fetched, nod3, hash, traceData, timestamp } = this
       if (fetched && !force) return this.getData()
-      if (!traceData) traceData = await nod3.trace.transaction(hash)
-      if (!timestamp) timestamp = await getTimestampFromBlock(traceData, nod3)
+      if (!traceData) {
+        this.log.debug(`Trace transaction ${hash}`)
+        traceData = await nod3.trace.transaction(hash)
+      }
+      if (!timestamp) {
+        this.log.debug(`Getting transaction timestamp ${hash}`)
+        timestamp = await getTimestampFromBlock(traceData, nod3)
+      }
       this.traceData = traceData
       this.timestamp = timestamp
       this.setData(traceData)
