@@ -34,7 +34,7 @@ export class BlockSummary extends BcThing {
       let Addresses = new BlockAddresses(blockData, { nod3, initConfig, collections })
       Addresses.add(miner, { block: blockData })
       let blockTrace = await nod3.trace.block(hash)
-      let Txs = txs.map(txData => new Tx(txData.hash, timestamp, { blockTrace, blockData, addresses: Addresses, txData, nod3, initConfig, collections }))
+      let Txs = txs.map(txData => this.newTx(txData.hash, timestamp, { blockTrace, blockData, addresses: Addresses, txData, nod3, initConfig, collections }))
       let txsData = await this.fetchItems(Txs)
       let transactions = txsData.map(d => d.tx)
       let events = [].concat(...txsData.map(d => d.events))
@@ -49,6 +49,10 @@ export class BlockSummary extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  newTx (hash, timestamp, options) {
+    return new Tx(hash, timestamp, options)
   }
 
   checkTransactions () {
