@@ -143,7 +143,7 @@ describe(`# Address, requires db connection`, function () {
     address.setBlock(block)
     await address.fetch()
     const data = address.getData()
-    expect(address.block, 'block number').to.be.equal(block.number)
+    expect(address.blockNumber, 'block number').to.be.equal(block.number)
     expect(data[lastBlockMined].number).to.be.equal(14)
   })
 
@@ -154,7 +154,7 @@ describe(`# Address, requires db connection`, function () {
     address.setBlock(block)
     await address.fetch()
     const data = address.getData()
-    expect(address.block).to.be.equal(block.number)
+    expect(address.blockNumber).to.be.equal(block.number)
     expect(data[lastBlockMined].number).to.be.equal(block.number)
   })
 

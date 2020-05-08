@@ -5,7 +5,7 @@ import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, collections }) {
+  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, collections, block }) {
     super({ nod3, initConfig, collections })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
@@ -19,6 +19,7 @@ class Contract extends BcThing {
     this.abi = abi
     this.parser = undefined
     this.isToken = false
+    this.block = block
     if (dbData) this.setData(dbData)
   }
 

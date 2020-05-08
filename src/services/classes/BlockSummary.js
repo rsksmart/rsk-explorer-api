@@ -27,14 +27,14 @@ export class BlockSummary extends BcThing {
       if (fetched && !forceFetch) {
         return this.getData()
       }
-      let blockData = await this.getBlock(hashOrNumber, true)
+      let blockData = await getBlock(hashOrNumber, true, nod3)
       const { transactions: txs, timestamp, miner, hash } = blockData
       blockData.transactions = txs.map(tx => tx.hash)
       this.data.block = blockData
       let Addresses = new BlockAddresses(blockData, { nod3, initConfig, collections })
-      Addresses.add(miner)
+      Addresses.add(miner, { block: blockData })
       let blockTrace = await nod3.trace.block(hash)
-      let Txs = txs.map(txData => new Tx(txData.hash, timestamp, { blockTrace, addresses: Addresses, txData, nod3, initConfig, collections }))
+      let Txs = txs.map(txData => new Tx(txData.hash, timestamp, { blockTrace, blockData, addresses: Addresses, txData, nod3, initConfig, collections }))
       let txsData = await this.fetchItems(Txs)
       let transactions = txsData.map(d => d.tx)
       let events = [].concat(...txsData.map(d => d.events))
@@ -46,17 +46,6 @@ export class BlockSummary extends BcThing {
       this.Addresses = Addresses
       this.fetched = true
       return this.getData()
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  async getBlock (hashOrNumber, txArr = false) {
-    try {
-      let { nod3 } = this
-      let blockData = await nod3.eth.getBlock(hashOrNumber, txArr)
-      if (blockData) blockData._received = Date.now()
-      return blockData
     } catch (err) {
       return Promise.reject(err)
     }
@@ -108,6 +97,16 @@ export async function saveBlockSummary (data, collections) {
     return result
   } catch (err) {
     this.log.error(`Error saving Block Summary ${hash}`)
+    return Promise.reject(err)
+  }
+}
+
+export async function getBlock (hashOrNumber, txArr = false, nod3) {
+  try {
+    let blockData = await nod3.eth.getBlock(hashOrNumber, txArr)
+    if (blockData) blockData._received = Date.now()
+    return blockData
+  } catch (err) {
     return Promise.reject(err)
   }
 }

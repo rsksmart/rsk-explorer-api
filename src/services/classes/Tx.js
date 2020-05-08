@@ -5,9 +5,11 @@ import { getTxOrEventId } from '../../lib/ids'
 import ContractParser from 'rsk-contract-parser'
 import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
+import { isBlockObject } from '../../lib/utils'
+import { getBlock } from './BlockSummary'
 
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { addresses, txData, blockTrace, traceData, nod3, initConfig, collections, notTrace, receipt, log } = {}) {
+  constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, collections, notTrace, receipt, log } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
     super({ nod3, initConfig, collections, log })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`Tx, ${hash} is not a tx hash`)
@@ -16,6 +18,7 @@ export class Tx extends BcThing {
     this.txData = txData
     this.receipt = receipt
     this.toAddress = undefined
+    this.blockData = blockData
     if (blockTrace) traceData = getTraceDataFromBlock(hash, blockTrace)
     addresses = addresses || new Addresses({ nod3, initConfig, collections })
     this.addresses = addresses
@@ -32,10 +35,12 @@ export class Tx extends BcThing {
       if (fetched && !force) return this.getData()
       let tx = await this.getTx()
       if (!tx) throw new Error('Error getting tx')
+      await this.setBlockData(tx)
+      let addressOptions = this.addressOptions()
       await this.setToAddress(tx)
-      this.addresses.add(tx.from)
+      this.addresses.add(tx.from, addressOptions)
       let { contractAddress } = tx.receipt
-      if (contractAddress) this.addresses.add(contractAddress)
+      if (contractAddress) this.addresses.add(contractAddress, addressOptions)
       tx = this.txFormat(tx)
       let { nod3, initConfig } = this
       let { contract } = this.toAddress || {}
@@ -46,7 +51,7 @@ export class Tx extends BcThing {
         if (tx.receipt.logs.length !== events.length) throw new Error(`logs error ${this.hash}`)
         tx.receipt.logs = events
         let eventAddresses = [].concat(...events.filter(e => e._addresses).map(({ _addresses }) => _addresses))
-        eventAddresses.forEach(address => this.addresses.add(address))
+        eventAddresses.forEach(address => this.addresses.add(address, addressOptions))
         this.setData({ events })
         if (contract) {
           eventAddresses.forEach(address => contract.addAddress(address))
@@ -57,7 +62,7 @@ export class Tx extends BcThing {
       if (this.trace) {
         let trace = await this.trace.fetch()
         let { internalTransactions, addresses } = await this.trace.getInternalTransactionsData(trace)
-        addresses.forEach(address => this.addresses.add(address))
+        addresses.forEach(address => this.addresses.add(address, addressOptions))
         this.setData({ trace, internalTransactions })
       }
       this.setData({ tx })
@@ -67,14 +72,24 @@ export class Tx extends BcThing {
       return Promise.reject(err)
     }
   }
-
+  async setBlockData ({ blockHash }) {
+    try {
+      let { blockData, nod3 } = this
+      if (!isBlockObject(blockData) || blockData.hash !== blockHash) {
+        blockData = await getBlock(blockHash, false, nod3)
+        this.blockData = blockData
+      }
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
   async setToAddress ({ to }) {
     try {
       let { isAddress, toAddress } = this
       if (toAddress !== undefined) return toAddress
       if (to !== null) {
         if (!isAddress(to)) throw new Error(`Invalid address ${to}`)
-        this.toAddress = this.addresses.add(to)
+        this.toAddress = this.addresses.add(to, this.addressOptions())
         await this.toAddress.fetch()
       } else {
         this.toAddress = null
@@ -134,6 +149,10 @@ export class Tx extends BcThing {
   isTxData (data) {
     if (!data || typeof data !== 'object') return
     return data.hash && data.blockHash && data.input
+  }
+  addressOptions () {
+    let block = this.blockData
+    return { block }
   }
 }
 

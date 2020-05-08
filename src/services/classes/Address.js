@@ -16,6 +16,7 @@ export class Address extends BcThing {
     this.collection = (collections) ? collections.Addrs : undefined
     this.contract = undefined
     this.block = undefined
+    this.blockNumber = undefined
     let { nativeContracts } = this
     let nName = (nativeContracts) ? nativeContracts.getNativeContractName(address) : undefined
     this.name = nName
@@ -29,10 +30,11 @@ export class Address extends BcThing {
   setBlock (block) {
     if (!block) block = 'latest'
     if (isBlockObject(block)) {
-      this.block = block.number
+      this.blockNumber = block.number
+      this.block = block
       this.data[fields.LAST_BLOCK_MINED] = block
     } else {
-      this.block = block
+      this.blockNumber = block
     }
   }
 
@@ -50,9 +52,9 @@ export class Address extends BcThing {
   async getCode () {
     try {
       let { code } = this.getData()
-      let { nod3, address, block } = this
+      let { nod3, address, blockNumber } = this
       if (code !== undefined) return code
-      code = await nod3.eth.getCode(address, block)
+      code = await nod3.eth.getCode(address, blockNumber)
       code = (isNullData(code)) ? null : code
       this.setData({ code })
       return code
@@ -69,11 +71,11 @@ export class Address extends BcThing {
       this.setData(dbData)
       // Fix it
       let balance = await this.getBalance('latest')
-      let { block } = this
+      let { blockNumber } = this
       balance = balance || 0
       this.setData({ balance })
-      if (block !== 'latest') {
-        let blockBalance = await this.getBalance(block)
+      if (blockNumber !== 'latest') {
+        let blockBalance = await this.getBalance(blockNumber)
         this.setData({ blockBalance })
       }
       let code = await this.getCode()
@@ -117,11 +119,11 @@ export class Address extends BcThing {
   }
   async searchDeploymentData () {
     try {
-      let { bcSearch, address, block } = this
-      if (block === 'latest') block = undefined
-      let blockNumber = await bcSearch.deploymentBlock(address, block)
-      if (!blockNumber) throw new Error('Missing deployment block')
-      let data = await bcSearch.deploymentTx(address, { blockNumber })
+      let { bcSearch, address, blockNumber } = this
+      if (blockNumber === 'latest') blockNumber = undefined
+      let dBlockNumber = await bcSearch.deploymentBlock(address, blockNumber)
+      if (!dBlockNumber) throw new Error('Missing deployment block')
+      let data = await bcSearch.deploymentTx(address, { blockNumber: dBlockNumber })
       if (!data) throw new Error(`Missing deployment data for ${address}`)
       if (!data.tx && !data.internalTx) throw new Error(`Invalid deployment data for ${address}`)
       let tx
@@ -184,8 +186,8 @@ export class Address extends BcThing {
   }
 
   makeContract (deployedCode, dbData) {
-    let { address, nod3, initConfig, collections } = this
-    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections })
+    let { address, nod3, initConfig, collections, block } = this
+    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections, block })
   }
 }
 
