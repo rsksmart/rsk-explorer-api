@@ -1,9 +1,10 @@
 import { Tx, txTypes } from '../../src/services/classes/Tx'
 import blocks from './blockData'
 import { expect } from 'chai'
-import { BlocksBase } from '../../src/lib/BlocksBase'
 import datasource from '../../src/lib/dataSource'
 import Address from '../../src/services/classes/Address'
+import nod3 from '../../src/lib/nod3Connect'
+import { testCollections } from '../shared'
 
 describe(`#Tx`, function () {
   for (let blockData of blocks) {
@@ -15,8 +16,9 @@ describe(`#Tx`, function () {
       describe(`Tx: ${hash} / ${blockNumber} `, function () {
         this.timeout(60000)
         it(`should return tx data`, async () => {
-          let { db, initConfig } = await datasource()
-          let tx = new Tx(hash, timestamp, new BlocksBase(db, { initConfig }))
+          let { initConfig } = await datasource()
+          let collections = await testCollections()
+          let tx = new Tx(hash, timestamp, { nod3, initConfig, collections })
           await tx.fetch()
           let data = await tx.getData()
           expect(tx.toAddress instanceof Address).to.be.equal(true, 'toAddress must be an instance of Address')

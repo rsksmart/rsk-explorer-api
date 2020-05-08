@@ -167,8 +167,7 @@ export function createTxObject (tx, { timestamp, receipt }) {
 
 export function getTraceDataFromBlock (hash, blockTrace) {
   if (!Array.isArray(blockTrace)) return
-  let key = blockTrace.findIndex(v => Array.isArray(v) && v[0].transactionHash === hash)
-  return blockTrace[key]
+  return blockTrace.filter(({ transactionHash }) => transactionHash === hash)
 }
 
 export async function getTimestampFromBlock ({ blockHash }, nod3) {
