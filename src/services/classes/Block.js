@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
-import { blockQuery, isBlockHash } from '../../lib/utils'
+import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -87,7 +87,7 @@ export class Block extends BcThing {
       // remove blockData if block was inserted
       if (result.block) {
         let data = this.getData()
-        this.deleteBlockDataFromDb(data.block.hash, data.block.number)
+        await this.deleteBlockDataFromDb(data.block.hash, data.block.number)
       }
       this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
       return Promise.reject(err)
@@ -120,7 +120,7 @@ export class Block extends BcThing {
 
   async getOldBlockData (block) {
     try {
-      if (!block || !block.hash) throw new Error('Block data is empty')
+      if (!isBlockObject(block)) throw new Error('Block data is empty')
       let exists = await this.searchBlock(block)
       if (exists.length > 1) {
         throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`)
@@ -139,8 +139,11 @@ export class Block extends BcThing {
 
   async removeOldBlockData (block, txs, oldBlock) {
     try {
-      oldBlock = oldBlock || await this.getOldBlockData(block)
-      if (oldBlock) await this.deleteBlockDataFromDb(oldBlock.hash, oldBlock.number)
+      if (!isBlockObject(oldBlock)) oldBlock = await this.getOldBlockData(block)
+      if (oldBlock) {
+        let { hash, number } = oldBlock.block
+        await this.deleteBlockDataFromDb(hash, number)
+      }
       await this.removeBlocksByTxs(txs)
       return block
     } catch (err) {
@@ -251,8 +254,8 @@ export const getBlockFromDb = async (blockHashOrNumber, collection) => {
 export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections) => {
   try {
     blockNumber = parseInt(blockNumber)
-    if (blockNumber < 1) throw new Error(`The blockNumber is wrong`)
-    if (!blockHash) throw new Error(`Empty block hash`)
+    if (blockNumber < 1) throw new Error(`The blockNumber: ${blockNumber} is wrong`)
+    if (!isBlockHash(blockHash)) throw new Error(`Empty block hash: ${blockHash}`)
     let hash = blockHash
     let result = {}
     let query = { $or: [{ blockHash }, { blockNumber }] }

@@ -77,7 +77,8 @@ export class BlockSummary extends BcThing {
       let res = await saveBlockSummary(data, this.collections)
       return res
     } catch (err) {
-      this.log.error(`Error saving block summary`)
+      let { hashOrNumber } = this
+      this.log.error(`Error saving block summary ${hashOrNumber}`)
       this.log.debug(err)
       return Promise.resolve()
     }
@@ -94,13 +95,14 @@ export const mismatchBlockTransactions = (block, transactions) => {
 export async function saveBlockSummary (data, collections) {
   const { hash, number, timestamp } = data.block
   try {
+    if (!hash) throw new Error(`Missing block hash ${number}`)
     const collection = collections[BlocksSummaryCollection]
-    const _id = getSummaryId(data.block)
+    const old = await collection.findOne({ hash }, { _id: 1 })
+    const _id = (old) ? old._id : getSummaryId(data.block)
     const summary = { _id, hash, number, timestamp, data }
     let result = await collection.updateOne({ _id }, { $set: summary }, { upsert: true })
     return result
   } catch (err) {
-    this.log.error(`Error saving Block Summary ${hash}`)
     return Promise.reject(err)
   }
 }
