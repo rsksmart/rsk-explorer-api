@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import { isBlockObject, isNullData } from '../../lib/utils'
+import { isBlockObject, isNullData, isAddress } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
@@ -170,7 +170,8 @@ export class Address extends BcThing {
         if (data[p] === dbData[p]) delete data[p]
       }
       if (Object.keys(data).length < 1) return
-      let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true })
+      data.address = address
+      let result = await saveAddressToDb(data, collection)
       return result
     } catch (err) {
       this.log.error(`Error updating address ${address}`)
@@ -242,6 +243,17 @@ function createAddressData ({ address, isNative, name }) {
     }
   }
   return new Proxy({ address, type, name, isNative }, dataHandler)
+}
+
+export async function saveAddressToDb (data, collection) {
+  try {
+    let { address } = data
+    if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
+    let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true })
+    return result
+  } catch (err) {
+    return Promise.reject(err)
+  }
 }
 
 export default Address

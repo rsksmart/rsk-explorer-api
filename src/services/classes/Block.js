@@ -1,6 +1,7 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
 import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
+import { saveAddressToDb } from './Address'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -48,7 +49,7 @@ export class Block extends BcThing {
       // save block summary
       await summary.save()
 
-      let { block, transactions, internalTransactions, events, tokenAddresses } = data
+      let { block, transactions, internalTransactions, events, tokenAddresses, addresses } = data
       // clean db
       block = await this.removeOldBlockData(block, transactions)
 
@@ -67,17 +68,10 @@ export class Block extends BcThing {
         .then(res => { result.internalTxs = res })
 
       // insert addresses
-      let Addresses = summary.getAddresses()
-      result.addresses = await Addresses.save().then(res => { result.addresses = res })
-      /*       await Promise.all(
-              Object.values(this.addresses).map(a => {
-                a.resetTxBalance() // reset to force update in next query
-                return a.save()
-              }))
-              .then(res => { result.addresses = res }) */
-      // insert events
+      result.addresses = await Promise.all([...addresses.map(a => saveAddressToDb(a, collections.Addrs))])
 
-      result.events = await this.inserEvents(events)
+      // insert events
+      result.events = await this.insertEvents(events)
 
       // insert tokenAddresses
       result.tokenAddresses = await this.insertTokenAddresses(tokenAddresses)
@@ -93,7 +87,7 @@ export class Block extends BcThing {
       return Promise.reject(err)
     }
   }
-  async inserEvents (events) {
+  async insertEvents (events) {
     try {
       let { Events } = this.collections
       let result = await Promise.all([...events.map(e => Events.updateOne(
@@ -102,7 +96,7 @@ export class Block extends BcThing {
         { upsert: true }))])
       return result
     } catch (err) {
-      this.log.error('Erron inserting events')
+      this.log.error('Error inserting events')
       return Promise.reject(err)
     }
   }
