@@ -91,11 +91,12 @@ describe(`# Address`, function () {
     for (let [tx, calls] of cases) {
       it(`${method} should be called ${calls} times`, async () => {
         let address = new Address(contractAddress, { tx, initConfig, collections: options.collections, nod3 })
-        let spy = Spy(address, method)
+        let { spy, remove } = Spy(address, method)
         await address.fetch().catch(() => { })
         let { type } = address.getData()
         expect(type).to.be.equal(addrTypes.CONTRACT)
         expect(spy.args.length).to.be.equal(calls)
+        remove()
       })
     }
   })

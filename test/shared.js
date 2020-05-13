@@ -78,12 +78,15 @@ export function Spy (obj, method) {
   let spy = {
     args: []
   }
-  let org = obj[method]
+  const org = obj[method]
   if (typeof org !== 'function') throw new Error(`The method ${method} is not a function`)
   obj[method] = function () {
     let args = [].slice.apply(arguments)
     spy.args.push(args)
     return org.call(obj, ...args)
   }
-  return Object.freeze(spy)
+  const remove = () => {
+    obj[method] = org
+  }
+  return Object.freeze({ spy, remove })
 }
