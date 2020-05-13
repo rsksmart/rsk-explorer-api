@@ -10,7 +10,7 @@ export class Block extends BcThing {
     this.fetched = false
     this.log = log || console
     this.hashOrNumber = hashOrNumber
-    this.summary = new BlockSummary(hashOrNumber, { nod3, initConfig, collections })
+    this.summary = new BlockSummary(hashOrNumber, { nod3, initConfig, collections, log })
     this.data = {
       block: null
     }

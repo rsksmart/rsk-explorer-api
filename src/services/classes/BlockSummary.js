@@ -23,12 +23,12 @@ export class BlockSummary extends BcThing {
   }
   async fetch (forceFetch, skipDb) {
     try {
-      let { fetched, nod3, initConfig, collections } = this
+      let { fetched, collections } = this
       if (fetched && !forceFetch) {
         return this.getData()
       }
       let blockData = await this.getBlockData()
-      const { transactions: txs, timestamp, hash } = blockData
+      const { hash } = blockData
       if (!skipDb && collections) {
         let dbData = await getBlockSummaryFromDb(hash, collections)
         if (dbData && dbData.data) {
@@ -38,8 +38,7 @@ export class BlockSummary extends BcThing {
         }
       }
       let Addresses = await this.getAddresses()
-      let blockTrace = await nod3.trace.block(hash)
-      let Txs = txs.map(hash => this.newTx(hash, timestamp, { blockTrace, blockData, addresses: Addresses, nod3, initConfig, collections }))
+      let Txs = await this.createTxs(blockData, Addresses)
       let txsData = await this.fetchItems(Txs)
       let transactions = txsData.map(d => d.tx)
       this.setData({ transactions })
@@ -51,6 +50,22 @@ export class BlockSummary extends BcThing {
       this.setData({ internalTransactions, events, addresses, tokenAddresses })
       this.fetched = true
       return this.getData()
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+  async createTxs (blockData, addresses) {
+    try {
+      let { nod3, initConfig, collections } = this
+      let { timestamp, transactions, hash } = blockData
+      let blockTrace = await nod3.trace.block(hash)
+      let txs = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionByHash', hash]))
+      let receipts = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionReceipt', hash]))
+      return transactions.map(hash => {
+        let txData = txs.find(tx => tx.hash === hash)
+        let receipt = receipts.find(re => re.transactionHash === hash)
+        return new Tx(hash, timestamp, { txData, receipt, blockTrace, blockData, addresses, nod3, initConfig, collections })
+      })
     } catch (err) {
       return Promise.reject(err)
     }
@@ -68,9 +83,6 @@ export class BlockSummary extends BcThing {
     } catch (err) {
       return Promise.reject(err)
     }
-  }
-  newTx (hash, timestamp, options) {
-    return new Tx(hash, timestamp, options)
   }
 
   checkTransactions () {
