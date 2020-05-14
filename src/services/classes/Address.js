@@ -5,11 +5,13 @@ import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx } from './InternalTx'
+import { isZeroAddress } from 'rsk-utils'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, collections, tx, block = 'latest', log } = {}) {
     super({ nod3, initConfig, collections, log })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
+    this.isZeroAddress = isZeroAddress(address)
     this.bcSearch = BcSearch(nod3)
     this.address = address
     this.fetched = false
@@ -40,6 +42,7 @@ export class Address extends BcThing {
 
   async getBalance (blockNumber = 'latest') {
     try {
+      if (this.isZeroAddress) return '0x0'
       let { nod3, address } = this
       let balance = await nod3.eth.getBalance(address, blockNumber)
       return balance
@@ -51,6 +54,7 @@ export class Address extends BcThing {
 
   async getCode () {
     try {
+      if (this.isZeroAddress) return null
       let { code } = this.getData()
       let { nod3, address, blockNumber } = this
       if (code !== undefined) return code
@@ -67,7 +71,7 @@ export class Address extends BcThing {
     try {
       if (this.fetched && !forceFetch) return this.getData(true)
       this.fetched = false
-      let dbData = await this.getFromDb()
+      let dbData = (this.isZeroAddress) ? {} : await this.getFromDb()
       this.setData(dbData)
       // Fix it
       let balance = await this.getBalance('latest')

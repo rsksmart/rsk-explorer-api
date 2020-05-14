@@ -1,12 +1,14 @@
 import { BcThing } from './BcThing'
 import Contract from './Contract'
-import { isBlockObject } from '../../lib/utils'
+import { isBlockObject, isAddress } from '../../lib/utils'
+import { isZeroAddress } from 'rsk-utils'
 
 export class TokenAddress extends BcThing {
   constructor (address, contract) {
     if (!(contract instanceof Contract)) {
       throw new Error('contract is not instance of Contract')
     }
+    if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
     let { block } = contract
     if (!isBlockObject(block)) {
       throw new Error(`Block must be a block object`)
@@ -16,6 +18,7 @@ export class TokenAddress extends BcThing {
     if (!this.isAddress(address)) {
       throw new Error(`TokenAddress: invalid address: ${address}`)
     }
+    this.isZeroAddress = isZeroAddress(address)
     this.Contract = contract
     this.address = address
     let { number, hash } = block
@@ -36,6 +39,7 @@ export class TokenAddress extends BcThing {
     }
   }
   getBalance () {
+    if (this.isZeroAddress) return null
     return this.Contract.call('balanceOf', [this.address])
   }
 }
