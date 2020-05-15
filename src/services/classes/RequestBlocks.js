@@ -2,7 +2,7 @@
 import { EventEmitter } from 'events'
 import { BlocksBase } from '../../lib/BlocksBase'
 import { events as et } from '../../lib/types'
-import { getBlockFromDb, Block } from './Block'
+import { Block } from './Block'
 import { isBlockHash } from '../../lib/utils'
 import { updateTokenAccountBalances } from './UpdateTokenAccountBalances'
 
@@ -10,8 +10,8 @@ class Emitter extends EventEmitter { }
 
 export class RequestBlocks extends BlocksBase {
   constructor (db, options) {
-    let { log, initConfig } = options
-    super(db, { log, initConfig })
+    let { log, initConfig, debug } = options
+    super(db, { log, initConfig, debug })
     this.queueSize = options.blocksQueueSize || 50
     this.pending = new Set()
     this.requested = new Map()
