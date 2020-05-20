@@ -70,6 +70,10 @@ export class Block extends BcThing {
       // insert addresses
       result.addresses = await Promise.all([...addresses.map(a => saveAddressToDb(a, collections.Addrs))])
 
+      // insert balances
+      const balances = this.makeBalances(addresses, block)
+      result.balances = await Promise.all(balances.map(balance => this.saveAddressBalance(balance)))
+
       // insert events
       result.events = await this.insertEvents(events)
 
@@ -112,6 +116,24 @@ export class Block extends BcThing {
     }
   }
 
+  makeBalances (addresses, block) {
+    const { number: blockNumber, hash: blockHash, timestamp } = block
+    return addresses.map(a => {
+      let { address, blockBalance: balance } = a
+      return { address, balance, blockHash, blockNumber, timestamp }
+    }).filter(({ balance }) => balance !== undefined)
+  }
+
+  async saveAddressBalance (balance) {
+    try {
+      let { collections } = this
+      let res = await collections.Balances.insertOne(balance)
+      return res
+    } catch (err) {
+      this.log.error(`Error updating balance address: ${balance.address} block:${balance.blockHash}`)
+      this.log.trace(err)
+    }
+  }
   async getOldBlockData (block) {
     try {
       if (!isBlockObject(block)) throw new Error('Block data is empty')
@@ -252,7 +274,7 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections)
     if (!isBlockHash(blockHash)) throw new Error(`Empty block hash: ${blockHash}`)
     let hash = blockHash
     let result = {}
-    let query = { $or: [{ blockHash }, { blockNumber }] }
+    const query = { $or: [{ blockHash }, { blockNumber }] }
 
     result.block = await collections.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] })
 
@@ -273,6 +295,9 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections)
 
     // remove contracts by blockHash
     result.addresses = await collections.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash })
+
+    // remove balances
+    result.balances = await collections.Balances.deleteMany(query)
 
     return result
   } catch (err) {
