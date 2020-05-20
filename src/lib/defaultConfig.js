@@ -63,6 +63,7 @@ export default {
     BlocksSummary: 'blocksSummary',
     ContractVerification: 'contractsVerifications',
     VerificationsResults: 'verificationResults',
-    InternalTransactions: 'internalTransactions'
+    InternalTransactions: 'internalTransactions',
+    Balances: 'balances'
   }
 }

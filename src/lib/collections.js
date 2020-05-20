@@ -261,5 +261,28 @@ export default {
         key: { 'action.to': 1 }
       }
     ]
+  },
+  Balances: {
+    indexes: [
+      {
+        key: {
+          address: 1,
+          blockNumber: 1
+        },
+        unique: true
+      },
+      {
+        key: { address: 1 }
+      },
+      {
+        key: { blockNumber: -1 }
+      },
+      {
+        key: { blockHash: -1 }
+      },
+      {
+        key: { timestamp: -1 }
+      }
+    ]
   }
 }
