@@ -9,9 +9,22 @@ import { Summary } from './Summary'
 // import { ExtendedStats } from './ExtendedStats'
 import { ContractVerification } from './ContractVerification'
 import { InternalTx } from './InternalTx'
+import { Balances } from './Balances'
 import { getModulesNames, getEnabledModules } from '../lib/apiTools'
 
-const apiModules = { Block, Tx, Address, Event, Token, TxPending, Stats, Summary, ContractVerification, InternalTx }
+const apiModules = {
+  Block,
+  Tx,
+  Address,
+  Event,
+  Token,
+  TxPending,
+  Stats,
+  Summary,
+  ContractVerification,
+  InternalTx,
+  Balances
+}
 
 export const getEnabledApiModules = modules => {
   const enabled = getModulesNames(getEnabledModules(modules))
