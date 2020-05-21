@@ -26,10 +26,12 @@ class Contract extends BcThing {
   async fetch () {
     try {
       let { deployedCode, fetched } = this
+
       if (fetched) return this.getData()
       let contract = await this.getContract()
       // new contracts
-      if (deployedCode) {
+      if (!this.data.contractInterfaces) {
+        if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
         let info = await this.parser.getContractInfo(deployedCode, contract)
         let { interfaces, methods } = info
         if (interfaces.length) this.setData({ contractInterfaces: interfaces })
@@ -39,7 +41,6 @@ class Contract extends BcThing {
       this.isToken = hasValue(contractInterfaces || [], tokensInterfaces)
       if (this.isToken && !tokenData) {
         let tokenData = await this.getToken()
-        // if (tokenData) this.data = Object.assign(this.data, tokenData)
         if (tokenData) this.setData(tokenData)
       }
       let data = this.getData()
