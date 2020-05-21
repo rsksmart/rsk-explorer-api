@@ -47,7 +47,8 @@ export default {
     validateCollections: false,
     bcTipSize: 120,
     batchRequestSize: 20,
-    debug: false
+    debug: false,
+    updateTokenBalances: true // Update token accounts balances on next block
   },
   collectionsNames: {
     Config: 'config',

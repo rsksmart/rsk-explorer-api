@@ -17,6 +17,7 @@ export class RequestBlocks extends BlocksBase {
     this.requested = new Map()
     this.events = (options.noEvents) ? null : new Emitter()
     this.maxRequestTime = 1000
+    this.updateTokenBalances = options.updateTokenBalances
   }
 
   emit (event, data) {
@@ -93,6 +94,9 @@ export class RequestBlocks extends BlocksBase {
       hash = hash || hashOrNumber
       const { nod3, collections, log, initConfig } = this
       let block = await getBlock(hash, { nod3, collections, log, initConfig })
+      if (this.updateTokenBalances) {
+        await updateTokenAccountBalances(block.block, { nod3, collections, initConfig, log })
+      }
       return block
     } catch (err) {
       return Promise.reject(err)
@@ -141,7 +145,6 @@ export async function getBlock (hashOrNumber, { nod3, collections, log, initConf
     let result = await newBlock.save()
     if (!result || !result.data) return
     let { block } = result.data
-    await updateTokenAccountBalances(block, { nod3, collections, initConfig, log })
     return { block, key: hashOrNumber }
   } catch (error) {
     return { error, key: hashOrNumber }
