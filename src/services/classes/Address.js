@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import { isBlockObject, isNullData, isAddress } from '../../lib/utils'
+import { isBlockObject, isNullData, isAddress, isValidBlockNumber } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
@@ -8,7 +8,7 @@ import { InternalTx } from './InternalTx'
 import { isZeroAddress } from 'rsk-utils'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, initConfig, collections, tx, block = 'latest', log } = {}) {
+  constructor (address, { nod3, initConfig, collections, tx, block, log } = {}) {
     super({ nod3, initConfig, collections, log })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
@@ -30,7 +30,9 @@ export class Address extends BcThing {
   }
 
   setBlock (block) {
-    if (!block) block = 'latest'
+    if (!isBlockObject(block) && !isValidBlockNumber(block)) {
+      throw new Error(`Invalid block ${block}`)
+    }
     if (isBlockObject(block)) {
       this.blockNumber = block.number
       this.block = block
@@ -73,15 +75,17 @@ export class Address extends BcThing {
       this.fetched = false
       let dbData = (this.isZeroAddress) ? {} : await this.getFromDb()
       this.setData(dbData)
-      // Fix it
-      let balance = await this.getBalance('latest')
+
       let { blockNumber } = this
-      balance = balance || 0
-      this.setData({ balance })
-      if (blockNumber !== 'latest') {
-        let blockBalance = await this.getBalance(blockNumber)
-        this.setData({ blockBalance })
+      let blockBalance = await this.getBalance(blockNumber)
+      this.setData({ blockBalance })
+
+      let storedBlock = this.data.blockNumber || 0
+      if (blockNumber > storedBlock) {
+        let balance = blockBalance || 0
+        this.setData({ balance, blockNumber })
       }
+
       let code = await this.getCode()
       // TODO suicide
       if (code) {
