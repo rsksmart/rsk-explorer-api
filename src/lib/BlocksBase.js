@@ -1,6 +1,6 @@
 import { getDbBlocksCollections } from './blocksCollections'
 import { events, actions } from './types'
-import nod3 from './nod3Connect'
+import { nod3Router as nod3 } from './nod3Connect'
 import NativeContracts from './NativeContracts'
 
 export class BlocksBase {
