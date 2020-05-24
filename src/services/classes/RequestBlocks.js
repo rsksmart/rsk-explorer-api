@@ -93,11 +93,13 @@ export class RequestBlocks extends BlocksBase {
       }
       hash = hash || hashOrNumber
       const { nod3, collections, log, initConfig } = this
-      let block = await getBlock(hash, { nod3, collections, log, initConfig })
+      let result = await getBlock(hash, { nod3, collections, log, initConfig })
+
       if (this.updateTokenBalances) {
-        await updateTokenAccountBalances(block.block, { nod3, collections, initConfig, log })
+        let { block } = result
+        if (block) await updateTokenAccountBalances(block, { nod3, collections, initConfig, log })
       }
-      return block
+      return result
     } catch (err) {
       return Promise.reject(err)
     }
@@ -111,7 +113,7 @@ export class RequestBlocks extends BlocksBase {
     if (res && res.block) {
       let block = res.block
       this.emit(et.NEW_BLOCK, { key, block })
-      return res.block
+      res = undefined
     }
     this.processPending()
   }
@@ -140,14 +142,15 @@ export class RequestBlocks extends BlocksBase {
 
 export async function getBlock (hashOrNumber, { nod3, collections, log, initConfig }) {
   if (hashOrNumber !== 0 && !isBlockHash(hashOrNumber)) throw new Error(`Invalid blockHash: ${hashOrNumber}`)
+  const key = hashOrNumber
   try {
     let newBlock = new Block(hashOrNumber, { nod3, collections, log, initConfig })
     let result = await newBlock.save()
-    if (!result || !result.data) return
+    if (!result || !result.data) return { key }
     let { block } = result.data
-    return { block, key: hashOrNumber }
+    return { block, key }
   } catch (error) {
-    return { error, key: hashOrNumber }
+    return { error, key }
   }
 }
 
