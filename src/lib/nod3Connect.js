@@ -1,5 +1,6 @@
 import { Nod3, Nod3Router } from 'nod3'
 import config from './config'
+import { quantityMarks } from '../lib/utils'
 
 const { HttpProvider } = Nod3.providers
 const { source, sourceRoutes } = config
@@ -29,6 +30,13 @@ export const createNod3Router = (sources, options = {}) => {
 export const nod3Instance = (source, options = {}) => {
   const sources = (!Array.isArray(source)) ? [source] : [...source]
   return nod3Connect(sources[0].url, options)
+}
+
+export const nod3Log = log => ({ method, params, time, url }) => {
+  let m = (time > 200) ? 'warn' : 'debug'
+  let marks = quantityMarks(time, 100, '*')
+  params = (params) ? JSON.stringify(params) : ''
+  return log[m](`${marks}[NOD3] [${url}] ${method} (${params}) -- time:${time}ms`)
 }
 
 export const nod3 = nod3Instance(source)
