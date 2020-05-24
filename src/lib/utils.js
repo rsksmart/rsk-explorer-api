@@ -125,3 +125,11 @@ export const isBlockObject = block => {
 }
 
 export const toAscii = hexString => toBuffer(remove0x(hexString), 'hex').toString('ascii').replace(/\0/g, '')
+
+export const quantityMarks = (quantity, unit, mark = '*') => {
+  quantity = parseInt(quantity)
+  unit = parseInt(unit)
+  if (isNaN(quantity) || isNaN(unit)) return ''
+  let steps = Math.floor(quantity / unit)
+  return Array(++steps).join(mark)
+}
