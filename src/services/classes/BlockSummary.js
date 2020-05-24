@@ -107,7 +107,7 @@ export class BlockSummary extends BcThing {
         Addresses.add(miner, { block: blockData })
         this.Addresses = Addresses
       }
-      return this.Addresses
+      return Addresses
     } catch (err) {
       return Promise.reject(err)
     }
