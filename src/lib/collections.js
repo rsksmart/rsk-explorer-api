@@ -284,5 +284,13 @@ export default {
         key: { timestamp: -1 }
       }
     ]
+  },
+  BlocksTraces: {
+    indexes: [
+      {
+        key: { hash: 1 },
+        unique: true
+      }
+    ]
   }
 }

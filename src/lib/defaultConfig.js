@@ -70,6 +70,7 @@ export default {
     ContractVerification: 'contractsVerifications',
     VerificationsResults: 'verificationResults',
     InternalTransactions: 'internalTransactions',
-    Balances: 'balances'
+    Balances: 'balances',
+    BlocksTraces: 'blockTraces'
   }
 }
