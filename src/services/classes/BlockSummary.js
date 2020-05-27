@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import Tx from './Tx'
+import BlockTrace from './BlockTrace'
 import BlockAddresses from './BlockAddresses'
 import { getSummaryId } from '../../lib/ids'
 import { arrayDifference, isBlockHash } from '../../lib/utils'
@@ -56,9 +57,10 @@ export class BlockSummary extends BcThing {
   }
   async createTxs (blockData, addresses) {
     try {
-      let { nod3, initConfig, collections } = this
+      let { nod3, initConfig, collections, log } = this
       let { timestamp, transactions, hash } = blockData
-      let blockTrace = await nod3.trace.block(hash)
+      let bTrace = new BlockTrace(hash, { nod3, collections, log, initConfig })
+      let blockTrace = await bTrace.fetch()
       let txs = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionByHash', hash]))
       let receipts = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionReceipt', hash]))
       return transactions.map(hash => {
@@ -70,6 +72,7 @@ export class BlockSummary extends BcThing {
       return Promise.reject(err)
     }
   }
+
   async getBlockData () {
     try {
       let { block } = this.getData()
