@@ -116,7 +116,8 @@ export class BlockSummary extends BcThing {
   async save () {
     try {
       let data = await this.fetch()
-      let res = await saveBlockSummary(data, this.collections)
+      let { log, collections } = this
+      let res = await saveBlockSummary(data, collections, log)
       return res
     } catch (err) {
       this.log.error(`Error saving block summary`)
@@ -133,7 +134,8 @@ export const mismatchBlockTransactions = (block, transactions) => {
   return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash)
 }
 
-export async function saveBlockSummary (data, collections) {
+export async function saveBlockSummary (data, collections, log) {
+  log = log || console
   const { hash, number, timestamp } = data.block
   try {
     const collection = collections[BlocksSummaryCollection]
@@ -143,7 +145,7 @@ export async function saveBlockSummary (data, collections) {
     let result = await collection.updateOne({ _id }, { $set: summary }, { upsert: true })
     return result
   } catch (err) {
-    this.log.error(`Error saving Block Summary ${hash}`)
+    log.error(`Error saving Block Summary ${hash}`)
     return Promise.reject(err)
   }
 }

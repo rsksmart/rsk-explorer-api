@@ -15,7 +15,7 @@ function saveBlock (data, msg = 'save') {
     this.timeout(60000)
     it(`should save a blockSummary`, async () => {
       const collections = await testCollections()
-      let { result } = await saveBlockSummary(data, collections).catch(err => console.log(err))
+      let { result } = await saveBlockSummary(data, collections, console).catch(err => console.log(err))
       expect(result.ok).to.be.equal(1)
     })
   })
