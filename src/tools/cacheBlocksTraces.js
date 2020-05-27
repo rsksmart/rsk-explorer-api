@@ -1,15 +1,26 @@
 
-import dataSource from '../lib/dataSource.js'
-import { nod3Router as nod3, nod3Log } from '../lib/nod3Connect'
+import { setup } from '../lib/dataSource'
+import config from '../lib/config'
+import { nod3Log } from '.././lib/nod3Connect'
+import { Nod3, Nod3Router } from 'nod3'
 import BlockTrace from '../services/classes/BlockTrace'
-import { log } from '../lib/cli'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
+import { Logger } from '../lib/Logger'
 
+const { HttpProvider } = Nod3.providers
+const log = Logger('cacheTraces', { level: 'trace' })
+const { source } = config
+
+const nod3 = createNod3(source)
 nod3.setDebug(nod3Log(log))
+
 const { argv } = process
 
 let lowerBlock = argv[2] || 0
 let higherBlock = argv[3] || 'latest'
+argv[4] = parseInt(argv[4])
+const sourcesLen = (Array.isArray(source)) ? source.length : 1
+const QUEUE_SIZE = (!isNaN(argv[4])) ? argv[4] : sourcesLen
+const requested = {}
 
 if (isNaN(parseInt(lowerBlock))) help(`Invalid lowerBlock value ${argv[2]}`)
 if (higherBlock !== 'latest') {
@@ -18,40 +29,72 @@ if (higherBlock !== 'latest') {
   if (higherBlock < lowerBlock) help()
 }
 
-dataSource().then(async ({ db, initConfig }) => {
-  const collections = await getDbBlocksCollections(db)
-  log.label(JSON.stringify({ lowBlock: lowerBlock, highBlock: higherBlock }))
-  log.info(initConfig.net)
-  let { number, hash } = await nod3.eth.getBlock(higherBlock)
-  await getBlocks({ number, hash }, lowerBlock, { collections, initConfig })
+main().then(() => {
+  log.info('Done')
   process.exit(0)
-}).catch(err => showError(err))
+})
 
-async function getBlocks (current, low, opts) {
+async function main () {
   try {
-    let { hash, number } = current
-    if (number <= low) return
-    let res = await saveBlockTrace(hash, opts)
-    return getBlocks({ hash: res.parentHash, number: res.number - 1 }, low, opts)
+    const { initConfig, collections } = await setup()
+    log.trace(JSON.stringify({ lowBlock: lowerBlock, highBlock: higherBlock }))
+    log.info(initConfig.net)
+
+    let block = await nod3.eth.getBlock(higherBlock)
+    const tasks = []
+    for (let i = 0; i < QUEUE_SIZE; i++) {
+      let { hash, parentHash } = block
+      tasks.push(getBlocks(hash, { collections, initConfig }))
+      block = await nod3.eth.getBlock(parentHash)
+    }
+    await Promise.all(tasks)
   } catch (err) {
-    showError(err)
+    showErrorAndExit(err)
   }
 }
 
-async function saveBlockTrace (hashOrNumber, { collections, initConfig }) {
+async function getBlocks (hash, opts) {
   try {
-    log.info(hashOrNumber)
-    let block = await nod3.eth.getBlock(hashOrNumber)
-    let { hash, parentHash, number } = block
+    let block = await nod3.eth.getBlock(hash)
+    let { number, parentHash } = block
+    if (number <= lowerBlock) return
+    log.info(`Get trace ${hash}/${number}`)
+    let res = await saveBlockTrace(hash, opts)
+    if (res) log.info(`Trace ${hash} done`)
+    return getBlocks(parentHash, opts)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+function createNod3 (source) {
+  if (Array.isArray(source)) {
+    const providers = source.map(({ url }) => new HttpProvider(url))
+    const { nod3, router } = new Nod3Router(providers)
+    router.reset()
+    router.add({ module: 'subscribe', to: 0 })
+    return nod3
+  } else {
+    let nod3 = new Nod3(new HttpProvider(source.url))
+    return nod3
+  }
+}
+
+async function saveBlockTrace (hash, { collections, initConfig }) {
+  try {
+    if (requested[hash] !== undefined) return
+    requested[hash] = false
+    log.info(`Waiting for block_trace ${hash}`)
     let blockTrace = new BlockTrace(hash, { nod3, collections, initConfig })
     await blockTrace.save()
-    return { hash, parentHash, number }
+    requested[hash] = true
+    return hash
   } catch (err) {
-    showError(err)
+    showErrorAndExit(err)
   }
 }
 
-function showError (err) {
+function showErrorAndExit (err) {
   log.error(err)
   process.exit(9)
 }
@@ -64,7 +107,7 @@ function help (msg) {
     console.log()
   }
   const myName = p(process.argv[1])
-  log.label(`Use: ${p(process.argv[0])} ${myName} [lowerBlock] [higherBlock] `)
+  log.info(`Use: ${p(process.argv[0])} ${myName} [lowerBlock] [higherBlock] `)
   log.info(`e.g. ${myName} 0 456`)
   process.exit(0)
 }
