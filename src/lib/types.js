@@ -83,7 +83,9 @@ export const EVMversions = [
   'spuriousDragon',
   'byzantium',
   'constantinople',
-  'petersburg']
+  'petersburg',
+  'istanbul'
+]
 
 export const bitcoinNetworks = {
   TESTNET: 'testnet',
