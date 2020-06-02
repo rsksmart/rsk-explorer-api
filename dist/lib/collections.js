@@ -198,13 +198,16 @@
       key: {
         hash: 1 },
 
-      unique: true }],
+      unique: true }] },
 
 
-    TxPool: [
+
+  TxPool: {
+    indexes: [
     {
       key: {
         timestamp: -1 } }] },
+
 
 
 

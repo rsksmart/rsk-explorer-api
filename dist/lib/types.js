@@ -83,7 +83,9 @@ const EVMversions = [
 'spuriousDragon',
 'byzantium',
 'constantinople',
-'petersburg'];exports.EVMversions = EVMversions;
+'petersburg',
+'istanbul'];exports.EVMversions = EVMversions;
+
 
 const bitcoinNetworks = {
   TESTNET: 'testnet',
