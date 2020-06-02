@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.0.8] - 2019-06-02
+
+### Added
+
+- Add 'istanbul' to EVM versions list
+
+### Fixed
+
+- TxPool collection indexes
+
 ## [1.0.7] - 2019-04-08
 
 ### Fixed
