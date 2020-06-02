@@ -200,8 +200,10 @@ export default {
         },
         unique: true
       }
-    ],
-    TxPool: [
+    ]
+  },
+  TxPool: {
+    indexes: [
       {
         key: {
           timestamp: -1
@@ -209,6 +211,7 @@ export default {
       }
     ]
   },
+
   PendingTxs: {
     indexes: [
       {
