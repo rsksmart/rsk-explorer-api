@@ -3,13 +3,23 @@ export const red = '\x1b[31m'
 export const blue = '\x1b[36m'
 export const green = '\x1b[32m'
 export const orange = '\x1b[33m'
+export const yellow = '\x1b[93m'
 export const grey = '\x1b[90m'
 
 export const error = l => console.log(red, l, reset)
 export const warn = l => console.log(orange, l, reset)
 export const info = l => console.log(blue, l, reset)
+export const debug = l => console.log(yellow, l, reset)
 export const ok = l => console.log(green, l, reset)
 export const example = l => console.log(grey, l, reset)
+export const label = l => console.log(green, l, reset)
+const logMethods = { error, warn, debug, info, label }
+
+export const log = new Proxy({}, {
+  get (t, p) {
+    return logMethods[p] || console.log
+  }
+})
 
 export const ansiCode = number => `\x1b[${parseInt(number)}m`
 
