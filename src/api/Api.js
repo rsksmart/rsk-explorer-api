@@ -139,12 +139,13 @@ class Api extends DataCollector {
     const stats = await Stats.run('getLatest')
     if (!stats) return
 
-    /*     const ExtendedStats = this.getModule('ExtendedStats')
-        if (ExtendedStats) {
-          const blockNumber = parseInt(stats.blockNumber)
-          const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
-          Object.assign(stats, extendedStats)
-        } */
+    const ExtendedStats = this.getModule('ExtendedStats')
+    if (ExtendedStats) {
+        const blockNumber = parseInt(stats.blockNumber)
+        const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+        Object.assign(stats, extendedStats)
+    }
+
     let circulatingSupply = stats.circulatingSupply || await this.getCirculatingSupplyFromDb()
     this.circulatingSupply = circulatingSupply
     this.stats = Object.assign({}, stats)
