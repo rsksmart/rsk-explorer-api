@@ -104,6 +104,7 @@ describe('# Services', function () {
         })
 
         events.on('data', ({ event, data }) => {
+          data = JSON.parse(data)
           msgs.push({ event, data })
         })
       })
