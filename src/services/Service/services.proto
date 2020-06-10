@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+message Empty {}
+
+message EmptyRequest {}
+
+message WorkerRequest {
+  string action = 1;
+  repeated string args = 2;
+}
+
+message WorkerResponse{
+  string result = 1;
+}
+
+message EventRequest {
+  string event = 1;
+  string data = 2;
+}
+
+message EventResponse{
+  string event = 1;
+  string data = 2;
+}
+
+message JoinRequest {
+  string user = 1;
+}
+
+message NameRequest{
+  string name = 1;
+}
+
+message InfoRequest {}
+
+message InfoResponse{
+  string name = 1;
+  repeated string protos = 2;
+}
+
+
+service Info{
+  rpc getServiceInfo(InfoRequest) returns (InfoResponse) {}
+}
+service EventEmitter{
+  rpc join(JoinRequest) returns (stream EventResponse) {}
+  rpc leave(Empty) returns (Empty) {}
+}
+service EventListener{
+  rpc send(EventRequest) returns (Empty) {}
+}
+service Worker{
+  rpc run(WorkerRequest) returns (WorkerResponse) {}
+}
+
