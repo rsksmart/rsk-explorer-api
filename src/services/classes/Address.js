@@ -190,7 +190,9 @@ export class Address extends BcThing {
   isContract () {
     let { code, type } = this.getData()
     let { isNative, address } = this
-    if (undefined === code && !isNative) throw new Error(`Run getCode first ${address}`)
+    if (undefined === code && !isNative && !isZeroAddress(address)) {
+      throw new Error(`Run getCode first ${address}`)
+    }
     return type === addrTypes.CONTRACT
   }
 
