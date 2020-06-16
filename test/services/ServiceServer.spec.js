@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { Service, clientCredentials } from '../../src/services/Service/ServiceServer'
-import { PROTO } from '../../src/services/Service/serviceProto'
+import { PROTO, Struct, MESSAGES } from '../../src/services/Service/serviceProto'
 import { isPortInUse } from '../shared'
 
 const credentials = clientCredentials()
@@ -35,6 +35,7 @@ describe('# Services', function () {
 
     describe('worker, grpc client', function () {
       it('should create a worker', async () => {
+
         let sum = (a, b) => parseInt(a) + parseInt(b)
         let service = Service(uri, {}, ({ create }) => {
           create.Worker({ sum })
@@ -47,8 +48,17 @@ describe('# Services', function () {
         assert.typeOf(client.run, 'function')
 
         let result = await new Promise((resolve, reject) => {
-          client.run({ action: 'sum', args: [2, 5] }, (err, { result }) => {
+          const msg = new MESSAGES.WorkerRequest(['sum', ['2', '5']])
+          /*
+          msg.setAction('sum')
+          msg.addArgs('2')
+          msg.addArgs('5')
+          msg.setArgsList(['2', '5'])
+          */
+          client.run(msg, (err, response) => {
             if (err) reject(err)
+            let res = response.getResult()
+            let { result } = res.toJavaScript()
             resolve(result)
           })
         })
@@ -59,7 +69,9 @@ describe('# Services', function () {
     describe('listener, grpc client', function () {
       it('should create a emitter', async () => {
         let msgs = []
-        let eventHandler = (event, data) => msgs.push({ event, data })
+        let eventHandler = (event, data) => {
+          msgs.push({ event, data })
+        }
 
         let service = Service(uri, {}, ({ create }) => {
           create.Listener(eventHandler)
@@ -70,14 +82,19 @@ describe('# Services', function () {
 
         let client = new PROTO[protos[0]](uri, credentials)
         assert.typeOf(client.send, 'function')
-        let event = { event: 'testEvent', data: 'testData' }
+        let event = 'testEvent'
+        let data = { test: 'testData' }
+        let request = new MESSAGES.EventRequest([event])
+        // request.setEvent(event)
+        request.setData(Struct.fromJavaScript(data))
         await new Promise((resolve, reject) => {
-          client.send(event, (err, res) => {
+          client.send(request, (err, response) => {
             if (err) reject(err)
-            resolve(res)
+            resolve(response.toString())
           })
         })
-        assert.deepEqual(msgs[0], event)
+        assert.deepEqual(msgs[0].event, event)
+        assert.deepEqual(msgs[0].data, data)
         service.stop()
       })
     })
@@ -93,35 +110,46 @@ describe('# Services', function () {
         let { protos } = service.getInfo()
         assert.equal(protos.length, 1)
         assert.typeOf(service.emit, 'function')
+        assert.typeOf(service.getJoined, 'function')
         await service.start()
         client = new PROTO[protos[0]](uri, credentials)
         assert.typeOf(client.join, 'function')
 
-        events = client.join({ user: 'test' })
+        const request = new MESSAGES.JoinRequest()
+        request.setUser('Johny')
+        events = client.join(request)
         assert.equal(events.constructor.name, 'ClientReadableStream')
+
         events.on('error', err => {
           console.error(err)
         })
 
-        events.on('data', ({ event, data }) => {
-          data = JSON.parse(data)
+        events.on('data', (request) => {
+          let event = request.getEvent()
+          let data = request.getData().toJavaScript()
           msgs.push({ event, data })
         })
       })
 
       it('should emit events', () => {
-        service.emit('data', 'test')
-        service.emit('data', 'test')
+        service.emit('data', { test: 'test' })
+        service.emit('data', { test: 'test' })
+      })
+
+      it('should return joined clients', async () => {
+        assert.equal(service.getJoined().length, 1)
       })
 
       it('should listen to events', async function () {
         assert.equal(msgs.length, 2)
         let [msg] = msgs
         assert.equal(msg.event, 'data')
-        assert.equal(msg.data, 'test')
-        client.leave(null, () => { })
-        client.close()
+        assert.deepEqual(msg.data, { test: 'test' })
         // service.stop()
+      })
+      it('should leave a channel', async () => {
+        await client.leave(new MESSAGES.Empty(), () => { })
+        client.close()
       })
     })
   })

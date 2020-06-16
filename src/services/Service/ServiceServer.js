@@ -1,8 +1,8 @@
 
 import gRPC from 'grpc'
-import { PROTO, INFO_SERVICE } from './serviceProto'
+import { PROTO, INFO_SERVICE, MESSAGES } from './serviceProto'
+import { Struct } from 'google-protobuf/google/protobuf/struct_pb'
 const createCredentials = gRPC.ServerCredentials.createInsecure
-
 export const clientCredentials = gRPC.credentials.createInsecure
 
 /**
@@ -14,7 +14,9 @@ export const clientCredentials = gRPC.credentials.createInsecure
  * the methods to create new services.
  * @returns {Object}
  */
-export function Service (uri, { name } = {}, executor) {
+export function Service (uri, options = {}, executor) {
+  if (typeof options !== 'object') throw new Error(`Invalid options`)
+  const { name } = options
   const protos = new Set()
   const methods = {}
   const registeredClients = {}
@@ -37,24 +39,32 @@ export function Service (uri, { name } = {}, executor) {
   }
 
   const getServiceInfo = (call, cb) => {
-    cb(null, getInfo())
+    const { name, protos } = getInfo()
+    const response = new MESSAGES.InfoResponse()
+    response.setName(name)
+    response.setProtosList(protos)
+    cb(null, response)
   }
 
   addMethods({
     start: async () => {
       try {
-        await new Promise((resolve, reject) => {
+        let port = await new Promise((resolve, reject) => {
           server.bindAsync(uri, createCredentials(), (err, res) => {
             if (err) reject(err)
-            resolve(res)
+            else resolve(res)
           })
         })
+        if (!port) throw new Error(`Service start error at ${uri}`)
         server.start()
+        return port
       } catch (err) {
         return Promise.reject(err)
       }
     },
-    stop: () => server.forceShutdown(),
+    stop: () => {
+      server.forceShutdown()
+    },
     getServer: () => server,
     getUri: () => uri,
     getInfo
@@ -64,6 +74,7 @@ export function Service (uri, { name } = {}, executor) {
   server.addService(INFO_SERVICE.service, { getServiceInfo })
 
   const addService = (serviceName, serviceMethods) => {
+    serviceName = `${serviceName}Service`
     server.addService(PROTO[serviceName].service, serviceMethods)
     protos.add(serviceName)
   }
@@ -80,7 +91,6 @@ export function Service (uri, { name } = {}, executor) {
 
     const join = call => {
       const peer = call.getPeer()
-
       call.on('cancelled', () => {
         clients.delete(peer)
       })
@@ -93,14 +103,21 @@ export function Service (uri, { name } = {}, executor) {
       const client = clients.get(peer)
       client.end()
       clients.delete(peer)
-      cb(null)
+      cb(null, new MESSAGES.Empty())
     }
 
     const emit = (event, data) => {
-      data = JSON.stringify(data)
-      clients.forEach(client => client.write({ event, data }))
+      const response = new MESSAGES.EventResponse()
+      response.setEvent(event)
+      response.setData(Struct.fromJavaScript(data))
+      clients.forEach(client => client.write(response))
     }
-    addMethods({ emit })
+
+    const getJoined = () => {
+      return [...clients.keys()]
+    }
+
+    addMethods({ emit, getJoined })
     addService('EventEmitter', { join, leave })
   }
 
@@ -108,9 +125,11 @@ export function Service (uri, { name } = {}, executor) {
   const Listener = (eventHandler) => {
     if (typeof eventHandler !== 'function') throw new Error(`eventHandler must be a function.`)
     const send = (call, cb) => {
-      const { event, data } = call.request
+      const { request } = call
+      const event = request.getEvent().toString()
+      const data = request.getData().toJavaScript()
       eventHandler(event, data, call)
-      cb(null)
+      cb(null, new MESSAGES.Empty())
     }
     addService('EventListener', { send })
   }
@@ -121,12 +140,17 @@ export function Service (uri, { name } = {}, executor) {
     if (Object.keys(actions) < 1) throw new Error('Actions is empty.')
     const run = async (call, cb) => {
       try {
-        let { action, args } = call.request
+        let { request } = call
+        let action = request.getAction()
+        let args = request.getArgsList()
         args = args || []
         if (!actions[action]) cb(new Error(`Unknown action:${action}`))
         if (!Array.isArray(args)) args = [args]
-        let res = await actions[action](...args)
-        cb(null, { result: JSON.stringify(res) })
+        let result = await actions[action](...args)
+        let response = new MESSAGES.WorkerResponse()
+        result = Struct.fromJavaScript({ result })
+        response.setResult(result)
+        cb(null, response)
       } catch (err) {
         cb(err)
         return Promise.reject(err)
@@ -140,4 +164,34 @@ export function Service (uri, { name } = {}, executor) {
   }
 
   return Object.freeze(methods)
+}
+
+export const responseDecoders = {
+
+  getServiceInfo: response => {
+    let { name: serviceName, protosList: protos } = response.toObject()
+    return { serviceName, protos }
+  },
+  join: (response) => {
+    response.on('data', (res) => {
+      let event = res.getEvent()
+      let data = res.getData()
+      data = data.toJavaScript()
+      response.emit('newEvent', { event, data })
+    })
+    return response
+  },
+  leave: response => { },
+  send: response => { },
+  run: response => {
+    let result = response.getResult()
+    result = result.toJavaScript()
+    return result
+  }
+}
+
+export const decodeResponse = (method, response, client) => {
+  let decoder = responseDecoders[method]
+  if (!decoder) throw new Error(`Unknown method ${method}`)
+  return decoder(response, client)
 }

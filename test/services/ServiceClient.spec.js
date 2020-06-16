@@ -7,9 +7,9 @@ const host = '127.0.0.1'
 const port = 3026
 const uri = `${host}:${port}`
 const events = [
-  ['testEvent', 'testData'],
+  ['testEvent', { test: 'testData' }],
   ['fooEvent', { bob: 44, alice: '23' }],
-  ['bar', 33]
+  ['bar', { bar: '33' }]
 ]
 const eventsReceived = []
 const eventsSent = []
@@ -31,13 +31,17 @@ let eventListener = (event, data) => {
 }
 
 describe(`Services.Client`, function () {
-  let client, serviceName
+  let client, serviceName, emitter
   let service = Service(uri, { name }, ({ create }) => {
     create.Emitter()
     create.Listener(eventListener)
     create.Worker(actions)
   })
-
+/*   this.afterAll(() => {
+    emitter.cancel()
+    client.close()
+    service.stop()
+  }) */
   it('should create a service', async () => {
     await service.start()
     let started = await isPortInUse(port)
@@ -55,14 +59,14 @@ describe(`Services.Client`, function () {
   })
 
   it('should join to event emitter', async () => {
-    let emitter = await client.join({})
+    emitter = await client.join('user')
     assert.equal(emitter.constructor.name, 'ClientReadableStream')
-    emitter.on('data', ({ event, data }) => {
-      eventsReceived.push([event, JSON.parse(data)])
+    emitter.on('newEvent', ({ event, data }) => {
+      eventsReceived.push([event, data])
     })
   })
 
-  it('should send events', () => {
+  it('should emit events', () => {
     for (let [event, data] of events) {
       service.emit(event, data)
     }
@@ -72,10 +76,16 @@ describe(`Services.Client`, function () {
     assert.deepEqual(eventsReceived, events)
   })
 
-  it('should send tasks to the worker and receive the results', async () => {
-    let msg = { Bob: 83, Alice: 27 }
-    let { result } = await client.run({ action: 'echo', args: [msg] })
-    assert.equal(JSON.parse(result), msg)
+  it('should receive events', async () => {
+    let event = 'sendEvent'
+    let data = { foo: 'bar' }
+    await client.send(event, data)
+    assert.deepEqual(eventsSent[0], [event, data])
   })
 
+  it('should send tasks to the worker and receive the results', async () => {
+    let msg = 'test'
+    let { result } = await client.run('echo', [msg])
+    assert.equal(result, msg)
+  })
 })

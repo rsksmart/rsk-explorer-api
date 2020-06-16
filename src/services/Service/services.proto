@@ -1,4 +1,5 @@
 syntax = "proto3";
+import "google/protobuf/struct.proto";
 
 message Empty {}
 
@@ -10,25 +11,21 @@ message WorkerRequest {
 }
 
 message WorkerResponse{
-  string result = 1;
+  google.protobuf.Struct result = 1;
 }
 
 message EventRequest {
   string event = 1;
-  string data = 2;
+  google.protobuf.Struct data = 2;
 }
 
 message EventResponse{
   string event = 1;
-  string data = 2;
+  google.protobuf.Struct data = 2;
 }
 
 message JoinRequest {
   string user = 1;
-}
-
-message NameRequest{
-  string name = 1;
 }
 
 message InfoRequest {}

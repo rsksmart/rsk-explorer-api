@@ -1,27 +1,18 @@
 
 import gRPC from 'grpc'
-import * as protoLoader from '@grpc/proto-loader'
-import path from 'path'
+import services from './protos/services_grpc_pb'
+import messages from './protos/services_pb'
+export { Struct } from 'google-protobuf/google/protobuf/struct_pb'
 
-const PROTO_PATH = path.resolve(__dirname, 'services.proto')
-
-const PROTO_LOADER_OPTIONS = {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true
-}
-
-export const loadProtoDefinition = protoPath => protoLoader.loadSync(protoPath, PROTO_LOADER_OPTIONS)
+export const MESSAGES = messages
 
 export const getProto = protoDefinition => gRPC.loadPackageDefinition(protoDefinition)
 
-export const PROTO_DEFINITION = loadProtoDefinition(PROTO_PATH)
+export const PROTO_DEFINITION = services
 
 export const PROTO = getProto(PROTO_DEFINITION)
 
-export const INFO_SERVICE = PROTO.Info
+export const INFO_SERVICE = PROTO.InfoService
 
 export const joinProtos = (name, protos) => {
   let res = {}
