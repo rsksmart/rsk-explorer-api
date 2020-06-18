@@ -12,7 +12,7 @@ export class BlocksBase {
     log = log || console
     this.log = log
     if (debug) nod3.setDebug(nod3Log(log))
-    this.et = events
+    this.events = events
     this.actions = actions
     this.nativeContracts = NativeContracts(initConfig)
     this.net = this.initConfig.net
