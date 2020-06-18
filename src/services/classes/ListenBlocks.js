@@ -1,9 +1,11 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 
 export class ListenBlocks extends BlocksBase {
-  constructor (db, options) {
+  constructor (db, options, { emit }) {
+    if (typeof emit !== 'function') throw new Error('Emit must be a function')
     super(db, options)
     this.Blocks = this.collections.Blocks
+    this.emit = emit
   }
 
   async start () {
@@ -23,7 +25,7 @@ export class ListenBlocks extends BlocksBase {
         let number = sync.currentBlock
         if (number) {
           this.log.debug('[syncing] New Block reported:', number)
-          this.requestBlock(number)
+          this.announceBlock(number)
         }
       }, err => {
         this.log.debug(`Sync err: ${err}`)
@@ -34,7 +36,7 @@ export class ListenBlocks extends BlocksBase {
       let newBlock = await this.nod3.subscribe.filter('newBlock')
       newBlock.watch(blockHash => {
         this.log.debug('New Block reported:', blockHash)
-        this.requestBlock(blockHash, true)
+        this.announceBlock(blockHash, true)
       }, err => {
         this.log.debug(`NewBlock error: ${err}`)
       })
@@ -43,19 +45,9 @@ export class ListenBlocks extends BlocksBase {
     }
   }
 
-  bulkRequest (args) {
-    let action = this.actions.BULK_BLOCKS_REQUEST
-    process.send({ action, args: [args] })
-  }
-
-  requestBlock (key, prioritize) {
-    let action = this.actions.BLOCK_REQUEST
-    process.send({ action, args: [key, prioritize] })
-  }
-
-  updateStatus (state) {
-    let action = this.actions.STATUS_UPDATE
-    process.send({ action, args: [state] })
+  announceBlock (key, prioritize) {
+    let event = this.events.NEW_BLOCK
+    this.emit(event, { key, prioritize })
   }
 }
 
