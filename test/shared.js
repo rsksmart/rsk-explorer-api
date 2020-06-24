@@ -106,3 +106,7 @@ export function isPortInUse (port, host) {
       .listen(port, host)
   })
 }
+
+export function asyncWait (time = 1000) {
+  return new Promise((resolve) => setTimeout(resolve, time))
+}
