@@ -45,8 +45,10 @@ export const events = {
   'BLOCK_SAVED': 'blockSaved',
   'BLOCK_ERROR': 'blockError',
   'NEW_BLOCK': 'newBlock',
+  'REQUEST_BLOCKS': 'requestBlocks',
   'QUEUE_DONE': 'queueDone',
-  'NEW_STATUS': 'newStatus'
+  'NEW_STATUS': 'newStatus',
+  'NEW_TIP_BLOCK': 'newTipBlock'
 }
 
 export const actions = {

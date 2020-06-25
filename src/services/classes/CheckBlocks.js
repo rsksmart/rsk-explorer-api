@@ -1,6 +1,7 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import { getBlockFromDb, deleteBlockDataFromDb } from './Block'
 import { getBlock } from './RequestBlocks'
+import { chunkArray } from '../../lib/utils'
 
 export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
@@ -9,16 +10,24 @@ export class CheckBlocks extends BlocksBase {
     this.tipBlock = null
     this.tipCount = 0
     this.tipSize = options.bcTipSize || 12
+    this.emit = undefined
   }
 
-  async start () {
+  setEmitter (emitter) {
+    this.emit = emitter
+  }
+
+  async start (emitter) {
     try {
+      if (emitter) this.setEmitter(emitter)
+      if (typeof this.emit !== 'function') throw new Error('Set emitter first')
       await Promise.all([this.getBlock(0), this.getLastBlock()])
       this.log.info('Checking database')
       let res = await this.checkDb(true)
       this.log.info('Getting missing blocks')
-      this.log.trace(res)
-      await this.getBlocks(res)
+      if (!res) this.log.info('There are no missing blocks')
+      else this.log.trace(res)
+      return this.getBlocks(res)
     } catch (err) {
       this.log.error(`[CheckBlocks.start] ${err}`)
       return Promise.reject(err)
@@ -129,9 +138,13 @@ export class CheckBlocks extends BlocksBase {
       })
 
       if (values.length) {
-        this.log.warn(`Getting ${values.length} bad blocks`)
-        this.log.trace(values)
-        process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
+        let { log, emit, events } = this
+        log.warn(`Getting ${values.length} bad blocks`)
+        log.trace(values)
+        let chunks = chunkArray(values, 100)
+        for (let blocks of chunks) {
+          emit(events.REQUEST_BLOCKS, { blocks })
+        }
       }
     } catch (err) {
       this.log.error(err)
