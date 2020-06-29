@@ -1,30 +1,25 @@
 
-import { EventEmitter } from 'events'
 import { BlocksBase } from '../../lib/BlocksBase'
-import { events as et } from '../../lib/types'
-import { Block } from './Block'
+import { Block, getBlockFromDb } from './Block'
 import { isBlockHash } from '../../lib/utils'
 import { updateTokenAccountBalances } from './UpdateTokenAccountBalances'
 
-class Emitter extends EventEmitter { }
-
 export class RequestBlocks extends BlocksBase {
-  constructor (db, options) {
-    let { log, initConfig, debug } = options
+  constructor (db, { log, initConfig, debug, blocksQueueSize, updateTokenBalances }) {
     super(db, { log, initConfig, debug })
-    this.queueSize = options.blocksQueueSize || 50
+    this.queueSize = blocksQueueSize || 50
     this.pending = new Set()
     this.requested = new Map()
-    this.events = (options.noEvents) ? null : new Emitter()
     this.maxRequestTime = 1000
-    this.updateTokenBalances = options.updateTokenBalances
+    this.updateTokenBalances = updateTokenBalances
+    this.blocksCollection = this.collections.Blocks
+    this.emit = (event, data) => {
+      log.warn(`Event ${event} received but emitter is not defined`)
+    }
   }
 
-  emit (event, data) {
-    let events = this.events
-    if (events) {
-      events.emit(event, data)
-    }
+  setEmitter (emitter) {
+    this.emit = emitter
   }
 
   request (key, prioritize) {
@@ -33,6 +28,7 @@ export class RequestBlocks extends BlocksBase {
   }
 
   bulkRequest (keys) {
+    if (!Array.isArray(keys)) throw new Error(`Keys must be an array`)
     for (let key of keys) {
       this.addToPending(key)
     }
@@ -58,7 +54,10 @@ export class RequestBlocks extends BlocksBase {
     let i = this.pending.values()
     let free = this.queueSize - this.requested.size
     let total = this.requested.size + this.pending.size
-    if (total === 0) this.emit(et.QUEUE_DONE)
+    if (total === 0) {
+      this.emit(this.events.QUEUE_DONE, {})
+      this.updateStatus()
+    }
     while (free > -1) {
       let key = i.next().value
       if (!key) return
@@ -71,9 +70,13 @@ export class RequestBlocks extends BlocksBase {
   async requestBlock (key) {
     try {
       this.requested.set(key, Date.now())
-      this.emit(et.BLOCK_REQUESTED, { key })
+      this.emit(this.events.BLOCK_REQUESTED, { key })
+      this.log.debug(this.events.BLOCK_REQUESTED, { key })
+      this.updateStatus()
       let block = await this.getBlock(key)
-      if (block.error) this.emit(et.BLOCK_ERROR, block)
+      if (block.error) {
+        this.log.debug(this.events.BLOCK_ERROR, block.error)
+      }
       this.endRequest(key, block)
     } catch (err) {
       this.log.error(err)
@@ -111,11 +114,32 @@ export class RequestBlocks extends BlocksBase {
     this.pending.delete(key)
     this.log.trace(`Key ${key} time: ${time}`)
     if (res && res.block) {
-      let block = res.block
-      this.emit(et.NEW_BLOCK, { key, block })
+      let block = this.getBlockData(res.block)
+      this.emit(this.events.BLOCK_SAVED, { key, block })
       res = undefined
+      this.requestParentBlock({ key, block })
     }
     this.processPending()
+  }
+
+  async requestParentBlock ({ key, block }) {
+    try {
+      if (!block) return
+      let isHashKey = isBlockHash(key)
+      let data = this.getBlockData(block)
+      this.emit(this.events.NEW_TIP_BLOCK, data)
+      let show = (isHashKey) ? block.number : block.hash
+      this.log.debug(this.events.NEW_BLOCK, `New Block DATA ${key} - ${show}`)
+      let { parentHash } = block
+      let parentBlock = await getBlockFromDb(parentHash, this.blocksCollection)
+      if (!parentBlock && block.number) {
+        this.log.debug(`Getting parent of block ${block.number} - ${parentHash}`)
+        this.request(parentHash, true)
+      }
+      this.updateStatus()
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 
   isRequestedOrPending (key) {
@@ -137,6 +161,12 @@ export class RequestBlocks extends BlocksBase {
 
   getPending () {
     return this.pending.size
+  }
+  updateStatus (state) {
+    state = state || {}
+    state.requestingBlocks = this.getRequested()
+    state.pendingBlocks = this.getPending()
+    this.emit(this.events.NEW_STATUS, state)
   }
 }
 

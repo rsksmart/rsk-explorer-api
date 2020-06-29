@@ -1,73 +1,46 @@
+import { setup } from '../../lib/dataSource'
+import { createService, services, createServiceLogger } from '../serviceFactory'
 import { RequestBlocks } from '../classes/RequestBlocks'
-import { events as et, actions as a } from '../../lib/types'
-import { isBlockHash } from '../../lib/utils'
-import { getBlockFromDb } from '../classes/Block'
-import { dataSource } from '../../lib/dataSource'
-import Logger from '../../lib/Logger'
-import conf from '../../lib/config'
+import { events } from '../../lib/types'
+import config from '../../lib/config'
 
-const config = Object.assign({}, conf.blocks)
-const log = Logger('Blocks', config.log)
+const serviceConfig = services.REQUESTER
 
-dataSource().then(({ db, initConfig }) => {
-  let Requester = new RequestBlocks(db, Object.assign(config, { log, initConfig }))
-  const blocksCollection = Requester.collections.Blocks
+async function main () {
+  try {
+    const { db, initConfig } = await setup()
+    const log = createServiceLogger(serviceConfig)
+    const Requester = new RequestBlocks(db, Object.assign(Object.assign({}, config.blocks), { log, initConfig }))
+    const eventHandler = async (event, data) => {
+      try {
+        switch (event) {
+          case events.NEW_BLOCK:
+            let { key, prioritize } = data
+            Requester.request(key, prioritize)
+            break
 
-  Requester.updateStatus = function (state) {
-    state = state || {}
-    state.requestingBlocks = this.getRequested()
-    state.pendingBlocks = this.getPending()
-    let action = a.STATUS_UPDATE
-    process.send({ action, args: [state] })
-  }
-
-  process.on('message', msg => {
-    let action = msg.action
-    let args = msg.args
-    if (action) {
-      switch (action) {
-        case a.BLOCK_REQUEST:
-          Requester.request(...args)
-          break
-
-        case a.BULK_BLOCKS_REQUEST:
-          Requester.bulkRequest(...args)
-          break
+          case events.REQUEST_BLOCKS:
+            const { blocks } = data
+            Requester.bulkRequest(blocks)
+            break
+        }
+      } catch (err) {
+        return Promise.reject(err)
       }
     }
-  })
-
-  Requester.events.on(et.QUEUE_DONE, data => {
-    Requester.updateStatus()
-  })
-
-  Requester.events.on(et.BLOCK_REQUESTED, data => {
-    log.debug(et.BLOCK_REQUESTED, data)
-    Requester.updateStatus()
-  })
-
-  Requester.events.on(et.BLOCK_ERROR, data => {
-    log.debug(et.BLOCK_ERROR, data)
-  })
-
-  Requester.events.on(et.NEW_BLOCK, data => {
-    let block = data.block
-    if (!block) return
-    let key = data.key
-    let isHashKey = isBlockHash(key)
-    if (block) {
-      process.send({ action: a.UPDATE_TIP_BLOCK, args: [block] })
-      let show = (isHashKey) ? block.number : block.hash
-      log.debug(et.NEW_BLOCK, `New Block DATA ${key} - ${show}`)
-      let parent = block.parentHash
-
-      getBlockFromDb(parent, blocksCollection).then(parentBlock => {
-        if (!parentBlock && block.number) {
-          log.debug(`Getting parent of block ${block.number} - ${parent}`)
-          Requester.request(parent, true)
-        }
-      })
+    const executor = ({ create }) => {
+      create.Emitter()
+      create.Listener(eventHandler)
     }
-    Requester.updateStatus()
-  })
-})
+
+    const { startService, service } = await createService(serviceConfig, executor, { log })
+    const { emit } = service
+    Requester.setEmitter(emit)
+    await startService()
+  } catch (err) {
+    console.error(err)
+    process.exit(9)
+  }
+}
+
+main()
