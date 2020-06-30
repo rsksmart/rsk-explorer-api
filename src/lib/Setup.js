@@ -48,6 +48,7 @@ export async function Setup ({ log } = {}) {
       if (!stored) {
         log.info(`Saving initial configuration to db`)
         await storedConfig.saveConfig(current)
+        await createCollections()
         return checkSetup()
       }
       if (stored.net.id !== current.net.id) {
