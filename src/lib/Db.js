@@ -4,18 +4,18 @@ const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true }
 export class Db {
   constructor (config) {
     config = config || {}
-    this.server = config.server || 'localhost'
-    this.port = config.port || 27017
-    this.dbName = config.database || config.db
+    const { server, port, password, user, db, database } = config
+    this.server = server || 'localhost'
+    this.port = port || 27017
+    this.dbName = database || db
     if (!this.dbName) throw new Error('Missing database name')
-    const user = config.user
-    const password = config.password
     let url = 'mongodb://'
     if (user && password) url += `${user}:${password}@`
     url += `${this.server}:${this.port}/${this.dbName}`
     this.url = url
     this.client = null
     this.log = config.Logger || console
+    this.DB = undefined
     this.connect()
   }
   async connect () {
@@ -31,9 +31,10 @@ export class Db {
 
   async db () {
     try {
+      if (this.DB) return this.DB
       let client = await this.connect()
-      let db = client.db(this.dbName)
-      return db
+      this.DB = client.db(this.dbName)
+      return this.DB
     } catch (err) {
       return Promise.reject(err)
     }
@@ -43,7 +44,7 @@ export class Db {
     this.log = log
   }
 
-  async createCollection (collectionName, { indexes, options }, { dropIndexes, validate } = {}) {
+  async createCollection (collectionName, { indexes, options } = {}, { dropIndexes, validate } = {}) {
     try {
       const db = await this.db()
       if (!collectionName) throw new Error('Invalid collection name')
