@@ -4,6 +4,7 @@ import DB from './Db.js'
 import { StoredConfig } from './StoredConfig'
 import nod3 from './nod3Connect'
 import initConfig from './initialConfiguration'
+import { getDbBlocksCollections } from './blocksCollections'
 
 export const dataBase = new DB(config.db)
 
@@ -22,8 +23,8 @@ export async function Setup ({ log } = {}) {
   const db = await dataBase.db()
   const storedConfig = StoredConfig(db)
 
-  const createCollections = async () => {
-    const names = config.collectionsNames
+  const createCollections = async (names) => {
+    names = names || config.collectionsNames
     const validate = config.blocks.validateCollections
     return dataBase.createCollections(collections, { names, validate })
   }
@@ -60,18 +61,24 @@ export async function Setup ({ log } = {}) {
     }
   }
 
+  const getCollections = (db) => {
+    return getDbBlocksCollections(db)
+  }
+
   const start = async (skipCheck) => {
     try {
       let initConfig
       if (skipCheck) initConfig = await storedConfig.getConfig()
       else initConfig = await checkSetup()
       if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
-      return { initConfig, db }
+      const collections = await getCollections(db)
+      return { initConfig, db, collections }
     } catch (err) {
       log.error(err)
       process.exit(9)
     }
   }
+
   return Object.freeze({ start, createCollections, checkSetup, getInitConfig })
 }
 
