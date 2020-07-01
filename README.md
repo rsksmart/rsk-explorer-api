@@ -18,10 +18,9 @@
 ## Requisites
 
 - mongodb > 4
-- node >= 10.16.0
-- access to JSON/RPC interface of a rskj node v1.0.2
-
-through
+- node >= 12.18.2
+- access to JSON/RPC interface of a rskj node >= 2.0.1
+  with this modules enabled: eth, net, web3, txpool, debug and trace.
 
 ## Install
 
@@ -42,13 +41,24 @@ see [configuration](#configuration)
 
 ## Start
 
-### services
+### Services
+
+Services can be started manually one by one, but we recommend to use [PM2](https://github.com/Unitech/pm2).
+This repo includes a pm2 ecosystem file that starts all services automatically.
+
+#### Install PM2
 
 ``` shell
-  node dist/services/blocks
+  npm install -g pm2
 ```
 
-### api
+#### Start services
+
+```shell
+pm2 start dist/services/blocks.config.js
+```
+
+### API
 
 ``` shell
   node dist/api
@@ -152,4 +162,3 @@ instance. The url must be provided on api section:
   
  - [api documentation](doc/api.md)
  - [open api specification](public/swagger.json)
-
