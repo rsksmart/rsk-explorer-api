@@ -133,3 +133,12 @@ export const quantityMarks = (quantity, unit, mark = '*') => {
   let steps = Math.floor(quantity / unit)
   return Array(++steps).join(mark)
 }
+
+export const chunkArray = (arr, chunkSize) => {
+  const result = []
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    let chunk = arr.slice(i, i + chunkSize)
+    result.push(chunk)
+  }
+  return result
+}
