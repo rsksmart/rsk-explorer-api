@@ -6,7 +6,7 @@ import { isPortInUse } from '../shared'
 const credentials = clientCredentials()
 
 const host = '127.0.0.1'
-const port = 3026
+const port = 9026
 const uri = `${host}:${port}`
 
 describe('# Services', function () {

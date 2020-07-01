@@ -1,7 +1,7 @@
 import { BcThing } from './BcThing'
 import Tx from './Tx'
 import BlockTrace from './BlockTrace'
-import BlockAddresses from './BlockAddresses'
+import { BlockAddresses } from './BlockAddresses'
 import { getSummaryId } from '../../lib/ids'
 import { arrayDifference, isBlockHash } from '../../lib/utils'
 

@@ -6,7 +6,6 @@ import NativeContracts from '../src/lib/NativeContracts'
 import initConfig from '../src/lib/initialConfiguration'
 import { addrTypes } from '../src/lib/types'
 import net from 'net'
-import assert from 'assert'
 
 export const nativeContracts = NativeContracts(initConfig)
 const testDatabase = 'dbToTest'
@@ -51,16 +50,19 @@ export const randomBlockNumber = (max) => {
   return Math.floor(Math.random() * max)
 }
 
-export const fakeBlock = (max) => {
-  let number = randomBlockNumber(max)
-  let hash = randomBlockHash()
-  return { hash, number }
-}
-
 export const fakeTx = (transactionIndex, { hash, number }) => {
   let blockHash = hash || randomBlockHash()
   let blockNumber = number || randomBlockNumber()
   return { blockHash, blockNumber, transactionIndex }
+}
+
+export const fakeBlock = (max) => {
+  let number = randomBlockNumber(max)
+  let hash = randomBlockHash()
+  let miner = randomAddress()
+  let txs = Math.floor(Math.random() * 10)
+  let transactions = [...Array(txs)].map(() => randomBlockHash())
+  return { hash, number, miner, transactions }
 }
 
 export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`

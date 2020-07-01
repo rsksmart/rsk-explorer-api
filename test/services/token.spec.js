@@ -4,6 +4,7 @@ import Address from '../../src/services/classes/Address'
 import { nod3 } from '../../src/lib/nod3Connect'
 import initConfig from '../../src/lib/initialConfiguration'
 
+const block = 30000
 const tokens = [
   {
     address: '0x1e6d0bad215c6407f552e4d1260e7bae90005ab2',
@@ -36,7 +37,7 @@ describe(`# Test tokens`, function () {
       let data
       it('get contract data', async function () {
         this.timeout(60000)
-        let Addr = new Address(address, { nod3, initConfig })
+        let Addr = new Address(address, { nod3, initConfig, block })
         await Addr.fetch()
         data = Addr.getData(true)
         expect(typeof data).to.be.equal('object')

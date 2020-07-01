@@ -7,15 +7,14 @@ import { isHexString } from 'rsk-utils'
 
 describe(`# BlockSummary fetch`, function () {
   for (let { block } of blocks) {
-
     let summaryData
     let { hash } = block.block
     describe(`Getting summary ${hash}`, function () {
       this.timeout(60000)
 
       it(`should fetch block`, async () => {
-        let { initConfig } = await datasource()
-        let summary = new BlockSummary(hash, { nod3, initConfig })
+        let { initConfig, collections } = await datasource()
+        let summary = new BlockSummary(hash, { nod3, initConfig, collections })
         summaryData = await summary.fetch()
         expect(typeof summaryData).to.be.equal('object')
       })

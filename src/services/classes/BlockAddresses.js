@@ -1,4 +1,4 @@
-import Addresses from './Addresses'
+import { Addresses } from './Addresses'
 import { isBlockObject } from '../../lib/utils'
 
 export class BlockAddresses extends Addresses {
@@ -14,4 +14,4 @@ export class BlockAddresses extends Addresses {
   }
 }
 
-export default BlockAddresses
+export default Addresses
