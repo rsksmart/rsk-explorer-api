@@ -1,6 +1,8 @@
 import crypto from 'crypto'
 import DB from '../src/lib/Db'
 import config from '../src/lib/config'
+import defaultConfig from '../src/lib/defaultConfig'
+import collections from '../src/lib/collections'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
 import NativeContracts from '../src/lib/NativeContracts'
 import initConfig from '../src/lib/initialConfiguration'
@@ -20,15 +22,17 @@ export const testDb = ({ dbName } = {}) => {
     return db
   }
   const dropDb = () => getDb().then(db => db.dropDatabase())
-  return Object.freeze({ getDb, dropDb })
+  return Object.freeze({ getDb, dropDb, db: database })
 }
 
 export const testCollections = async (dropDb) => {
   const database = testDb()
   if (dropDb) await database.dropDb()
   const db = await database.getDb()
-  const collections = await getDbBlocksCollections(db)
-  return collections
+  const names = defaultConfig.collectionsNames
+  await database.db.createCollections(collections, { names })
+  const colls = await getDbBlocksCollections(db)
+  return colls
 }
 
 export const fakeBlocks = (count = 10, { max, addTimestamp } = {}) => {
