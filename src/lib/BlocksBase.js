@@ -17,6 +17,10 @@ export class BlocksBase {
     this.nativeContracts = NativeContracts(initConfig)
     this.net = this.initConfig.net
   }
+  getBlockData (block) {
+    let { number, hash, parentHash } = block
+    return { number, hash, parentHash }
+  }
 }
 
 export default BlocksBase
