@@ -1,14 +1,11 @@
-import { setup } from '../../lib/dataSource'
-import { createService, services, createServiceLogger } from '../serviceFactory'
+import { createService, services, bootStrapService } from '../serviceFactory'
 import { BlocksStatus } from '../classes/BlocksStatus'
-import { events } from '../../lib/types'
 
 const serviceConfig = services.STATUS
 
 async function main () {
   try {
-    const { db, initConfig } = await setup()
-    const log = createServiceLogger(serviceConfig)
+    const { log, db, initConfig, events } = await bootStrapService(serviceConfig)
     const Status = new BlocksStatus(db, { log, initConfig })
     const eventHandler = (event, data) => {
       switch (event) {
@@ -18,7 +15,7 @@ async function main () {
       }
     }
     const executor = ({ create }) => { create.Listener(eventHandler) }
-    const { startService } = await createService(serviceConfig, executor)
+    const { startService } = await createService(serviceConfig, executor, { log })
     await startService()
   } catch (err) {
     console.error(err)

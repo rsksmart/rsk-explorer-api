@@ -1,15 +1,12 @@
-import { setup } from '../../lib/dataSource'
-import { createService, services, createServiceLogger } from '../serviceFactory'
+import { createService, services, bootStrapService } from '../serviceFactory'
 import { RequestBlocks } from '../classes/RequestBlocks'
-import { events } from '../../lib/types'
 import config from '../../lib/config'
 
 const serviceConfig = services.REQUESTER
 
 async function main () {
   try {
-    const { db, initConfig } = await setup()
-    const log = createServiceLogger(serviceConfig)
+    const { log, db, initConfig, events } = await bootStrapService(serviceConfig)
     const Requester = new RequestBlocks(db, Object.assign(Object.assign({}, config.blocks), { log, initConfig }))
     const eventHandler = async (event, data) => {
       try {

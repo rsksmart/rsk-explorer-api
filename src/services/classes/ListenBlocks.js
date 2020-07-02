@@ -24,6 +24,7 @@ export class ListenBlocks extends BlocksBase {
       syncing.watch(sync => {
         let number = sync.currentBlock
         if (number) {
+          number = parseInt(number)
           this.log.debug('[syncing] New Block reported:', number)
           this.announceBlock(number)
         }
@@ -45,7 +46,7 @@ export class ListenBlocks extends BlocksBase {
     }
   }
 
-  announceBlock (key, prioritize) {
+  announceBlock (key, prioritize = false) {
     let event = this.events.NEW_BLOCK
     this.emit(event, { key, prioritize })
   }

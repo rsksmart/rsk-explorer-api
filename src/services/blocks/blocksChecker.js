@@ -1,14 +1,11 @@
-import { setup } from '../../lib/dataSource'
-import { createService, services, createServiceLogger } from '../serviceFactory'
+import { createService, services, bootStrapService } from '../serviceFactory'
 import { CheckBlocks } from '../classes/CheckBlocks'
-import { events } from '../../lib/types'
 
 const serviceConfig = services.CHECKER
 
 async function main () {
   try {
-    const { db, initConfig } = await setup()
-    const log = createServiceLogger(serviceConfig)
+    const { log, db, initConfig, events } = await bootStrapService(serviceConfig)
     const checker = new CheckBlocks(db, { log, initConfig })
     const eventHandler = (event, data) => {
       switch (event) {
