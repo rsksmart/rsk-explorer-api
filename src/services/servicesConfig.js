@@ -5,7 +5,7 @@ export const servicesNames = {
   REQUESTER: 'blocksRequester',
   CHECKER: 'blocksChecker',
   TXPOOL: 'txPool',
-  // ADDR_BALANCE: 'addressBalance',
+  BALANCES: 'blocksBalances',
   STATUS: 'blocksStatus',
   STATS: 'blocksStats'
 }
