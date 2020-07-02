@@ -25,8 +25,8 @@ export const testDb = ({ dbName } = {}) => {
   return Object.freeze({ getDb, dropDb, db: database })
 }
 
-export const testCollections = async (dropDb) => {
-  const database = testDb()
+export const testCollections = async (dropDb, database) => {
+  database = database || testDb()
   if (dropDb) await database.dropDb()
   const db = await database.getDb()
   const names = defaultConfig.collectionsNames
