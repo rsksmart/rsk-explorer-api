@@ -22,6 +22,7 @@ const nod3 = {
 
 describe(`# Address`, function () {
   describe(`address type`, function () {
+    this.timeout(9000)
     const address = new Address(randomAddress(), options)
 
     it('address type should be account', () => {
@@ -40,6 +41,7 @@ describe(`# Address`, function () {
   })
 
   describe(`lastBlock`, function () {
+    this.timeout(9000)
     const a = randomAddress()
     const address = new Address(a, options)
     let data = address.getData()
@@ -81,6 +83,7 @@ describe(`# Address`, function () {
   })
 
   describe(`searchDeploymentData()`, function () {
+    this.timeout(9000)
     let method = 'searchDeploymentData'
     let cases = [
       [undefined, 1],
@@ -104,7 +107,7 @@ describe(`# Address`, function () {
 })
 
 describe(`# Address, requires db connection`, function () {
-
+  this.timeout(20000)
   const a = randomAddress()
   let blockA = {
     number: 3,
@@ -123,7 +126,7 @@ describe(`# Address, requires db connection`, function () {
   const lastBlockMined = fields.LAST_BLOCK_MINED
 
   it(`should set ${lastBlockMined} and save the address`, async () => {
-    options2.collections = await testCollections()
+    options2.collections = await testCollections(true)
     const address = new Address(a, options2)
     address.setBlock(block)
     expect(address.getData()[lastBlockMined].number).to.be.equal(block.number)

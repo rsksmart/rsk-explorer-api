@@ -51,8 +51,8 @@ describe('Db', function () {
   describe('setLogger', function () {
     it('should set the logger', () => {
       db.setLogger(true)
-      assert.equal(db.log, true)
-      db.setLogger(console)
+      assert.typeOf(db.log, 'object')
+      // db.setLogger(console)
     })
   })
   describe('createCollection', function () {

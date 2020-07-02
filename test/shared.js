@@ -16,6 +16,7 @@ export const testDb = ({ dbName } = {}) => {
   dbName = dbName || testDatabase
   const dbConf = Object.assign(config.db, { database: dbName })
   const database = new DB(dbConf)
+  database.setLogger(null)
   let db
   const getDb = async () => {
     if (!db) db = await database.db()
