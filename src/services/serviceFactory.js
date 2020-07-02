@@ -1,8 +1,10 @@
 import config from '../lib/config'
+import { setup } from '../lib/dataSource'
 import { Logger } from '../lib/Logger'
 import { createPorts, createServices } from './servicesConfig'
 import { Service } from './Service/ServiceServer'
 import { Router } from './Router'
+import { events } from '../lib/types'
 
 const { blocks } = config
 const { address } = blocks
@@ -60,6 +62,16 @@ export async function createRouter (routerServiceConfig, { services, log }) {
     }
     router.setRouterService(service)
     return Object.freeze({ router, startService, log })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+export async function bootStrapService (serviceConfig) {
+  try {
+    const log = createServiceLogger(serviceConfig)
+    const setupData = await setup({ log })
+    return Object.assign(setupData, { log, events })
   } catch (err) {
     return Promise.reject(err)
   }
