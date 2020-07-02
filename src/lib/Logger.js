@@ -22,7 +22,6 @@ export const Logger = (name, options) => {
 }
 
 const logProxyHandler = (logger) => {
-
   return {
     get: (target, prop) => {
       if (logger && typeof logger === 'object') return logger[prop]

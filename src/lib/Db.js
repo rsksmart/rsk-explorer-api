@@ -1,4 +1,5 @@
 import { MongoClient } from 'mongodb'
+import { LogProxy } from './Logger'
 
 const connectionOptions = { useNewUrlParser: true, useUnifiedTopology: true }
 export class Db {
@@ -14,8 +15,9 @@ export class Db {
     url += `${this.server}:${this.port}/${this.dbName}`
     this.url = url
     this.client = null
-    this.log = config.Logger || console
+    this.log = undefined
     this.DB = undefined
+    this.setLogger(config.Logger || console)
     this.connect()
   }
   async connect () {
@@ -41,7 +43,7 @@ export class Db {
   }
 
   setLogger (log) {
-    this.log = log
+    this.log = (log && log.constructor && log.constructor.name === 'Logger') ? log : LogProxy(log)
   }
 
   async createCollection (collectionName, { indexes, options } = {}, { dropIndexes, validate } = {}) {
