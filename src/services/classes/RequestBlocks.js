@@ -13,13 +13,6 @@ export class RequestBlocks extends BlocksBase {
     this.maxRequestTime = 1000
     this.updateTokenBalances = updateTokenBalances
     this.blocksCollection = this.collections.Blocks
-    this.emit = (event, data) => {
-      log.warn(`Event ${event} received but emitter is not defined`)
-    }
-  }
-
-  setEmitter (emitter) {
-    this.emit = emitter
   }
 
   request (key, prioritize) {

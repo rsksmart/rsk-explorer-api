@@ -4,18 +4,26 @@ import { nod3Router as nod3, nod3Log } from './nod3Connect'
 import NativeContracts from './NativeContracts'
 
 export class BlocksBase {
-  constructor (db, { log, initConfig, debug } = {}) {
+  constructor (db, options = {}) {
+    let { initConfig, log, debug } = options
     this.initConfig = initConfig || {}
     this.db = db
     this.collections = (db) ? getDbBlocksCollections(db) : undefined
-    this.nod3 = nod3
-    log = log || console
+    this.nod3 = options.nod3 || nod3
+    log = options.log || console
     this.log = log
     if (debug) nod3.setDebug(nod3Log(log))
     this.events = events
     this.actions = actions
     this.nativeContracts = NativeContracts(initConfig)
     this.net = this.initConfig.net
+    this.emit = (event) => {
+      this.log.warn(`Event ${event} received but emitter is not defined`)
+    }
+  }
+  setEmitter (emitter) {
+    if (typeof emitter !== 'function') throw new Error('The emitter must be a function')
+    this.emit = emitter
   }
   getBlockData (block) {
     let { number, hash, parentHash } = block

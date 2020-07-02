@@ -10,17 +10,12 @@ export class CheckBlocks extends BlocksBase {
     this.tipBlock = null
     this.tipCount = 0
     this.tipSize = options.bcTipSize || 12
-    this.emit = undefined
-  }
-
-  setEmitter (emitter) {
-    this.emit = emitter
   }
 
   async start (emitter) {
     try {
       if (emitter) this.setEmitter(emitter)
-      if (typeof this.emit !== 'function') throw new Error('Set emitter first')
+      if (!this.emit) throw new Error('The emitter should be defined')
       await Promise.all([this.getBlock(0), this.getLastBlock()])
       this.log.info('Checking database')
       let res = await this.checkDb(true)

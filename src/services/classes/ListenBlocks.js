@@ -5,7 +5,7 @@ export class ListenBlocks extends BlocksBase {
     if (typeof emit !== 'function') throw new Error('Emit must be a function')
     super(db, options)
     this.Blocks = this.collections.Blocks
-    this.emit = emit
+    this.setEmitter(emit)
   }
 
   async start () {
