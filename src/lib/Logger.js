@@ -21,4 +21,18 @@ export const Logger = (name, options) => {
   return log
 }
 
+const logProxyHandler = (logger) => {
+
+  return {
+    get: (target, prop) => {
+      if (logger && typeof logger === 'object') return logger[prop]
+      else return () => { }
+    }
+  }
+}
+
+export const LogProxy = logger => {
+  return new Proxy({}, logProxyHandler(logger))
+}
+
 export default Logger
