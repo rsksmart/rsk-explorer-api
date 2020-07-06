@@ -2,6 +2,7 @@ import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
 import { ObjectID } from 'mongodb'
 import { remove0x, toBuffer, isAddress } from 'rsk-utils'
+import crypto from 'crypto'
 export * from 'rsk-utils'
 
 export const bigNumberDoc = bigNumber => {
@@ -141,4 +142,8 @@ export const chunkArray = (arr, chunkSize) => {
     result.push(chunk)
   }
   return result
+}
+
+export const hash = (thing, alg = 'sha1', out = 'hex') => {
+  return crypto.createHash(alg).update(JSON.stringify(thing)).digest(out)
 }
