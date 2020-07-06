@@ -1,5 +1,5 @@
-import { testDb } from '../shared'
-import StoredConfig from '../../src/lib/StoredConfig'
+import { testDb } from './shared'
+import StoredConfig from '../src/lib/StoredConfig'
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 chai.use(chaiAsPromised)
@@ -58,4 +58,3 @@ describe(`Stored config`, function () {
     expect(stored).to.be.deep.equal(test)
   })
 })
-
