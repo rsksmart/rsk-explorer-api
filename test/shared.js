@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import DB from '../src/lib/Db'
-import config from '../src/lib/config'
+import { makeConfig, config as userConfig } from '../src/lib/config'
 import defaultConfig from '../src/lib/defaultConfig'
 import collections from '../src/lib/collections'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
@@ -9,11 +9,17 @@ import initConfig from '../src/lib/initialConfiguration'
 import { addrTypes } from '../src/lib/types'
 import net from 'net'
 
+export const config = makeConfig()
 export const nativeContracts = NativeContracts(initConfig)
 const testDatabase = 'dbToTest'
 
+const getDbName = config => config.db.database
+
+const writeOnlyDbs = [getDbName(userConfig), getDbName(defaultConfig)]
+
 export const testDb = ({ dbName } = {}) => {
   dbName = dbName || testDatabase
+  if (writeOnlyDbs.includes(dbName)) throw new Error(`Don't use production databases to test!!!`)
   const dbConf = Object.assign(config.db, { database: dbName })
   const database = new DB(dbConf)
   database.setLogger(null)
@@ -23,7 +29,7 @@ export const testDb = ({ dbName } = {}) => {
     return db
   }
   const dropDb = () => getDb().then(db => db.dropDatabase())
-  return Object.freeze({ getDb, dropDb, db: database })
+  return Object.freeze({ getDb, dropDb, db: database, config })
 }
 
 export const testCollections = async (dropDb, database) => {
