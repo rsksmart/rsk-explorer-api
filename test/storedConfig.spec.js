@@ -12,6 +12,9 @@ const config = () => { return { test: 'test' } }
 const testId = 'testId'
 const testData = () => { return { test: 'testData' } }
 
+const ID = 'testID'
+const readOnly = [ID]
+
 describe(`Stored config`, function () {
   let db, storedConfig
 
@@ -20,20 +23,20 @@ describe(`Stored config`, function () {
     storedConfig = StoredConfig(db)
   })
 
-  it(`should store init config`, async () => {
+  it(`should store a config doc`, async () => {
     await dataBase.dropDb()
-    let res = await storedConfig.saveConfig(config())
+    let res = await storedConfig.save(ID, config())
     expect(res).to.haveOwnProperty('result')
     expect(res.result).to.haveOwnProperty('ok').equal(1)
     expect(res).to.haveOwnProperty('insertedCount').equal(1)
   })
 
-  it(`init config should be read only`, async () => {
-    expect(storedConfig.saveConfig(config)).to.be.rejectedWith()
+  it(`the doc should be read only`, async () => {
+    expect(storedConfig.save(ID, config)).to.be.rejectedWith()
   })
 
-  it(`should return stored init config`, async () => {
-    const res = await storedConfig.getConfig()
+  it(`should return stored doc`, async () => {
+    const res = await storedConfig.get(ID)
     expect(res).to.be.deep.equal(config())
   })
   it(`should create a new config doc`, async () => {

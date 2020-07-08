@@ -1,10 +1,8 @@
 
 import config from './config'
 const collectionName = config.collectionsNames.Config
-const INIT_ID = '_explorerInitialConfiguration'
-const readOnlyDocsIds = [INIT_ID]
 
-export function StoredConfig (db) {
+export function StoredConfig (db, readOnlyDocsIds = []) {
   const storage = db.collection(collectionName)
   const isReadOnly = _id => readOnlyDocsIds.includes(_id)
   const isValidId = id => typeof id === 'string'
@@ -41,21 +39,18 @@ export function StoredConfig (db) {
       const newDoc = Object.assign({}, doc)
       newDoc._updated = Date.now()
       const options = {}
-      if (create) options.upsert = true
+      if (create) {
+        let old = await get(_id)
+        if (!old) return save(_id, doc)
+      }
       let res = await storage.updateOne({ _id }, { $set: doc }, options)
       return res
     } catch (err) {
       return Promise.reject(err)
     }
   }
-  const saveConfig = doc => {
-    return save(INIT_ID, doc)
-  }
-  const getConfig = async () => {
-    return get(INIT_ID)
-  }
 
-  return Object.freeze({ getConfig, saveConfig, save, get, update })
+  return Object.freeze({ save, get, update })
 }
 
 export default StoredConfig
