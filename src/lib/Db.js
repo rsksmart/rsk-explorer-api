@@ -46,6 +46,10 @@ export class Db {
     this.log = (log && log.constructor && log.constructor.name === 'Logger') ? log : LogProxy(log)
   }
 
+  getLogger () {
+    return this.log
+  }
+
   async createCollection (collectionName, { indexes, options } = {}, { dropIndexes, validate } = {}) {
     try {
       const db = await this.db()
