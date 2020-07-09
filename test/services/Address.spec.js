@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { randomAddress, randomBlockHash, testCollections } from '../shared'
+import { randomAddress, randomBlockHash, testCollections, Spy } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
 import initConfig from '../../src/lib/initialConfiguration'
@@ -7,6 +7,18 @@ import initConfig from '../../src/lib/initialConfiguration'
 const nativeTestContract = '0x0000000000000000000000000000000001aaaaaa'
 
 const options = { collections: { Addr: null }, initConfig }
+const contractAddress = randomAddress()
+const fakeCode = '0x0102'
+const nod3 = {
+  eth: {
+    async getCode (address) {
+      return (address === contractAddress) ? fakeCode : null
+    },
+    async getBalance (address) {
+      return '0x01'
+    }
+  }
+}
 
 describe(`# Address`, function () {
   describe(`address type`, function () {
@@ -17,12 +29,12 @@ describe(`# Address`, function () {
     })
 
     it('address type should be account', () => {
-      address.setData('code', '0x0000')
+      address.setData({ code: '0x0000' })
       expect(address.getData().type).to.be.equal('account')
     })
 
     it('adress type should be contract', () => {
-      address.setData('code', '0xa')
+      address.setData({ code: '0xa' })
       expect(address.getData().type).to.be.equal('contract')
     })
   })
@@ -67,6 +79,27 @@ describe(`# Address`, function () {
       expect(data[fields.LAST_BLOCK_MINED]).to.be.deep.equal(test)
     })
   })
+
+  describe(`searchDeploymentData()`, function () {
+    let method = 'searchDeploymentData'
+    let cases = [
+      [undefined, 1],
+      [{ input: fakeCode, receipt: { contractAddress } }, 0],
+      [{ type: 'create', action: { init: fakeCode }, result: { address: contractAddress } }, 0]
+    ]
+
+    for (let [tx, calls] of cases) {
+      it(`${method} should be called ${calls} times`, async () => {
+        let address = new Address(contractAddress, { tx, initConfig, collections: options.collections, nod3 })
+        let { spy, remove } = Spy(address, method)
+        await address.fetch().catch(() => { })
+        let { type } = address.getData()
+        expect(type).to.be.equal(addrTypes.CONTRACT)
+        expect(spy.args.length).to.be.equal(calls)
+        remove()
+      })
+    }
+  })
 })
 
 describe(`# Address, requires db connection`, function () {
@@ -78,16 +111,7 @@ describe(`# Address, requires db connection`, function () {
     miner: a,
     transactions: []
   }
-  const nod3 = {
-    eth: {
-      async getCode () {
-        return null
-      },
-      async getBalance (address) {
-        return '0x01'
-      }
-    }
-  }
+
   const options2 = { nod3, initConfig }
   const lastBlockMined = fields.LAST_BLOCK_MINED
 
@@ -120,7 +144,7 @@ describe(`# Address, requires db connection`, function () {
     address.setBlock(block)
     await address.fetch()
     const data = address.getData()
-    expect(address.block, 'block number').to.be.equal(block.number)
+    expect(address.blockNumber, 'block number').to.be.equal(block.number)
     expect(data[lastBlockMined].number).to.be.equal(14)
   })
 
@@ -131,7 +155,7 @@ describe(`# Address, requires db connection`, function () {
     address.setBlock(block)
     await address.fetch()
     const data = address.getData()
-    expect(address.block).to.be.equal(block.number)
+    expect(address.blockNumber).to.be.equal(block.number)
     expect(data[lastBlockMined].number).to.be.equal(block.number)
   })
 

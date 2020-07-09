@@ -19,6 +19,11 @@ export default {
     port: 4444,
     url: null
   },
+  sourceRoutes: { // Nod3Router routes, used as default when source is an array of sources
+    subscribe: 0, // delegates subscriptions to the first node
+    rsk: 0, // delegates rsk module to the node that handle subscriptions
+    trace: 1 // delegates trace_ module to the second node
+  },
   log: {
     dir: '/var/log/rsk-explorer',
     level: 'info'
@@ -45,8 +50,10 @@ export default {
   blocks: {
     blocksQueueSize: 100,
     validateCollections: false,
-    bcTipSize: 12,
-    batchRequestSize: 20
+    bcTipSize: 120,
+    batchRequestSize: 20,
+    debug: false,
+    updateTokenBalances: true // Update token accounts balances on next block
   },
   collectionsNames: {
     Config: 'config',
@@ -56,12 +63,14 @@ export default {
     Status: 'status',
     Events: 'events',
     TokensAddrs: 'tokensAddresses',
-    OrphanBlocks: 'orphanBlocks',
     TxPool: 'txPool',
     PendingTxs: 'transactionsPending',
     Stats: 'statsCollection',
     BlocksSummary: 'blocksSummary',
     ContractVerification: 'contractsVerifications',
-    VerificationsResults: 'verificationResults'
+    VerificationsResults: 'verificationResults',
+    InternalTransactions: 'internalTransactions',
+    Balances: 'balances',
+    BlocksTraces: 'blockTraces'
   }
 }

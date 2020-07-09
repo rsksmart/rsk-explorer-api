@@ -7,7 +7,6 @@ import Logger from '../../lib/Logger'
 import conf from '../../lib/config'
 
 const config = Object.assign({}, conf.blocks)
-
 const log = Logger('Blocks', config.log)
 
 dataSource().then(({ db, initConfig }) => {

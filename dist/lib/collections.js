@@ -171,6 +171,12 @@
       name: 'eventAddressesIndex' }] },
 
 
+  TokensAddrs: {
+    indexes: [
+    {
+      key: {
+        address: 1,
+        contract: 1 },
 
   TokensAddrs: {
     indexes: [
@@ -200,6 +206,10 @@
 
       unique: true }] },
 
+    TxPool: [
+    {
+      key: {
+        timestamp: -1 } }] },
 
 
   TxPool: {

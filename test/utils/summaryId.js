@@ -20,6 +20,5 @@ describe('# summary id', () => {
     const byNumber = [...blocks].sort(sortBlocks('number'))
     const byId = [...blocks].sort(sortBlocks('id'))
     assert.deepEqual(byId, byNumber)
-    console.log(byNumber)
   })
 })

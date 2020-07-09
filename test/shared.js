@@ -4,6 +4,7 @@ import config from '../src/lib/config'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
 import NativeContracts from '../src/lib/NativeContracts'
 import initConfig from '../src/lib/initialConfiguration'
+import { addrTypes } from '../src/lib/types'
 
 export const nativeContracts = NativeContracts(initConfig)
 const testDatabase = 'dbToTest'
@@ -21,8 +22,9 @@ export const testDb = ({ dbName } = {}) => {
   return Object.freeze({ getDb, dropDb })
 }
 
-export const testCollections = async () => {
+export const testCollections = async (dropDb) => {
   const database = testDb()
+  if (dropDb) await database.dropDb()
   const db = await database.getDb()
   const collections = await getDbBlocksCollections(db)
   return collections
@@ -60,3 +62,31 @@ export const fakeTx = (transactionIndex, { hash, number }) => {
 }
 
 export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`
+
+export const randomBalance = () => `0x${crypto.randomBytes(4).toString('hex')}`
+
+export const fakeAddress = (code = null) => {
+  let address = randomAddress()
+  let balance = randomBalance()
+  let type = addrTypes.ADDRESS
+  let name
+  let isNative = false
+  return { address, balance, name, isNative, type, code }
+}
+
+export function Spy (obj, method) {
+  let spy = {
+    args: []
+  }
+  const org = obj[method]
+  if (typeof org !== 'function') throw new Error(`The method ${method} is not a function`)
+  obj[method] = function () {
+    let args = [].slice.apply(arguments)
+    spy.args.push(args)
+    return org.call(obj, ...args)
+  }
+  const remove = () => {
+    obj[method] = org
+  }
+  return Object.freeze({ spy, remove })
+}

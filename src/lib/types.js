@@ -4,7 +4,8 @@ export const txTypes = {
   default: 'normal',
   remasc: 'remasc',
   bridge: 'bridge',
-  contract: 'contract deploy'
+  contract: 'contract deploy',
+  call: 'contract call'
 }
 
 export const errors = apiErrors(
@@ -64,7 +65,9 @@ export const MODULES = {
   summary: 'Summary',
   txPending: 'TxPending',
   extendedStats: 'ExtendedStats',
-  contractVerifier: 'ContractVerification'
+  contractVerifier: 'ContractVerification',
+  internalTransactions: 'InternalTx',
+  balances: 'Balances'
 }
 
 export const BIG_NUMBER = 'BigNumber'
@@ -74,7 +77,9 @@ export const OBJECT_ID = 'ObjectID'
 export const TOTAL_SUPPLY = 21 * 10 ** 6
 
 export const fields = {
-  LAST_BLOCK_MINED: 'lastBlockMined'
+  LAST_BLOCK_MINED: 'lastBlockMined',
+  DEPLOYED_CODE: 'deployedCode',
+  CREATED_BY_TX: 'createdByTx'
 }
 
 export const EVMversions = [

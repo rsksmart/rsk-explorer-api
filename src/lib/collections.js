@@ -192,26 +192,6 @@ export default {
 
     ]
   },
-  OrphanBlocks: {
-    indexes: [
-      {
-        key: {
-          hash: 1
-        },
-        unique: true
-      }
-    ]
-  },
-  TxPool: {
-    indexes: [
-      {
-        key: {
-          timestamp: -1
-        }
-      }
-    ]
-  },
-
   PendingTxs: {
     indexes: [
       {
@@ -256,6 +236,60 @@ export default {
       },
       {
         key: { match: 1 }
+      }
+    ]
+  },
+  InternalTransactions: {
+    indexes: [
+      {
+        key: { internalTxId: -1 },
+        unique: true
+      },
+      {
+        key: { blockHash: 1 }
+      },
+      {
+        key: { blockNumber: -1 }
+      },
+      {
+        key: { transactionHash: 1 }
+      },
+      {
+        key: { 'action.from': 1 }
+      },
+      {
+        key: { 'action.to': 1 }
+      }
+    ]
+  },
+  Balances: {
+    indexes: [
+      {
+        key: {
+          address: 1,
+          blockNumber: 1
+        },
+        unique: true
+      },
+      {
+        key: { address: 1 }
+      },
+      {
+        key: { blockNumber: -1 }
+      },
+      {
+        key: { blockHash: -1 }
+      },
+      {
+        key: { timestamp: -1 }
+      }
+    ]
+  },
+  BlocksTraces: {
+    indexes: [
+      {
+        key: { hash: 1 },
+        unique: true
       }
     ]
   }

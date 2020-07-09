@@ -1,10 +1,15 @@
 import path from 'path'
 import fs from 'fs'
+import URL from 'url'
 import defaultConf from './defaultConfig'
 
 export const config = createConfig('../../config.json')
 
 export function createConfig (file) {
+  return makeConfig(loadConfig(file))
+}
+
+export function makeConfig (config = {}) {
   const defaultLogs = (key) => {
     const dir = config.log.dir
     if (!dir) return
@@ -13,7 +18,6 @@ export function createConfig (file) {
     config[key].log.level = config[key].log.level || config.log.level || 'info'
   }
 
-  const config = loadConfig(file)
   const keys = Object.keys(defaultConf)
 
   for (let key of keys) {
@@ -29,12 +33,8 @@ export function createConfig (file) {
   }
 
   // defaults  servers/ports
-
-  config.blocks.node = config.blocks.node || config.source.node
-  config.blocks.port = config.blocks.port || config.source.port
-
-  let s = config.source
-  config.source.url = config.source.url || `${s.protocol}://${s.node}:${s.port}`
+  config.source = nodeSources(config.source)
+  config.blocks.source = config.source
 
   // defaults log files
 
@@ -57,6 +57,25 @@ function loadConfig (file) {
     }
   }
   return config
+}
+
+export function nodeSources (sources) {
+  if (!Array.isArray(sources)) sources = [sources]
+  sources = sources.map(s => createNodeSource(s))
+  sources = Object.values(sources.reduce((v, a, i) => {
+    let { url } = a
+    v[url] = a
+    return v
+  }, {})
+  )
+  return (sources.length > 1) ? sources : sources[0]
+}
+
+export function createNodeSource (s) {
+  let url = s.url || `${s.protocol}://${s.node}:${s.port}`
+  let { protocol, port, hostname: node } = URL.parse(url)
+  protocol = protocol.replace(/:$/, '')
+  return { protocol, node, port, url }
 }
 
 export default config
