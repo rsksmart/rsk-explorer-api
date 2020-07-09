@@ -56,9 +56,11 @@ export const fakeBlocks = (count = 10, { max, addTimestamp } = {}) => {
 
 export const randomBlockHash = () => '0x' + crypto.randomBytes(32).toString('hex')
 
-export const randomBlockNumber = (max) => {
+export const randomNumber = (max, min = 1) => Math.floor(Math.random() * max) + min
+
+export const randomBlockNumber = (max, min = 0) => {
   max = max || 10 ** 6
-  return Math.floor(Math.random() * max)
+  return randomNumber(max, min)
 }
 
 export const fakeTx = (transactionIndex, { hash, number }) => {
@@ -71,7 +73,7 @@ export const fakeBlock = (max) => {
   let number = randomBlockNumber(max)
   let hash = randomBlockHash()
   let miner = randomAddress()
-  let txs = Math.floor(Math.random() * 10)
+  let txs = randomNumber(10)
   let transactions = [...Array(txs)].map(() => randomBlockHash())
   return { hash, number, miner, transactions }
 }

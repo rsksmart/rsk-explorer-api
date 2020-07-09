@@ -1,12 +1,12 @@
 import { expect } from 'chai'
 import { addMetadataToBlocks, BLOCK_METADATA_FIELD } from '../../src/api/lib/blocksMetadata'
-import { randomBlockHash } from '../shared'
+import { randomBlockHash, randomNumber } from '../shared'
 
 const blocks = Array(10).fill(0).map((b, i) => {
   let number = i
   let timestamp = Date.now() + 3000
   let difficulty = 0
-  let transactions = Array(Math.floor(Math.random() * 10) + 1).fill(randomBlockHash())
+  let transactions = Array(randomNumber(10)).fill(randomBlockHash())
   return { number, timestamp, difficulty, transactions }
 })
 

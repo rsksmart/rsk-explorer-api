@@ -1,6 +1,6 @@
 import UpdateBlockBalances, { MissingBalances } from '../../src/services/classes/UpdateBlockBalances'
 import { assert } from 'chai'
-import { testDb, testCollections, randomBlockHash, randomAddress, fakeAddress } from '../shared'
+import { testDb, testCollections, randomBlockHash, randomAddress, fakeAddress, randomNumber } from '../shared'
 
 let highestBlock = 10
 const database = testDb()
@@ -15,7 +15,7 @@ const blocks = [...Array(highestBlock)].map((x, number) => {
 
 const summaries = blocks.map(block => {
   let { hash, number } = block
-  let addresses = [...Array(Math.floor(Math.random() * 10))].map(() => fakeAddress())
+  let addresses = [...Array(randomNumber(10, 2))].map(() => fakeAddress())
   let data = { block, addresses }
   return { hash, number, data }
 })
@@ -79,7 +79,6 @@ describe('UpdateBlockBalances', function () {
   })
 
   /*  describe('start', function () {
- 
    }) */
 
   describe('updateLastBlock', function () {
@@ -92,7 +91,7 @@ describe('UpdateBlockBalances', function () {
       let updateBalances = new UpdateBlockBalances(db, { nod3, initConfig: {} })
       assert.deepEqual(updateBalances.lastBlock, { number: undefined })
       let newBlock = blocks[blocks.length - 1]
-      let res = await updateBalances.updateLastBlock(newBlock)
+      let res = await updateBalances.updateLastBlock(newBlock, true)
       assert.isTrue(res)
       assert.deepEqual(updateBalances.lastBlock, newBlock)
     })
