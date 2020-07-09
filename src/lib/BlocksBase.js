@@ -2,10 +2,12 @@ import { getDbBlocksCollections } from './blocksCollections'
 import { events, actions } from './types'
 import { nod3Router as nod3, nod3Log } from './nod3Connect'
 import NativeContracts from './NativeContracts'
+import config from '../lib/config'
 
 export class BlocksBase {
   constructor (db, options = {}) {
     let { initConfig, log, debug } = options
+    if (undefined === debug) debug = config.blocks.debug
     this.initConfig = initConfig || {}
     this.db = db
     this.collections = (db) ? getDbBlocksCollections(db) : undefined
