@@ -53,7 +53,9 @@ export default {
     bcTipSize: 120,
     batchRequestSize: 20,
     debug: false,
-    updateTokenBalances: true // Update token accounts balances on next block
+    updateTokenBalances: true, // Update token accounts balances on next block
+    ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
+    address: '127.0.0.1'
   },
   collectionsNames: {
     Config: 'config',

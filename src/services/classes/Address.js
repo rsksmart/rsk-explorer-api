@@ -77,12 +77,10 @@ export class Address extends BcThing {
       this.setData(dbData)
 
       let { blockNumber } = this
-      let blockBalance = await this.getBalance(blockNumber)
-      this.setData({ blockBalance })
 
       let storedBlock = this.data.blockNumber || 0
       if (blockNumber > storedBlock) {
-        let balance = blockBalance || 0
+        let balance = await this.getBalance('latest')
         this.setData({ balance, blockNumber })
       }
 
@@ -190,7 +188,9 @@ export class Address extends BcThing {
   isContract () {
     let { code, type } = this.getData()
     let { isNative, address } = this
-    if (undefined === code && !isNative) throw new Error(`Run getCode first ${address}`)
+    if (undefined === code && !isNative && !isZeroAddress(address)) {
+      throw new Error(`Run getCode first ${address}`)
+    }
     return type === addrTypes.CONTRACT
   }
 

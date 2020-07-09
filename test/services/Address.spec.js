@@ -1,12 +1,12 @@
 import { expect } from 'chai'
-import { randomAddress, randomBlockHash, testCollections, Spy } from '../shared'
+import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
 import initConfig from '../../src/lib/initialConfiguration'
 
 const nativeTestContract = '0x0000000000000000000000000000000001aaaaaa'
-
-const options = { collections: { Addr: null }, initConfig }
+const block = fakeBlock()
+const options = { collections: { Addr: null }, initConfig, block }
 const contractAddress = randomAddress()
 const fakeCode = '0x0102'
 const nod3 = {
@@ -22,6 +22,7 @@ const nod3 = {
 
 describe(`# Address`, function () {
   describe(`address type`, function () {
+    this.timeout(9000)
     const address = new Address(randomAddress(), options)
 
     it('address type should be account', () => {
@@ -40,6 +41,7 @@ describe(`# Address`, function () {
   })
 
   describe(`lastBlock`, function () {
+    this.timeout(9000)
     const a = randomAddress()
     const address = new Address(a, options)
     let data = address.getData()
@@ -81,6 +83,7 @@ describe(`# Address`, function () {
   })
 
   describe(`searchDeploymentData()`, function () {
+    this.timeout(9000)
     let method = 'searchDeploymentData'
     let cases = [
       [undefined, 1],
@@ -90,7 +93,8 @@ describe(`# Address`, function () {
 
     for (let [tx, calls] of cases) {
       it(`${method} should be called ${calls} times`, async () => {
-        let address = new Address(contractAddress, { tx, initConfig, collections: options.collections, nod3 })
+        let block = fakeBlock()
+        let address = new Address(contractAddress, { tx, initConfig, collections: options.collections, nod3, block })
         let { spy, remove } = Spy(address, method)
         await address.fetch().catch(() => { })
         let { type } = address.getData()
@@ -103,8 +107,14 @@ describe(`# Address`, function () {
 })
 
 describe(`# Address, requires db connection`, function () {
-
+  this.timeout(20000)
   const a = randomAddress()
+  let blockA = {
+    number: 3,
+    hash: randomBlockHash(),
+    miner: randomAddress(),
+    transactions: []
+  }
   let block = {
     number: 10,
     hash: randomBlockHash(),
@@ -112,11 +122,11 @@ describe(`# Address, requires db connection`, function () {
     transactions: []
   }
 
-  const options2 = { nod3, initConfig }
+  const options2 = { nod3, initConfig, block: blockA }
   const lastBlockMined = fields.LAST_BLOCK_MINED
 
   it(`should set ${lastBlockMined} and save the address`, async () => {
-    options2.collections = await testCollections()
+    options2.collections = await testCollections(true)
     const address = new Address(a, options2)
     address.setBlock(block)
     expect(address.getData()[lastBlockMined].number).to.be.equal(block.number)
@@ -161,8 +171,8 @@ describe(`# Address, requires db connection`, function () {
 
   it(`should return a native contract address document`, async () => {
     const collections = await testCollections()
-
-    const address = new Address(nativeTestContract, { collections, nod3, initConfig: { nativeContracts: { nativeTestContract } } })
+    const block = fakeBlock()
+    const address = new Address(nativeTestContract, { block, collections, nod3, initConfig: { nativeContracts: { nativeTestContract } } })
     await address.fetch()
     const data = address.getData()
     expect(data).haveOwnProperty('isNative').equal(true)

@@ -39,11 +39,16 @@ export const tokensInterfaces = [
 ]
 
 export const events = {
+  'SERVICE_STARTED': 'serviceStarted',
   'BLOCK_QUEUED': 'blockQueued',
   'BLOCK_REQUESTED': 'blockRequested',
-  'NEW_BLOCK': 'newBlock',
+  'BLOCK_SAVED': 'blockSaved',
   'BLOCK_ERROR': 'blockError',
-  'QUEUE_DONE': 'queueDone'
+  'NEW_BLOCK': 'newBlock',
+  'REQUEST_BLOCKS': 'requestBlocks',
+  'QUEUE_DONE': 'queueDone',
+  'NEW_STATUS': 'newStatus',
+  'NEW_TIP_BLOCK': 'newTipBlock'
 }
 
 export const actions = {

@@ -1,6 +1,7 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import { getBlockFromDb, deleteBlockDataFromDb } from './Block'
 import { getBlock } from './RequestBlocks'
+import { chunkArray } from '../../lib/utils'
 
 export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
@@ -11,21 +12,29 @@ export class CheckBlocks extends BlocksBase {
     this.tipSize = options.bcTipSize || 12
   }
 
-  async start () {
+  async saveTipBlocks () {
+    await this.getBlock(0).catch(err => this.log.trace(err))
+    let lastBlock = await this.getLastBlock().catch(err => this.log.trace(err))
+    await this.getBlock(lastBlock.hash).catch(err => this.log.trace(err))
+  }
+  async start (emitter) {
     try {
-      await Promise.all([this.getBlock(0), this.getLastBlock()])
+      if (emitter) this.setEmitter(emitter)
+      if (!this.emit) throw new Error('The emitter should be defined')
+      await this.saveTipBlocks()
       this.log.info('Checking database')
-      let res = await this.checkDb(true)
+      let res = await this.checkDb({ checkOrphans: true, skipTxs: true })
       this.log.info('Getting missing blocks')
-      this.log.trace(res)
-      await this.getBlocks(res)
+      if (!res) this.log.info('There are no missing blocks')
+      else this.log.trace(res)
+      return this.getBlocks(res)
     } catch (err) {
       this.log.error(`[CheckBlocks.start] ${err}`)
       return Promise.reject(err)
     }
   }
 
-  async checkDb (checkOrphans, lastBlock, firstBlock) {
+  async checkDb ({ checkOrphans, lastBlock, firstBlock, skipTxs }) {
     if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock()
     if (!lastBlock) return
     lastBlock = lastBlock.number
@@ -35,9 +44,11 @@ export class CheckBlocks extends BlocksBase {
     if (blocks < lastBlock + 1) {
       missingSegments = await this.getMissingSegments()
     }
-
-    let missingTxs = await this.getMissingTransactions(lastBlock, firstBlock)
-    await this.deleteMissingTxsBlocks(missingTxs)
+    let missingTxs
+    if (!skipTxs) {
+      missingTxs = await this.getMissingTransactions(lastBlock, firstBlock)
+      await this.deleteMissingTxsBlocks(missingTxs)
+    }
 
     let res = { lastBlock, blocks, missingSegments, missingTxs }
     if (checkOrphans) {
@@ -92,8 +103,8 @@ export class CheckBlocks extends BlocksBase {
   }
 
   async getBlock (hashOrNumber) {
-    const { nod3, collections, log, nativeContracts } = this
-    return getBlock(hashOrNumber, { nod3, collections, log, nativeContracts })
+    const { nod3, collections, log, initConfig } = this
+    return getBlock(hashOrNumber, { nod3, collections, log, initConfig })
   }
 
   getBlockFromDb (hashOrNumber) {
@@ -129,9 +140,13 @@ export class CheckBlocks extends BlocksBase {
       })
 
       if (values.length) {
-        this.log.warn(`Getting ${values.length} bad blocks`)
-        this.log.trace(values)
-        process.send({ action: this.actions.BULK_BLOCKS_REQUEST, args: [values] })
+        let { log, emit, events } = this
+        log.warn(`Getting ${values.length} bad blocks`)
+        log.trace(values)
+        let chunks = chunkArray(values, 100)
+        for (let blocks of chunks) {
+          emit(events.REQUEST_BLOCKS, { blocks })
+        }
       }
     } catch (err) {
       this.log.error(err)
@@ -169,7 +184,8 @@ export class CheckBlocks extends BlocksBase {
         let lastBlock = this.tipBlock
         this.tipCount = 0
         this.log.info(`Checking db / LastBlock: ${lastBlock}`)
-        let res = await this.checkDb(true, lastBlock, lastBlock - this.tipSize * 10)
+        let firstBlock = lastBlock - this.tipSize * 10
+        let res = await this.checkDb({ checkOrphans: true, lastBlock, firstBlock })
         this.log.trace(`Check db: ${res}`)
         return this.getBlocks(res)
       }

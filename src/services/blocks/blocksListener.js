@@ -1,20 +1,20 @@
-import { setup } from '../../lib/dataSource.js'
-import conf from '../../lib/config'
+import { createService, services, bootStrapService } from '../serviceFactory'
 import { ListenBlocks } from '../classes/ListenBlocks'
-import Logger from '../../lib/Logger'
 
-const config = Object.assign({}, conf.blocks)
-const log = Logger('Blocks', config.log)
-config.log = log
+const serviceConfig = services.LISTENER
+const executor = ({ create }) => { create.Emitter() }
 
-setup({ log }).then(({ db }) => {
-  config.Logger = log
-  const listener = new ListenBlocks(db, config)
-  log.info(`Starting blocks listener`)
-  listener.start()
-})
+async function main () {
+  try {
+    const { log, db, initConfig } = await bootStrapService(serviceConfig)
+    const { service, startService } = await createService(serviceConfig, executor, { log })
+    await startService()
+    const listener = new ListenBlocks(db, { log, initConfig }, service)
+    listener.start()
+  } catch (err) {
+    console.error(err)
+    process.exit(9)
+  }
+}
 
-process.on('unhandledRejection', err => {
-  console.error(err)
-  process.exit(1)
-})
+main()

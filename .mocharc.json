@@ -1,0 +1,8 @@
+{
+  "recursive": true,
+  "require": "@babel/register",
+  "sort": true,
+  "ext": "*.spec.js",
+  "exit": true,
+  "timeout": 5000
+}

@@ -19,7 +19,7 @@ describe('Save Block', function () {
         this.timeout(60000)
         let { initConfig } = await datasource()
         let collections = await testCollections(true)
-        let block = new Block(hashOrNumber, { nod3, initConfig, collections })
+        let block = new Block(hashOrNumber, { nod3, initConfig, collections, log: null })
         await block.fetch()
         let result = await block.save()
         expect(result).to.be.an('object')

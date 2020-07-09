@@ -1,32 +1,32 @@
-import { dataSource } from '../../lib/dataSource.js'
-import { actions } from '../../lib/types'
+import { createService, services, bootStrapService } from '../serviceFactory'
 import { CheckBlocks } from '../classes/CheckBlocks'
-import conf from '../../lib/config'
-import Logger from '../../lib/Logger'
 
-const log = Logger('Blocks', conf.blocks.log)
+const serviceConfig = services.CHECKER
 
-dataSource().then(({ db }) => {
-  const Checker = new CheckBlocks(db, { log })
-  Checker.start()
-  process.on('message', msg => {
-    let action = msg.action
-    let args = msg.args
-    if (action) {
-      switch (action) {
-        case actions.CHECK_DB:
-          Checker.checkDb(...args)
-          break
-
-        case actions.UPDATE_TIP_BLOCK:
-          Checker.updateTipBlock(...args)
+async function main () {
+  try {
+    const { log, db, initConfig, events } = await bootStrapService(serviceConfig)
+    const checker = new CheckBlocks(db, { log, initConfig })
+    const eventHandler = (event, data) => {
+      switch (event) {
+        case events.NEW_TIP_BLOCK:
+          checker.updateTipBlock(data)
           break
       }
     }
-  })
-})
+    const executor = ({ create }) => {
+      create.Emitter()
+      create.Listener(eventHandler)
+    }
 
-process.on('unhandledRejection', err => {
-  console.error(err)
-  process.exit(1)
-})
+    const { startService, service } = await createService(serviceConfig, executor, { log })
+    const { emit } = service
+    await startService()
+    checker.start(emit)
+  } catch (err) {
+    console.error(err)
+    process.exit(9)
+  }
+}
+
+main()
