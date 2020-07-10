@@ -105,7 +105,7 @@ export class Balances extends DataCollectorItem {
         const projection = { blockHash: 1, blockNumber: 1, _id: 0 }
         const fromBlock = await this.getOne({}, projection, { blockNumber: 1 })
         const toBlock = await this.getOne({}, projection, { blockNumber: -1 })
-        return { data: { fromBlock, toBlock } }
+        return { data: { fromBlock: fromBlock.data, toBlock: toBlock.data } }
       }
     }
   }

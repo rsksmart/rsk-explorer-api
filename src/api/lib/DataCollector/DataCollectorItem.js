@@ -52,9 +52,10 @@ export class DataCollectorItem {
     return { data }
   }
 
-  async getOne (query, projection) {
+  async getOne (query, projection, sort) {
     projection = projection || this.getDefaultsFields()
-    const data = await this.db.findOne(query, { projection })
+    sort = sort || this.sort
+    const data = await this.db.findOne(query, { projection, sort })
     return { data }
   }
 
