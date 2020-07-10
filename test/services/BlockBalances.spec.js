@@ -1,6 +1,6 @@
 import { BlockBalances } from '../../src/services/classes/BlockBalances'
 import { expect, assert } from 'chai'
-import { randomBlockHash, testCollections, fakeAddress } from '../shared'
+import { randomBlockHash, testCollections, fakeAddress, randomTimestamp } from '../shared'
 
 const fakeBalance = address => `0x${address.slice(-4)}`
 const nod3 = {
@@ -13,7 +13,8 @@ const nod3 = {
 const createAddreses = (number) => {
   number = number || 2000
   let hash = randomBlockHash()
-  let block = { hash, number }
+  let timestamp = randomTimestamp({ unix: true })
+  let block = { hash, number, timestamp }
   let addresses = [...Array(10)].map(() => fakeAddress())
   return { block, addresses }
 }
@@ -81,7 +82,7 @@ function testBalances (balances, block, addresses) {
   for (let balance of balances) {
     expect(balance).to.be.an('object', 'balance is an object')
     expect(balance).has.ownProperty('address')
-    expect(balance).has.ownProperty('timestamp')
+    expect(balance).has.ownProperty('timestamp', block.timestamp)
     let address = addresses.find(({ address }) => address === balance.address)
     expect(address.address).to.be.equal(balance.address)
     expect(balance).has.ownProperty('blockHash', block.hash)

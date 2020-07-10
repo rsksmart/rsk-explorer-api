@@ -4,13 +4,15 @@ import { isBlockHash, isValidBlockNumber } from '../../lib/utils'
 
 export class BlockBalances extends BcThing {
   constructor ({ block, addresses }, { nod3, collections, log, initConfig }) {
-    let { number, hash } = block
+    let { number, hash, timestamp } = block
     if (!Array.isArray(addresses)) throw new Error('addresses must be an array')
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash: ${hash}`)
     if (!isValidBlockNumber(number)) throw new Error(`Invalid block number: ${number}`)
+    if (!timestamp) throw new Error('invalid block timestamp')
     super({ nod3, collections, initConfig, log })
     this.blockHash = hash
     this.blockNumber = number
+    this.timestamp = timestamp
     addresses = [...new Set(addresses.map(({ address }) => address))]
     this.addresses = addresses.map(address => new Address(address, { nod3, initConfig, collections, block: number }))
     this.balances = undefined
@@ -19,12 +21,12 @@ export class BlockBalances extends BcThing {
   async fetch () {
     try {
       if (this.balances) return this.balances
-      let { addresses, blockHash, blockNumber } = this
+      let { addresses, blockHash, blockNumber, timestamp } = this
       let balances = await Promise.all(addresses.map(async Addr => {
         let { address } = Addr
         let balance = await Addr.getBalance(blockNumber)
-        let timestamp = Date.now()
-        return { address, balance, blockHash, blockNumber, timestamp }
+        let _created = Date.now()
+        return { address, balance, blockHash, blockNumber, timestamp, _created }
       }))
       this.balances = balances
       return this.balances

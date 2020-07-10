@@ -1,15 +1,18 @@
 import UpdateBlockBalances, { MissingBalances } from '../../src/services/classes/UpdateBlockBalances'
 import { assert } from 'chai'
-import { testDb, testCollections, randomBlockHash, randomAddress, fakeAddress, randomNumber } from '../shared'
+import { testDb, testCollections, randomBlockHash, randomAddress, fakeAddress, randomNumber, randomTimestamp } from '../shared'
 
 let highestBlock = 10
 const database = testDb()
 
+const startTime = randomTimestamp({ unix: true })
+
 const blocks = [...Array(highestBlock)].map((x, number) => {
   let hash = randomBlockHash()
   ++number
+  let timestamp = startTime + number * 30
   return {
-    hash, number, blockHash: hash
+    hash, number, blockHash: hash, timestamp
   }
 })
 
