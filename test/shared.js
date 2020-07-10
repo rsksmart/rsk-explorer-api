@@ -129,3 +129,11 @@ export function asyncWait (time = 1000) {
 export function isRejected (promise) {
   return promise.then(() => false).catch(err => Promise.resolve(() => { throw err }))
 }
+
+export function randomTimestamp ({ start, end, unix } = {}) {
+  start = start || new Date(2018, 1, 2).getTime()
+  end = end || new Date().getTime()
+  let time = new Date(start + Math.random() * (end - start)).getTime()
+  if (unix) time = Math.floor(time / 1000)
+  return time
+}
