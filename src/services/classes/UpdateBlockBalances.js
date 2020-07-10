@@ -2,6 +2,7 @@ import { BlocksBase } from '../../lib/BlocksBase'
 import { BlockBalances } from './BlockBalances'
 import { getBlockSummaryFromDb } from './BlockSummary'
 import { isBlockHash } from '../../lib/utils'
+import { filterValueAddresses } from './InternalTx'
 
 export class UpdateBlockBalances extends BlocksBase {
   constructor (db, { log, initConfig, nod3, debug, confirmations }) {
@@ -21,7 +22,9 @@ export class UpdateBlockBalances extends BlocksBase {
       let { nod3, log, collections, initConfig } = this
       let summary = await getBlockSummaryFromDb(blockHash, collections)
       if (!summary) throw new Error(`Missing block summary: ${blockHash}`)
-      let blockBalances = new BlockBalances(summary.data, { nod3, log, collections, initConfig })
+      const { block, internalTransactions } = summary.data
+      const addresses = filterValueAddresses(internalTransactions)
+      let blockBalances = new BlockBalances({ block, addresses }, { nod3, log, collections, initConfig })
       let result = await blockBalances.save()
       blockBalances = undefined
       return result

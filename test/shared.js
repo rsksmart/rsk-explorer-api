@@ -56,7 +56,10 @@ export const fakeBlocks = (count = 10, { max, addTimestamp } = {}) => {
 
 export const randomBlockHash = () => '0x' + crypto.randomBytes(32).toString('hex')
 
-export const randomNumber = (max, min = 1) => Math.floor(Math.random() * max) + min
+export const randomNumber = (max, min = 1) => {
+  max = max || Number.MAX_SAFE_INTEGER
+  return Math.floor(Math.random() * max) + min
+}
 
 export const randomBlockNumber = (max, min = 0) => {
   max = max || 10 ** 6

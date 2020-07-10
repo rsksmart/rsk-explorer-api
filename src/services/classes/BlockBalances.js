@@ -13,7 +13,7 @@ export class BlockBalances extends BcThing {
     this.blockHash = hash
     this.blockNumber = number
     this.timestamp = timestamp
-    addresses = [...new Set(addresses.map(({ address }) => address))]
+    addresses = [...new Set(addresses)]
     this.addresses = addresses.map(address => new Address(address, { nod3, initConfig, collections, block: number }))
     this.balances = undefined
     this.collection = this.collections.Balances

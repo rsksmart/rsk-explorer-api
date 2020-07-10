@@ -15,7 +15,7 @@ const createAddreses = (number) => {
   let hash = randomBlockHash()
   let timestamp = randomTimestamp({ unix: true })
   let block = { hash, number, timestamp }
-  let addresses = [...Array(10)].map(() => fakeAddress())
+  let addresses = [...Array(10)].map(() => fakeAddress().address)
   return { block, addresses }
 }
 
@@ -83,8 +83,8 @@ function testBalances (balances, block, addresses) {
     expect(balance).to.be.an('object', 'balance is an object')
     expect(balance).has.ownProperty('address')
     expect(balance).has.ownProperty('timestamp', block.timestamp)
-    let address = addresses.find(({ address }) => address === balance.address)
-    expect(address.address).to.be.equal(balance.address)
+    let address = addresses.find((address) => address === balance.address)
+    expect(address).to.be.equal(balance.address)
     expect(balance).has.ownProperty('blockHash', block.hash)
     expect(balance).has.ownProperty('blockNumber', block.number)
     expect(balance).has.ownProperty('balance', fakeBalance(balance.address))

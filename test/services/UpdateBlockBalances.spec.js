@@ -16,10 +16,17 @@ const blocks = [...Array(highestBlock)].map((x, number) => {
   }
 })
 
+const fakeAction = () => {
+  const from = fakeAddress().address
+  const to = fakeAddress().address
+  const value = '0x' + randomNumber(undefined, 0).toString(16)
+  return { from, to, value }
+}
+
 const summaries = blocks.map(block => {
   let { hash, number } = block
-  let addresses = [...Array(randomNumber(10, 2))].map(() => fakeAddress())
-  let data = { block, addresses }
+  let internalTransactions = [...Array(randomNumber(10, 2))].map(() => { return { action: fakeAction() } })
+  let data = { block, internalTransactions }
   return { hash, number, data }
 })
 
@@ -116,20 +123,6 @@ describe('UpdateBlockBalances', function () {
       assert(balance.balance, fakeBalance(blockHash))
     })
 
-    it.skip('should update a block balance', async () => {
-      let db = await database.getDb()
-      let collections = await testCollections(true, database)
-      const { Blocks, Balances } = collections
-      await insert(blocks, Blocks)
-      let total = await collections.Balances.countDocuments()
-      assert.equal(total, 0)
-      let updateBalances = new UpdateBlockBalances(db, { nod3 })
-      let { hash: blockHash } = blocks[0]
-      await updateBalances.updateBalance(blockHash)
-      const balance = await Balances.findOne({ blockHash })
-      assert.typeOf(balance, 'object')
-      assert(balance.balance, fakeBalance(blockHash))
-    })
   })
 })
 
