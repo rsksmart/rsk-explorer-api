@@ -25,6 +25,7 @@ export class BlockBalances extends BcThing {
       let balances = await Promise.all(addresses.map(async Addr => {
         let { address } = Addr
         let balance = await Addr.getBalance(blockNumber)
+        balance = (parseInt(balance)) ? balance : 0
         let _created = Date.now()
         return { address, balance, blockHash, blockNumber, timestamp, _created }
       }))
