@@ -276,7 +276,7 @@ export default {
       {
         key: {
           address: 1,
-          blockNumber: 1
+          blockNumber: -1
         },
         unique: true
       },
@@ -287,7 +287,7 @@ export default {
         key: { blockNumber: -1 }
       },
       {
-        key: { blockHash: -1 }
+        key: { blockHash: 1 }
       },
       {
         key: { timestamp: -1 }
