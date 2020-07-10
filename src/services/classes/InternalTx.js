@@ -52,4 +52,16 @@ export function getInternalTxId ({ blockNumber, transactionPosition: transaction
   return generateId({ blockNumber, transactionIndex, hash, index })
 }
 
+export function filterValueAddresses (internalTransactions) {
+  const addresses = new Set()
+  internalTransactions.forEach(({ action, error }) => {
+    let { value, from, to } = action
+    if (!error && parseInt(value) > 0) {
+      addresses.add(from)
+      addresses.add(to)
+    }
+  })
+  return [...addresses]
+}
+
 export default InternalTx
