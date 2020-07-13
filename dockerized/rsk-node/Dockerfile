@@ -3,7 +3,7 @@
 #
 
 # Pull base image.
-FROM ubuntu:latest
+FROM ubuntu:bionic
 
 MAINTAINER RSK Release <support@rsk.co>
 
