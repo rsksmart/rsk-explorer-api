@@ -1,152 +1,267 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Address = void 0;var _BcThing = require("./BcThing");
-var _GetTxBalance = require("./GetTxBalance");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.saveAddressToDb = saveAddressToDb;exports.default = exports.Address = void 0;var _BcThing = require("./BcThing");
 var _utils = require("../../lib/utils");
 var _types = require("../../lib/types");
+var _Contract = _interopRequireDefault(require("./Contract"));
+var _rskContractParser = require("rsk-contract-parser");
+var _Tx = require("./Tx");
+var _InternalTx = require("./InternalTx");
+var _rskUtils = require("rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Address extends _BcThing.BcThing {
-  constructor(address, { nod3, initConfig, db, collections, block = 'latest' } = {}) {
-    super({ nod3, initConfig, collections });
+  constructor(address, { nod3, initConfig, collections, tx, block, log } = {}) {
+    super({ nod3, initConfig, collections, log });
     if (!this.isAddress(address)) throw new Error(`Invalid address: ${address}`);
+    this.isZeroAddress = (0, _rskUtils.isZeroAddress)(address);
+    this.bcSearch = (0, _rskContractParser.BcSearch)(nod3);
     this.address = address;
-    this.db = db || this.collections.Addrs;
-    this.codeIsSaved = false;
-    this.TxsBalance = new _GetTxBalance.GetTxBalance(this.collections.Txs);
-    this.data = new Proxy(
-    { address, type: _types.addrTypes.ADDRESS },
-    {
-      set(obj, prop, val) {
-        if (prop === 'code') {
-          val = val || null;
-          if (!(0, _utils.isNullData)(val)) {
-            obj.type = _types.addrTypes.CONTRACT;
-            obj.code = val;
-          }
-        } else if (val && prop === _types.fields.LAST_BLOCK_MINED) {
-          const lastBlock = obj[_types.fields.LAST_BLOCK_MINED] || {};
-          let number = lastBlock.number || -1;
-          if (val.miner === obj.address && val.number > number) {
-            obj[prop] = Object.assign({}, val);
-          }
-        } else {
-          obj[prop] = val;
-        }
-        return true;
-      } });
-
-    this.block = 'latest';
-    this.dbData = null;
+    this.fetched = false;
+    this.collection = collections ? collections.Addrs : undefined;
+    this.contract = undefined;
+    this.block = undefined;
+    this.blockNumber = undefined;
+    let { nativeContracts } = this;
+    let nName = nativeContracts ? nativeContracts.getNativeContractName(address) : undefined;
+    this.name = nName;
+    this.isNative = !!nName;
+    this.dbData = undefined;
+    this.tx = tx;
+    this.data = createAddressData(this);
     this.setBlock(block);
   }
 
   setBlock(block) {
-    if (!block) block = 'latest';
+    if (!(0, _utils.isBlockObject)(block) && !(0, _utils.isValidBlockNumber)(block)) {
+      throw new Error(`Invalid block ${block}`);
+    }
     if ((0, _utils.isBlockObject)(block)) {
-      this.block = block.number;
-      this.setLastBlock(block);
+      this.blockNumber = block.number;
+      this.block = block;
+      this.data[_types.fields.LAST_BLOCK_MINED] = block;
+    } else {
+      this.blockNumber = block;
     }
   }
 
-  setLastBlock(block) {
-    this.setData(_types.fields.LAST_BLOCK_MINED, block);
-  }
-
-  setData(prop, value) {
-    if (prop === 'address') return;
-    this.data[prop] = value;
-  }
-
-  getBalance() {
-    return this.nod3.eth.getBalance(this.address, 'latest'); // rskj 1.0.1 returns 500 with blockNumbers
-  }
-
-  getCode() {
-    return this.nod3.eth.getCode(this.address, 'latest'); // rskj 1.0.1 returns 500 with blockNumbers
-  }
-
-  async fetch() {
+  async getBalance(blockNumber = 'latest') {
     try {
-      let balance = await this.getBalance().
-      catch(err => {
-        throw new Error(`Address: error getting balance of ${this.address} ${err}`);
-      });
-      balance = balance || 0;
-      this.data.balance = balance;
+      if (this.isZeroAddress) return '0x0';
+      let { nod3, address } = this;
+      let balance = await nod3.eth.getBalance(address, blockNumber);
+      return balance;
+    } catch (err) {
+      this.log.debug(err);
+      return Promise.reject(new Error(`Address: error getting balance of ${this.address} ${err}`));
+    }
+  }
 
-      let code = null;
-      let dbData = await this.getFromDb();
-      this.dbData = dbData;
-
-      if (dbData) {
-        if (dbData.code) {
-          code = dbData.code;
-          this.codeIsSaved = true;
-        }
-        // Update lastBlockMined to highest block number
-        this.setData(_types.fields.LAST_BLOCK_MINED, dbData[_types.fields.LAST_BLOCK_MINED]);
-      }
-
-      if (undefined === code || code === null) {
-        code = await this.getCode();
-      }
-      this.data.code = code;
-      const { nativeContracts } = this;
-      if (nativeContracts) {
-        const isNative = this.nativeContracts.isNativeContract(this.address);
-        if (isNative) {
-          this.data.isNative = true;
-          this.data.name = this.nativeContracts.getNativeContractName(this.address);
-          this.data.type = _types.addrTypes.CONTRACT;
-        }
-      }
-      return this.getData();
+  async getCode() {
+    try {
+      if (this.isZeroAddress) return null;
+      let { code } = this.getData();
+      let { nod3, address, blockNumber } = this;
+      if (code !== undefined) return code;
+      code = await nod3.eth.getCode(address, blockNumber);
+      code = (0, _utils.isNullData)(code) ? null : code;
+      this.setData({ code });
+      return code;
     } catch (err) {
       return Promise.reject(err);
     }
   }
 
-  getFromDb() {
-    return this.db.findOne({ address: this.address });
+  async fetch(forceFetch) {
+    try {
+      if (this.fetched && !forceFetch) return this.getData(true);
+      this.fetched = false;
+      let dbData = this.isZeroAddress ? {} : await this.getFromDb();
+      this.setData(dbData);
+
+      let { blockNumber } = this;
+
+      let storedBlock = this.data.blockNumber || 0;
+      if (blockNumber > storedBlock) {
+        let balance = await this.getBalance('latest');
+        this.setData({ balance, blockNumber });
+      }
+
+      let code = await this.getCode();
+      // TODO suicide
+      if (code) {
+        // get contract info
+        let deployedCode = dbData ? dbData[_types.fields.DEPLOYED_CODE] : undefined;
+        if (!deployedCode) {
+          let deployData = await this.getDeploymentData();
+
+          if (!deployData) throw new Error('Deployment data is missing');
+          deployedCode = deployData.deployedCode;
+          let createdByTx = deployData.tx;
+          // this.tx = createdByTx
+          let data = {};
+          data[_types.fields.CREATED_BY_TX] = createdByTx;
+          data[_types.fields.DEPLOYED_CODE] = deployedCode;
+          this.setData(data);
+        }
+        this.makeContract(deployedCode, dbData);
+        let contractData = await this.contract.fetch();
+        this.setData(contractData);
+      }
+      this.fetched = true;
+      return this.getData(true);
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
+  async getDeploymentData() {
+    try {
+      let { address, tx } = this;
+      let deployedCode = getDeployedCode(tx, address);
+      if (!deployedCode) {
+        ({ tx, deployedCode } = await this.searchDeploymentData());
+      }
+      if (tx && deployedCode) return { tx, deployedCode };
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+  async searchDeploymentData() {
+    try {
+      let { bcSearch, address, blockNumber } = this;
+      if (blockNumber === 'latest') blockNumber = undefined;
+      let dBlockNumber = await bcSearch.deploymentBlock(address, blockNumber);
+      if (!dBlockNumber) throw new Error('Missing deployment block');
+      let data = await bcSearch.deploymentTx(address, { blockNumber: dBlockNumber });
+      if (!data) throw new Error(`Missing deployment data for ${address}`);
+      if (!data.tx && !data.internalTx) throw new Error(`Invalid deployment data for ${address}`);
+      let tx;
+      if (data.tx) {
+        tx = (0, _Tx.createTxObject)(data.tx, data);
+      } else {
+        let { timestamp } = data;
+        let { initConfig } = this;
+        let itx = new _InternalTx.InternalTx(Object.assign({ timestamp }, data.internalTx), { initConfig });
+        tx = itx.getData();
+      }
+      return { tx, deployedCode: getDeployedCode(tx, address) };
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async getFromDb() {
+    try {
+      let { dbData, collection, address } = this;
+      if (dbData) return dbData;
+      if (!collection) return;
+      dbData = await collection.findOne({ address });
+      this.dbData = dbData;
+      return dbData;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
   getData(serialize) {
     let data = Object.assign(this.data);
-    if (this.codeIsSaved) delete data.code;
+    // if (this.codeIsSaved) delete data.code
     return serialize ? this.serialize(data) : data;
   }
   async save() {
+    let { address } = this;
     try {
-      const data = this.getData(true);
-      let res = await this.update(data);
-      return res;
+      await this.fetch();
+      let data = this.getData(true);
+      let { collection, dbData } = this;
+      // Optimization
+      for (let p in dbData) {
+        if (data[p] === dbData[p]) delete data[p];
+      }
+      if (Object.keys(data).length < 1) return;
+      data.address = address;
+      let result = await saveAddressToDb(data, collection);
+      return result;
     } catch (err) {
+      this.log.error(`Error updating address ${address}`);
       return Promise.reject(err);
     }
-  }
-  async updateTxBalance() {
-    try {
-      let txBalance = await this.getBalanceFromTxs();
-      if (txBalance) this.setData('txBalance', txBalance);
-      return txBalance;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-  resetTxBalance() {
-    this.setData('txBalance', '0x00');
-  }
-  update(data) {
-    let address = data.address || this.address;
-    return this.db.updateOne({ address }, { $set: data }, { upsert: true });
   }
 
-  async getBalanceFromTxs() {
-    let address = this.address;
-    try {
-      let balance = await this.TxsBalance.getBalanceFromTx(address);
-      if (balance) return this.serialize(balance);
-    } catch (err) {
-      return Promise.reject(err);
+  isContract() {
+    let { code, type } = this.getData();
+    let { isNative, address } = this;
+    if (undefined === code && !isNative && !(0, _rskUtils.isZeroAddress)(address)) {
+      throw new Error(`Run getCode first ${address}`);
     }
-  }}exports.Address = Address;var _default =
+    return type === _types.addrTypes.CONTRACT;
+  }
 
+  makeContract(deployedCode, dbData) {
+    let { address, nod3, initConfig, collections, block } = this;
+    this.contract = new _Contract.default(address, deployedCode, { dbData, nod3, initConfig, collections, block });
+  }}exports.Address = Address;
+
+
+function getDeployedCode(tx, address) {
+  if (!tx) return;
+  let contractAddress, code;
+  // normal tx
+  if (tx.receipt) {
+    contractAddress = tx.receipt.contractAddress;
+    code = tx.input;
+  }
+  // internal tx
+  if (tx.type && tx.type === 'create') {
+    contractAddress = tx.result.address;
+    code = tx.action.init;
+  }
+  if (contractAddress === address) return code;
+}
+
+/**
+   * Address data proxy
+   */
+function createAddressData({ address, isNative, name }) {
+  const type = isNative ? _types.addrTypes.CONTRACT : _types.addrTypes.ADDRESS;
+  const dataHandler = {
+    set: function (data, prop, val) {
+      let protectedProperties = ['address', 'type', 'isNative', '_id'];
+      if (protectedProperties.includes(prop)) return true;
+      switch (prop) {
+        case 'code':
+          if ((0, _utils.isNullData)(val)) val = null;
+          if (val) {
+            data.type = _types.addrTypes.CONTRACT;
+          }
+          // Fix to support suicide
+          data.code = val;
+          break;
+
+        case _types.fields.LAST_BLOCK_MINED:
+          const lastBlock = data[_types.fields.LAST_BLOCK_MINED] || {};
+          let number = lastBlock.number || -1;
+          if (val && val.miner === data.address && val.number > number) {
+            data[prop] = Object.assign({}, val);
+          }
+          break;
+
+        default:
+          data[prop] = val;
+          break;}
+
+      return true;
+    } };
+
+  return new Proxy({ address, type, name, isNative }, dataHandler);
+}
+
+async function saveAddressToDb(data, collection) {
+  try {
+    let { address } = data;
+    if (!(0, _utils.isAddress)(address)) throw new Error(`Invalid address ${address}`);
+    let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true });
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}var _default =
 
 Address;exports.default = _default;

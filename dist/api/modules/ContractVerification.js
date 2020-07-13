@@ -12,24 +12,44 @@ class ContractVerification extends _DataCollector.DataCollectorItem {
     this.verificationsCollection = VerificationsResults;
     this.publicActions = {
       /**
-                            * @swagger
-                            * /api?module=contractVerifier&action=verify:
-                            *    get:
-                            *      description: Verify contract source
-                            *      tags:
-                            *        - contract verifier
-                            *      parameters:
-                            *        - name: request
-                            *          in: query
-                            *          required: true
-                            *      responses:
-                            *        200:
-                            *          $ref: '#/definitions/Response'
-                            *        400:
-                            *          $ref: '#/responses/BadRequest'
-                            *        404:
-                            *          $ref: '#/responses/NotFound'
-                            */
+                           * @swagger
+                           * /api?module=contractVerifier&action=getVerifiedContracts:
+                           *    get:
+                           *      description: Gets a list of verified contracts addresses
+                           *      tags:
+                           *        - contract verifier
+                           *      responses:
+                           *        200:
+                           *          $ref: '#/definitions/Response'
+                           *        400:
+                           *          $ref: '#/responses/BadRequest'
+                           *        404:
+                           *          $ref: '#/responses/NotFound'
+                           */
+      getVerifiedContracts: params => {
+        params.fields = ['address'];
+        let query = { match: true };
+        return this.getPageData(query, params);
+      },
+      /**
+          * @swagger
+          * /api?module=contractVerifier&action=verify:
+          *    get:
+          *      description: Verify contract source
+          *      tags:
+          *        - contract verifier
+          *      parameters:
+          *        - name: request
+          *          in: query
+          *          required: true
+          *      responses:
+          *        200:
+          *          $ref: '#/definitions/Response'
+          *        400:
+          *          $ref: '#/responses/BadRequest'
+          *        404:
+          *          $ref: '#/responses/NotFound'
+          */
       verify: async params => {
         try {
           const { request } = params;

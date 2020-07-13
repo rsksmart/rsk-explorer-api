@@ -52,9 +52,10 @@ class DataCollectorItem {
     return { data };
   }
 
-  async getOne(query, projection) {
+  async getOne(query, projection, sort) {
     projection = projection || this.getDefaultsFields();
-    const data = await this.db.findOne(query, { projection });
+    sort = sort || this.sort;
+    const data = await this.db.findOne(query, { projection, sort });
     return { data };
   }
 
@@ -80,7 +81,10 @@ class DataCollectorItem {
     let sortDir = this.sortDir;
 
     let { limit, next, prev, fields, count, countOnly, page, getPages } = params;
+
+    // fields = parseFields(fields)
     if (!fields) fields = this.getDefaultsFields();
+
     sort = filterSort(sort, sortable, defaultSort);
     return { sort, sortable, defaultSort, sortDir, limit, next, prev, fields, count, countOnly, page, getPages };
   }

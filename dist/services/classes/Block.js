@@ -1,58 +1,29 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.missmatchBlockTransactions = exports.Block = void 0;var _BcThing = require("./BcThing");
-var _Tx = _interopRequireDefault(require("./Tx"));
-var _Address = _interopRequireDefault(require("./Address"));
-var _Contract = _interopRequireDefault(require("./Contract"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.Block = void 0;var _BcThing = require("./BcThing");
+var _BlockSummary = _interopRequireDefault(require("./BlockSummary"));
 var _utils = require("../../lib/utils");
-var _ids = require("../../lib/ids");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _Address = require("./Address");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Block extends _BcThing.BcThing {
   constructor(hashOrNumber, { nod3, collections, log, initConfig }) {
-    super({ nod3, collections, initConfig });
+    super({ nod3, collections, initConfig, log });
     this.Blocks = this.collections.Blocks;
     this.fetched = false;
     this.log = log || console;
     this.hashOrNumber = hashOrNumber;
-    this.addresses = {};
-    this.contracts = {};
-    this.tokenAddresses = {};
+    this.summary = new _BlockSummary.default(hashOrNumber, { nod3, initConfig, collections, log });
     this.data = {
-      block: null,
-      txs: [],
-      addresses: [],
-      contracts: [],
-      tokenAddresses: [],
-      events: [] };
+      block: null };
 
   }
 
   async fetch(forceFetch) {
-    if (this.fetched && !forceFetch) {
-      return Promise.resolve(this.getData());
-    }
-
-    let connected = await this.nod3.isConnected();
-    if (!connected) {
-      return Promise.reject(new Error('nod3 is not connected'));
-    }
     try {
-      let blockData = await this.getBlock(this.hashOrNumber, true);
-      const { transactions, timestamp } = blockData;
-      blockData.transactions = transactions.map(tx => tx.hash);
-      this.data.block = blockData;
-      this.addAddress(blockData.miner, blockData);
-      const { nod3, initConfig } = this;
-      let txs = transactions.map(txData => new _Tx.default(txData.hash, timestamp, { txData, nod3, initConfig }));
-      let txsData = await this.fetchItems(txs);
-      this.data.txs = txsData.map(d => d.tx);
-      this.data.txs.forEach(tx => this.addTxAddresses(tx));
-
-      this.data.events = [].concat.apply([], txsData.map(d => d.events));
-
-      this.data.contracts = await this.fetchItems(this.contracts);
-      this.addEventsAddresses();
-      this.mergeContractsAddresses();
-      this.data.addresses = await this.fetchItems(this.addresses);
-      this.data.tokenAddresses = await this.fetchContractsAddresses();
+      if (this.fetched && !forceFetch) {
+        return this.getData();
+      }
+      let { summary } = this;
+      let data = await summary.fetch();
+      this.setData(data);
       this.fetched = true;
       return this.getData();
     } catch (err) {
@@ -61,108 +32,89 @@ class Block extends _BcThing.BcThing {
     }
   }
 
-  async getBlock(number, txArr = false) {
+  async save(overwrite) {
+    let result = {};
     try {
-      let blockData = await this.nod3.eth.getBlock(number, txArr);
-      if (blockData) blockData._received = Date.now();
-      return blockData;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  addTxAddresses(tx) {
-    let { receipt, to, from } = tx;
-    this.addAddress(receipt.contractAddress);
-    this.addContract(tx);
-    this.addAddress(to);
-    this.addAddress(from);
-  }
-
-  async save() {
-    let db = this.collections;
-    const result = {};
-    let data = await this.fetch();
-    try {
-      if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`);
-      data = this.serialize(data);
-      let { block, txs, events, tokenAddresses } = data;
-
-      // check transactions
-      let txsErr = missmatchBlockTransactions(block, txs);
-      if (txsErr.length) {
-        this.log.trace(`Block: ${block.number} - ${block.hash} Missing transactions: ${JSON.stringify(txsErr)} `);
-        throw new Error(`Block: ${block.number} - ${block.hash} Missing transactions `);
+      let { collections, summary, hashOrNumber } = this;
+      // Skip saved blocks
+      if ((0, _utils.isBlockHash)(hashOrNumber) && !overwrite) {
+        let hash = hashOrNumber;
+        let exists = await collections.Blocks.findOne({ hash });
+        if (exists) throw new Error(`Block ${hash} skipped`);
       }
-
-      // clean db
-      block = await this.removeOldBlockData(block, txs);
+      await this.fetch();
+      let data = this.getData(true);
+      if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`);
 
       // save block summary
-      await this.saveBlockSummary(data);
+      await summary.save();
+
+      let { block, transactions, internalTransactions, events, tokenAddresses, addresses } = data;
+      // clean db
+      block = await this.removeOldBlockData(block, transactions);
 
       // insert block
       result.block = await this.insertBlock(block);
 
       // insert txs
-      await Promise.all([...txs.map(tx => db.Txs.insertOne(tx))]).
+      await Promise.all([...transactions.map(tx => collections.Txs.insertOne(tx))]).
       then(res => {result.txs = res;});
 
       // remove pending txs
-      await Promise.all([...txs.map(tx => db.PendingTxs.deleteOne({ hash: tx.hash }))]);
+      await Promise.all([...transactions.map(tx => collections.PendingTxs.deleteOne({ hash: tx.hash }))]);
+
+      // insert internal transactions
+      await Promise.all([...internalTransactions.map(itx => collections.InternalTransactions.insertOne(itx))]).
+      then(res => {result.internalTxs = res;});
 
       // insert addresses
-      await Promise.all(
-      Object.values(this.addresses).map(a => {
-        a.resetTxBalance(); // reset to force update in next query
-        return a.save();
-      })).
-      then(res => {result.addresses = res;});
+      result.addresses = await Promise.all([...addresses.map(a => (0, _Address.saveAddressToDb)(a, collections.Addrs))]);
 
       // insert events
-      await Promise.all(
-      events.map(e => db.Events.updateOne(
-      { eventId: e.eventId },
-      { $set: e },
-      { upsert: true }))).
-      then(res => {result.events = res;});
+      result.events = await this.insertEvents(events);
 
       // insert tokenAddresses
-      await Promise.all(
-      tokenAddresses.map(ta => db.TokensAddrs.updateOne(
-      { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))).
-      then(res => {result.tokenAddresses = res;});
+      result.tokenAddresses = await this.insertTokenAddresses(tokenAddresses);
 
       return { result, data };
     } catch (err) {
       // remove blockData if block was inserted
       if (result.block) {
-        this.deleteBlockDataFromDb(data.block.hash, data.block.number);
+        let data = this.getData();
+        await this.deleteBlockDataFromDb(data.block.hash, data.block.number);
       }
       this.log.trace(`Block save error [${this.hashOrNumber}]`, err);
       return Promise.reject(err);
     }
   }
-
-  async saveBlockSummary(data) {
+  async insertEvents(events) {
     try {
-      const { hash, number, timestamp } = data.block;
-      const collection = this.collections.BlocksSummary;
-      if (!hash) throw new Error(`Missing block hash`);
-      const old = await collection.findOne({ hash }, { _id: 1 });
-      const _id = old ? old._id : (0, _ids.getSummaryId)(data.block);
-      const summary = { _id, hash, number, timestamp, data };
-      const res = await collection.updateOne({ _id }, { $set: summary }, { upsert: true });
-      return res;
+      let { Events } = this.collections;
+      let result = await Promise.all([...events.map(e => Events.updateOne(
+      { eventId: e.eventId },
+      { $set: e },
+      { upsert: true }))]);
+      return result;
     } catch (err) {
-      this.log.error(`Error saving block summary`);
-      this.log.debug(err);
-      return Promise.resolve();
+      this.log.error('Error inserting events');
+      return Promise.reject(err);
     }
   }
+  async insertTokenAddresses(data) {
+    try {
+      let { TokensAddrs } = this.collections;
+      let result = await Promise.all([...data.map(ta => TokensAddrs.updateOne(
+      { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))]);
+      return result;
+    } catch (err) {
+      this.log.error('Error inserting token addresses');
+      return Promise.reject(err);
+    }
+  }
+
   async getOldBlockData(block) {
     try {
-      if (!block || !block.hash) throw new Error('Block data is empty');
+      if (!(0, _utils.isBlockObject)(block)) throw new Error('Block data is empty');
       let exists = await this.searchBlock(block);
       if (exists.length > 1) {
         throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`);
@@ -179,31 +131,15 @@ class Block extends _BcThing.BcThing {
     }
   }
 
-  async removeOldBlockData(block, txs) {
+  async removeOldBlockData(block, txs, oldBlock) {
     try {
-      let oldBlock = await this.getOldBlockData(block);
-      if (oldBlock) block = this.moveOldBlock(block, oldBlock);
+      if (!(0, _utils.isBlockObject)(oldBlock)) oldBlock = await this.getOldBlockData(block);
+      if (oldBlock) {
+        let { hash, number } = oldBlock.block;
+        await this.deleteBlockDataFromDb(hash, number);
+      }
       await this.removeBlocksByTxs(txs);
       return block;
-    } catch (err) {
-      return Promise.reject(err);
-    }
-  }
-
-  async moveOldBlock(newBlock, oldBlockData) {
-    try {
-      if (!oldBlockData || !newBlock) {
-        this.log.trace(`Replace block missing arguments`, oldBlockData, newBlock);
-        throw new Error(`Replace block error, missing arguments`);
-      }
-      let { block, txs, events } = oldBlockData;
-      block._replacedBy = newBlock.hash;
-      block._events = events;
-      block.transactions = txs;
-      await this.saveOrphanBlock(block).catch(err => this.log.debug(err));
-      await this.deleteBlockDataFromDb(block.hash, block.number);
-      newBlock._replacedBlockHash = block.hash;
-      return newBlock;
     } catch (err) {
       return Promise.reject(err);
     }
@@ -234,9 +170,7 @@ class Block extends _BcThing.BcThing {
     }
   }
 
-  searchBlock(block) {
-    let hash = block.hash;
-    let number = block.number;
+  searchBlock({ hash, number }) {
     return this.collections.Blocks.find({ $or: [{ hash }, { number }] }).toArray();
   }
 
@@ -281,70 +215,6 @@ class Block extends _BcThing.BcThing {
     return this.collections.Txs.findOne({ hash });
   }
 
-  saveOrphanBlock(blockData) {
-    delete blockData._id;
-    blockData._updated = Date.now();
-    return this.collections.OrphanBlocks.updateOne({ hash: blockData.hash }, { $set: blockData }, { upsert: true });
-  }
-
-  addAddress(address, block) {
-    if (!this.isAddress(address) || this.addresses[address]) return;
-    let { nod3, collections, initConfig } = this;
-    const Addr = new _Address.default(address, { initConfig, collections, nod3, block });
-    this.addresses[address] = Addr;
-  }
-
-  addContract(tx) {
-    let address = tx.receipt.contractAddress;
-    if (address) {
-      let data = { tx, code: () => this.getAddressCode(address) };
-      return this.getContract(address, data);
-    }
-  }
-
-  getContract(address, data) {
-    let contract = this.contracts[address];
-    if (contract) return contract;else
-    return this.newContract(address, data);
-  }
-
-  newContract(address, data) {
-    let { nod3, initConfig } = this;
-    let { block } = this.data;
-    let contract = new _Contract.default(address, data, { nod3, initConfig, block });
-    this.contracts[address] = contract;
-    return contract;
-  }
-
-  getAddressCode(address) {
-    return this.addresses[address].code;
-  }
-
-  addEventsAddresses() {
-    this.data.events.forEach(event => {
-      if (event && event.args) {
-        let address = event.address;
-        this.addAddress(address);
-        let abi = event.abi;
-        let contract = this.getContract(address);
-        if (abi && abi.inputs) {
-          let eventAddresses = abi.inputs.
-          filter(i => i.type === 'address').
-          map((field, i) => {
-            let address = event.args[i];
-            if (this.isAddress(address)) {
-              return address;
-            }
-          });
-          eventAddresses.forEach(a => {
-            this.addAddress(a);
-            contract.addAddress(a);
-          });
-        }
-      }
-    });
-  }
-
   // adds contract data to addresses
   mergeContractsAddresses() {
     let contracts = this.data.contracts;
@@ -366,18 +236,8 @@ class Block extends _BcThing.BcThing {
       if (addData.length) data = data.concat(addData);
     }
     return data;
-  }
-  fetchItems(items) {
-    return Promise.all(Object.values(items).map(i => i.fetch()));
   }}exports.Block = Block;
 
-
-const missmatchBlockTransactions = (block, transactions) => {
-  let diff = (0, _utils.arrayDifference)(block.transactions, transactions.map(tx => tx.hash));
-  if (diff.length) return diff;
-  let blockHash = block.hash;
-  return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash);
-};exports.missmatchBlockTransactions = missmatchBlockTransactions;
 
 const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = (0, _utils.blockQuery)(blockHashOrNumber);
@@ -385,31 +245,37 @@ const getBlockFromDb = async (blockHashOrNumber, collection) => {
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`));
 };exports.getBlockFromDb = getBlockFromDb;
 
-const deleteBlockDataFromDb = async (blockHash, blockNumber, db) => {
+const deleteBlockDataFromDb = async (blockHash, blockNumber, collections) => {
   try {
     blockNumber = parseInt(blockNumber);
-    if (blockNumber < 1) throw new Error(`The blockNumber is wrong`);
-    if (!blockHash) throw new Error(`Empty block hash`);
+    if (blockNumber < 1) throw new Error(`The blockNumber: ${blockNumber} is wrong`);
+    if (!(0, _utils.isBlockHash)(blockHash)) throw new Error(`Empty block hash: ${blockHash}`);
     let hash = blockHash;
     let result = {};
-    let query = { $or: [{ blockHash }, { blockNumber }] };
+    const query = { $or: [{ blockHash }, { blockNumber }] };
 
-    result.block = await db.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] });
+    result.block = await collections.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] });
 
-    let txs = (await db.Txs.find(query).toArray()) || [];
+    let txs = (await collections.Txs.find(query).toArray()) || [];
     let txsHashes = txs.map(tx => tx.hash);
 
     // remove txs
-    result.txs = await db.Txs.deleteMany({ hash: { $in: txsHashes } });
+    result.txs = await collections.Txs.deleteMany({ hash: { $in: txsHashes } });
+
+    // remove internal txs
+    result.itxs = await collections.InternalTransactions.deleteMany({ transactionHash: { $in: txsHashes } });
 
     // remove events by block
-    result.events = await db.Events.deleteMany(query);
+    result.events = await collections.Events.deleteMany(query);
 
     // remove events by txs
-    result.eventsByTxs = await db.Events.deleteMany({ txHash: { $in: txsHashes } });
+    result.eventsByTxs = await collections.Events.deleteMany({ txHash: { $in: txsHashes } });
 
     // remove contracts by blockHash
-    result.addresses = await db.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash });
+    result.addresses = await collections.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash });
+
+    // remove balances
+    result.balances = await collections.Balances.deleteMany(query);
 
     return result;
   } catch (err) {

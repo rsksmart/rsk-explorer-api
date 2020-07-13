@@ -6,7 +6,8 @@ const CHANNELS = {
   txsChannel: 'transactions',
   statusChannel: 'status',
   txPoolChannel: 'txpool',
-  statsChannel: 'stats' };exports.CHANNELS = CHANNELS;
+  statsChannel: 'stats',
+  balancesChannel: 'balances' };exports.CHANNELS = CHANNELS;
 
 
 const createChannels = io => {

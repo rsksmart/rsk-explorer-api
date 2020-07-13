@@ -1,29 +1,18 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.getBlock = getBlock;exports.default = exports.RequestBlocks = void 0;
-var _events = require("events");
 var _BlocksBase = require("../../lib/BlocksBase");
-var _types = require("../../lib/types");
 var _Block = require("./Block");
 var _utils = require("../../lib/utils");
 var _UpdateTokenAccountBalances = require("./UpdateTokenAccountBalances");
 
-class Emitter extends _events.EventEmitter {}
-
 class RequestBlocks extends _BlocksBase.BlocksBase {
-  constructor(db, options) {
-    let { log, initConfig } = options;
-    super(db, { log, initConfig });
-    this.queueSize = options.blocksQueueSize || 50;
+  constructor(db, { log, initConfig, debug, blocksQueueSize, updateTokenBalances }) {
+    super(db, { log, initConfig, debug });
+    this.queueSize = blocksQueueSize || 50;
     this.pending = new Set();
     this.requested = new Map();
-    this.events = options.noEvents ? null : new Emitter();
     this.maxRequestTime = 1000;
-  }
-
-  emit(event, data) {
-    let events = this.events;
-    if (events) {
-      events.emit(event, data);
-    }
+    this.updateTokenBalances = updateTokenBalances;
+    this.blocksCollection = this.collections.Blocks;
   }
 
   request(key, prioritize) {
@@ -32,6 +21,7 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
   }
 
   bulkRequest(keys) {
+    if (!Array.isArray(keys)) throw new Error(`Keys must be an array`);
     for (let key of keys) {
       this.addToPending(key);
     }
@@ -57,7 +47,10 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
     let i = this.pending.values();
     let free = this.queueSize - this.requested.size;
     let total = this.requested.size + this.pending.size;
-    if (total === 0) this.emit(_types.events.QUEUE_DONE);
+    if (total === 0) {
+      this.emit(this.events.QUEUE_DONE, {});
+      this.updateStatus();
+    }
     while (free > -1) {
       let key = i.next().value;
       if (!key) return;
@@ -70,9 +63,13 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
   async requestBlock(key) {
     try {
       this.requested.set(key, Date.now());
-      this.emit(_types.events.BLOCK_REQUESTED, { key });
+      this.emit(this.events.BLOCK_REQUESTED, { key });
+      this.log.debug(this.events.BLOCK_REQUESTED, { key });
+      this.updateStatus();
       let block = await this.getBlock(key);
-      if (block.error) this.emit(_types.events.BLOCK_ERROR, block);
+      if (block.error) {
+        this.log.debug(this.events.BLOCK_ERROR, block.error);
+      }
       this.endRequest(key, block);
     } catch (err) {
       this.log.error(err);
@@ -92,8 +89,13 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
       }
       hash = hash || hashOrNumber;
       const { nod3, collections, log, initConfig } = this;
-      let block = await getBlock(hash, { nod3, collections, log, initConfig });
-      return block;
+      let result = await getBlock(hash, { nod3, collections, log, initConfig });
+
+      if (this.updateTokenBalances) {
+        let { block } = result;
+        if (block) await (0, _UpdateTokenAccountBalances.updateTokenAccountBalances)(block, { nod3, collections, initConfig, log });
+      }
+      return result;
     } catch (err) {
       return Promise.reject(err);
     }
@@ -105,11 +107,32 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
     this.pending.delete(key);
     this.log.trace(`Key ${key} time: ${time}`);
     if (res && res.block) {
-      let block = res.block;
-      this.emit(_types.events.NEW_BLOCK, { key, block });
-      return res.block;
+      let block = this.getBlockData(res.block);
+      this.emit(this.events.BLOCK_SAVED, { key, block });
+      res = undefined;
+      this.requestParentBlock({ key, block });
     }
     this.processPending();
+  }
+
+  async requestParentBlock({ key, block }) {
+    try {
+      if (!block) return;
+      let isHashKey = (0, _utils.isBlockHash)(key);
+      let data = this.getBlockData(block);
+      this.emit(this.events.NEW_TIP_BLOCK, data);
+      let show = isHashKey ? block.number : block.hash;
+      this.log.debug(this.events.NEW_BLOCK, `New Block DATA ${key} - ${show}`);
+      let { parentHash } = block;
+      let parentBlock = await (0, _Block.getBlockFromDb)(parentHash, this.blocksCollection);
+      if (!parentBlock && block.number) {
+        this.log.debug(`Getting parent of block ${block.number} - ${parentHash}`);
+        this.request(parentHash, true);
+      }
+      this.updateStatus();
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   isRequestedOrPending(key) {
@@ -131,25 +154,26 @@ class RequestBlocks extends _BlocksBase.BlocksBase {
 
   getPending() {
     return this.pending.size;
+  }
+  updateStatus(state) {
+    state = state || {};
+    state.requestingBlocks = this.getRequested();
+    state.pendingBlocks = this.getPending();
+    this.emit(this.events.NEW_STATUS, state);
   }}exports.RequestBlocks = RequestBlocks;
 
 
 async function getBlock(hashOrNumber, { nod3, collections, log, initConfig }) {
-  if ((0, _utils.isBlockHash)(hashOrNumber)) {
-    let block = await (0, _Block.getBlockFromDb)(hashOrNumber, collections.Blocks);
-    if (block) return { block, key: hashOrNumber };
-  }
+  if (hashOrNumber !== 0 && !(0, _utils.isBlockHash)(hashOrNumber)) throw new Error(`Invalid blockHash: ${hashOrNumber}`);
+  const key = hashOrNumber;
   try {
     let newBlock = new _Block.Block(hashOrNumber, { nod3, collections, log, initConfig });
-    let block = await newBlock.save().then(async res => {
-      if (!res || !res.data) return;
-      let block = res.data.block;
-      await (0, _UpdateTokenAccountBalances.updateTokenAccountBalances)(block, { nod3, collections, initConfig, log });
-      return block;
-    });
-    return { block, key: hashOrNumber };
+    let result = await newBlock.save();
+    if (!result || !result.data) return { key };
+    let { block } = result.data;
+    return { block, key };
   } catch (error) {
-    return { error, key: hashOrNumber };
+    return { error, key };
   }
 }var _default =
 

@@ -1,9 +1,11 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.Blocks = Blocks;exports.default = exports.ListenBlocks = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 
 class ListenBlocks extends _BlocksBase.BlocksBase {
-  constructor(db, options) {
+  constructor(db, options, { emit }) {
+    if (typeof emit !== 'function') throw new Error('Emit must be a function');
     super(db, options);
     this.Blocks = this.collections.Blocks;
+    this.setEmitter(emit);
   }
 
   async start() {
@@ -22,8 +24,9 @@ class ListenBlocks extends _BlocksBase.BlocksBase {
       syncing.watch(sync => {
         let number = sync.currentBlock;
         if (number) {
+          number = parseInt(number);
           this.log.debug('[syncing] New Block reported:', number);
-          this.requestBlock(number);
+          this.announceBlock(number);
         }
       }, err => {
         this.log.debug(`Sync err: ${err}`);
@@ -34,7 +37,7 @@ class ListenBlocks extends _BlocksBase.BlocksBase {
       let newBlock = await this.nod3.subscribe.filter('newBlock');
       newBlock.watch(blockHash => {
         this.log.debug('New Block reported:', blockHash);
-        this.requestBlock(blockHash, true);
+        this.announceBlock(blockHash, true);
       }, err => {
         this.log.debug(`NewBlock error: ${err}`);
       });
@@ -43,19 +46,9 @@ class ListenBlocks extends _BlocksBase.BlocksBase {
     }
   }
 
-  bulkRequest(args) {
-    let action = this.actions.BULK_BLOCKS_REQUEST;
-    process.send({ action, args: [args] });
-  }
-
-  requestBlock(key, prioritize) {
-    let action = this.actions.BLOCK_REQUEST;
-    process.send({ action, args: [key, prioritize] });
-  }
-
-  updateStatus(state) {
-    let action = this.actions.STATUS_UPDATE;
-    process.send({ action, args: [state] });
+  announceBlock(key, prioritize = false) {
+    let event = this.events.NEW_BLOCK;
+    this.emit(event, { key, prioritize });
   }}exports.ListenBlocks = ListenBlocks;
 
 

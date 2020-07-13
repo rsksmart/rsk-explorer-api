@@ -171,12 +171,6 @@
       name: 'eventAddressesIndex' }] },
 
 
-  TokensAddrs: {
-    indexes: [
-    {
-      key: {
-        address: 1,
-        contract: 1 },
 
   TokensAddrs: {
     indexes: [
@@ -198,26 +192,11 @@
 
 
 
-  OrphanBlocks: {
-    indexes: [
-    {
-      key: {
-        hash: 1 },
-
-      unique: true }] },
-
-    TxPool: [
-    {
-      key: {
-        timestamp: -1 } }] },
-
-
   TxPool: {
     indexes: [
     {
       key: {
         timestamp: -1 } }] },
-
 
 
 
@@ -265,4 +244,58 @@
       key: { address: 1 } },
 
     {
-      key: { match: 1 } }] } };exports.default = _default;
+      key: { match: 1 } }] },
+
+
+
+  InternalTransactions: {
+    indexes: [
+    {
+      key: { internalTxId: -1 },
+      unique: true },
+
+    {
+      key: { blockHash: 1 } },
+
+    {
+      key: { blockNumber: -1 } },
+
+    {
+      key: { transactionHash: 1 } },
+
+    {
+      key: { 'action.from': 1 } },
+
+    {
+      key: { 'action.to': 1 } }] },
+
+
+
+  Balances: {
+    indexes: [
+    {
+      key: {
+        address: 1,
+        blockNumber: -1 },
+
+      unique: true },
+
+    {
+      key: { address: 1 } },
+
+    {
+      key: { blockNumber: -1 } },
+
+    {
+      key: { blockHash: 1 } },
+
+    {
+      key: { timestamp: -1 } }] },
+
+
+
+  BlocksTraces: {
+    indexes: [
+    {
+      key: { hash: 1 },
+      unique: true }] } };exports.default = _default;

@@ -1,6 +1,18 @@
 # Changelog
 
-## [1.0.8] - 2019-06-02
+## [1.1.0] - 2020-07-13
+
+### Added
+
+- Internal Transactions
+- Address Balances
+- Decode events using ABI for verified contracts
+
+## Changed
+
+- Services
+
+## [1.0.8] - 2020-06-02
 
 ### Added
 
@@ -10,7 +22,7 @@
 
 - TxPool collection indexes
 
-## [1.0.7] - 2019-04-08
+## [1.0.7] - 2020-04-08
 
 ### Fixed
 
@@ -22,7 +34,7 @@
 
 - Update the balances of the token accounts, recovered in the previous block, when a new block is saved.
 
-## [1.0.5] - 2019-03-05
+## [1.0.5] - 2020-03-05
 
 ### Fixed
 
@@ -33,7 +45,7 @@
 
 - Docker: expose api documentation
 
-## [1.0.4] - 2019-02-27
+## [1.0.4] - 2020-02-27
 
 ### Added
 
@@ -50,7 +62,7 @@
 
 - API/Address.getMiners
 
-## [1.0.3] - 2019-01-03
+## [1.0.3] - 2020-01-03
 
 ### Added
 

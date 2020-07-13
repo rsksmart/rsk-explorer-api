@@ -215,7 +215,12 @@ class Address extends _DataCollector.DataCollectorItem {
           const { createdByTx, code } = data;
           if (!code) throw new Error('The address does not have code');
           if (createdByTx) {
-            data.creationCode = createdByTx.input;
+            // is a transaction
+            if (createdByTx.hasOwnProperty('receipt')) {
+              data.creationCode = createdByTx.input;
+            } else {// is an internal transactions
+              data.creationCode = createdByTx.action.init;
+            }
             data.created = createdByTx.timestamp;
             delete data.createdByTx;
           }

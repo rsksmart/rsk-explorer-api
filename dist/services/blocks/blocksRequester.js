@@ -1,74 +1,43 @@
-"use strict";var _RequestBlocks = require("../classes/RequestBlocks");
-var _types = require("../../lib/types");
-var _utils = require("../../lib/utils");
-var _Block = require("../classes/Block");
-var _dataSource = require("../../lib/dataSource");
-var _Logger = _interopRequireDefault(require("../../lib/Logger"));
+"use strict";var _serviceFactory = require("../serviceFactory");
+var _RequestBlocks = require("../classes/RequestBlocks");
 var _config = _interopRequireDefault(require("../../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const config = Object.assign({}, _config.default.blocks);
+const serviceConfig = _serviceFactory.services.REQUESTER;
 
-const log = (0, _Logger.default)('Blocks', config.log);
+async function main() {
+  try {
+    const { log, db, initConfig, events } = await (0, _serviceFactory.bootStrapService)(serviceConfig);
+    const Requester = new _RequestBlocks.RequestBlocks(db, Object.assign(Object.assign({}, _config.default.blocks), { log, initConfig }));
+    const eventHandler = async (event, data) => {
+      try {
+        switch (event) {
+          case events.NEW_BLOCK:
+            let { key, prioritize } = data;
+            Requester.request(key, prioritize);
+            break;
 
-(0, _dataSource.dataSource)().then(({ db, initConfig }) => {
-  let Requester = new _RequestBlocks.RequestBlocks(db, Object.assign(config, { log, initConfig }));
-  const blocksCollection = Requester.collections.Blocks;
+          case events.REQUEST_BLOCKS:
+            const { blocks } = data;
+            Requester.bulkRequest(blocks);
+            break;}
 
-  Requester.updateStatus = function (state) {
-    state = state || {};
-    state.requestingBlocks = this.getRequested();
-    state.pendingBlocks = this.getPending();
-    let action = _types.actions.STATUS_UPDATE;
-    process.send({ action, args: [state] });
-  };
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    };
+    const executor = ({ create }) => {
+      create.Emitter();
+      create.Listener(eventHandler);
+    };
 
-  process.on('message', msg => {
-    let action = msg.action;
-    let args = msg.args;
-    if (action) {
-      switch (action) {
-        case _types.actions.BLOCK_REQUEST:
-          Requester.request(...args);
-          break;
+    const { startService, service } = await (0, _serviceFactory.createService)(serviceConfig, executor, { log });
+    const { emit } = service;
+    Requester.setEmitter(emit);
+    await startService();
+  } catch (err) {
+    console.error(err);
+    process.exit(9);
+  }
+}
 
-        case _types.actions.BULK_BLOCKS_REQUEST:
-          Requester.bulkRequest(...args);
-          break;}
-
-    }
-  });
-
-  Requester.events.on(_types.events.QUEUE_DONE, data => {
-    Requester.updateStatus();
-  });
-
-  Requester.events.on(_types.events.BLOCK_REQUESTED, data => {
-    log.debug(_types.events.BLOCK_REQUESTED, data);
-    Requester.updateStatus();
-  });
-
-  Requester.events.on(_types.events.BLOCK_ERROR, data => {
-    log.debug(_types.events.BLOCK_ERROR, data);
-  });
-
-  Requester.events.on(_types.events.NEW_BLOCK, data => {
-    let block = data.block;
-    if (!block) return;
-    let key = data.key;
-    let isHashKey = (0, _utils.isBlockHash)(key);
-    if (block) {
-      process.send({ action: _types.actions.UPDATE_TIP_BLOCK, args: [block] });
-      let show = isHashKey ? block.number : block.hash;
-      log.debug(_types.events.NEW_BLOCK, `New Block DATA ${key} - ${show}`);
-      let parent = block.parentHash;
-
-      (0, _Block.getBlockFromDb)(parent, blocksCollection).then(parentBlock => {
-        if (!parentBlock && block.number) {
-          log.debug(`Getting parent of block ${block.number} - ${parent}`);
-          Requester.request(parent, true);
-        }
-      });
-    }
-    Requester.updateStatus();
-  });
-});
+main();

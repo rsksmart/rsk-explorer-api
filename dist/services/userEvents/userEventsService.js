@@ -3,38 +3,39 @@ var _blocksCollections = require("../../lib/blocksCollections");
 var _config = _interopRequireDefault(require("../../lib/config"));
 var _Logger = _interopRequireDefault(require("../../lib/Logger"));
 var _utils = require("../../lib/utils");
-var _RequestCache = require("./RequestCache");
-var _AddressModule = _interopRequireDefault(require("./AddressModule"));
-var _ContractVerifierModule = _interopRequireDefault(require("./ContractVerifierModule"));
-var _types = require("../../lib/types");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
+
+var _ContractVerifierModule = _interopRequireDefault(require("./ContractVerifierModule"));
+var _types = require("../../lib/types");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /* import { RequestCache } from './RequestCache'
+                                                                                                                                      import AddressModule from './AddressModule' */
 const log = (0, _Logger.default)('UserRequests', _config.default.blocks.log);
 const verifierConfig = _config.default.api.contractVerifier;
 
 (0, _dataSource.default)({ log, skipCheck: true }).then(({ db, initConfig }) => {
   const collections = (0, _blocksCollections.getDbBlocksCollections)(db);
-  const cache = new _RequestCache.RequestCache();
+  // const cache = new RequestCache()
   // TODO, conditional creation
   const verifierModule = (0, _ContractVerifierModule.default)(db, collections, verifierConfig, { log });
-  const addressModule = (0, _AddressModule.default)({ db, collections, initConfig, log });
+  // const addressModule = AddressModule({ db, collections, initConfig, log })
 
   process.on('message', async msg => {
     try {
-      let { action, params, block, module } = msg;
+      // let { action, params, block, module } = msg
+      let { action, module } = msg;
       if (module && action) {
         switch (module) {
           // Address module
-          case 'Address':
-            if (action === 'updateAddress') {
-              if (!block) return;
-              msg = await addressModule.updateAddress({ cache, msg }, params);
-              sendMessage(msg);
-            }
-            break;
+          /*          case 'Address':
+                     if (action === 'updateAddress') {
+                       if (!block) return
+                       msg = await addressModule.updateAddress({ cache, msg }, params)
+                       sendMessage(msg)
+                     }
+                     break */
           // Contract Verifier module
           case 'ContractVerification':
             const method = verifierModule[action];
-            if (!method) throw new Error(`Unknow action ${action}`);
+            if (!method) throw new Error(`Unknown action ${action}`);
             try {
               msg = await method(msg);
               sendMessage(msg);

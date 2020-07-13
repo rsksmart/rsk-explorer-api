@@ -39,7 +39,7 @@ const address = _config.default.api.address || 'localhost';
 
   // create channels
   const channels = (0, _channels.createChannels)(io);
-  const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel } = channels.channels;
+  const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel, balancesChannel } = channels.channels;
 
   // send blocks on join
   blocksChannel.on('join', socket => {
@@ -65,6 +65,7 @@ const address = _config.default.api.address || 'localhost';
   api.events.on('newBlocks', result => {
     blocksChannel.emit('newBlocks', result);
     txsChannel.emit('newTransactions', api.getLastTransactions());
+    balancesChannel.emit('balancesStatus', api.getBalancesStatus());
   });
 
   // send stats on join
@@ -90,6 +91,11 @@ const address = _config.default.api.address || 'localhost';
   // send stats to channel
   api.events.on('newStats', result => {
     statsChannel.emit('stats', result);
+  });
+
+  // send balances status on join
+  balancesChannel.on('join', socket => {
+    socket.emit('data', (0, _apiTools.formatRes)({ action: 'balancesStatus', result: api.getBalancesStatus() }));
   });
 
   io.on('connection', socket => {

@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.eventId = exports.getSummaryId = exports.getTxOrEventId = void 0;var _utils = require("./utils");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.getEventId = exports.getSummaryId = exports.getTxOrEventId = exports.generateId = void 0;var _utils = require("./utils");
 
 const checkNumbers = payload => {
   for (let name in payload) {
@@ -9,24 +9,37 @@ const checkNumbers = payload => {
 
 const padBlockNumber = number => number.toString(16).padStart(7, 0);
 
-const getTxOrEventId = ({ blockNumber, transactionIndex, blockHash, logIndex }) => {
+/**
+                                                                      * Generates sortable and immutable ids for txs and events
+                                                                      * id structure:
+                                                                      * [blockNumber](24b)
+                                                                      * [txIndex][16b]
+                                                                      * [index](optional)(16b)
+                                                                      * [blockHash|txHash][72b]
+                                                                      */
+
+const generateId = ({ blockNumber, transactionIndex, hash, index }) => {
   try {
+    if (!hash) throw new Error(`Invalid hash ${hash}`);
+    hash = hash.toLowerCase();
     checkNumbers({ blockNumber, transactionIndex });
-    if (!(0, _utils.isBlockHash)(blockHash)) throw new Error('blockHash is not a block hash');
+    if (!(0, _utils.isTxOrBlockHash)(hash)) throw new Error('blockHash is not a block hash');
 
     let block = padBlockNumber(blockNumber);
     let txI = transactionIndex.toString(16).padStart(3, 0);
-    let hash = blockHash.substr(-19, 19);
-    let id = `${block}${txI}`;
-    if (undefined !== logIndex) {
-      if (logIndex) checkNumbers({ logIndex });
-      id += logIndex.toString(16).padStart(3, 0);
-    }
-    id = `${id}${hash}`;
+    let hashBit = hash.substr(-19, 19);
+    index = parseInt(index);
+    index = isNaN(index) ? '' : index.toString(16).padStart(3, 0);
+    let id = `${block}${txI}${index}${hashBit}`;
     return id;
   } catch (err) {
+    console.error(err);
     return err;
   }
+};exports.generateId = generateId;
+
+const getTxOrEventId = ({ blockNumber, transactionIndex, blockHash: hash, logIndex: index }) => {
+  return generateId({ blockNumber, transactionIndex, hash, index });
 };exports.getTxOrEventId = getTxOrEventId;
 
 const getSummaryId = ({ hash, number, timestamp }) => {
@@ -43,7 +56,4 @@ const getSummaryId = ({ hash, number, timestamp }) => {
   }
 };exports.getSummaryId = getSummaryId;
 
-const eventId = event => {
-  let id = getTxOrEventId(event);
-  return id;
-};exports.eventId = eventId;
+const getEventId = event => getTxOrEventId(event);exports.getEventId = getEventId;

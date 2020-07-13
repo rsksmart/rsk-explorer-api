@@ -1,19 +1,20 @@
-"use strict";var _dataSource = require("../../lib/dataSource.js");
-var _config = _interopRequireDefault(require("../../lib/config"));
+"use strict";var _serviceFactory = require("../serviceFactory");
 var _ListenBlocks = require("../classes/ListenBlocks");
-var _Logger = _interopRequireDefault(require("../../lib/Logger"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const config = Object.assign({}, _config.default.blocks);
-const log = (0, _Logger.default)('Blocks', config.log);
+const serviceConfig = _serviceFactory.services.LISTENER;
+const executor = ({ create }) => {create.Emitter();};
 
-(0, _dataSource.setup)({ log }).then(({ db }) => {
-  config.Logger = log;
-  const listener = new _ListenBlocks.ListenBlocks(db, { log });
-  log.info(`Starting blocks listener`);
-  listener.start();
-});
+async function main() {
+  try {
+    const { log, db, initConfig } = await (0, _serviceFactory.bootStrapService)(serviceConfig);
+    const { service, startService } = await (0, _serviceFactory.createService)(serviceConfig, executor, { log });
+    await startService();
+    const listener = new _ListenBlocks.ListenBlocks(db, { log, initConfig }, service);
+    listener.start();
+  } catch (err) {
+    console.error(err);
+    process.exit(9);
+  }
+}
 
-process.on('unhandledRejection', err => {
-  console.error(err);
-  process.exit(1);
-});
+main();

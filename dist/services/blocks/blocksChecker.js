@@ -1,32 +1,32 @@
-"use strict";var _dataSource = require("../../lib/dataSource.js");
-var _types = require("../../lib/types");
+"use strict";var _serviceFactory = require("../serviceFactory");
 var _CheckBlocks = require("../classes/CheckBlocks");
-var _config = _interopRequireDefault(require("../../lib/config"));
-var _Logger = _interopRequireDefault(require("../../lib/Logger"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const log = (0, _Logger.default)('Blocks', _config.default.blocks.log);
+const serviceConfig = _serviceFactory.services.CHECKER;
 
-(0, _dataSource.dataSource)().then(({ db }) => {
-  const Checker = new _CheckBlocks.CheckBlocks(db, { log });
-  Checker.start();
-  process.on('message', msg => {
-    let action = msg.action;
-    let args = msg.args;
-    if (action) {
-      switch (action) {
-        case _types.actions.CHECK_DB:
-          Checker.checkDb(...args);
-          break;
-
-        case _types.actions.UPDATE_TIP_BLOCK:
-          Checker.updateTipBlock(...args);
+async function main() {
+  try {
+    const { log, db, initConfig, events } = await (0, _serviceFactory.bootStrapService)(serviceConfig);
+    const checker = new _CheckBlocks.CheckBlocks(db, { log, initConfig });
+    const eventHandler = (event, data) => {
+      switch (event) {
+        case events.NEW_TIP_BLOCK:
+          checker.updateTipBlock(data);
           break;}
 
-    }
-  });
-});
+    };
+    const executor = ({ create }) => {
+      create.Emitter();
+      create.Listener(eventHandler);
+    };
 
-process.on('unhandledRejection', err => {
-  console.error(err);
-  process.exit(1);
-});
+    const { startService, service } = await (0, _serviceFactory.createService)(serviceConfig, executor, { log });
+    const { emit } = service;
+    await startService();
+    checker.start(emit);
+  } catch (err) {
+    console.error(err);
+    process.exit(9);
+  }
+}
+
+main();

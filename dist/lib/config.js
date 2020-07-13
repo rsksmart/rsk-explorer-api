@@ -1,10 +1,15 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.createConfig = createConfig;exports.default = exports.config = void 0;var _path = _interopRequireDefault(require("path"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.createConfig = createConfig;exports.makeConfig = makeConfig;exports.nodeSources = nodeSources;exports.createNodeSource = createNodeSource;exports.default = exports.config = void 0;var _path = _interopRequireDefault(require("path"));
 var _fs = _interopRequireDefault(require("fs"));
+var _url = _interopRequireDefault(require("url"));
 var _defaultConfig = _interopRequireDefault(require("./defaultConfig"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const config = createConfig('../../config.json');exports.config = config;
 
 function createConfig(file) {
+  return makeConfig(loadConfig(file));
+}
+
+function makeConfig(config = {}) {
   const defaultLogs = key => {
     const dir = config.log.dir;
     if (!dir) return;
@@ -13,7 +18,6 @@ function createConfig(file) {
     config[key].log.level = config[key].log.level || config.log.level || 'info';
   };
 
-  const config = loadConfig(file);
   const keys = Object.keys(_defaultConfig.default);
 
   for (let key of keys) {
@@ -29,12 +33,8 @@ function createConfig(file) {
   }
 
   // defaults  servers/ports
-
-  config.blocks.node = config.blocks.node || config.source.node;
-  config.blocks.port = config.blocks.port || config.source.port;
-
-  let s = config.source;
-  config.source.url = config.source.url || `${s.protocol}://${s.node}:${s.port}`;
+  config.source = nodeSources(config.source);
+  config.blocks.source = config.source;
 
   // defaults log files
 
@@ -57,6 +57,25 @@ function loadConfig(file) {
     }
   }
   return config;
+}
+
+function nodeSources(sources) {
+  if (!Array.isArray(sources)) sources = [sources];
+  sources = sources.map(s => createNodeSource(s));
+  sources = Object.values(sources.reduce((v, a, i) => {
+    let { url } = a;
+    v[url] = a;
+    return v;
+  }, {}));
+
+  return sources.length > 1 ? sources : sources[0];
+}
+
+function createNodeSource(s) {
+  let url = s.url || `${s.protocol}://${s.node}:${s.port}`;
+  let { protocol, port, hostname: node } = _url.default.parse(url);
+  protocol = protocol.replace(/:$/, '');
+  return { protocol, node, port, url };
 }var _default =
 
 config;exports.default = _default;

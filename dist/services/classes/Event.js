@@ -2,7 +2,7 @@
 
 const formatEvent = (event, tx) => {
   let { timestamp, receipt } = tx;
-  let id = (0, _ids.eventId)(event, tx);
+  let id = (0, _ids.getEventId)(event, tx);
   event.eventId = id;
   event.timestamp = timestamp;
   event.txStatus = receipt.status;

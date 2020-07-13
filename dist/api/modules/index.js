@@ -8,9 +8,23 @@ var _Stats = require("./Stats");
 var _Summary = require("./Summary");
 
 var _ContractVerification = require("./ContractVerification");
+var _InternalTx = require("./InternalTx");
+var _Balances = require("./Balances");
 var _apiTools = require("../lib/apiTools"); // import { ExtendedStats } from './ExtendedStats'
 
-const apiModules = { Block: _Block.Block, Tx: _Tx.Tx, Address: _Address.Address, Event: _Event.Event, Token: _Token.Token, TxPending: _TxPending.TxPending, Stats: _Stats.Stats, Summary: _Summary.Summary, ContractVerification: _ContractVerification.ContractVerification };
+const apiModules = {
+  Block: _Block.Block,
+  Tx: _Tx.Tx,
+  Address: _Address.Address,
+  Event: _Event.Event,
+  Token: _Token.Token,
+  TxPending: _TxPending.TxPending,
+  Stats: _Stats.Stats,
+  Summary: _Summary.Summary,
+  ContractVerification: _ContractVerification.ContractVerification,
+  InternalTx: _InternalTx.InternalTx,
+  Balances: _Balances.Balances };
+
 
 const getEnabledApiModules = modules => {
   const enabled = (0, _apiTools.getModulesNames)((0, _apiTools.getEnabledModules)(modules));

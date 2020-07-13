@@ -1,10 +1,10 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.StoredConfig = StoredConfig;exports.default = void 0;
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.StoredConfig = StoredConfig;exports.default = exports.readOnlyError = void 0;
 var _config = _interopRequireDefault(require("./config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const collectionName = _config.default.collectionsNames.Config;
-const INIT_ID = '_explorerInitialConfiguration';
-const readOnlyDocsIds = [INIT_ID];
 
-function StoredConfig(db) {
+const readOnlyError = id => `The doc with _id ${id} is read only`;exports.readOnlyError = readOnlyError;
+
+function StoredConfig(db, readOnlyDocsIds = []) {
   const storage = db.collection(collectionName);
   const isReadOnly = _id => readOnlyDocsIds.includes(_id);
   const isValidId = id => typeof id === 'string';
@@ -25,6 +25,10 @@ function StoredConfig(db) {
   const save = async (id, doc) => {
     try {
       if (!id || !isValidId(id)) throw new Error(`Invalid id ${id}`);
+      if (isReadOnly(id)) {
+        let exists = await get(id);
+        if (exists) throw new Error(readOnlyError(id));
+      }
       const newDoc = Object.assign({}, doc);
       newDoc._id = id;
       newDoc._created = Date.now();
@@ -37,25 +41,23 @@ function StoredConfig(db) {
   const update = async (_id, doc, { create } = {}) => {
     try {
       if (!_id) throw new Error(`Missing doc._id`);
-      if (isReadOnly(_id)) throw new Error(`The doc with _id ${_id} is read only`);
+      if (isReadOnly(_id)) throw new Error(readOnlyError(_id));
       const newDoc = Object.assign({}, doc);
-      newDoc._updated = Date.now();
+
       const options = {};
-      if (create) options.upsert = true;
-      let res = await storage.updateOne({ _id }, { $set: doc }, options);
+      if (create) {
+        let old = await get(_id);
+        if (!old) return save(_id, newDoc);
+      }
+      newDoc._updated = Date.now();
+      let res = await storage.updateOne({ _id }, { $set: newDoc }, options);
       return res;
     } catch (err) {
       return Promise.reject(err);
     }
   };
-  const saveConfig = doc => {
-    return save(INIT_ID, doc);
-  };
-  const getConfig = async () => {
-    return get(INIT_ID);
-  };
 
-  return Object.freeze({ getConfig, saveConfig, save, get, update });
+  return Object.freeze({ save, get, update });
 }var _default =
 
 StoredConfig;exports.default = _default;
