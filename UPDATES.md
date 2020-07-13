@@ -1,30 +1,36 @@
 # Updates
 
-## 0.5.3
+## 1.1.0
 
- 1. Drop Database
- 2. Start blocks service 
 
-## 0.4.0 to 0.4.1
+### 1. Backup database
 
- 1. Backup db
- 2. Run db patches
-  ```
-  node dist/dbPatches/0.4.1/0.4.1-a.js
-  node dist/dbPatches/0.4.1/0.4.1-b.js
-  ```
-3. Start blocks service
-4. Start api 
+```shell
+mongodump --out=/<backup-folder>
 
-## 0.3.x to 0.4.0
+```
 
-1. Backup db
-  ```
-  mongodump --db blockDB
-  ```
-2. Run db patches
-  ```
-  node dist/dbPatches/0.4.0.js
-  ```
-3. Start blocks service
-4. Start api 
+see: [MongoDB Tools](https://docs.mongodb.com/manual/tutorial/backup-and-restore-tools/)
+
+
+### 2. Import collections
+
+Import these collections from backup to a new database:
+
+- contractsVerifications
+- verificationResults
+- statsCollection
+
+```
+cd backup-folder/dbName
+mongorestore --db=contractsVerifications --collection=config ./contractsVerifications.bson
+mongorestore --db=verificationResults --collection=config ./verificationResults.bson
+mongorestore --db=statsCollection --collection=config ./statsCollection.bson
+
+```
+
+### 3. Start explorer-api
+
+- start blocks service
+- start api
+
