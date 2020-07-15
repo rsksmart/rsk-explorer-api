@@ -6,12 +6,11 @@
 ### 1. Backup database
 
 ```shell
-mongodump --out=/<backup-folder>
+mongodump --out=/<backup-folder> --db=<explorer-db-name>
 
 ```
 
 see: [MongoDB Tools](https://docs.mongodb.com/manual/tutorial/backup-and-restore-tools/)
-
 
 ### 2. Import collections
 
@@ -21,11 +20,12 @@ Import these collections from backup to a new database:
 - verificationResults
 - statsCollection
 
-```
+```shell
+
 cd backup-folder/dbName
-mongorestore --db=contractsVerifications --collection=config ./contractsVerifications.bson
-mongorestore --db=verificationResults --collection=config ./verificationResults.bson
-mongorestore --db=statsCollection --collection=config ./statsCollection.bson
+mongorestore --db=<new-explorer-db-name> --collection=contractsVerifications ./contractsVerifications.bson
+mongorestore --db=<new-explorer-db-name> --collection=verificationResults ./verificationResults.bson
+mongorestore --db=<new-explorer-db-name> --collection=statsCollection ./statsCollection.bson
 
 ```
 
@@ -33,4 +33,3 @@ mongorestore --db=statsCollection --collection=config ./statsCollection.bson
 
 - start blocks service
 - start api
-
