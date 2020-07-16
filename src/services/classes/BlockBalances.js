@@ -1,5 +1,4 @@
 import { BcThing } from './BcThing'
-import { Address } from './Address'
 import { isBlockHash, isValidBlockNumber } from '../../lib/utils'
 
 export class BlockBalances extends BcThing {
@@ -13,19 +12,17 @@ export class BlockBalances extends BcThing {
     this.blockHash = hash
     this.blockNumber = number
     this.timestamp = timestamp
-    addresses = [...new Set(addresses)]
-    this.addresses = addresses.map(address => new Address(address, { nod3, initConfig, collections, block: number }))
+    this.addresses = [...new Set(addresses)]
     this.balances = undefined
     this.collection = this.collections.Balances
   }
   async fetch () {
     try {
       if (this.balances) return this.balances
-      let { addresses, blockHash, blockNumber, timestamp } = this
+      let { addresses, blockHash, blockNumber, timestamp, nod3 } = this
       const balances = []
-      for (let Addr of addresses) {
-        let { address } = Addr
-        let balance = await Addr.getBalance(blockNumber)
+      for (let address of addresses) {
+        let balance = await nod3.eth.getBalance(address, blockNumber)
         balance = (parseInt(balance)) ? balance : 0
         let _created = Date.now()
         balances.push({ address, balance, blockHash, blockNumber, timestamp, _created })
@@ -45,7 +42,7 @@ export class BlockBalances extends BcThing {
       let balances = await this.fetch()
       if (!balances.length) {
         let { blockHash, blockNumber } = this
-        this.log.warn(`No balances for ${blockHash} /  ${blockNumber}`)
+        this.log.info(`No balances for ${blockHash} /  ${blockNumber}`)
         return
       }
       await this.deleteOldBalances()

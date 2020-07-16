@@ -86,7 +86,7 @@ export class UpdateBlockBalances extends BlocksBase {
       if (!this.emit) throw new Error('Set emitter before start')
       let { blocksCollection } = this
       let lastBlock = await getLastBlock(blocksCollection)
-      if (lastBlock) await this.updateLastBlock(lastBlock)
+      if (lastBlock) await this.updateLastBlock(lastBlock, true)
       this.started = this.getNextBalances()
       return this.started
     } catch (err) {
@@ -110,17 +110,16 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
     let currentBlock = highestBlock
     let block
     const current = () => currentBlock
+    const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } }
+    const cursor = blocksCollection.find(query, { projection, sort })
     const next = async () => {
       if (currentBlock <= lowestBlock) return
-      const query = { number: { $lte: --currentBlock, $gte: lowestBlock } }
-      const cursor = blocksCollection.find(query, { projection, sort })
+
       while (await cursor.hasNext()) {
         block = await cursor.next()
         let { hash: blockHash, number } = block
         let balance = await balancesCollection.findOne({ blockHash })
-
         currentBlock = number
-        if (currentBlock < lowestBlock) currentBlock = lowestBlock
         if (!balance) break
       }
       return block
