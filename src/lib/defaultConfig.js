@@ -49,7 +49,7 @@ export default {
     delayedFields
   },
   blocks: {
-    blocksQueueSize: 100,
+    blocksQueueSize: 10,
     validateCollections: false,
     bcTipSize: 120,
     batchRequestSize: 20,
