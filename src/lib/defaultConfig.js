@@ -26,7 +26,8 @@ export default {
   },
   log: {
     dir: '/var/log/rsk-explorer',
-    level: 'info'
+    level: 'info',
+    logToFiles: false
   },
   db: {
     server: 'localhost',
