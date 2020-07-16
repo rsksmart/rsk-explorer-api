@@ -87,7 +87,7 @@ pm2 start dist/services/blocks.config.js
 ### API
 
 ``` shell
-  node dist/api
+  pm2 start dist/api/api.config.js
 ```
 
 ## Commands
