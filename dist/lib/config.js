@@ -37,9 +37,10 @@ function makeConfig(config = {}) {
   config.blocks.source = config.source;
 
   // defaults log files
-
-  defaultLogs('api');
-  defaultLogs('blocks');
+  if (config.log.logToFiles === true) {
+    defaultLogs('api');
+    defaultLogs('blocks');
+  }
 
   config.api.collectionsNames = config.collectionsNames;
   return config;

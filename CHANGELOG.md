@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.1] - 2020-07-16
+
+### Changed
+
+- Default config, remove logging to files as default
+- blocksBalances service, get balances one by one.
+
+### Added
+
+- Log configuration instructions to README
+- config.log.dir as PM2 log folder in blocks.config.js
+- api.config.js, PM2 config file to start api
+
+### Fixed
+
+- Unhandled promise rejection on API start
+
 ## [1.1.0] - 2020-07-13
 
 ### Added
