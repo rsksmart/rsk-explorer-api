@@ -27,7 +27,7 @@ export class ContractVerification extends DataCollectorItem {
      *          $ref: '#/responses/NotFound'
      */
       getVerifiedContracts: (params) => {
-        params.fields = ['address']
+        params.fields = { address: 1 }
         let query = { match: true }
         return this.getPageData(query, params)
       },
