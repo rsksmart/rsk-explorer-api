@@ -22,13 +22,14 @@ export class BlockBalances extends BcThing {
     try {
       if (this.balances) return this.balances
       let { addresses, blockHash, blockNumber, timestamp } = this
-      let balances = await Promise.all(addresses.map(async Addr => {
+      const balances = []
+      for (let Addr of addresses) {
         let { address } = Addr
         let balance = await Addr.getBalance(blockNumber)
         balance = (parseInt(balance)) ? balance : 0
         let _created = Date.now()
-        return { address, balance, blockHash, blockNumber, timestamp, _created }
-      }))
+        balances.push({ address, balance, blockHash, blockNumber, timestamp, _created })
+      }
       this.balances = balances
       return this.balances
     } catch (err) {
