@@ -30,7 +30,11 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
         case 'versions':
           log.debug(`Updating solc versions list`)
           versions = Object.assign({}, data)
-          storedConfig.update(versionsId, versions, { create: true })
+          // temporal solution to '.' in field names
+          await storedConfig.update(versionsId, {}, { create: true })
+          storedConfig.update(versionsId, versions).catch(err => {
+            log.warn(err)
+          })
           break
         // verification result
         case 'verify':
