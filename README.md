@@ -24,11 +24,21 @@
 
 ## Install
 
-- Install dependecies
+- Install dependencies
 
 ``` shell
     npm install
   ```
+
+## Create log dir
+
+```shell
+sudo mkdir /var/log/rsk-explorer
+sudo chown $USER /var/log/rsk-explorer/
+chmod 755 /var/log/rsk-explorer
+```
+
+Note: You can change the log folder in config.json
 
 ## Configuration file 
 (optional)
@@ -38,6 +48,7 @@
   ```
 
 see [configuration](#configuration)
+
 
 ## Start
 
@@ -50,6 +61,21 @@ This repo includes a pm2 ecosystem file that starts all services automatically.
 
 ``` shell
   npm install -g pm2
+```
+
+To enable pm2 log rotation
+
+``` shell
+  pm2 install pm2-logrotate
+```
+
+see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
+see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
+
+e.g:
+
+```shell
+pm2 set pm2-logrotate:compress true
 ```
 
 #### Start services
@@ -98,7 +124,7 @@ Production build to ./dist folder
 
   to check current configuration
   
-**Configurarion Example:**
+**Configuration Example:**
 
 ``` javascript
    "source": {
@@ -147,7 +173,7 @@ instance. The url must be provided on api section:
 
 ### blocks
   
-  **validateCollections** :[Boolean] Validate collectios at blocks service start
+  **validateCollections** :[Boolean] Validate collections at blocks service start
   **blocksQueueSize**:[Number]
   **bcTipSize**:[Number] BC tip size
 
