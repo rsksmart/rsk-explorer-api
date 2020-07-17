@@ -1,5 +1,4 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.BlockBalances = void 0;var _BcThing = require("./BcThing");
-var _Address = require("./Address");
 var _utils = require("../../lib/utils");
 
 class BlockBalances extends _BcThing.BcThing {
@@ -13,19 +12,17 @@ class BlockBalances extends _BcThing.BcThing {
     this.blockHash = hash;
     this.blockNumber = number;
     this.timestamp = timestamp;
-    addresses = [...new Set(addresses)];
-    this.addresses = addresses.map(address => new _Address.Address(address, { nod3, initConfig, collections, block: number }));
+    this.addresses = [...new Set(addresses)];
     this.balances = undefined;
     this.collection = this.collections.Balances;
   }
   async fetch() {
     try {
       if (this.balances) return this.balances;
-      let { addresses, blockHash, blockNumber, timestamp } = this;
+      let { addresses, blockHash, blockNumber, timestamp, nod3 } = this;
       const balances = [];
-      for (let Addr of addresses) {
-        let { address } = Addr;
-        let balance = await Addr.getBalance(blockNumber);
+      for (let address of addresses) {
+        let balance = await nod3.eth.getBalance(address, blockNumber);
         balance = parseInt(balance) ? balance : 0;
         let _created = Date.now();
         balances.push({ address, balance, blockHash, blockNumber, timestamp, _created });
@@ -45,7 +42,7 @@ class BlockBalances extends _BcThing.BcThing {
       let balances = await this.fetch();
       if (!balances.length) {
         let { blockHash, blockNumber } = this;
-        this.log.warn(`No balances for ${blockHash} /  ${blockNumber}`);
+        this.log.info(`No balances for ${blockHash} /  ${blockNumber}`);
         return;
       }
       await this.deleteOldBalances();

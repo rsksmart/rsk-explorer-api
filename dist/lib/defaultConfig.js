@@ -49,7 +49,7 @@ reduce((a, v, i) => {
     delayedFields: _delayedFields.default },
 
   blocks: {
-    blocksQueueSize: 100,
+    blocksQueueSize: 10,
     validateCollections: false,
     bcTipSize: 120,
     batchRequestSize: 20,
@@ -74,4 +74,5 @@ reduce((a, v, i) => {
     VerificationsResults: 'verificationResults',
     InternalTransactions: 'internalTransactions',
     Balances: 'balances',
+    BalancesLog: 'balancesLog',
     BlocksTraces: 'blockTraces' } };exports.default = _default;

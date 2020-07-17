@@ -294,6 +294,14 @@
 
 
 
+  BalancesLog: {
+    indexes: [
+    {
+      key: { blockHash: 1 },
+      unique: true }] },
+
+
+
   BlocksTraces: {
     indexes: [
     {

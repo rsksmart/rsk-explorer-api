@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.1.2] - 2020-07-17
+
+### Fixed
+  
+- blocksBalances memory leak
+
+### Updated
+
+- blocksBalances: Store record of requested block balances to skip on next sync.
+
 ## [1.1.1] - 2020-07-16
 
 ### Changed

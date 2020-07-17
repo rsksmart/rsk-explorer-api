@@ -10,23 +10,47 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
     confirmations = parseInt(confirmations);
     this.confirmations = !isNaN(confirmations) ? confirmations : 120;
     this.lastBlock = { number: undefined };
-    let { Blocks, Balances } = this.collections;
+    let { Blocks, Balances, BalancesLog } = this.collections;
     this.blocksCollection = Blocks;
     this.balancesCollection = Balances;
+    this.balancesLogCollection = BalancesLog;
     this.missing = undefined;
     this.started = undefined;
   }
 
+  async updateLogBalance(blockHash) {
+    try {
+      if (!(0, _utils.isBlockHash)(blockHash)) throw new Error(`Invalid blockHash: ${blockHash}`);
+      let _created = Date.now();
+      let result = await this.balancesLogCollection.insertOne({ blockHash, _created });
+      return result;
+    } catch (err) {
+      if (err.code === 11000) return Promise.resolve();else
+      return Promise.reject(err);
+    }
+  }
+  getLogBalance(blockHash) {
+    return this.balancesLogCollection.findOne({ blockHash });
+  }
+
   async updateBalance(blockHash) {
     try {
+      let isChecked = await this.getLogBalance(blockHash);
+      if (isChecked) {
+        this.log.debug(`Block balance ${blockHash} skipped`);
+        return;
+      }
       let { nod3, log, collections, initConfig } = this;
       let summary = await (0, _BlockSummary.getBlockSummaryFromDb)(blockHash, collections);
       if (!summary) throw new Error(`Missing block summary: ${blockHash}`);
       const { block, internalTransactions } = summary.data;
+      const { number } = block;
       const addresses = (0, _InternalTx.filterValueAddresses)(internalTransactions);
       let blockBalances = new _BlockBalances.BlockBalances({ block, addresses }, { nod3, log, collections, initConfig });
       let result = await blockBalances.save();
       blockBalances = undefined;
+      await this.updateLogBalance(blockHash);
+      this.log.info(`The balances of block: ${blockHash}/${number} were updated`);
       return result;
     } catch (err) {
       this.log.error(`Error updating balances of ${blockHash}`);
@@ -44,11 +68,11 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
 
   async updateLastBlock(block, skipStart = false) {
     try {
-      const { lastBlock } = this;
+      const { lastBlock, confirmations } = this;
       const { number, hash } = block;
       if (isNaN(parseInt(number))) throw new Error(`Invalid block number: ${number}`);
       if (!(0, _utils.isBlockHash)(hash)) throw new Error(`invalid block hash: ${hash}`);
-      if (!lastBlock.number || number > lastBlock.number) {
+      if (!lastBlock.number || number > lastBlock.number + confirmations) {
         this.log.info(`Last block ${number}/${hash}`);
         this.lastBlock = block;
         let missing = await this.createMissingBalances();
@@ -72,7 +96,6 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
       let { hash, number } = next;
       this.log.info(`Updating balances for block ${hash} / ${number}`);
       await this.updateBalance(hash);
-      this.log.info(`The balances of block: ${hash}/${number} were updated`);
       return this.getNextBalances();
     } catch (err) {
       this.started = undefined;
@@ -86,7 +109,7 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
       if (!this.emit) throw new Error('Set emitter before start');
       let { blocksCollection } = this;
       let lastBlock = await getLastBlock(blocksCollection);
-      if (lastBlock) await this.updateLastBlock(lastBlock);
+      if (lastBlock) await this.updateLastBlock(lastBlock, true);
       this.started = this.getNextBalances();
       return this.started;
     } catch (err) {
@@ -110,17 +133,16 @@ async function MissingBalances(blocksCollection, balancesCollection, { highestBl
     let currentBlock = highestBlock;
     let block;
     const current = () => currentBlock;
+    const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } };
+    const cursor = blocksCollection.find(query, { projection, sort });
     const next = async () => {
       if (currentBlock <= lowestBlock) return;
-      const query = { number: { $lte: --currentBlock, $gte: lowestBlock } };
-      const cursor = blocksCollection.find(query, { projection, sort });
+
       while (await cursor.hasNext()) {
         block = await cursor.next();
         let { hash: blockHash, number } = block;
         let balance = await balancesCollection.findOne({ blockHash });
-
         currentBlock = number;
-        if (currentBlock < lowestBlock) currentBlock = lowestBlock;
         if (!balance) break;
       }
       return block;
