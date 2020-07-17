@@ -6,13 +6,26 @@
 
 ## Components
 
-### Api server
+### API server
 
-### Blocks service
-  Imports blockchain data from rsk node to db.
+HTTP/WS server, see the documentation [here](doc/api.md).
+
+### Blocks services
+
+  Imports blockchain data from rsk node to DB.
+
+- **blocksRouter:** routes messages between services *REQUIRED*
+- **blocksListener:** listens to new blocks from node and announces them as service event.
+- **blocksRequester:** requests blocks from node.
+- **blocksChecker:** checks database for missing blocks and reorgs, emits missing/bad blocks.
+- **txPool:** listens to node transactions pool and stores changes in the DB.
+- **blocksBalances:** gets historical addresses balances and stores in the DB.
+- **blocksStatus:** checks DB and node status and stores changes in the DB.
+- **blocksStats:** gets BC stats and stores in the DB.
 
 ### User events service
-  (Optional)
+
+(Optional)
  Allows to update fields on the fly and send async response to clients.
 
 ## Requisites
@@ -40,7 +53,8 @@ chmod 755 /var/log/rsk-explorer
 
 Note: You can change the log folder in config.json
 
-## Configuration file 
+## Configuration file
+
 (optional)
 
 ``` shell
@@ -48,7 +62,6 @@ Note: You can change the log folder in config.json
   ```
 
 see [configuration](#configuration)
-
 
 ## Start
 
@@ -75,7 +88,9 @@ see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#co
 e.g:
 
 ```shell
+
 pm2 set pm2-logrotate:compress true
+
 ```
 
 #### Start services
@@ -88,6 +103,24 @@ pm2 start dist/services/blocks.config.js
 
 ``` shell
   pm2 start dist/api/api.config.js
+```
+
+## Show PM2 logs in pretty format
+
+All tasks
+
+```shell
+
+:~/rsk-explorer-api$ pm2 log --raw | npx bunyan
+
+```
+
+One task
+
+```shell
+
+:~/rsk-explorer-api$ pm2 log blocksListener --raw | npx bunyan
+
 ```
 
 ## Commands
@@ -127,7 +160,7 @@ Production build to ./dist folder
 **Configuration Example:**
 
 ``` javascript
-   "source": {
+  "source": {
     "node": "localhost",
     "port": 4444
   },
@@ -157,8 +190,26 @@ instance. The url must be provided on api section:
 
 ### Source
 
-  **node**: "localhost",
-  **port**: 4444
+  Address of rskj node or array of addresses of rskj nodes
+
+e.g.:
+
+```json
+{
+  "url":"http://localhost:4444"
+}
+
+```
+
+e.g:
+
+```json
+[
+  { "url":"http://localhost:4444" },
+  { "url":"http://othernode:4444" }
+]
+
+```
 
 ### db
 
@@ -173,11 +224,13 @@ instance. The url must be provided on api section:
 
 ### blocks
   
-  **validateCollections** :[Boolean] Validate collections at blocks service start
-  **blocksQueueSize**:[Number]
-  **bcTipSize**:[Number] BC tip size
+  **validateCollections** :[Boolean] Validate collections at blocks service start, default false
+  **blocksQueueSize**:[Number] blocksRequester queue size
+  **bcTipSize**:[Number] Number of confirmations required to check blocks
+  **debug**:[Boolean] Enable logging of nod3 requests, default false
 
 ### api
+
   **address** [string] api server bind address
   **port**  [number] api server port
 
@@ -186,5 +239,5 @@ instance. The url must be provided on api section:
 
 ## Documentation
   
- - [api documentation](doc/api.md)
- - [open api specification](public/swagger.json)
+- [api documentation](doc/api.md)
+- [open api specification](public/swagger.json)
