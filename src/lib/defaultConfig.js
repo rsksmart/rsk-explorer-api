@@ -74,6 +74,7 @@ export default {
     VerificationsResults: 'verificationResults',
     InternalTransactions: 'internalTransactions',
     Balances: 'balances',
+    BalancesLog: 'balancesLog',
     BlocksTraces: 'blockTraces'
   }
 }
