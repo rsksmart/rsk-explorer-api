@@ -10,23 +10,47 @@ export class UpdateBlockBalances extends BlocksBase {
     confirmations = parseInt(confirmations)
     this.confirmations = !isNaN(confirmations) ? confirmations : 120
     this.lastBlock = { number: undefined }
-    let { Blocks, Balances } = this.collections
+    let { Blocks, Balances, BalancesLog } = this.collections
     this.blocksCollection = Blocks
     this.balancesCollection = Balances
+    this.balancesLogCollection = BalancesLog
     this.missing = undefined
     this.started = undefined
   }
 
+  async updateLogBalance (blockHash) {
+    try {
+      if (!isBlockHash(blockHash)) throw new Error(`Invalid blockHash: ${blockHash}`)
+      let _created = Date.now()
+      let result = await this.balancesLogCollection.insertOne({ blockHash, _created })
+      return result
+    } catch (err) {
+      if (err.code === 11000) return Promise.resolve()
+      else return Promise.reject(err)
+    }
+  }
+  getLogBalance (blockHash) {
+    return this.balancesLogCollection.findOne({ blockHash })
+  }
+
   async updateBalance (blockHash) {
     try {
+      let isChecked = await this.getLogBalance(blockHash)
+      if (isChecked) {
+        this.log.debug(`Block balance ${blockHash} skipped`)
+        return
+      }
       let { nod3, log, collections, initConfig } = this
       let summary = await getBlockSummaryFromDb(blockHash, collections)
       if (!summary) throw new Error(`Missing block summary: ${blockHash}`)
       const { block, internalTransactions } = summary.data
+      const { number } = block
       const addresses = filterValueAddresses(internalTransactions)
       let blockBalances = new BlockBalances({ block, addresses }, { nod3, log, collections, initConfig })
       let result = await blockBalances.save()
       blockBalances = undefined
+      await this.updateLogBalance(blockHash)
+      this.log.info(`The balances of block: ${blockHash}/${number} were updated`)
       return result
     } catch (err) {
       this.log.error(`Error updating balances of ${blockHash}`)
@@ -44,11 +68,11 @@ export class UpdateBlockBalances extends BlocksBase {
 
   async updateLastBlock (block, skipStart = false) {
     try {
-      const { lastBlock } = this
+      const { lastBlock, confirmations } = this
       const { number, hash } = block
       if (isNaN(parseInt(number))) throw new Error(`Invalid block number: ${number}`)
       if (!isBlockHash(hash)) throw new Error(`invalid block hash: ${hash}`)
-      if (!lastBlock.number || number > lastBlock.number) {
+      if (!lastBlock.number || number > lastBlock.number + confirmations) {
         this.log.info(`Last block ${number}/${hash}`)
         this.lastBlock = block
         let missing = await this.createMissingBalances()
@@ -72,7 +96,6 @@ export class UpdateBlockBalances extends BlocksBase {
       let { hash, number } = next
       this.log.info(`Updating balances for block ${hash} / ${number}`)
       await this.updateBalance(hash)
-      this.log.info(`The balances of block: ${hash}/${number} were updated`)
       return this.getNextBalances()
     } catch (err) {
       this.started = undefined

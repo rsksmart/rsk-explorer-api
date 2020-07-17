@@ -108,6 +108,9 @@ describe('UpdateBlockBalances', function () {
   })
 
   describe('updateBalance', function () {
+    let summary = summaries[0]
+    let logCreated
+    let balanceCreated
     it('should update a block balance', async () => {
       let db = await database.getDb()
       let collections = await testCollections(true, database)
@@ -116,13 +119,41 @@ describe('UpdateBlockBalances', function () {
       let total = await collections.Balances.countDocuments()
       assert.equal(total, 0)
       let updateBalances = new UpdateBlockBalances(db, { nod3, initConfig: {} })
-      let { hash: blockHash } = summaries[0]
+      let { hash: blockHash } = summary
       await updateBalances.updateBalance(blockHash)
       const balance = await Balances.findOne({ blockHash })
       assert.typeOf(balance, 'object')
       assert(balance.balance, fakeBalance(blockHash))
+      assert.property(balance, '_created')
+      assert.isTrue(balance._created < Date.now())
+      balanceCreated = balance._created
     })
-
+    it(`should create a logBalance`, async () => {
+      let collections = await testCollections(false, database)
+      let logs = await collections.BalancesLog.find({}).toArray()
+      assert.isArray(logs)
+      assert.isTrue(logs.length === 1)
+      let log = logs[0]
+      assert.equal(log.blockHash, summary.hash)
+      assert.property(log, '_created')
+      assert.isTrue(log._created < Date.now())
+      logCreated = log._created
+    })
+    it('logged blocks should be skipped', async () => {
+      let db = await database.getDb()
+      let collections = await testCollections(false, database)
+      const { Balances } = collections
+      let updateBalances = new UpdateBlockBalances(db, { nod3, initConfig: {} })
+      let { hash: blockHash } = summary
+      await updateBalances.updateBalance(blockHash)
+      const balance = await Balances.findOne({ blockHash })
+      assert.typeOf(balance, 'object')
+      assert(balance.balance, fakeBalance(blockHash))
+      assert.equal(balance._created, balanceCreated)
+      let log = await collections.BalancesLog.findOne({ blockHash })
+      assert.propertyVal(log, 'blockHash', blockHash)
+      assert.propertyVal(log, '_created', logCreated)
+    })
   })
 })
 
