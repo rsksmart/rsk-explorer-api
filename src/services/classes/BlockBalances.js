@@ -12,7 +12,8 @@ export class BlockBalances extends BcThing {
     this.blockHash = hash
     this.blockNumber = number
     this.timestamp = timestamp
-    this.addresses = [...new Set(addresses)]
+    let { isAddress } = this
+    this.addresses = [...new Set(addresses)].filter(address => isAddress(address))
     this.balances = undefined
     this.collection = this.collections.Balances
   }
