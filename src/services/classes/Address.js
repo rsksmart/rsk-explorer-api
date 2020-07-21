@@ -79,7 +79,7 @@ export class Address extends BcThing {
       let { blockNumber } = this
 
       let storedBlock = this.data.blockNumber || 0
-      if (blockNumber > storedBlock) {
+      if (blockNumber >= storedBlock) {
         let balance = await this.getBalance('latest')
         this.setData({ balance, blockNumber })
       }

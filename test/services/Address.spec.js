@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock } from '../shared'
+import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock, fakeAddress } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
 import initConfig from '../../src/lib/initialConfiguration'
@@ -178,5 +178,46 @@ describe(`# Address, requires db connection`, function () {
     expect(data).haveOwnProperty('isNative').equal(true)
     expect(data.type).to.be.equal(addrTypes.CONTRACT)
     expect(data.name).to.be.equal('nativeTestContract')
+  })
+  describe('Update balance', function () {
+    const block = fakeBlock()
+    const address = fakeAddress()
+    let balance = 0
+    const nod3balances = { eth: Object.assign({}, nod3.eth) }
+    nod3balances.eth.getBalance = address => {
+      balance = ++balance
+      return Number(balance).toString(16)
+    }
+
+    it('Low block should be skipped', async () => {
+      const collections = await testCollections(true)
+      block.number = 2
+      let Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
+      await Addr.save()
+      block.number = 1
+      Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
+      let data = await Addr.fetch()
+      expect(Number(data.balance)).to.be.equal(1)
+    })
+
+    it('High block should update the balance', async () => {
+      const collections = await testCollections()
+      let Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
+      let data = await Addr.fetch()
+      await Addr.save()
+      expect(Number(data.balance)).to.be.equal(1)
+      block.number = 3
+      Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
+      data = await Addr.fetch()
+      await Addr.save()
+      expect(Number(data.balance)).to.be.equal(2)
+    })
+
+    it('Same block should update the balance', async () => {
+      const collections = await testCollections()
+      let Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
+      let data = await Addr.fetch()
+      expect(Number(data.balance)).to.be.equal(3)
+    })
   })
 })
