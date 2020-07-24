@@ -27,7 +27,7 @@ export class InternalTx extends DataCollectorItem {
       *          in: query
       *          required: true
       *          enum: [getInternalTransaction]
-      *        - name: eventId
+      *        - name: internalTxId
       *          in: query
       *          schema:
       *            type: string
