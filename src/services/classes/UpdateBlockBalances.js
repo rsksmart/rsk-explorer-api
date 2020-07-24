@@ -54,7 +54,6 @@ export class UpdateBlockBalances extends BlocksBase {
       return result
     } catch (err) {
       this.log.error(`Error updating balances of ${blockHash}`)
-      this.log.trace(err)
       return Promise.reject(err)
     }
   }
@@ -95,7 +94,9 @@ export class UpdateBlockBalances extends BlocksBase {
       }
       let { hash, number } = next
       this.log.info(`Updating balances for block ${hash} / ${number}`)
-      await this.updateBalance(hash)
+      await this.updateBalance(hash).catch(err => {
+        this.log.trace(err)
+      })
       return this.getNextBalances()
     } catch (err) {
       this.started = undefined
