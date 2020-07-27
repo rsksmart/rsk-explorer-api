@@ -185,4 +185,16 @@ export async function deleteBlockSummaryFromDb (hash, collections) {
   }
 }
 
+export async function getBlockSummariesByNumber (blockNumber, collections) {
+  try {
+    const number = parseInt(blockNumber)
+    if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
+    const collection = collections[BlocksSummaryCollection]
+    let res = await collection.find({ number }).toArray()
+    return res
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 export default BlockSummary
