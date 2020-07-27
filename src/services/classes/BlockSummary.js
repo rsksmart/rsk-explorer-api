@@ -174,4 +174,15 @@ export async function getBlockSummaryFromDb (hash, collections) {
   }
 }
 
+export async function deleteBlockSummaryFromDb (hash, collections) {
+  try {
+    const collection = collections[BlocksSummaryCollection]
+    if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
+    let res = await collection.deleteOne({ hash })
+    return res
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 export default BlockSummary
