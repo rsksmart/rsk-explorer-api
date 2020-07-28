@@ -26,7 +26,6 @@ class Contract extends BcThing {
   async fetch () {
     try {
       let { deployedCode, fetched } = this
-
       if (fetched) return this.getData()
       let contract = await this.getContract()
       // new contracts
@@ -51,7 +50,7 @@ class Contract extends BcThing {
     }
   }
 
-  async getParser () {
+  async setParser () {
     try {
       let { parser, nod3, initConfig, log } = this
       if (parser) return parser
@@ -69,7 +68,7 @@ class Contract extends BcThing {
       if (contract) return contract
       // get abi
       let abi = await this.getAbi()
-      let parser = await this.getParser()
+      let parser = await this.setParser()
       this.contract = parser.makeContract(address, abi)
       return this.contract
     } catch (err) {
@@ -79,14 +78,22 @@ class Contract extends BcThing {
 
   async getAbi () {
     try {
-      let { address, collections, abi } = this
-      if (abi) return abi
-      let data = {}
-      if (collections) {
-        data = await collections.VerificationsResults.findOne({ address })
-        if (data && data.abi) this.abi = data.abi
+      if (!this.abi) {
+        let abi = await this.getAbiFromVerification()
+        this.abi = abi
       }
       return this.abi
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getAbiFromVerification () {
+    try {
+      let { collections, address } = this
+      if (!collections) return
+      const data = await collections.VerificationsResults.findOne({ address, match: true })
+      if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)
     }
