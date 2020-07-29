@@ -19,6 +19,7 @@ class Contract extends BcThing {
     this.abi = abi
     this.parser = undefined
     this.isToken = false
+    this.isNative = !!this.nativeContracts.getNativeContractName(address)
     this.block = block
     if (dbData) this.setData(dbData)
   }
@@ -27,21 +28,27 @@ class Contract extends BcThing {
     try {
       let { deployedCode, fetched } = this
       if (fetched) return this.getData()
-      let contract = await this.getContract()
-      // new contracts
-      if (!this.data.contractInterfaces) {
-        if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
-        let info = await this.parser.getContractInfo(deployedCode, contract)
-        let { interfaces, methods } = info
-        if (interfaces.length) this.setData({ contractInterfaces: interfaces })
-        if (methods) this.setData({ contractMethods: methods })
+      let contract = await this.setContract()
+      if (!this.isNative) {
+        // new contracts
+        if (!this.data.contractInterfaces) {
+          if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
+          let info = await this.parser.getContractInfo(deployedCode, contract)
+          let { interfaces, methods } = info
+          if (interfaces.length) this.setData({ contractInterfaces: interfaces })
+          if (methods) this.setData({ contractMethods: methods })
+        }
+        let { contractInterfaces, tokenData } = this.data
+        this.isToken = hasValue(contractInterfaces || [], tokensInterfaces)
+        // get token data
+        if (!tokenData) {
+          let tokenData = await this.getTokenData()
+          if (tokenData) this.setData(tokenData)
+        }
       }
-      let { contractInterfaces, tokenData } = this.data
-      this.isToken = hasValue(contractInterfaces || [], tokensInterfaces)
-      if (this.isToken && !tokenData) {
-        let tokenData = await this.getToken()
-        if (tokenData) this.setData(tokenData)
-      }
+      // update totalSupply
+      let totalSupply = await this.getTokenData(['totalSupply'])
+      if (undefined !== totalSupply) this.setData(totalSupply)
       let data = this.getData()
       this.fetched = true
       return data
@@ -50,25 +57,26 @@ class Contract extends BcThing {
     }
   }
 
-  async setParser () {
+  async getParser () {
     try {
-      let { parser, nod3, initConfig, log } = this
-      if (parser) return parser
-      let abi = await this.getAbi()
-      this.parser = new ContractParser({ abi, nod3, initConfig, log })
+      let { nod3, initConfig, log } = this
+      if (!this.parser) {
+        let abi = await this.getAbi()
+        this.parser = new ContractParser({ abi, nod3, initConfig, log })
+      }
       return this.parser
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
-  async getContract () {
+  async setContract () {
     try {
       let { address, contract } = this
       if (contract) return contract
       // get abi
       let abi = await this.getAbi()
-      let parser = await this.setParser()
+      let parser = await this.getParser()
       this.contract = parser.makeContract(address, abi)
       return this.contract
     } catch (err) {
@@ -99,11 +107,13 @@ class Contract extends BcThing {
     }
   }
 
-  getToken () {
+  getTokenData (methods) {
     let { contractMethods } = this.data
     let { parser, contract } = this
-    let methods = ['name', 'symbol', 'decimals', 'totalSupply']
+    if (!contractMethods) return
+    methods = methods || ['name', 'symbol', 'decimals', 'totalSupply']
     methods = methods.filter(m => contractMethods.includes(`${m}()`))
+    if (!methods.length) return
     return parser.getTokenData(contract, { methods })
   }
 
