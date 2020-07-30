@@ -47,10 +47,10 @@ export class TxTrace extends BcThing {
       return Promise.reject(err)
     }
   }
-  async getInternalTransactionsData (data) {
+  async getInternalTransactionsData () {
     try {
       await this.fetch()
-      data = data || this.getData()
+      const data = this.getData()
       let iTxs = await this.createInternalTransactions(data)
       let internalTransactions = iTxs.map(i => i.getData())
       let addresses = iTxs.map(i => i.getAddresses())
