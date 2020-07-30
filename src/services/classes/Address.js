@@ -56,7 +56,7 @@ export class Address extends BcThing {
 
   async getCode () {
     try {
-      if (this.isZeroAddress) return null
+      if (this.isZeroAddress || this.isNative) return null
       let { code } = this.getData()
       let { nod3, address, blockNumber } = this
       if (code !== undefined) return code
@@ -105,6 +105,7 @@ export class Address extends BcThing {
         let contractData = await this.contract.fetch()
         this.setData(contractData)
       }
+      if (this.isNative) this.makeContract()
       this.fetched = true
       return this.getData(true)
     } catch (err) {
@@ -195,8 +196,18 @@ export class Address extends BcThing {
   }
 
   makeContract (deployedCode, dbData) {
+    if (this.contract) return this.contract
     let { address, nod3, initConfig, collections, block } = this
     this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections, block })
+  }
+
+  async getContract () {
+    try {
+      await this.fetch()
+      return this.contract
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 }
 
