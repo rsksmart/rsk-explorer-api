@@ -2,7 +2,7 @@
 import { expect } from 'chai'
 import Address from '../../src/services/classes/Address'
 import { nod3 } from '../../src/lib/nod3Connect'
-import initConfig from '../../src/lib/initialConfiguration'
+import { initConfig } from '../shared'
 
 const block = 30000
 const tokens = [

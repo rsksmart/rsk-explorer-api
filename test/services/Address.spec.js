@@ -1,8 +1,7 @@
 import { expect } from 'chai'
-import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock, fakeAddress } from '../shared'
+import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock, fakeAddress, initConfig } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
-import initConfig from '../../src/lib/initialConfiguration'
 
 const nativeTestContract = '0x0000000000000000000000000000000001aaaaaa'
 const block = fakeBlock()

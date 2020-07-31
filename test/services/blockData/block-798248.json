@@ -142,7 +142,10 @@
               "transactionIndex": 2,
               "address": "0xc21f30744ae25e1b5bdc981ebec50ed378014775",
               "data": "0x000000000000000000000000bc6d08ecd1f17c5f7ae16c92ceb8d9b5f6bcbc540000000000000000000000000000000000000000000000000000062e158fae00000000000000000000000000bc6d08ecd1f17c5f7ae16c92ceb8d9b5f6bcbc5400000000000000000000000000000000000000000000000000000000000c2e1f",
-              "topics": [],
+              "topics": [
+                "0x3a383add96d332943cbe603b4dc1055154e63668959b8d8517ae06c46be46218"
+              ],
+              "_addresses": [],
               "abi": {},
               "eventId": "00c2e28002000504e7832ce7e4e18501",
               "timestamp": 1587763156,
@@ -3845,6 +3848,7 @@
                 "transactionIndex": 1,
                 "address": "0x78c892dc5b7139d0ec1ef513c9e28edfaa44f2d4",
                 "data": "0x",
+                "_addresses": [],
                 "topics": [
                   "0xce241d7ca1f669fee44b6fc00b8eba2df3bb514eed0f6f668f8f89096e81ed94",
                   "0x000000000000000000000000e2929d888015eb568affa06aab946923a7236ad9"
@@ -4319,8 +4323,11 @@
         "transactionIndex": 2,
         "address": "0xc21f30744ae25e1b5bdc981ebec50ed378014775",
         "data": "0x000000000000000000000000bc6d08ecd1f17c5f7ae16c92ceb8d9b5f6bcbc540000000000000000000000000000000000000000000000000000062e158fae00000000000000000000000000bc6d08ecd1f17c5f7ae16c92ceb8d9b5f6bcbc5400000000000000000000000000000000000000000000000000000000000c2e1f",
-        "topics": [],
+        "topics": [
+          "0x3a383add96d332943cbe603b4dc1055154e63668959b8d8517ae06c46be46218"
+        ],
         "abi": {},
+        "_addresses": [],
         "eventId": "00c2e28002000504e7832ce7e4e18501",
         "timestamp": 1587763156,
         "txStatus": "0x1",

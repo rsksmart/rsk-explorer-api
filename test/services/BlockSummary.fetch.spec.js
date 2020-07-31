@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import BlockSummary from '../../src/services/classes/BlockSummary'
 import blocks from './blockData'
 import { nod3 } from '../../src/lib/nod3Connect'
-import datasource from '../../src/lib/dataSource'
 import { isHexString } from 'rsk-utils'
+import { testCollections, initConfig } from '../shared'
 
 describe(`# BlockSummary fetch`, function () {
   for (let { block } of blocks) {
@@ -13,7 +13,7 @@ describe(`# BlockSummary fetch`, function () {
       this.timeout(60000)
 
       it(`should fetch block`, async () => {
-        let { initConfig, collections } = await datasource()
+        let collections = await testCollections(true)
         let summary = new BlockSummary(hash, { nod3, initConfig, collections })
         summaryData = await summary.fetch()
         expect(typeof summaryData).to.be.equal('object')

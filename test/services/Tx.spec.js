@@ -1,10 +1,9 @@
 import { Tx, txTypes } from '../../src/services/classes/Tx'
 import blocks from './blockData'
 import { expect } from 'chai'
-import datasource from '../../src/lib/dataSource'
 import Address from '../../src/services/classes/Address'
 import nod3 from '../../src/lib/nod3Connect'
-import { testCollections } from '../shared'
+import { testCollections, initConfig } from '../shared'
 
 describe(`#Tx`, function () {
   for (let blockData of blocks) {
@@ -16,7 +15,6 @@ describe(`#Tx`, function () {
       describe(`Tx: ${hash} / ${blockNumber} `, function () {
         this.timeout(60000)
         it(`should return tx data`, async () => {
-          let { initConfig } = await datasource()
           let collections = await testCollections()
           let tx = new Tx(hash, timestamp, { nod3, initConfig, collections })
           await tx.fetch()

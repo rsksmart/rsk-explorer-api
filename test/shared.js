@@ -5,9 +5,13 @@ import defaultConfig from '../src/lib/defaultConfig'
 import collections from '../src/lib/collections'
 import { getDbBlocksCollections } from '../src/lib/blocksCollections'
 import NativeContracts from '../src/lib/NativeContracts'
-import initConfig from '../src/lib/initialConfiguration'
+import initialConfiguration from '../src/lib/initialConfiguration'
 import { addrTypes } from '../src/lib/types'
 import net from 'net'
+
+const defaultNet = { id: '31', name: 'RSK Testnet' }
+
+export const initConfig = Object.assign(Object.assign({}, initialConfiguration), { net: defaultNet })
 
 export const config = makeConfig()
 export const nativeContracts = NativeContracts(initConfig)

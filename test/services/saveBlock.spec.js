@@ -2,8 +2,7 @@
 import { expect } from 'chai'
 import { Block } from '../../src/services/classes/Block'
 import { nod3 } from '../../src/lib/nod3Connect'
-import datasource from '../../src/lib/dataSource'
-import { testCollections } from '../shared'
+import { testCollections, initConfig } from '../shared'
 
 let blocks = [141459, 3516, 792221, '0x3fee1ae875423c6fa405fdce0adcee0e6aadad85a941edaf3598f6d92efa846c']
 
@@ -17,7 +16,6 @@ describe('Save Block', function () {
       this.timeout(90000)
       it(`should save block ${hashOrNumber}`, async function () {
         this.timeout(60000)
-        let { initConfig } = await datasource()
         let collections = await testCollections(true)
         let block = new Block(hashOrNumber, { nod3, initConfig, collections, log: null })
         await block.fetch()

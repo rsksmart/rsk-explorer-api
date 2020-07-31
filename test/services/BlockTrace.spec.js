@@ -16,7 +16,7 @@ const nod3 = {
 
 describe('# BlockTrace', function () {
   it('should get a block trace and save cache', async () => {
-    const collections = await testCollections()
+    const collections = await testCollections(true)
     const blockTrace = new BlockTrace(hash, { collections, initConfig, nod3 })
     let { traced, blockHash } = await blockTrace.fetch()
     expect(blockHash).equal(hash)
