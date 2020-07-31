@@ -2,7 +2,6 @@ import { BcThing } from './BcThing'
 import { formatEvent } from './Event'
 import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
-import ContractParser from 'rsk-contract-parser'
 import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
 import { isBlockObject } from '../../lib/utils'
@@ -31,7 +30,7 @@ export class Tx extends BcThing {
   }
   async fetch (force) {
     try {
-      let { fetched } = this
+      let { fetched, hash } = this
       if (fetched && !force) return this.getData()
       let tx = await this.getTx()
       if (!tx) throw new Error('Error getting tx')
@@ -42,26 +41,35 @@ export class Tx extends BcThing {
       let { contractAddress } = tx.receipt
       if (contractAddress) this.addresses.add(contractAddress, addressOptions)
       tx = this.txFormat(tx)
-      let { nod3, initConfig } = this
-      let { contract } = this.toAddress || {}
-      const parser = (contract) ? await contract.getParser() : new ContractParser({ nod3, initConfig })
-      if (parser) {
-        tx.receipt.logs = parseLogs(tx, parser)
-        let events = formatEvents(tx, parser)
-        if (tx.receipt.logs.length !== events.length) throw new Error(`logs error ${this.hash}`)
-        tx.receipt.logs = events
-        let eventAddresses = [].concat(...events.filter(e => e._addresses).map(({ _addresses }) => _addresses))
-        eventAddresses.forEach(address => this.addresses.add(address, addressOptions))
-        this.setData({ events })
-        if (contract) {
-          eventAddresses.forEach(address => contract.addAddress(address))
-          let tokenAddresses = await contract.fetchAddresses()
-          this.setData({ tokenAddresses })
-        }
+      let { events, contracts } = await this.decodeLogsAndAddresses(tx, addressOptions)
+      let { logs } = tx.receipt
+      if (logs.length !== events.length) {
+        throw new Error(`Error decoding events ${hash}`)
       }
+
+      // replace logs with log and event
+      tx.receipt.logs = events
+      /*       for (let event of events) {
+              if (event) {
+                let { logIndex } = event
+                let index = tx.receipt.logs.findIndex((l) => l.logIndex === logIndex)
+                if (index > -1) tx.receipt.logs[index] = event
+              }
+            } */
+      this.setData({ events })
+
+      // get token addresses
+      let tokenAddresses = []
+      for (let contractAddress in contracts) {
+        let contract = contracts[contractAddress]
+        let contractAddresses = await contract.fetchAddresses()
+        tokenAddresses = tokenAddresses.concat(contractAddresses)
+      }
+      this.setData({ tokenAddresses })
+
       if (this.trace) {
         let trace = await this.trace.fetch()
-        let { internalTransactions, addresses } = await this.trace.getInternalTransactionsData(trace)
+        let { internalTransactions, addresses } = await this.trace.getInternalTransactionsData()
         addresses.forEach(address => this.addresses.add(address, addressOptions))
         this.setData({ trace, internalTransactions })
       }
@@ -154,6 +162,39 @@ export class Tx extends BcThing {
     let block = this.blockData
     return { block }
   }
+
+  async decodeLogsAndAddresses (tx, { addressOptions } = {}) {
+    try {
+      addressOptions = addressOptions || this.addressOptions()
+      const { receipt } = tx
+      const logs = [...receipt.logs]
+      const events = []
+      const contracts = {}
+      for (let index in logs) {
+        events[index] = null
+        let log = logs[index]
+        let { address } = log
+        let Addr = this.addresses.add(address)
+        let contract = await Addr.getContract()
+        if (contract) {
+          contracts[address] = contract
+          let parser = await contract.getParser()
+          let [event] = parser.parseTxLogs([log])
+          events[index] = formatEvent(event, tx)
+          const { _addresses } = event
+          for (let address of _addresses) {
+            contract.addAddress(address)
+            this.addresses.add(address, addressOptions)
+          }
+        } else {
+          this.log.warn(`Missing contract for: ${address}`)
+        }
+      }
+      return { events, contracts }
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
 }
 
 export function createTxObject (tx, { timestamp, receipt }) {
@@ -179,18 +220,5 @@ export async function getTimestampFromBlock ({ blockHash }, nod3) {
     return Promise.reject(err)
   }
 }
-
-export function parseLogs (tx, parser) {
-  return parser.parseTxLogs(tx.receipt.logs)
-}
-export function formatEvents (tx) {
-  return tx.receipt.logs.map(l => {
-    l = formatEvent(l, tx)
-    let event = Object.assign({}, l)
-    delete l._id
-    return event
-  })
-}
-
 export { txTypes }
 export default Tx
