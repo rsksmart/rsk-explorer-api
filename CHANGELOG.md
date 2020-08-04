@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.3] - 2020-08-04
+
+This release requires the regeneration of the DB follow the instructions in [UPDATES.md](UPDATES.md) before starting.
+
+### Fixed
+
+- Event decoding
+- Addresses balances
+- Token Addresses balances and detection
+- Repetitive indexing of collections at each service start.
+- Tokens total supply, see #30
+
 ## [1.1.2] - 2020-07-17
 
 ### Fixed

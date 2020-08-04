@@ -7,31 +7,32 @@
     {
       key: { number: -1 },
       unique: true,
-      name: 'blockNumber' },
+      name: 'blockNumberIndex' },
 
     {
       key: { hash: 1 },
-      unique: true },
+      unique: true,
+      name: 'blockHashIndex' },
 
     {
       key: { timestamp: -1 },
-      name: 'blocksTimestamp' },
+      name: 'blocksTimestampIndex' },
 
     {
       key: { miner: 1 },
-      name: 'blocksMiner' },
+      name: 'blocksMinerIndex' },
 
     {
       key: { txs: 1 },
-      name: 'blocksTxs' },
+      name: 'blocksTxsIndex' },
 
     {
       key: { size: 1 },
-      name: 'blocksSize' },
+      name: 'blocksSizeIndex' },
 
     {
       key: { _received: -1 },
-      name: 'blockReceivedTime' }] },
+      name: 'blockReceivedTimeIndex' }] },
 
 
 
@@ -39,13 +40,16 @@
     indexes: [
     {
       key: { hash: 1 },
-      unique: true },
+      unique: true,
+      name: 'blockSummaryHashIndex' },
 
     {
-      key: { number: -1 } },
+      key: { number: -1 },
+      name: 'blockSummaryNumberIndex' },
 
     {
-      key: { timestamp: -1 } }] },
+      key: { timestamp: -1 },
+      name: 'blockSummaryTimestampIndex' }] },
 
 
 
@@ -53,11 +57,13 @@
     indexes: [
     {
       key: { txId: -1 },
-      unique: true },
+      unique: true,
+      name: 'txIdIndex' },
 
     {
       key: { hash: 1 },
-      unique: true },
+      unique: true,
+      name: 'txHashIndex' },
 
     {
       key: { blockNumber: -1 },
@@ -73,7 +79,7 @@
 
     {
       key: { timestamp: -1 },
-      name: 'txTime' },
+      name: 'txTimeIndex' },
 
     {
       key: { from: 1 },
@@ -93,7 +99,8 @@
     indexes: [
     {
       key: { address: 1 },
-      unique: true },
+      unique: true,
+      name: 'addressAddressIndex' },
 
     {
       key: { balance: 1 },
@@ -109,7 +116,7 @@
 
     {
       key: { 'createdByTx.timestamp': -1 },
-      name: 'contractCreated' },
+      name: 'contractCreatedIndex' },
 
     {
       key: { name: 'text' },
@@ -127,8 +134,9 @@
     {
       key: { timestamp: -1 },
       partialFilterExpression: {
-        timestamp: { $exists: true } } }] },
+        timestamp: { $exists: true } },
 
+      name: 'statusKeyIndex' }] },
 
 
 
@@ -136,7 +144,8 @@
     indexes: [
     {
       key: { eventId: -1 },
-      unique: true },
+      unique: true,
+      name: 'eventIdIndex' },
 
     {
       key: { address: 1 },
@@ -179,6 +188,7 @@
         address: 1,
         contract: 1 },
 
+      name: 'tokenAddressContractIndex',
       unique: true },
 
     {
@@ -195,9 +205,8 @@
   TxPool: {
     indexes: [
     {
-      key: {
-        timestamp: -1 } }] },
-
+      key: { timestamp: -1 },
+      name: 'txPoolTimestampIndex' }] },
 
 
 
@@ -207,15 +216,16 @@
       key: {
         hash: 1 },
 
+      name: 'pendingTxsHashIndex',
       unique: true },
 
     {
       key: { from: 1 },
-      name: 'pendingTxFrom' },
+      name: 'pendingTxFromIndex' },
 
     {
       key: { to: 1 },
-      name: 'pendingTxTo' }] },
+      name: 'pendingTxToIndex' }] },
 
 
 
@@ -223,28 +233,31 @@
     indexes: [
     {
       key: { timestamp: 1 },
-      name: 'statsTime' },
+      name: 'statsTimeIndex' },
 
     {
       key: { blockNumber: -1 },
-      name: 'statsBlockNumber' }] },
+      name: 'statsBlockNumberIndex' }] },
 
 
 
   ContractVerification: {
     indexes: [
     {
-      key: { address: 1 } }] },
+      key: { address: 1 },
+      name: 'contractVerificationAddressIndex' }] },
 
 
 
   VerificationsResults: {
     indexes: [
     {
-      key: { address: 1 } },
+      key: { address: 1 },
+      name: 'verificationsResultsAddressIndex' },
 
     {
-      key: { match: 1 } }] },
+      key: { match: 1 },
+      name: 'verificationsResultsMatchIndex' }] },
 
 
 
@@ -252,22 +265,28 @@
     indexes: [
     {
       key: { internalTxId: -1 },
-      unique: true },
+      unique: true,
+      name: 'internalTxIdIndex' },
 
     {
-      key: { blockHash: 1 } },
+      key: { blockHash: 1 },
+      name: 'internalTxsBlockHashIndex' },
 
     {
-      key: { blockNumber: -1 } },
+      key: { blockNumber: -1 },
+      name: 'internalTxsBlockNumberIndex' },
 
     {
-      key: { transactionHash: 1 } },
+      key: { transactionHash: 1 },
+      name: 'internalTxsTxHashIndex' },
 
     {
-      key: { 'action.from': 1 } },
+      key: { 'action.from': 1 },
+      name: 'internalFromIndex' },
 
     {
-      key: { 'action.to': 1 } }] },
+      key: { 'action.to': 1 },
+      name: 'internalTxsToIndex' }] },
 
 
 
@@ -278,19 +297,24 @@
         address: 1,
         blockNumber: -1 },
 
-      unique: true },
+      unique: true,
+      name: 'balancesBlockAddressIndex' },
 
     {
-      key: { address: 1 } },
+      key: { address: 1 },
+      name: 'balancesAddressIndex' },
 
     {
-      key: { blockNumber: -1 } },
+      key: { blockNumber: -1 },
+      name: 'balancesBlockNumberIndex' },
 
     {
-      key: { blockHash: 1 } },
+      key: { blockHash: 1 },
+      name: 'balancesBlockHashIndex' },
 
     {
-      key: { timestamp: -1 } }] },
+      key: { timestamp: -1 },
+      name: 'balacesTimestampIndex' }] },
 
 
 
@@ -298,7 +322,8 @@
     indexes: [
     {
       key: { blockHash: 1 },
-      unique: true }] },
+      unique: true,
+      name: 'balancesLogBlockHashIndex' }] },
 
 
 
@@ -306,4 +331,5 @@
     indexes: [
     {
       key: { hash: 1 },
-      unique: true }] } };exports.default = _default;
+      unique: true,
+      name: 'blockTracesHashIndex' }] } };exports.default = _default;

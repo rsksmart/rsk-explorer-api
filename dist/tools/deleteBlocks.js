@@ -1,10 +1,12 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _Block = require("../services/classes/Block");
+var _BlockSummary = require("../services/classes/BlockSummary");
 var _BlocksBase = require("../lib/BlocksBase");
 var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 (0, _dataSource.default)({ skipCheck: true }).then(async ({ db }) => {
   const options = new _BlocksBase.BlocksBase(db);
+  const { collections } = options;
   const p = path => path.split('/').pop();
   const help = () => {
     const myName = p(process.argv[1]);
@@ -15,6 +17,7 @@ var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return ob
   };
 
   let fromTo = process.argv[2];
+  let deleteSummary = process.argv.find(x => x === '--deleteSummary');
   if (!fromTo) help();
   fromTo = fromTo.split('-');
   let [f, t] = fromTo;
@@ -27,12 +30,25 @@ var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return ob
   try {
     let Q = [];
     while (t >= f) {
-      let b = await (0, _Block.getBlockFromDb)(t, options.collections.Blocks);
+      let b = await (0, _Block.getBlockFromDb)(t, collections.Blocks);
+      let color = (0, _cli.ansiCode)(Number(t.toString().split('').pop()) + 30);
       if (b) {
-        let number = b.number;
-        let color = (0, _cli.ansiCode)(Number(number.toString().split('').pop()) + 30);
-        console.log(`${_cli.reset} ${color} ● ● ● Removig block  ${number} ${b.hash}`);
-        Q.push((0, _Block.deleteBlockDataFromDb)(b.hash, number, options.collections));
+        let { hash, number } = b;
+        console.log(`${_cli.reset} ${color} ● ● ● Removing block  ${number} ${hash}`);
+        Q.push((0, _Block.deleteBlockDataFromDb)(b.hash, number, collections));
+      }
+      if (deleteSummary) {
+        if (b) {
+          Q.push((0, _BlockSummary.deleteBlockSummaryFromDb)(b.hash, options.collections));
+        } else {
+          console.log(`${_cli.reset} ${color} ● ● ● Removing ALL summaries for blockNumber: ${t}`);
+          let summaries = await (0, _BlockSummary.getBlockSummariesByNumber)(t, collections);
+          if (summaries.length) {
+            for (let summary of summaries) {
+              Q.push((0, _BlockSummary.deleteBlockSummaryFromDb)(summary.hash, collections));
+            }
+          }
+        }
       }
       t--;
     }

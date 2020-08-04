@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.saveBlockSummary = saveBlockSummary;exports.getBlock = getBlock;exports.getBlockSummaryFromDb = getBlockSummaryFromDb;exports.default = exports.mismatchBlockTransactions = exports.BlockSummary = exports.BlocksSummaryCollection = void 0;var _BcThing = require("./BcThing");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.saveBlockSummary = saveBlockSummary;exports.getBlock = getBlock;exports.getBlockSummaryFromDb = getBlockSummaryFromDb;exports.deleteBlockSummaryFromDb = deleteBlockSummaryFromDb;exports.getBlockSummariesByNumber = getBlockSummariesByNumber;exports.default = exports.mismatchBlockTransactions = exports.BlockSummary = exports.BlocksSummaryCollection = void 0;var _BcThing = require("./BcThing");
 var _Tx = _interopRequireDefault(require("./Tx"));
 var _BlockTrace = _interopRequireDefault(require("./BlockTrace"));
 var _BlockAddresses = require("./BlockAddresses");
@@ -169,6 +169,29 @@ async function getBlockSummaryFromDb(hash, collections) {
     if (!(0, _utils.isBlockHash)(hash)) throw new Error(`Invalid blockHash ${hash}`);
     let data = await collection.findOne({ hash });
     return data;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+async function deleteBlockSummaryFromDb(hash, collections) {
+  try {
+    const collection = collections[BlocksSummaryCollection];
+    if (!(0, _utils.isBlockHash)(hash)) throw new Error(`Invalid blockHash ${hash}`);
+    let res = await collection.deleteOne({ hash });
+    return res;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+async function getBlockSummariesByNumber(blockNumber, collections) {
+  try {
+    const number = parseInt(blockNumber);
+    if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`);
+    const collection = collections[BlocksSummaryCollection];
+    let res = await collection.find({ number }).toArray();
+    return res;
   } catch (err) {
     return Promise.reject(err);
   }
