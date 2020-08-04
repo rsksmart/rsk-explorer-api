@@ -1,0 +1,10 @@
+[
+  "TxPool",
+  "PendingTxs",
+  "Stats",
+  "ContractVerification",
+  "VerificationsResults",
+  "Balances",
+  "BalancesLog",
+  "BlocksTraces"
+]
