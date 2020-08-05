@@ -2,7 +2,7 @@
 import dataSource from '../lib/dataSource.js'
 import nod3 from '../lib/nod3Connect'
 import ContractParser from 'rsk-contract-parser'
-import { add0x } from 'rsk-utils'
+import { add0x } from '@rsksmart/rsk-utils'
 
 const parser = new ContractParser({ nod3 })
 

@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import BlockSummary from '../../src/services/classes/BlockSummary'
 import blocks from './blockData'
 import { nod3 } from '../../src/lib/nod3Connect'
-import { isHexString } from 'rsk-utils'
+import { isHexString } from '@rsksmart/rsk-utils'
 import { testCollections, initConfig } from '../shared'
 
 describe(`# BlockSummary fetch`, function () {

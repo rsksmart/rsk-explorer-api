@@ -5,7 +5,7 @@ import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx } from './InternalTx'
-import { isZeroAddress } from 'rsk-utils'
+import { isZeroAddress } from '@rsksmart/rsk-utils'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, collections, tx, block, log } = {}) {

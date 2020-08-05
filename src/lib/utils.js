@@ -1,9 +1,9 @@
 import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
 import { ObjectID } from 'mongodb'
-import { remove0x, toBuffer, isAddress } from 'rsk-utils'
+import { remove0x, toBuffer, isAddress } from '@rsksmart/rsk-utils'
 import crypto from 'crypto'
-export * from 'rsk-utils'
+export * from '@rsksmart/rsk-utils'
 
 export const bigNumberDoc = bigNumber => {
   return '0x' + bigNumber.toString(16)
