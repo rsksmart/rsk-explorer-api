@@ -23,10 +23,10 @@ HTTP/WS server, see the documentation [here](doc/api.md).
 - **blocksStatus:** checks DB and node status and stores changes in the DB.
 - **blocksStats:** gets BC stats and stores in the DB.
 
-### User events service
+### API user events service
 
-(Optional)
  Allows to update fields on the fly and send async response to clients.
+ Required by the contract verification module.
 
 ## Requisites
 
@@ -213,29 +213,30 @@ e.g:
 
 ### db
 
-  **server**": "localhost"
-  **port**": 27017
-  **database**: "explorerDB"
+- **server**": "localhost"
+- **port**": 27017
+- **database**: "explorerDB"
 
 **Optionals:**
 
-  **user**: < user >
-  **password**: < password >
+- **user**: < user >
+- **password**: < password >
 
 ### blocks
   
-  **validateCollections** :[Boolean] Validate collections at blocks service start, default false
-  **blocksQueueSize**:[Number] blocksRequester queue size
-  **bcTipSize**:[Number] Number of confirmations required to check blocks
-  **debug**:[Boolean] Enable logging of nod3 requests, default false
+- **validateCollections** :[Boolean] Validate collections at blocks service start, default false
+- **blocksQueueSize**:[Number] blocksRequester queue size
+- **bcTipSize**:[Number] Number of confirmations required to check blocks
+- **debug**:[Boolean] Enable logging of nod3 requests, default false
+- **services**:[Object] {ServiceName:[Boolean]}. All services are enabled as default, to disable a service use: **serviceName:false**
 
 ### api
 
-  **address** [string] api server bind address
-  **port**  [number] api server port
+- **address** [string] api server bind address
+- **port**  [number] api server port
 
-  **allowUserEvents** [boolean]: enable/disable userEventsApi
-  **exposeDoc** [boolean]: serve rsk-openapi-ui on /doc to render swagger.json
+- **allowUserEvents** [boolean]: enable/disable userEventsApi
+- **exposeDoc** [boolean]: serve rsk-openapi-ui on /doc to render swagger.json
 
 ## Documentation
   
