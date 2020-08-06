@@ -5,7 +5,7 @@ var _Contract = _interopRequireDefault(require("./Contract"));
 var _rskContractParser = require("rsk-contract-parser");
 var _Tx = require("./Tx");
 var _InternalTx = require("./InternalTx");
-var _rskUtils = require("rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Address extends _BcThing.BcThing {
   constructor(address, { nod3, initConfig, collections, tx, block, log } = {}) {

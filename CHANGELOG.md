@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.4] - 2020-08-06
+
+### Updated
+
+- Db.createCollection to the new mongodb driver behavior
+- blocks checker service, delay before start.
+- config: disable services in config
+
 ## [1.1.3] - 2020-08-04
 
 This release requires the regeneration of the DB follow the instructions in [UPDATES.md](UPDATES.md) before starting.

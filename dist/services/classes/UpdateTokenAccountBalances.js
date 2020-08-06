@@ -1,5 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.updateTokenAccountBalances = updateTokenAccountBalances;
-var _rskUtils = require("rsk-utils");
+var _rskUtils = require("@rsksmart/rsk-utils");
 var _rskContractParser = _interopRequireDefault(require("rsk-contract-parser"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 async function updateTokenAccountBalances(block, { nod3, collections, log }) {

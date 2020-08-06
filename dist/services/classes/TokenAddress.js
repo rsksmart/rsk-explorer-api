@@ -1,7 +1,7 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TokenAddress = void 0;var _BcThing = require("./BcThing");
 var _Contract = _interopRequireDefault(require("./Contract"));
 var _utils = require("../../lib/utils");
-var _rskUtils = require("rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class TokenAddress extends _BcThing.BcThing {
   constructor(address, contract) {

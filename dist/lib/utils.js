@@ -1,7 +1,7 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });var _exportNames = { bigNumberDoc: true, isBigNumber: true, serializeBigNumber: true, isSerializedBigNumber: true, unSerializeBigNumber: true, bigNumberToSring: true, bigNumberSum: true, bigNumberDifference: true, newBigNumber: true, isObj: true, serialize: true, checkBlockHash: true, isBlockHash: true, blockQuery: true, getBestBlock: true, applyDecimals: true, isValidBlockNumber: true, isBlockObject: true, toAscii: true, quantityMarks: true, chunkArray: true, hash: true };exports.hash = exports.chunkArray = exports.quantityMarks = exports.toAscii = exports.isBlockObject = exports.isValidBlockNumber = exports.applyDecimals = exports.getBestBlock = exports.blockQuery = exports.isBlockHash = exports.checkBlockHash = exports.serialize = exports.isObj = exports.newBigNumber = exports.bigNumberDifference = exports.bigNumberSum = exports.bigNumberToSring = exports.unSerializeBigNumber = exports.isSerializedBigNumber = exports.serializeBigNumber = exports.isBigNumber = exports.bigNumberDoc = void 0;var _bignumber = require("bignumber.js");
 var _types = require("./types");
 var _mongodb = require("mongodb");
-var _rskUtils = require("rsk-utils");
+var _rskUtils = require("@rsksmart/rsk-utils");
 
 Object.keys(_rskUtils).forEach(function (key) {if (key === "default" || key === "__esModule") return;if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;Object.defineProperty(exports, key, { enumerable: true, get: function () {return _rskUtils[key];} });});var _crypto = _interopRequireDefault(require("crypto"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 

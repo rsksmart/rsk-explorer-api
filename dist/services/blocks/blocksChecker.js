@@ -22,7 +22,7 @@ async function main() {
     const { startService, service } = await (0, _serviceFactory.createService)(serviceConfig, executor, { log });
     const { emit } = service;
     await startService();
-    checker.start(emit);
+    setTimeout(() => checker.start(emit), 5000);
   } catch (err) {
     console.error(err);
     process.exit(9);

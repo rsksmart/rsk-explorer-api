@@ -3,10 +3,16 @@
 
 
 var _types = require("./types");
-var _delayedFields = _interopRequireDefault(require("./delayedFields"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
-                                                                                                                                                                       *  This file provides default values,
-                                                                                                                                                                       *  use /config.json, to overwrite settings
-                                                                                                                                                                       */const setAllModules = (status) => Object.keys(_types.MODULES).
+var _delayedFields = _interopRequireDefault(require("./delayedFields"));
+var _servicesConfig = require("../services/servicesConfig");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
+                                                                                                                                                           *  This file provides default values,
+                                                                                                                                                           *  use /config.json, to overwrite settings
+                                                                                                                                                           */const services = Object.assign({}, _servicesConfig.servicesNames);for (let s in services) {
+  services[s] = true;
+}
+
+const setAllModules = (status) =>
+Object.keys(_types.MODULES).
 reduce((a, v, i) => {
   a[v] = status;
   return a;
@@ -56,7 +62,8 @@ reduce((a, v, i) => {
     debug: false,
     updateTokenBalances: true, // Update token accounts balances on next block
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
-    address: '127.0.0.1' },
+    address: '127.0.0.1',
+    services },
 
   collectionsNames: {
     Config: 'config',

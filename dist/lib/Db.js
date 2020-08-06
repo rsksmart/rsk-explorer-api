@@ -54,7 +54,10 @@ class Db {
     try {
       const db = await this.db();
       if (!collectionName) throw new Error('Invalid collection name');
-      let collection = await db.createCollection(collectionName, options);
+      let list = await db.listCollections({}, { nameOnly: true }).toArray();
+      let exists = list.find(c => c.name === collectionName);
+      if (!exists) await db.createCollection(collectionName, options);
+      let collection = db.collection(collectionName);
       if (dropIndexes) {
         this.log.info(`Removing indexes from ${collectionName}`);
         await collection.dropIndexes();
@@ -63,14 +66,16 @@ class Db {
         this.log.info(`Creating indexes to ${collectionName}`);
         await collection.createIndexes(indexes);
       }
-      if (validate) {
-        this.log.info(`Validating collection: ${collectionName}`);
-        await db.admin().validateCollection(collectionName);
-      }
+      if (validate) await this.validateCollection(db, collectionName);
       return collection;
     } catch (err) {
       return Promise.reject(err);
     }
+  }
+
+  validateCollection(db, collectionName) {
+    this.log.info(`Validating collection: ${collectionName}`);
+    return db.admin().validateCollection(collectionName);
   }
 
   createCollections(collections, creationOptions = {}) {
