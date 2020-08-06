@@ -21,6 +21,7 @@ const nod3 = {
 const { dropDb, getDb, config } = testDb()
 
 describe('Setup', function () {
+  this.timeout(10000)
   describe('constructor', function () {
     it('should create a Setup instance', async () => {
       await dropDb()
