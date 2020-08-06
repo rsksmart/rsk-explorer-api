@@ -1,8 +1,11 @@
 
 import config from '../lib/config'
 import { servicesNames } from './servicesConfig'
+const { services } = config.blocks
 
-const scripts = Object.values(servicesNames)
+const scripts = Object.entries(servicesNames)
+  .filter(([service]) => services[service])
+  .map(([service, name]) => name)
 
 const scriptName = name => `${name}.js`
 

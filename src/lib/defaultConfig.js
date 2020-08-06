@@ -4,6 +4,12 @@
  */
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
+import { servicesNames } from '../services/servicesConfig'
+
+const services = Object.assign({}, servicesNames)
+for (let s in services) {
+  services[s] = true
+}
 
 const setAllModules = (status) =>
   Object.keys(MODULES)
@@ -56,7 +62,8 @@ export default {
     debug: false,
     updateTokenBalances: true, // Update token accounts balances on next block
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
-    address: '127.0.0.1'
+    address: '127.0.0.1',
+    services
   },
   collectionsNames: {
     Config: 'config',

@@ -32,6 +32,13 @@ export function makeConfig (config = {}) {
     config.api.modules[module] = config.api.modules[module] !== false
   }
 
+  // defaults services
+  const services = config.blocks.services || {}
+  for (let s in defaultConf.blocks.services) {
+    services[s] = config.blocks.services[s] !== false
+  }
+  services.ROUTER = true
+  config.blocks.services = services
   // defaults  servers/ports
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
