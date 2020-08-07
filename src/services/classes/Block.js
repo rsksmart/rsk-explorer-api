@@ -97,6 +97,7 @@ export class Block extends BcThing {
       return result
     } catch (err) {
       this.log.error('Error inserting events')
+      this.log.trace(`Events: ${JSON.stringify(events, null, 2)}`)
       return Promise.reject(err)
     }
   }
