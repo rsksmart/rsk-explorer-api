@@ -174,7 +174,7 @@ export class Tx extends BcThing {
         events[index] = null
         let log = logs[index]
         let { address } = log
-        let Addr = this.addresses.add(address)
+        let Addr = this.addresses.add(address, addressOptions)
         let contract = await Addr.getContract()
         if (contract) {
           contracts[address] = contract
