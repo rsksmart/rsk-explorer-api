@@ -4,6 +4,7 @@ import blocks from './blockData'
 import { nod3 } from '../../src/lib/nod3Connect'
 import { isHexString } from '@rsksmart/rsk-utils'
 import { testCollections, initConfig } from '../shared'
+import block03 from './blockData/03.json'
 
 describe(`# BlockSummary fetch`, function () {
   for (let { block } of blocks) {
@@ -48,7 +49,18 @@ describe(`# BlockSummary fetch`, function () {
       it('events', () => {
         expect(block.events).to.be.deep.equal(summaryData.events)
       })
+    })
+  }
+})
 
+describe('# BlockSummary Events', function () {
+  for (let { result: blockData } of [block03]) {
+    const { hash } = blockData
+    it('events', async () => {
+      let collections = await testCollections(true)
+      let summary = new BlockSummary(hash, { nod3, initConfig, collections })
+      let summaryData = await summary.fetch()
+      expect(summaryData.events).to.deep.equal(summaryData.events.filter(e => Object.keys(e).length))
     })
   }
 })
