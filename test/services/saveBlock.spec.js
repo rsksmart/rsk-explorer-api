@@ -4,7 +4,7 @@ import { Block } from '../../src/services/classes/Block'
 import { nod3 } from '../../src/lib/nod3Connect'
 import { testCollections, initConfig } from '../shared'
 
-let blocks = [141459, 3516, 792221, '0x3fee1ae875423c6fa405fdce0adcee0e6aadad85a941edaf3598f6d92efa846c']
+let blocks = [0x3e852, 141459, 3516, 792221, '0x3fee1ae875423c6fa405fdce0adcee0e6aadad85a941edaf3598f6d92efa846c']
 
 describe('Save Block', function () {
   it('should be connected to RSK testnet', async function () {
