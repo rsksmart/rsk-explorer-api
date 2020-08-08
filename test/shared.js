@@ -89,13 +89,15 @@ export const randomAddress = () => `0x${crypto.randomBytes(20).toString('hex')}`
 
 export const randomBalance = () => `0x${crypto.randomBytes(4).toString('hex')}`
 
-export const fakeAddress = (code = null) => {
+export const fakeAddress = (code) => {
   let address = randomAddress()
   let balance = randomBalance()
   let type = addrTypes.ADDRESS
   let name
   let isNative = false
-  return { address, balance, name, isNative, type, code }
+  let data = { address, balance, name, isNative, type }
+  if (undefined !== code) data.code = code
+  return data
 }
 
 export function Spy (obj, method) {

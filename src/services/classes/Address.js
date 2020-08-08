@@ -24,6 +24,7 @@ export class Address extends BcThing {
     this.name = nName
     this.isNative = !!nName
     this.dbData = undefined
+    this.blockCode = undefined
     this.tx = tx
     this.data = createAddressData(this)
     this.setBlock(block)
@@ -56,17 +57,28 @@ export class Address extends BcThing {
 
   async getCode () {
     try {
-      if (this.isZeroAddress || this.isNative) return null
-      let { code } = this.getData()
-      let { nod3, address, blockNumber } = this
-      if (code !== undefined) return code
-      code = await nod3.eth.getCode(address, blockNumber)
-      code = (isNullData(code)) ? null : code
-      this.setData({ code })
-      return code
+      if (this.isZeroAddress || this.isNative) {
+        this.blockCode = null
+      }
+      let { nod3, address, blockNumber, blockCode } = this
+      if (blockCode !== undefined) return blockCode
+      blockCode = await nod3.eth.getCode(address, blockNumber)
+      blockCode = (isNullData(blockCode)) ? null : blockCode
+      this.blockCode = blockCode
+      return blockCode
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  saveCode () {
+    let { code } = this.getData()
+    if (code) return
+    let { blockCode } = this
+    if (!blockCode) return
+    code = blockCode
+    let codeStoredAtBlock = this.blockNumber
+    this.setData({ code, codeStoredAtBlock })
   }
 
   async fetch (forceFetch) {
@@ -79,13 +91,14 @@ export class Address extends BcThing {
       let { blockNumber } = this
 
       let storedBlock = this.data.blockNumber || 0
-      if (blockNumber >= storedBlock) {
+      if (storedBlock <= blockNumber) {
         let balance = await this.getBalance('latest')
         this.setData({ balance, blockNumber })
       }
 
       let code = await this.getCode()
-      // TODO suicide
+      this.saveCode()
+      // TODO selfdestruct & create2
       if (code) {
         // get contract info
         let deployedCode = (dbData) ? dbData[fields.DEPLOYED_CODE] : undefined
@@ -187,12 +200,11 @@ export class Address extends BcThing {
   }
 
   isContract () {
-    let { code, type } = this.getData()
-    let { isNative, address } = this
-    if (undefined === code && !isNative && !isZeroAddress(address)) {
+    let { address, blockCode } = this
+    if (undefined === blockCode) {
       throw new Error(`Run getCode first ${address}`)
     }
-    return type === addrTypes.CONTRACT
+    return !!blockCode
   }
 
   makeContract (deployedCode, dbData) {
