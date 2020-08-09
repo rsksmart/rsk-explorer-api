@@ -287,6 +287,10 @@ export default {
       {
         key: { 'action.to': 1 },
         name: 'internalTxsToIndex'
+      },
+      {
+        key: { type: 1 },
+        name: 'internalTxTypeIndex'
       }
     ]
   },
