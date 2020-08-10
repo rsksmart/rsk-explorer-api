@@ -1,11 +1,31 @@
 import { assert } from 'chai'
-import { ports, services, createService } from '../../src/services/serviceFactory'
+import { ports, createService, getEnabledServices, services } from '../../src/services/serviceFactory'
 import { servicesNames } from '../../src/services/servicesConfig'
-import config from '../../src/lib/config'
+import { config } from '../shared'
 const { blocks } = config
 const { address } = blocks
 
 describe('ServiceFactory', function () {
+
+  describe('getEnabledServices()', function () {
+
+    it('as default all services should be enabled', () => {
+      assert.deepEqual(getEnabledServices(), servicesNames)
+    })
+
+    it('config.block.services should disable services', () => {
+      const keys = Object.keys(servicesNames)
+      let config = {}
+      config[keys[0]] = false
+      config[keys[1]] = false
+      config[keys[2]] = false
+      const enabled = getEnabledServices(config)
+      assert.isUndefined(enabled[keys[0]])
+      assert.isUndefined(enabled[keys[1]])
+      assert.isUndefined(enabled[keys[2]])
+    })
+  })
+
   describe('ports', function () {
     it('ports should be an object', () => {
       assert.typeOf(ports, 'object')
@@ -22,11 +42,6 @@ describe('ServiceFactory', function () {
       assert.typeOf(services, 'object')
     })
 
-    it('all services should be defined', () => {
-      for (let sk in servicesNames) {
-        assert.isDefined(services[sk])
-      }
-    })
     it('each service definition should be valid', () => {
       for (let sk in services) {
         let serviceConfig = services[sk]

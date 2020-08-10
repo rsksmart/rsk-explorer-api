@@ -10,10 +10,11 @@ export const servicesNames = {
   STATS: 'blocksStats'
 }
 
-export function createServices (address, ports) {
+export function createServices (address, ports, enabledServices) {
+  enabledServices = enabledServices || servicesNames
   let services = {}
-  for (let type in servicesNames) {
-    let name = servicesNames[type]
+  for (let type in enabledServices) {
+    let name = enabledServices[type]
     let port = ports.next()
     let uri = `${address}:${port}`
     services[type] = { address, port, uri, name }

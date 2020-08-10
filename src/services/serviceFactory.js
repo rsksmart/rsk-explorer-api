@@ -1,7 +1,7 @@
 import config from '../lib/config'
 import { setup } from '../lib/dataSource'
 import { Logger } from '../lib/Logger'
-import { createPorts, createServices } from './servicesConfig'
+import { createPorts, createServices, servicesNames } from './servicesConfig'
 import { Service } from './Service/ServiceServer'
 import { Router } from './Router'
 import { events } from '../lib/types'
@@ -11,7 +11,9 @@ const { address } = blocks
 
 export const ports = createPorts(blocks.ports.map(p => parseInt(p)))
 
-export const services = createServices(address, ports)
+export const enabledServices = getEnabledServices(blocks.services)
+
+export const services = createServices(address, ports, enabledServices)
 
 export const createServiceLogger = ({ name, uri }) => {
   if (!name || !uri) throw new Error('Missing log options')
@@ -75,4 +77,13 @@ export async function bootStrapService (serviceConfig) {
   } catch (err) {
     return Promise.reject(err)
   }
+}
+
+
+export function getEnabledServices (servicesConfig = {}) {
+  let enabled = Object.assign({}, servicesNames)
+  for (let service in servicesConfig) {
+    if (servicesConfig[service] === false) delete enabled[service]
+  }
+  return enabled
 }

@@ -1,10 +1,8 @@
 
 import config from '../lib/config'
-import { servicesNames } from './servicesConfig'
-const { services } = config.blocks
+import { enabledServices } from './serviceFactory'
 
-const scripts = Object.entries(servicesNames)
-  .filter(([service]) => services[service])
+const scripts = Object.entries(enabledServices)
   .map(([service, name]) => name)
 
 const scriptName = name => `${name}.js`
@@ -24,3 +22,4 @@ export const apps = scripts.map(name => {
   }
   return conf
 })
+
