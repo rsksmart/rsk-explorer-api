@@ -84,7 +84,8 @@ export const TOTAL_SUPPLY = 21 * 10 ** 6
 export const fields = {
   LAST_BLOCK_MINED: 'lastBlockMined',
   DEPLOYED_CODE: 'deployedCode',
-  CREATED_BY_TX: 'createdByTx'
+  CREATED_BY_TX: 'createdByTx',
+  DESTROYED_BY: 'destroyedByTx'
 }
 
 export const EVMversions = [

@@ -25,18 +25,40 @@ describe(`# Address`, function () {
     const address = new Address(randomAddress(), options)
 
     it('address type should be account', () => {
-      expect(address.getData().type).to.be.equal('account')
+      expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
     })
 
     it('address type should be account', () => {
       address.setData({ code: '0x0000' })
-      expect(address.getData().type).to.be.equal('account')
+      expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
     })
 
     it('adress type should be contract', () => {
       address.setData({ code: '0xa' })
-      expect(address.getData().type).to.be.equal('contract')
+      expect(address.getData().type).to.be.equal(addrTypes.CONTRACT)
     })
+
+    it('address suicide should set type to address', () => {
+      let data = { transactionHash: randomBlockHash() }
+      address.suicide(data)
+      expect(address.getData()[fields.DESTROYED_BY]).to.be.deep.equal(data)
+      expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
+    })
+
+    it('suicided addresses should not reborn', () => {
+      address.setData({ code: '0xffaabbcc' })
+      expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
+    })
+
+    it('suicide data should not be changed', () => {
+      let transactionHash = randomBlockHash()
+      let data = address.getData()
+      expect(data[fields.DESTROYED_BY]).to.be.an('object')
+      address.suicide({ transactionHash })
+      expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
+      expect(address.getData()[fields.DESTROYED_BY]).to.be.deep.equal(data[fields.DESTROYED_BY])
+    })
+
   })
 
   describe(`lastBlock`, function () {

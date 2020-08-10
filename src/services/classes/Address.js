@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import { isBlockObject, isNullData, isAddress, isValidBlockNumber } from '../../lib/utils'
+import { isBlockObject, isNullData, isAddress, isValidBlockNumber, isBlockHash } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
@@ -221,6 +221,12 @@ export class Address extends BcThing {
       return Promise.reject(err)
     }
   }
+
+  suicide (destroyedBy) {
+    let data = {}
+    data[fields.DESTROYED_BY] = destroyedBy
+    this.setData(data)
+  }
 }
 
 function getDeployedCode (tx, address) {
@@ -251,11 +257,20 @@ function createAddressData ({ address, isNative, name }) {
       switch (prop) {
         case 'code':
           if (isNullData(val)) val = null
-          if (val) {
+          if (val && data[fields.DESTROYED_BY] === undefined) {
             data.type = addrTypes.CONTRACT
           }
           // Fix to support suicide
           data.code = val
+          break
+
+        case fields.DESTROYED_BY:
+          if (data[prop] !== undefined) return true
+          if (!isBlockHash(val.transactionHash)) {
+            throw new Error(`destroyedBy.transactionHash must be a tx hash`)
+          }
+          data[prop] = Object.assign({}, val)
+          data.type = addrTypes.ADDRESS
           break
 
         case fields.LAST_BLOCK_MINED:
