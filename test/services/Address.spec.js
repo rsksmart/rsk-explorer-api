@@ -231,13 +231,18 @@ describe(`# Address, requires db connection`, function () {
       data = await Addr.fetch()
       await Addr.save()
       expect(Number(data.balance)).to.be.equal(2)
+      let stored = await collections.Addrs.findOne({ address: address.address })
+      expect(stored.balance).to.be.equal('2')
     })
 
     it('Same block should update the balance', async () => {
       const collections = await testCollections()
       let Addr = new Address(address.address, { block, nod3: nod3balances, collections, initConfig: {} })
       let data = await Addr.fetch()
+      await Addr.save()
       expect(Number(data.balance)).to.be.equal(3)
+      let stored = await collections.Addrs.findOne({ address: address.address })
+      expect(stored.balance).to.be.equal('3')
     })
   })
 })

@@ -8,13 +8,16 @@ export class Addresses {
     this.initConfig = initConfig
     this.addresses = {}
   }
-  add (address, options = {}) {
+  createAddress (address, options = {}) {
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
+    options = options || {}
+    let { nod3, initConfig, collections } = this
+    options = Object.assign(options, { nod3, initConfig, collections })
+    return new Address(address, options)
+  }
+  add (address, options = {}) {
     if (!this.addresses[address]) {
-      options = options || {}
-      let { nod3, initConfig, collections } = this
-      options = Object.assign(options, { nod3, initConfig, collections })
-      this.addresses[address] = new Address(address, options)
+      this.addresses[address] = this.createAddress(address, options)
     }
     return this.addresses[address]
   }

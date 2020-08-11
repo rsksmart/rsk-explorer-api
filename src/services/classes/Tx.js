@@ -65,7 +65,7 @@ export class Tx extends BcThing {
         let { internalTransactions, addresses, suicides } = await this.trace.getInternalTransactionsData()
         addresses.forEach(address => this.addresses.add(address, addressOptions))
         suicides.forEach(itx => {
-          let {action} = itx
+          let { action } = itx
           let Addr = this.addresses.add(action.address)
           Addr.suicide(itx)
         })
@@ -174,7 +174,24 @@ export class Tx extends BcThing {
         let { address } = log
         let Addr = this.addresses.add(address, addressOptions)
         let contract = await Addr.getContract()
-        if (contract) {
+
+        /* When a contract logs an event in the same block that self-destructs,
+          the contract has no code in that block.
+        */
+        if (!contract) {
+          let { block } = addressOptions
+          let { number } = block
+          let newAddress = this.addresses.createAddress(address, { block: number - 1 })
+          contract = await newAddress.getContract()
+          newAddress = undefined
+        }
+
+        if (!contract) {
+          this.log.error(`Missing contract for: ${address}`)
+          this.log.trace(JSON.stringify(log))
+          // add log as event
+          events[index] = formatEvent(log, tx)
+        } else {
           contracts[address] = contract
           let parser = await contract.getParser()
           let [event] = parser.parseTxLogs([log])
@@ -184,8 +201,6 @@ export class Tx extends BcThing {
             contract.addAddress(address)
             this.addresses.add(address, addressOptions)
           }
-        } else {
-          this.log.warn(`Missing contract for: ${address}`)
         }
       }
       return { events, contracts }
