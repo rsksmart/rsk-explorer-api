@@ -84,7 +84,6 @@ export class Address extends BcThing {
   async fetch (forceFetch) {
     try {
       if (this.fetched && !forceFetch) return this.getData(true)
-      this.fetched = false
       let dbData = (this.isZeroAddress) ? {} : await this.getFromDb()
       this.setData(dbData)
 
@@ -98,7 +97,6 @@ export class Address extends BcThing {
 
       let code = await this.getCode()
       this.saveCode()
-      // TODO selfdestruct & create2
       if (code) {
         // get contract info
         let deployedCode = (dbData) ? dbData[fields.DEPLOYED_CODE] : undefined
@@ -114,8 +112,11 @@ export class Address extends BcThing {
           data[fields.DEPLOYED_CODE] = deployedCode
           this.setData(data)
         }
-        this.makeContract(deployedCode, dbData)
+        this.makeContract(deployedCode)
         let contractData = await this.contract.fetch()
+        // prevent update this fields from contractData
+        delete contractData.balance
+        delete contractData.blockNumber
         this.setData(contractData)
       }
       if (this.isNative) this.makeContract()
@@ -207,7 +208,8 @@ export class Address extends BcThing {
     return !!blockCode
   }
 
-  makeContract (deployedCode, dbData) {
+  makeContract (deployedCode) {
+    const dbData = Object.assign({}, this.getData(true))
     if (this.contract) return this.contract
     let { address, nod3, initConfig, collections, block } = this
     this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections, block })
