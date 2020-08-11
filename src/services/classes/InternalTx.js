@@ -1,15 +1,15 @@
 import { BcThing } from './BcThing'
 import { generateId } from '../../lib/ids'
-import { isBlockHash } from '../../lib/utils'
+import { isBlockHash, isAddress } from '../../lib/utils'
 
 const ITX_FIELDS = {
   blockNumber: null,
   transactionHash: isBlockHash,
   blockHash: isBlockHash,
   transactionPosition: null,
-  type: null,
+  type: checkInternatTransactionType,
   subtraces: null,
-  traceAddress: null,
+  traceAddress: Array.isArray,
   result: null,
   action: null,
   timestamp: null,
@@ -38,11 +38,22 @@ export class InternalTx extends BcThing {
     let data = this.getData()
     let { action } = data
     let { isAddress } = this
-    return Object.entries(action)
+    let addresses = Object.entries(action)
       .filter(([name, value]) => {
         return name !== 'balance' && isAddress(value)
       }).map(v => v[1])
+    return [...new Set(addresses)]
   }
+
+  isSuicide () {
+    let { type, action } = this.getData()
+    return checkInternatTransactionType(type) === 'suicide' && isAddress(action.address)
+  }
+}
+
+export function checkInternatTransactionType (type) {
+  if (typeof type !== 'string') throw new Error(`Invalid itx type: ${type}`)
+  return type
 }
 
 export function getInternalTxId ({ blockNumber, transactionPosition: transactionIndex, transactionHash: hash, _index: index }) {

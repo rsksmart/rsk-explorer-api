@@ -100,18 +100,18 @@ export const fakeAddress = (code) => {
   return data
 }
 
-export const fakeInternalTx = () => {
-  let blockHash = randomBlockHash()
-  let transactionHash = randomBlockHash()
-  let blockNumber = randomBlockNumber()
-  let _index = randomNumber(10)
-  let action = {}
-  let type = 'call'
+export const fakeInternalTx = ({ action, result, _index, type, blockHash, blockNumber, transactionHash, traceAddress } = {}) => {
+  blockHash = blockHash || randomBlockHash()
+  transactionHash = transactionHash || randomBlockHash()
+  blockNumber = blockNumber || randomBlockNumber()
+  _index = _index || randomNumber(10)
+  action = action || {}
+  type = type || 'call'
   let timestamp = randomTimestamp()
   let transactionPosition = randomNumber(10)
   let subtraces = 0
-  let traceAddress = fakeAddress()
-  let result = {}
+  traceAddress = traceAddress || []
+  result = result || {}
   return { type, subtraces, traceAddress, result, blockHash, transactionHash, transactionPosition, blockNumber, action, _index, timestamp }
 }
 
