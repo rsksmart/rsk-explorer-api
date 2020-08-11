@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.createService = createService;exports.createStartService = createStartService;exports.createRouter = createRouter;exports.bootStrapService = bootStrapService;exports.createServiceLogger = exports.services = exports.ports = void 0;var _config = _interopRequireDefault(require("../lib/config"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.createService = createService;exports.createStartService = createStartService;exports.createRouter = createRouter;exports.bootStrapService = bootStrapService;exports.getEnabledServices = getEnabledServices;exports.createServiceLogger = exports.services = exports.enabledServices = exports.ports = void 0;var _config = _interopRequireDefault(require("../lib/config"));
 var _dataSource = require("../lib/dataSource");
 var _Logger = require("../lib/Logger");
 var _servicesConfig = require("./servicesConfig");
@@ -11,7 +11,9 @@ const { address } = blocks;
 
 const ports = (0, _servicesConfig.createPorts)(blocks.ports.map(p => parseInt(p)));exports.ports = ports;
 
-const services = (0, _servicesConfig.createServices)(address, ports);exports.services = services;
+const enabledServices = getEnabledServices(blocks.services);exports.enabledServices = enabledServices;
+
+const services = (0, _servicesConfig.createServices)(address, ports, enabledServices);exports.services = services;
 
 const createServiceLogger = ({ name, uri }) => {
   if (!name || !uri) throw new Error('Missing log options');
@@ -75,4 +77,12 @@ async function bootStrapService(serviceConfig) {
   } catch (err) {
     return Promise.reject(err);
   }
+}
+
+function getEnabledServices(servicesConfig = {}) {
+  let enabled = Object.assign({}, _servicesConfig.servicesNames);
+  for (let service in servicesConfig) {
+    if (servicesConfig[service] === false) delete enabled[service];
+  }
+  return enabled;
 }

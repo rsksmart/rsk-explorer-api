@@ -24,6 +24,7 @@ class Address extends _BcThing.BcThing {
     this.name = nName;
     this.isNative = !!nName;
     this.dbData = undefined;
+    this.blockCode = undefined;
     this.tx = tx;
     this.data = createAddressData(this);
     this.setBlock(block);
@@ -56,36 +57,46 @@ class Address extends _BcThing.BcThing {
 
   async getCode() {
     try {
-      if (this.isZeroAddress || this.isNative) return null;
-      let { code } = this.getData();
-      let { nod3, address, blockNumber } = this;
-      if (code !== undefined) return code;
-      code = await nod3.eth.getCode(address, blockNumber);
-      code = (0, _utils.isNullData)(code) ? null : code;
-      this.setData({ code });
-      return code;
+      if (this.isZeroAddress || this.isNative) {
+        this.blockCode = null;
+      }
+      let { nod3, address, blockNumber, blockCode } = this;
+      if (blockCode !== undefined) return blockCode;
+      blockCode = await nod3.eth.getCode(address, blockNumber);
+      blockCode = (0, _utils.isNullData)(blockCode) ? null : blockCode;
+      this.blockCode = blockCode;
+      return blockCode;
     } catch (err) {
       return Promise.reject(err);
     }
   }
 
+  saveCode() {
+    let { code } = this.getData();
+    if (code) return;
+    let { blockCode } = this;
+    if (!blockCode) return;
+    code = blockCode;
+    let codeStoredAtBlock = this.blockNumber;
+    this.setData({ code, codeStoredAtBlock });
+  }
+
   async fetch(forceFetch) {
     try {
       if (this.fetched && !forceFetch) return this.getData(true);
-      this.fetched = false;
       let dbData = this.isZeroAddress ? {} : await this.getFromDb();
       this.setData(dbData);
 
       let { blockNumber } = this;
 
       let storedBlock = this.data.blockNumber || 0;
-      if (blockNumber >= storedBlock) {
+      if (storedBlock <= blockNumber) {
         let balance = await this.getBalance('latest');
         this.setData({ balance, blockNumber });
       }
 
       let code = await this.getCode();
-      // TODO suicide
+      this.saveCode();
       if (code) {
         // get contract info
         let deployedCode = dbData ? dbData[_types.fields.DEPLOYED_CODE] : undefined;
@@ -101,8 +112,11 @@ class Address extends _BcThing.BcThing {
           data[_types.fields.DEPLOYED_CODE] = deployedCode;
           this.setData(data);
         }
-        this.makeContract(deployedCode, dbData);
+        this.makeContract(deployedCode);
         let contractData = await this.contract.fetch();
+        // prevent update this fields from contractData
+        delete contractData.balance;
+        delete contractData.blockNumber;
         this.setData(contractData);
       }
       if (this.isNative) this.makeContract();
@@ -187,15 +201,15 @@ class Address extends _BcThing.BcThing {
   }
 
   isContract() {
-    let { code, type } = this.getData();
-    let { isNative, address } = this;
-    if (undefined === code && !isNative && !(0, _rskUtils.isZeroAddress)(address)) {
+    let { address, blockCode } = this;
+    if (undefined === blockCode) {
       throw new Error(`Run getCode first ${address}`);
     }
-    return type === _types.addrTypes.CONTRACT;
+    return !!blockCode;
   }
 
-  makeContract(deployedCode, dbData) {
+  makeContract(deployedCode) {
+    const dbData = Object.assign({}, this.getData(true));
     if (this.contract) return this.contract;
     let { address, nod3, initConfig, collections, block } = this;
     this.contract = new _Contract.default(address, deployedCode, { dbData, nod3, initConfig, collections, block });
@@ -208,6 +222,12 @@ class Address extends _BcThing.BcThing {
     } catch (err) {
       return Promise.reject(err);
     }
+  }
+
+  suicide(destroyedBy) {
+    let data = {};
+    data[_types.fields.DESTROYED_BY] = destroyedBy;
+    this.setData(data);
   }}exports.Address = Address;
 
 
@@ -239,11 +259,18 @@ function createAddressData({ address, isNative, name }) {
       switch (prop) {
         case 'code':
           if ((0, _utils.isNullData)(val)) val = null;
-          if (val) {
+          if (val && data[_types.fields.DESTROYED_BY] === undefined) {
             data.type = _types.addrTypes.CONTRACT;
           }
           // Fix to support suicide
           data.code = val;
+          break;
+
+        case _types.fields.DESTROYED_BY:
+          if (data[prop] !== undefined) return true;
+          val = (0, _InternalTx.checkInternalTransactionData)(Object.assign({}, val));
+          data[prop] = val;
+          data.type = _types.addrTypes.ADDRESS;
           break;
 
         case _types.fields.LAST_BLOCK_MINED:

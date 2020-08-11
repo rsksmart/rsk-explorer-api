@@ -47,8 +47,9 @@ class BlockSummary extends _BcThing.BcThing {
       let events = [].concat(...txsData.map(d => d.events));
       let internalTransactions = [].concat(...txsData.map(d => d.internalTransactions));
       let tokenAddresses = [].concat(...txsData.map(d => d.tokenAddresses));
+      let suicides = [].concat(...txsData.map(d => d.suicides));
       let addresses = await Addresses.fetch();
-      this.setData({ internalTransactions, events, addresses, tokenAddresses });
+      this.setData({ internalTransactions, events, addresses, tokenAddresses, suicides });
       this.fetched = true;
       return this.getData();
     } catch (err) {

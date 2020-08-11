@@ -1,7 +1,6 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _blocksCollections = require("../lib/blocksCollections");
-var _utils = require("../lib/utils");
-var _util = require("util");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _utils = require("../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 // import { info, orange, reset, error, ansiCode } from '../lib/cli'
 const fromBlock = parseInt(process.argv[2]);

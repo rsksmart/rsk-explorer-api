@@ -1,10 +1,8 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.apps = exports.paths = void 0;
 var _config = _interopRequireDefault(require("../lib/config"));
-var _servicesConfig = require("./servicesConfig");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
-const { services } = _config.default.blocks;
+var _serviceFactory = require("./serviceFactory");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const scripts = Object.entries(_servicesConfig.servicesNames).
-filter(([service]) => services[service]).
+const scripts = Object.entries(_serviceFactory.enabledServices).
 map(([service, name]) => name);
 
 const scriptName = name => `${name}.js`;

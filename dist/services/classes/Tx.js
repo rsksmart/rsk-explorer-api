@@ -49,13 +49,6 @@ class Tx extends _BcThing.BcThing {
 
       // replace logs with log and event
       tx.receipt.logs = events;
-      /*       for (let event of events) {
-                                        if (event) {
-                                          let { logIndex } = event
-                                          let index = tx.receipt.logs.findIndex((l) => l.logIndex === logIndex)
-                                          if (index > -1) tx.receipt.logs[index] = event
-                                        }
-                                      } */
       this.setData({ events });
 
       // get token addresses
@@ -68,10 +61,15 @@ class Tx extends _BcThing.BcThing {
       this.setData({ tokenAddresses });
 
       if (this.trace) {
-        let trace = await this.trace.fetch();
-        let { internalTransactions, addresses } = await this.trace.getInternalTransactionsData();
+        let traceData = await this.trace.fetch();
+        let { internalTransactions, addresses, suicides } = await this.trace.getInternalTransactionsData();
         addresses.forEach(address => this.addresses.add(address, addressOptions));
-        this.setData({ trace, internalTransactions });
+        suicides.forEach(itx => {
+          let { action } = itx;
+          let Addr = this.addresses.add(action.address);
+          Addr.suicide(itx);
+        });
+        this.setData({ trace: traceData, internalTransactions, suicides });
       }
       this.setData({ tx });
       this.fetched = true;
@@ -174,9 +172,26 @@ class Tx extends _BcThing.BcThing {
         events[index] = null;
         let log = logs[index];
         let { address } = log;
-        let Addr = this.addresses.add(address);
+        let Addr = this.addresses.add(address, addressOptions);
         let contract = await Addr.getContract();
-        if (contract) {
+
+        /* When a contract logs an event in the same block that self-destructs,
+                                                   the contract has no code in that block.
+                                                 */
+        if (!contract) {
+          let { block } = addressOptions;
+          let { number } = block;
+          let newAddress = this.addresses.createAddress(address, { block: number - 1 });
+          contract = await newAddress.getContract();
+          newAddress = undefined;
+        }
+
+        if (!contract) {
+          this.log.error(`Missing contract for: ${address}`);
+          this.log.trace(JSON.stringify(log));
+          // add log as event
+          events[index] = (0, _Event.formatEvent)(log, tx);
+        } else {
           contracts[address] = contract;
           let parser = await contract.getParser();
           let [event] = parser.parseTxLogs([log]);
@@ -186,8 +201,6 @@ class Tx extends _BcThing.BcThing {
             contract.addAddress(address);
             this.addresses.add(address, addressOptions);
           }
-        } else {
-          this.log.warn(`Missing contract for: ${address}`);
         }
       }
       return { events, contracts };

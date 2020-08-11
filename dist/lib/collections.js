@@ -286,7 +286,11 @@
 
     {
       key: { 'action.to': 1 },
-      name: 'internalTxsToIndex' }] },
+      name: 'internalTxsToIndex' },
+
+    {
+      key: { type: 1 },
+      name: 'internalTxTypeIndex' }] },
 
 
 

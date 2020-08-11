@@ -1,12 +1,23 @@
 # Changelog
 
+## [1.1.5] - 2020-08-11
+
+## Added
+
+- Self destructed contracts support.
+- Tools: updateBalances, checks/updates the balances of all DB addresses.
+
+## Fixed
+
+- Contracts balances
+
 ## [1.1.4] - 2020-08-06
 
 ### Updated
 
-- Db.createCollection to the new mongodb driver behavior
+- Db.createCollection to the new mongodb driver behavior.
 - blocks checker service, delay before start.
-- config: disable services in config
+- Config: disable services in config.
 
 ## [1.1.3] - 2020-08-04
 
@@ -14,11 +25,11 @@ This release requires the regeneration of the DB follow the instructions in [UPD
 
 ### Fixed
 
-- Event decoding
-- Addresses balances
-- Token Addresses balances and detection
+- Event decoding.
+- Addresses balances.
+- Token Addresses balances and detection.
 - Repetitive indexing of collections at each service start.
-- Tokens total supply, see #30
+- Tokens total supply, see #30.
 
 ## [1.1.2] - 2020-07-17
 

@@ -84,7 +84,8 @@ const TOTAL_SUPPLY = 21 * 10 ** 6;exports.TOTAL_SUPPLY = TOTAL_SUPPLY;
 const fields = {
   LAST_BLOCK_MINED: 'lastBlockMined',
   DEPLOYED_CODE: 'deployedCode',
-  CREATED_BY_TX: 'createdByTx' };exports.fields = fields;
+  CREATED_BY_TX: 'createdByTx',
+  DESTROYED_BY: 'destroyedByTx' };exports.fields = fields;
 
 
 const EVMversions = [

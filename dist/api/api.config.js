@@ -13,7 +13,6 @@ if (log && log.dir) {
   conf.out_file = `${dir}/${name}-out.log`;
 }
 
-
 const apps = [conf];exports.apps = apps;
 
 console.log(apps);
