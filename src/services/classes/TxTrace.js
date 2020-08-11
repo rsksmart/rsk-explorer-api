@@ -56,7 +56,8 @@ export class TxTrace extends BcThing {
       let addresses = iTxs.map(i => i.getAddresses())
       // merge addresses arrays
       addresses = [].concat.apply([], addresses)
-      return { internalTransactions, addresses }
+      const suicides = iTxs.filter(itx => itx.isSuicide()).map(itx => itx.getData())
+      return { internalTransactions, addresses, suicides }
     } catch (err) {
       return Promise.reject(err)
     }
