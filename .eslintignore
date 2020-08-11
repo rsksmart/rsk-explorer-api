@@ -1,3 +1,5 @@
 src/api/docs.yaml
 src/services/Service/protos/*.js
+src/updates/*.sh
+src/updates/*.json
 

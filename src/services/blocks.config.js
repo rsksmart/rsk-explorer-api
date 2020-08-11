@@ -22,4 +22,3 @@ export const apps = scripts.map(name => {
   }
   return conf
 })
-

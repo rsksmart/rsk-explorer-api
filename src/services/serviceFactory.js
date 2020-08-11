@@ -79,7 +79,6 @@ export async function bootStrapService (serviceConfig) {
   }
 }
 
-
 export function getEnabledServices (servicesConfig = {}) {
   let enabled = Object.assign({}, servicesNames)
   for (let service in servicesConfig) {

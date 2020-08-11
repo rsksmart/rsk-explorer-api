@@ -1,7 +1,6 @@
 import dataSource from '../lib/dataSource.js'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { newBigNumber } from '../lib/utils'
-import { inspect } from 'util'
 
 // import { info, orange, reset, error, ansiCode } from '../lib/cli'
 const fromBlock = parseInt(process.argv[2])
