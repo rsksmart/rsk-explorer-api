@@ -49,13 +49,6 @@ export class Tx extends BcThing {
 
       // replace logs with log and event
       tx.receipt.logs = events
-      /*       for (let event of events) {
-              if (event) {
-                let { logIndex } = event
-                let index = tx.receipt.logs.findIndex((l) => l.logIndex === logIndex)
-                if (index > -1) tx.receipt.logs[index] = event
-              }
-            } */
       this.setData({ events })
 
       // get token addresses
@@ -68,10 +61,15 @@ export class Tx extends BcThing {
       this.setData({ tokenAddresses })
 
       if (this.trace) {
-        let trace = await this.trace.fetch()
-        let { internalTransactions, addresses } = await this.trace.getInternalTransactionsData()
+        let traceData = await this.trace.fetch()
+        let { internalTransactions, addresses, suicides } = await this.trace.getInternalTransactionsData()
         addresses.forEach(address => this.addresses.add(address, addressOptions))
-        this.setData({ trace, internalTransactions })
+        suicides.forEach(itx => {
+          let {action} = itx
+          let Addr = this.addresses.add(action.address)
+          Addr.suicide(itx)
+        })
+        this.setData({ trace: traceData, internalTransactions, suicides })
       }
       this.setData({ tx })
       this.fetched = true
