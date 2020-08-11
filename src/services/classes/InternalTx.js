@@ -1,18 +1,20 @@
 import { BcThing } from './BcThing'
 import { generateId } from '../../lib/ids'
+import { isBlockHash } from '../../lib/utils'
 
-const REQUIRED_FIELDS = [
-  'blockHash',
-  'blockNumber',
-  'transactionHash',
-  'transactionPosition',
-  'type',
-  'subtraces',
-  'traceAddress',
-  'result',
-  'action',
-  'timestamp'
-]
+const ITX_FIELDS = {
+  blockNumber: null,
+  transactionHash: isBlockHash,
+  blockHash: isBlockHash,
+  transactionPosition: null,
+  type: null,
+  subtraces: null,
+  traceAddress: null,
+  result: null,
+  action: null,
+  timestamp: null,
+  _index: null
+}
 
 export class InternalTx extends BcThing {
   constructor (data, { initConfig }) {
@@ -21,11 +23,7 @@ export class InternalTx extends BcThing {
   }
 
   checkData (data) {
-    if (typeof data !== 'object') throw new Error('Data is not an object')
-    for (let field of REQUIRED_FIELDS) {
-      if (!data.hasOwnProperty(field)) throw new Error(`Missing field: ${field}`)
-    }
-    return data
+    return checkInternalTransactionData(data)
   }
 
   setData (data) {
@@ -41,8 +39,7 @@ export class InternalTx extends BcThing {
     let { action } = data
     let { isAddress } = this
     return Object.entries(action)
-      .filter(a => {
-        let [name, value] = a
+      .filter(([name, value]) => {
         return name !== 'balance' && isAddress(value)
       }).map(v => v[1])
   }
@@ -59,9 +56,25 @@ export function filterValueAddresses (internalTransactions) {
     if (!error && parseInt(value) > 0) {
       addresses.add(from)
       addresses.add(to)
+      // review suicide and refund address
     }
   })
   return [...addresses]
+}
+
+export function checkInternalTransactionData (data) {
+  if (typeof data !== 'object') throw new Error('Data is not an object')
+  for (let field of Object.keys(ITX_FIELDS)) {
+    if (!data.hasOwnProperty(field)) throw new Error(`Missing field: ${field}`)
+    let value = data[field]
+    let check = ITX_FIELDS[field]
+    if (typeof check === 'function') {
+      if (!check(data[field])) {
+        throw new Error(`Invalid value: ${value} for itx field: ${field}`)
+      }
+    }
+  }
+  return data
 }
 
 export default InternalTx

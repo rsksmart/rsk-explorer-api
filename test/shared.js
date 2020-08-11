@@ -100,6 +100,21 @@ export const fakeAddress = (code) => {
   return data
 }
 
+export const fakeInternalTx = () => {
+  let blockHash = randomBlockHash()
+  let transactionHash = randomBlockHash()
+  let blockNumber = randomBlockNumber()
+  let _index = randomNumber(10)
+  let action = {}
+  let type = 'call'
+  let timestamp = randomTimestamp()
+  let transactionPosition = randomNumber(10)
+  let subtraces = 0
+  let traceAddress = fakeAddress()
+  let result = {}
+  return { type, subtraces, traceAddress, result, blockHash, transactionHash, transactionPosition, blockNumber, action, _index, timestamp }
+}
+
 export function Spy (obj, method) {
   let spy = {
     args: []

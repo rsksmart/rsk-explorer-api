@@ -1,10 +1,10 @@
 import { BcThing } from './BcThing'
-import { isBlockObject, isNullData, isAddress, isValidBlockNumber, isBlockHash } from '../../lib/utils'
+import { isBlockObject, isNullData, isAddress, isValidBlockNumber } from '../../lib/utils'
 import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from 'rsk-contract-parser'
 import { createTxObject } from './Tx'
-import { InternalTx } from './InternalTx'
+import { InternalTx, checkInternalTransactionData } from './InternalTx'
 import { isZeroAddress } from '@rsksmart/rsk-utils'
 
 export class Address extends BcThing {
@@ -266,10 +266,8 @@ function createAddressData ({ address, isNative, name }) {
 
         case fields.DESTROYED_BY:
           if (data[prop] !== undefined) return true
-          if (!isBlockHash(val.transactionHash)) {
-            throw new Error(`destroyedBy.transactionHash must be a tx hash`)
-          }
-          data[prop] = Object.assign({}, val)
+          val = checkInternalTransactionData(Object.assign({}, val))
+          data[prop] = val
           data.type = addrTypes.ADDRESS
           break
 

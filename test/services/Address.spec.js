@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock, fakeAddress, initConfig } from '../shared'
+import { randomAddress, randomBlockHash, testCollections, Spy, fakeBlock, fakeAddress, initConfig, fakeInternalTx } from '../shared'
 import { fields, addrTypes } from '../../src/lib/types'
 import Address from '../../src/services/classes/Address'
 
@@ -39,7 +39,7 @@ describe(`# Address`, function () {
     })
 
     it('address suicide should set type to address', () => {
-      let data = { transactionHash: randomBlockHash() }
+      let data = fakeInternalTx()
       address.suicide(data)
       expect(address.getData()[fields.DESTROYED_BY]).to.be.deep.equal(data)
       expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
@@ -51,10 +51,9 @@ describe(`# Address`, function () {
     })
 
     it('suicide data should not be changed', () => {
-      let transactionHash = randomBlockHash()
       let data = address.getData()
       expect(data[fields.DESTROYED_BY]).to.be.an('object')
-      address.suicide({ transactionHash })
+      address.suicide(fakeInternalTx())
       expect(address.getData().type).to.be.equal(addrTypes.ADDRESS)
       expect(address.getData()[fields.DESTROYED_BY]).to.be.deep.equal(data[fields.DESTROYED_BY])
     })
