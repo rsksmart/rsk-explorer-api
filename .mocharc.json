@@ -4,5 +4,5 @@
   "sort": true,
   "ext": "*.spec.js",
   "exit": true,
-  "timeout": 5000
+  "timeout": 10000
 }
