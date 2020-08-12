@@ -45,7 +45,6 @@ export class Address extends BcThing {
 
   async getBalance (blockNumber = 'latest') {
     try {
-      if (this.isZeroAddress) return '0x0'
       let { nod3, address } = this
       let balance = await nod3.eth.getBalance(address, blockNumber)
       return balance
@@ -62,6 +61,7 @@ export class Address extends BcThing {
       }
       let { nod3, address, blockNumber, blockCode } = this
       if (blockCode !== undefined) return blockCode
+
       blockCode = await nod3.eth.getCode(address, blockNumber)
       blockCode = (isNullData(blockCode)) ? null : blockCode
       this.blockCode = blockCode
