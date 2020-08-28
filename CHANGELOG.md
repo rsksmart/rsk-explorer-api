@@ -1,13 +1,23 @@
 # Changelog
 
+## [1.1.6] - 2020-08-31
+
+### Fixed
+
+- Token totalSupply & decimals serialization
+
+### Added
+
+- Get balances of all addresses obtained by the block summaries for each block number.  
+
 ## [1.1.5] - 2020-08-11
 
-## Added
+### Added
 
 - Self destructed contracts support.
 - Tools: updateBalances, checks/updates the balances of all DB addresses.
 
-## Fixed
+### Fixed
 
 - Contracts balances
 
