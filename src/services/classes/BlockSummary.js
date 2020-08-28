@@ -4,6 +4,7 @@ import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
 import { getSummaryId } from '../../lib/ids'
 import { arrayDifference, isBlockHash } from '../../lib/utils'
+import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 
 export const BlocksSummaryCollection = 'BlocksSummary'
 
@@ -108,10 +109,27 @@ export class BlockSummary extends BcThing {
         let blockData = await this.getBlockData()
         Addresses = new BlockAddresses(blockData, { nod3, initConfig, collections })
         let { miner } = blockData
-        Addresses.add(miner, { block: blockData })
+        let options = { block: blockData }
+        Addresses.add(miner, options)
+        let summariesAddresses = await this.getSummariesAddresses()
+        for (let address of summariesAddresses) {
+          if (isAddress(address)) Addresses.add(address, options)
+        }
         this.Addresses = Addresses
       }
       return Addresses
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getSummariesAddresses () {
+    try {
+      const { collections } = this
+      const { number } = await this.getBlockData()
+      const summaries = await getBlockSummariesByNumber(number, collections)
+      const addresses = [...new Set([].concat(...summaries.map(({ addresses }) => addresses)))]
+      return addresses
     } catch (err) {
       return Promise.reject(err)
     }
