@@ -32,7 +32,7 @@ class Addresses {
       for (let address of addresses) {
         await address.fetch(forceFetch);
       }
-      return addresses.map(a => a.getData());
+      return addresses.map(a => a.getData(true));
     } catch (err) {
       return Promise.reject(err);
     }

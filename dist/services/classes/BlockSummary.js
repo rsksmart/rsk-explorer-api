@@ -3,7 +3,8 @@ var _Tx = _interopRequireDefault(require("./Tx"));
 var _BlockTrace = _interopRequireDefault(require("./BlockTrace"));
 var _BlockAddresses = require("./BlockAddresses");
 var _ids = require("../../lib/ids");
-var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _utils = require("../../lib/utils");
+var _addresses = require("@rsksmart/rsk-utils/dist/addresses");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const BlocksSummaryCollection = 'BlocksSummary';exports.BlocksSummaryCollection = BlocksSummaryCollection;
 
@@ -108,10 +109,27 @@ class BlockSummary extends _BcThing.BcThing {
         let blockData = await this.getBlockData();
         Addresses = new _BlockAddresses.BlockAddresses(blockData, { nod3, initConfig, collections });
         let { miner } = blockData;
-        Addresses.add(miner, { block: blockData });
+        let options = { block: blockData };
+        Addresses.add(miner, options);
+        let summariesAddresses = await this.getSummariesAddresses();
+        for (let address of summariesAddresses) {
+          if ((0, _addresses.isAddress)(address)) Addresses.add(address, options);
+        }
         this.Addresses = Addresses;
       }
       return Addresses;
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  }
+
+  async getSummariesAddresses() {
+    try {
+      const { collections } = this;
+      const { number } = await this.getBlockData();
+      const summaries = await getBlockSummariesByNumber(number, collections);
+      const addresses = [...new Set([].concat(...summaries.map(({ addresses }) => addresses)))];
+      return addresses;
     } catch (err) {
       return Promise.reject(err);
     }
