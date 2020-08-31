@@ -1,5 +1,29 @@
 # Updates
 
+## 1.1.5 to 1.1.6
+
+This release contains a db patch.
+
+### 1 - Update rsk-explorer-api code
+
+  ```shell
+  git checkout 1.1.6
+  ```
+
+### 2 - Update dependencies
+
+```shell
+rm -rf node_modules
+npm install
+```
+
+### 3 - Apply db patch
+
+``` shell
+node dist/dbPatches/tokenData.js
+
+```
+
 ## Requisites
 
  [MongoDB Tools](https://docs.mongodb.com/manual/tutorial/backup-and-restore-tools/)
