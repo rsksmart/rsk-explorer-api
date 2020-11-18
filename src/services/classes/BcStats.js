@@ -1,6 +1,8 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import getCirculatingSupply from '../../api/lib/getCirculatingSupply'
 import getActiveAccounts from '../../api/lib/getActiveAccounts'
+import { Contract, abi as ABI } from 'rsk-contract-parser'
+import { serialize } from '../../lib/utils'
 
 export class BcStats extends BlocksBase {
   constructor (db, options) {
@@ -20,6 +22,19 @@ export class BcStats extends BlocksBase {
     }
   }
 
+  async bridgeCall (method, params = []) {
+    try {
+      const { nod3, initConfig } = this
+      const address = initConfig.nativeContracts.bridge
+      const abi = ABI.bridge
+      const contract = Contract(abi, { address, nod3 })
+      const res = await contract.call(method, params)
+      return res
+    } catch (err) {
+      this.log.debug(err)
+    }
+  }
+
   async getStats (blockHash, blockNumber) {
     try {
       if (undefined === blockHash || undefined === blockNumber) {
@@ -31,8 +46,12 @@ export class BcStats extends BlocksBase {
       const hashrate = await this.nod3.eth.netHashrate()
       const circulating = await this.getCirculating()
       let activeAccounts = await getActiveAccounts(this.collections)
+      let lockingCap = await this.bridgeCall('getLockingCap')
+      // lockingCap = lockingCap.toString()
+      const bridge = serialize({ lockingCap })
       const timestamp = Date.now()
-      return Object.assign({}, { circulating, activeAccounts, hashrate, timestamp, blockHash, blockNumber })
+      const res = Object.assign({}, { circulating, activeAccounts, hashrate, timestamp, blockHash, blockNumber, bridge })
+      return res
     } catch (err) {
       this.log.error(err)
       return Promise.reject(err)
