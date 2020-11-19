@@ -86,7 +86,7 @@ class Api extends DataCollector {
     }
   }
   getStats () {
-    return this.formatData(this.stats)
+    return this.stats
   }
   getCirculatingSupply () {
     return this.formatData(this.circulatingSupply)
