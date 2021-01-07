@@ -648,7 +648,7 @@
         "subtraces": 1,
         "traceAddress": [],
         "result": null,
-        "error": "class org.ethereum.vm.program.Program$OutOfGasException: Not enough gas for 'RETURNDATASIZE' cause spending: invokeGas[310991], gas[2], usedGas[310991];",
+        "error": "class org.ethereum.vm.program.Program$OutOfGasException: Not enough gas for 'RETURNDATASIZE' cause spending: invokeGas[310991], gas[2], usedGas[310991], tx[0x3bc20c1c6873521e1537ee595523e35685a5de978066db2f4b050068fa75d660]",
         "_index": 1,
         "timestamp": 1587763156,
         "internalTxId": "00c2e28005001b2f4b050068fa75d660"
@@ -672,7 +672,7 @@
           0
         ],
         "result": null,
-        "error": "org.ethereum.vm.program.Program$OutOfGasException: Not enough gas for 'CALL' cause spending: invokeGas[287735], gas[2300], usedGas[277926];",
+        "error": "org.ethereum.vm.program.Program$OutOfGasException: Not enough gas for 'CALL' cause spending: invokeGas[287735], gas[2300], usedGas[277926], tx[0x8609a71b73473941522a100c037d2900437883aa71b0e18f4d1669ab52493f04]",
         "_index": 2,
         "timestamp": 1587763156,
         "internalTxId": "00c2e28005002b2f4b050068fa75d660"
@@ -4430,6 +4430,6 @@
         "txStatus": "0x1"
       }
     ],
-    "suicides":[]
+    "suicides": []
   }
 }
