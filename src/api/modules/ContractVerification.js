@@ -112,7 +112,7 @@ export class ContractVerification extends DataCollectorItem {
       },
       /**
        * @swagger
-       * /api?module=contractVerifier&action=getVersificationResult:
+       * /api?module=contractVerifier&action=getVerificationResult:
        *    get:
        *      description: Gets the result of source code verification
        *      tags:
