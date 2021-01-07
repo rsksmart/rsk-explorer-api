@@ -6,14 +6,14 @@ const createCredentials = _grpc.default.ServerCredentials.createInsecure;
 const clientCredentials = _grpc.default.credentials.createInsecure;
 
 /**
-                                                                     * Service Server
-                                                                     * Creates a service
-                                                                     * @param {String} uri server URI
-                                                                     * @param {Object} [{ name }={}]
-                                                                     * @param {Function} executor, expose the 'create' object that contains
-                                                                     * the methods to create new services.
-                                                                     * @returns {Object}
-                                                                     */exports.clientCredentials = clientCredentials;
+ * Service Server
+ * Creates a service
+ * @param {String} uri server URI
+ * @param {Object} [{ name }={}]
+ * @param {Function} executor, expose the 'create' object that contains
+ * the methods to create new services.
+ * @returns {Object}
+ */exports.clientCredentials = clientCredentials;
 function Service(uri, options = {}, executor) {
   if (typeof options !== 'object') throw new Error(`Invalid options`);
   const { name } = options;

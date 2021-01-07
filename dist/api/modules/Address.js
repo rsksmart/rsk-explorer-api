@@ -8,30 +8,30 @@ class Address extends _DataCollector.DataCollectorItem {
     this.fields = { code: 0, 'createdByTx.input': 0 };
     this.publicActions = {
       /**
-                            * @swagger
-                            * /api?module=addresses&action=getAddress:
-                            *    get:
-                            *      description: get address data
-                            *      tags:
-                            *        - addresses
-                            *      parameters:
-                            *        - name: module
-                            *          in: query
-                            *          required: true
-                            *          enum: [addresses]
-                            *        - name: action
-                            *          in: query
-                            *          required: true
-                            *          enum: [getAddress]
-                            *        - $ref: '#/parameters/address'
-                            *      responses:
-                            *        200:
-                            *          $ref: '#/definitions/Response'
-                            *        400:
-                            *          $ref: '#/responses/BadRequest'
-                            *        404:
-                            *          $ref: '#/responses/NotFound'
-                             */
+       * @swagger
+       * /api?module=addresses&action=getAddress:
+       *    get:
+       *      description: get address data
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getAddress]
+       *        - $ref: '#/parameters/address'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+        */
 
       getAddress: async params => {
         const { address } = params;
@@ -48,67 +48,67 @@ class Address extends _DataCollector.DataCollectorItem {
         return aData;
       },
       /**
-          * @swagger
-          * /api?module=addresses&action=getAddresses:
-          *    get:
-          *      description: get list of addresses
-          *      tags:
-          *        - addresses
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [addresses]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getAddresses]
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=addresses&action=getAddresses:
+       *    get:
+       *      description: get list of addresses
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getAddresses]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getAddresses: params => {
         let type = params.query ? params.query.type : null;
         let query = type ? { type } : {};
         return this.getPageData(query, params);
       },
       /**
-          * @swagger
-          * /api?module=addresses&action=getMiners:
-          *    get:
-          *      description: get list of miners
-          *      tags:
-          *        - addresses
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [addresses]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getMiners]
-          *        - name: fromBlock
-          *          in: query
-          *          required: false
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=addresses&action=getMiners:
+       *    get:
+       *      description: get list of miners
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getMiners]
+       *        - name: fromBlock
+       *          in: query
+       *          required: false
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getMiners: params => {
         let query = {};
         const lbMined = _types.fields.LAST_BLOCK_MINED;
@@ -121,32 +121,32 @@ class Address extends _DataCollector.DataCollectorItem {
         return this.getPageData(query, params);
       },
       /**
-          * @swagger
-          * /api?module=addresses&action=getTokens:
-          *    get:
-          *      description: get list of tokens
-          *      tags:
-          *        - addresses
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [addresses]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getTokens]
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=addresses&action=getTokens:
+       *    get:
+       *      description: get list of tokens
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTokens]
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokens: params => {
         return this.getPageData({
           type: _types.addrTypes.CONTRACT,
@@ -154,57 +154,57 @@ class Address extends _DataCollector.DataCollectorItem {
         params);
       },
       /**
-          * @swagger
-          * /api?module=addresses&action=getCirculatingSupply:
-          *    get:
-          *      description: get list of tokens
-          *      tags:
-          *        - addresses
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [addresses]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getCirculatingSupply]
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/Response'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=addresses&action=getCirculatingSupply:
+       *    get:
+       *      description: get list of tokens
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getCirculatingSupply]
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getCirculatingSupply: params => {
         return this.parent.getCirculatingSupply();
       },
       /**
-            * @swagger
-            * /api?module=addresses&action=getCode:
-            *    get:
-            *      description: get contract code
-            *      tags:
-            *        - addresses
-            *      parameters:
-            *        - name: module
-            *          in: query
-            *          required: true
-            *          enum: [addresses]
-            *        - name: action
-            *          in: query
-            *          required: true
-            *          enum: [getCode]
-            *        - $ref: '#/parameters/address'
-            *      responses:
-            *        200:
-            *          $ref: '#/definitions/Response'
-            *        400:
-            *          $ref: '#/responses/BadRequest'
-            *        404:
-            *          $ref: '#/responses/NotFound'
-            */
+         * @swagger
+         * /api?module=addresses&action=getCode:
+         *    get:
+         *      description: get contract code
+         *      tags:
+         *        - addresses
+         *      parameters:
+         *        - name: module
+         *          in: query
+         *          required: true
+         *          enum: [addresses]
+         *        - name: action
+         *          in: query
+         *          required: true
+         *          enum: [getCode]
+         *        - $ref: '#/parameters/address'
+         *      responses:
+         *        200:
+         *          $ref: '#/definitions/Response'
+         *        400:
+         *          $ref: '#/responses/BadRequest'
+         *        404:
+         *          $ref: '#/responses/NotFound'
+         */
       getCode: async params => {
         try {
           const { address } = params;
@@ -230,30 +230,30 @@ class Address extends _DataCollector.DataCollectorItem {
         }
       },
       /**
-          * @swagger
-          * /api?module=addresses&action=findAddresses:
-          *    get:
-          *      description: find addresses by name
-          *      tags:
-          *        - addresses
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [addresses]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *        - name: name
-          *          required: true
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/Response'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=addresses&action=findAddresses:
+       *    get:
+       *      description: find addresses by name
+       *      tags:
+       *        - addresses
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [addresses]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *        - name: name
+       *          required: true
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       findAddresses: async params => {
         let { name } = params;
         params.field = 'name';

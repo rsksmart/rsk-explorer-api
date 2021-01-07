@@ -10,13 +10,13 @@ const checkNumbers = payload => {
 const padBlockNumber = number => number.toString(16).padStart(7, 0);
 
 /**
-                                                                      * Generates sortable and immutable ids for txs and events
-                                                                      * id structure:
-                                                                      * [blockNumber](24b)
-                                                                      * [txIndex][16b]
-                                                                      * [index](optional)(16b)
-                                                                      * [blockHash|txHash][72b]
-                                                                      */
+ * Generates sortable and immutable ids for txs and events
+ * id structure:
+ * [blockNumber](24b)
+ * [txIndex][16b]
+ * [index](optional)(16b)
+ * [blockHash|txHash][72b]
+ */
 
 const generateId = ({ blockNumber, transactionIndex, hash, index }) => {
   try {

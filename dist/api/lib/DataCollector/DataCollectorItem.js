@@ -62,7 +62,8 @@ class DataCollectorItem {
   async getLatest(query, project) {
     query = query || {};
     const result = await (0, _pagination.find)(this.db, query, this.sort, 1, project);
-    return result.length ? result[0] : null;
+    const data = result.length ? result[0] : null;
+    return { data };
   }
 
   async setFieldsTypes() {
@@ -127,10 +128,10 @@ class DataCollectorItem {
     }
   }
   /**
-     *  Resolves item query parsing params
-     * @param {*} query
-     * @param {*} params
-     */
+   *  Resolves item query parsing params
+   * @param {*} query
+   * @param {*} params
+   */
   async getItem(query, { fields, getPrevNext }) {
     try {
       let data = await this.getOne(query, fields);

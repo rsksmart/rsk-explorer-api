@@ -49,11 +49,11 @@ const clientMethodToPromise = (client, method) => {
 };
 
 /**
-    * Service Client
-    * @param {String} uri
-    * @param {*} credentials
-    * @returns
-    */
+ * Service Client
+ * @param {String} uri
+ * @param {*} credentials
+ * @returns
+ */
 
 async function Client(uri, credentials) {
   credentials = credentials || (0, _ServiceServer.clientCredentials)();

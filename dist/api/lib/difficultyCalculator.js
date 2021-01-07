@@ -2,14 +2,14 @@
 
 class DifficultyCalculator {
   /**
-                               * Given an array of blocks, a period of time and a bucket size. Returns an array with the average
-                               * block difficulty for each bucket.
-                               *
-                               * @param {*} blocks An array of blocks with timestamp and difficulty
-                               * @param {*} tstart Period start time
-                               * @param {*} tend Period end time
-                               * @param {*} bucketSize Bucket time size to divide the period in
-                               */
+     * Given an array of blocks, a period of time and a bucket size. Returns an array with the average
+     * block difficulty for each bucket.
+     *
+     * @param {*} blocks An array of blocks with timestamp and difficulty
+     * @param {*} tstart Period start time
+     * @param {*} tend Period end time
+     * @param {*} bucketSize Bucket time size to divide the period in
+     */
   difficulties(blocks, tstart, tend, bucketSize) {
     if (!Array.isArray(blocks) || tend < tstart) {
       return [];

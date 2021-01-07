@@ -10,41 +10,41 @@ class Tx extends _DataCollector.DataCollectorItem {
     super(Txs, key, { cursorField, sortDir, sortable });
     this.publicActions = {
       /**
-                            * @swagger
-                            * /api?module=transactions&action=getTransactions:
-                            *    get:
-                            *      description: get transactions
-                            *      tags:
-                            *        - transactions
-                            *      produces:
-                            *        - application/json
-                            *      parameters:
-                            *        - name: module
-                            *          in: query
-                            *          required: true
-                            *          enum: [transactions]
-                            *        - name: action
-                            *          in: query
-                            *          required: true
-                            *          enum: [getTransactions]
-                            *        - name: query
-                            *          in: query
-                            *          required: false
-                            *          schema:
-                            *            type: object
-                            *            example:
-                            *              txType:normal
-                            *        - $ref: '#/parameters/limit'
-                            *        - $ref: '#/parameters/next'
-                            *        - $ref: '#/parameters/prev'
-                            *      responses:
-                            *        200:
-                            *          $ref: '#/definitions/ResponseList'
-                            *        400:
-                            *          $ref: '#/responses/BadRequest'
-                            *        404:
-                            *          $ref: '#/responses/NotFound'
-                           */
+       * @swagger
+       * /api?module=transactions&action=getTransactions:
+       *    get:
+       *      description: get transactions
+       *      tags:
+       *        - transactions
+       *      produces:
+       *        - application/json
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [transactions]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTransactions]
+       *        - name: query
+       *          in: query
+       *          required: false
+       *          schema:
+       *            type: object
+       *            example:
+       *              txType:normal
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+      */
       getTransactions: params => {
         let query = {};
         let txType = params.query ? params.query.txType : null;
@@ -54,30 +54,30 @@ class Tx extends _DataCollector.DataCollectorItem {
         return this.getPageData(query, params);
       },
       /**
-         * @swagger
-         * /api?module=transactions&action=getTransaction:
-         *    get:
-         *      description: get transaction
-         *      tags:
-         *        - transactions
-         *      parameters:
-         *        - name: module
-         *          in: query
-         *          required: true
-         *          enum: [transactions]
-         *        - name: action
-         *          in: query
-         *          required: true
-         *          enum: [getTransaction]
-         *        - $ref: '#/parameters/txHash'
-         *      responses:
-         *        200:
-         *          $ref: '#/definitions/Response'
-         *        400:
-         *          $ref: '#/responses/BadRequest'
-         *        404:
-         *          $ref: '#/responses/NotFound'
-         */
+      * @swagger
+      * /api?module=transactions&action=getTransaction:
+      *    get:
+      *      description: get transaction
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [transactions]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getTransaction]
+      *        - $ref: '#/parameters/txHash'
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/Response'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+      */
 
       getTransaction: async params => {
         const hash = params.hash;
@@ -90,34 +90,34 @@ class Tx extends _DataCollector.DataCollectorItem {
       },
 
       /**
-         * @swagger
-         * /api?module=transactions&action=getTransactionWithAddressData:
-         *    get:
-         *      description: get transaction
-         *      tags:
-         *        - transactions
-         *      parameters:
-         *        - name: module
-         *          in: query
-         *          required: true
-         *          enum: [transactions]
-         *        - name: action
-         *          in: query
-         *          required: true
-         *          enum: [getTransactionWithAddressData]
-         *        - name: hash
-         *          in: query
-         *          required: true
-         *          schema:
-         *            type: string
-         *      responses:
-         *        200:
-         *          $ref: '#/definitions/Response'
-         *        400:
-         *          $ref: '#/responses/BadRequest'
-         *        404:
-         *          $ref: '#/responses/NotFound'
-         */
+      * @swagger
+      * /api?module=transactions&action=getTransactionWithAddressData:
+      *    get:
+      *      description: get transaction
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [transactions]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getTransactionWithAddressData]
+      *        - name: hash
+      *          in: query
+      *          required: true
+      *          schema:
+      *            type: string
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/Response'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+      */
       getTransactionWithAddressData: async params => {
         let data = await this.publicActions.getTransaction(params);
         let tx = data ? data.data : null;
@@ -142,33 +142,33 @@ class Tx extends _DataCollector.DataCollectorItem {
       },
 
       /**
-         * @swagger
-         * /api?module=transactions&action=getTransactionsByBlock:
-         *    get:
-         *      description: get transaction
-         *      tags:
-         *        - transactions
-         *      parameters:
-         *        - name: module
-         *          in: query
-         *          required: true
-         *          enum: [transactions]
-         *        - name: action
-         *          in: query
-         *          required: true
-         *          enum: [getTransactionsByBlock]
-         *        - $ref: '#/parameters/hashOrNumber'
-         *        - $ref: '#/parameters/limit'
-         *        - $ref: '#/parameters/next'
-         *        - $ref: '#/parameters/prev'
-         *      responses:
-         *        200:
-         *          $ref: '#/definitions/ResponseList'
-         *        400:
-         *          $ref: '#/responses/BadRequest'
-         *        404:
-         *          $ref: '#/responses/NotFound'
-         */
+      * @swagger
+      * /api?module=transactions&action=getTransactionsByBlock:
+      *    get:
+      *      description: get transaction
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [transactions]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getTransactionsByBlock]
+      *        - $ref: '#/parameters/hashOrNumber'
+      *        - $ref: '#/parameters/limit'
+      *        - $ref: '#/parameters/next'
+      *        - $ref: '#/parameters/prev'
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/ResponseList'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+      */
       getTransactionsByBlock: params => {
         const hashOrNumber = params.hashOrNumber || params.number;
 
@@ -181,30 +181,30 @@ class Tx extends _DataCollector.DataCollectorItem {
         }
       },
       /**
-         * @swagger
-         * /api?module=transactions&action=getTransactionsByAddress:
-         *    get:
-         *      description: get transactions by address
-         *      tags:
-         *        - transactions
-         *      parameters:
-         *        - name: module
-         *          in: query
-         *          required: true
-         *          enum: [transactions]
-         *        - name: action
-         *          in: query
-         *          required: true
-         *          enum: [getTransactionsByAddress]
-         *        - $ref: '#/parameters/address'
-         *      responses:
-         *        200:
-         *          $ref: '#/definitions/ResponseList'
-         *        400:
-         *          $ref: '#/responses/BadRequest'
-         *        404:
-         *          $ref: '#/responses/NotFound'
-         */
+      * @swagger
+      * /api?module=transactions&action=getTransactionsByAddress:
+      *    get:
+      *      description: get transactions by address
+      *      tags:
+      *        - transactions
+      *      parameters:
+      *        - name: module
+      *          in: query
+      *          required: true
+      *          enum: [transactions]
+      *        - name: action
+      *          in: query
+      *          required: true
+      *          enum: [getTransactionsByAddress]
+      *        - $ref: '#/parameters/address'
+      *      responses:
+      *        200:
+      *          $ref: '#/definitions/ResponseList'
+      *        400:
+      *          $ref: '#/responses/BadRequest'
+      *        404:
+      *          $ref: '#/responses/NotFound'
+      */
       getTransactionsByAddress: params => {
         let address = params.address;
         return this.getPageData(

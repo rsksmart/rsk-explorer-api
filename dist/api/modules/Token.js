@@ -7,65 +7,65 @@ class Token extends _DataCollector.DataCollectorItem {
     super(TokensAddrs, key);
     this.publicActions = {
       /**
-                            * @swagger
-                            * /api?module=tokens&action=getTokenAccounts:
-                            *    get:
-                            *      description: get token accounts
-                            *      tags:
-                            *        - tokens
-                            *      parameters:
-                            *        - name: module
-                            *          in: query
-                            *          required: true
-                            *          enum: [tokens]
-                            *        - name: action
-                            *          in: query
-                            *          required: true
-                            *          enum: [getTokenAccounts]
-                            *        - $ref: '#/parameters/address'
-                            *        - $ref: '#/parameters/limit'
-                            *        - $ref: '#/parameters/next'
-                            *        - $ref: '#/parameters/prev'
-                            *      responses:
-                            *        200:
-                            *          $ref: '#/definitions/ResponseList'
-                            *        400:
-                            *          $ref: '#/responses/BadRequest'
-                            *        404:
-                            *          $ref: '#/responses/NotFound'
-                            */
+       * @swagger
+       * /api?module=tokens&action=getTokenAccounts:
+       *    get:
+       *      description: get token accounts
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [tokens]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTokenAccounts]
+       *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokenAccounts: params => {
         const contract = params.contract || params.address;
         if (contract) return this.getPageData({ contract }, params);
       },
       /**
-          * @swagger
-          * /api?module=tokens&action=getTokensByAddress:
-          *    get:
-          *      description: get token by address
-          *      tags:
-          *        - tokens
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [tokens]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getTokensByAddress]
-          *        - $ref: '#/parameters/address'
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=tokens&action=getTokensByAddress:
+       *    get:
+       *      description: get token by address
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [tokens]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTokensByAddress]
+       *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokensByAddress: async params => {
         const address = params.address;
         const from = this.parent.collectionsNames.Addrs;
@@ -83,96 +83,96 @@ class Token extends _DataCollector.DataCollectorItem {
         }
       },
       /**
-          * @swagger
-          * /api?module=tokens&action=getContractAccount:
-          *    get:
-          *      description: get token account
-          *      tags:
-          *        - tokens
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [tokens]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getContractAccount]
-          *        - $ref: '#/parameters/address'
-          *        - $ref: '#/parameters/contract'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/Response'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=tokens&action=getContractAccount:
+       *    get:
+       *      description: get token account
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [tokens]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getContractAccount]
+       *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/contract'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getContractAccount: params => {
         const { address, contract } = params;
         return this.getOne({ address, contract });
       },
       /**
-          * @swagger
-          * /api?module=tokens&action=getTokenAccount:
-          *    get:
-          *      description: get token account and address data
-          *      tags:
-          *        - tokens
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [tokens]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getTokenAccount]
-          *        - $ref: '#/parameters/address'
-          *        - $ref: '#/parameters/contract'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/Response'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=tokens&action=getTokenAccount:
+       *    get:
+       *      description: get token account and address data
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [tokens]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTokenAccount]
+       *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/contract'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokenAccount: async params => {
         const { address, contract } = params;
         const account = await this.getOne({ address, contract });
         return this.parent.addAddressData(contract, account, '_contractData');
       },
       /**
-          * @swagger
-          * /api?module=tokens&action=getTokenBalance:
-          *    get:
-          *      description: get token balance
-          *      tags:
-          *        - tokens
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [tokens]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getTokenBalance]
-          *        - $ref: '#/parameters/contract'
-          *        - name: addresses
-          *          in: query
-          *          type: array
-          *          required: false
-          *          description: include only this addresses in balance
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/Response'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=tokens&action=getTokenBalance:
+       *    get:
+       *      description: get token balance
+       *      tags:
+       *        - tokens
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [tokens]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getTokenBalance]
+       *        - $ref: '#/parameters/contract'
+       *        - name: addresses
+       *          in: query
+       *          type: array
+       *          required: false
+       *          description: include only this addresses in balance
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getTokenBalance: async params => {
         const { contract, addresses } = params;
         if (!contract) return;

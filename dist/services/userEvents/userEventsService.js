@@ -7,7 +7,7 @@ var _utils = require("../../lib/utils");
 
 var _ContractVerifierModule = _interopRequireDefault(require("./ContractVerifierModule"));
 var _types = require("../../lib/types");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /* import { RequestCache } from './RequestCache'
-                                                                                                                                      import AddressModule from './AddressModule' */
+import AddressModule from './AddressModule' */
 const log = (0, _Logger.default)('UserRequests', _config.default.blocks.log);
 const verifierConfig = _config.default.api.contractVerifier;
 

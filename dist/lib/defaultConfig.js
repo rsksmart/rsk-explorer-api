@@ -5,9 +5,9 @@
 var _types = require("./types");
 var _delayedFields = _interopRequireDefault(require("./delayedFields"));
 var _servicesConfig = require("../services/servicesConfig");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };} /**
-                                                                                                                                                           *  This file provides default values,
-                                                                                                                                                           *  use /config.json, to overwrite settings
-                                                                                                                                                           */const services = Object.assign({}, _servicesConfig.servicesNames);for (let s in services) {
+ *  This file provides default values,
+ *  use /config.json, to overwrite settings
+ */const services = Object.assign({}, _servicesConfig.servicesNames);for (let s in services) {
   services[s] = true;
 }
 

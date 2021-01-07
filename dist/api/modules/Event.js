@@ -8,33 +8,33 @@ class Event extends _DataCollector.DataCollectorItem {
     super(Events, key, { cursorField, sortDir, sortable });
     this.publicActions = {
       /**
-                            * @swagger
-                            * /api?module=events&action=getEvent:
-                            *    get:
-                            *      description: get event data
-                            *      tags:
-                            *        - events
-                            *      parameters:
-                            *        - name: module
-                            *          in: query
-                            *          required: true
-                            *          enum: [events]
-                            *        - name: action
-                            *          in: query
-                            *          required: true
-                            *          enum: [getEvent]
-                            *        - name: eventId
-                            *          in: query
-                            *          schema:
-                            *            type: string
-                            *      responses:
-                            *        200:
-                            *          $ref: '#/definitions/Response'
-                            *        400:
-                            *          $ref: '#/responses/BadRequest'
-                            *        404:
-                            *          $ref: '#/responses/NotFound'
-                            */
+       * @swagger
+       * /api?module=events&action=getEvent:
+       *    get:
+       *      description: get event data
+       *      tags:
+       *        - events
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [events]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getEvent]
+       *        - name: eventId
+       *          in: query
+       *          schema:
+       *            type: string
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/Response'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getEvent: async params => {
         try {
           const { eventId } = params;
@@ -49,47 +49,47 @@ class Event extends _DataCollector.DataCollectorItem {
         }
       },
       /**
-          * @swagger
-          * /api?module=events&action=getEventsByAddress:
-          *    get:
-          *      description: get events by address
-          *      tags:
-          *        - events
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [events]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getEventsByAddress]
-          *        - $ref: '#/parameters/address'
-          *        - name: contract
-          *          in: query
-          *          required: false
-          *          schema:
-          *            type: string
-          *            example: "0x0000000000000000000000000000000001000008"
-          *        - name: signatures
-          *          in: query
-          *          required: false
-          *          description: filter by event's signatures
-          *          schema:
-          *            type: array
-          *            example:
-          *              e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=events&action=getEventsByAddress:
+       *    get:
+       *      description: get events by address
+       *      tags:
+       *        - events
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [events]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getEventsByAddress]
+       *        - $ref: '#/parameters/address'
+       *        - name: contract
+       *          in: query
+       *          required: false
+       *          schema:
+       *            type: string
+       *            example: "0x0000000000000000000000000000000001000008"
+       *        - name: signatures
+       *          in: query
+       *          required: false
+       *          description: filter by event's signatures
+       *          schema:
+       *            type: array
+       *            example:
+       *              e19260aff97b920c7df27010903aeb9c8d2be5d310a2c67824cf3f15396e4c16
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params;
         if (address) {
@@ -126,33 +126,33 @@ class Event extends _DataCollector.DataCollectorItem {
         }
       },
       /**
-          * @swagger
-          * /api?module=events&action=getAllEventsByAddress:
-          *    get:
-          *      description: get events by address
-          *      tags:
-          *        - events
-          *      parameters:
-          *        - name: module
-          *          in: query
-          *          required: true
-          *          enum: [events]
-          *        - name: action
-          *          in: query
-          *          required: true
-          *          enum: [getAllEventsByAddress]
-          *        - $ref: '#/parameters/address'
-          *        - $ref: '#/parameters/limit'
-          *        - $ref: '#/parameters/next'
-          *        - $ref: '#/parameters/prev'
-          *      responses:
-          *        200:
-          *          $ref: '#/definitions/ResponseList'
-          *        400:
-          *          $ref: '#/responses/BadRequest'
-          *        404:
-          *          $ref: '#/responses/NotFound'
-          */
+       * @swagger
+       * /api?module=events&action=getAllEventsByAddress:
+       *    get:
+       *      description: get events by address
+       *      tags:
+       *        - events
+       *      parameters:
+       *        - name: module
+       *          in: query
+       *          required: true
+       *          enum: [events]
+       *        - name: action
+       *          in: query
+       *          required: true
+       *          enum: [getAllEventsByAddress]
+       *        - $ref: '#/parameters/address'
+       *        - $ref: '#/parameters/limit'
+       *        - $ref: '#/parameters/next'
+       *        - $ref: '#/parameters/prev'
+       *      responses:
+       *        200:
+       *          $ref: '#/definitions/ResponseList'
+       *        400:
+       *          $ref: '#/responses/BadRequest'
+       *        404:
+       *          $ref: '#/responses/NotFound'
+       */
       getAllEventsByAddress: async params => {
         const { address } = params;
         if (address) {

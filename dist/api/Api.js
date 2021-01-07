@@ -86,7 +86,7 @@ class Api extends _DataCollector.DataCollector {
     }
   }
   getStats() {
-    return this.formatData(this.stats);
+    return this.stats;
   }
   getCirculatingSupply() {
     return this.formatData(this.circulatingSupply);
@@ -151,11 +151,11 @@ class Api extends _DataCollector.DataCollector {
     if (!stats) return;
 
     /*     const ExtendedStats = this.getModule('ExtendedStats')
-                            if (ExtendedStats) {
-                              const blockNumber = parseInt(stats.blockNumber)
-                              const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
-                              Object.assign(stats, extendedStats)
-                            } */
+        if (ExtendedStats) {
+          const blockNumber = parseInt(stats.blockNumber)
+          const extendedStats = await ExtendedStats.getExtendedStats(blockNumber)
+          Object.assign(stats, extendedStats)
+        } */
     let circulatingSupply = stats.circulatingSupply || (await this.getCirculatingSupplyFromDb());
     this.circulatingSupply = circulatingSupply;
     this.stats = Object.assign({}, stats);

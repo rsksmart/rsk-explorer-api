@@ -1,6 +1,8 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.BcStats = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 var _getCirculatingSupply = _interopRequireDefault(require("../../api/lib/getCirculatingSupply"));
-var _getActiveAccounts = _interopRequireDefault(require("../../api/lib/getActiveAccounts"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _getActiveAccounts = _interopRequireDefault(require("../../api/lib/getActiveAccounts"));
+var _rskContractParser = require("rsk-contract-parser");
+var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class BcStats extends _BlocksBase.BlocksBase {
   constructor(db, options) {
@@ -20,6 +22,19 @@ class BcStats extends _BlocksBase.BlocksBase {
     }
   }
 
+  async bridgeCall(method, params = []) {
+    try {
+      const { nod3, initConfig } = this;
+      const address = initConfig.nativeContracts.bridge;
+      const abi = _rskContractParser.abi.bridge;
+      const contract = (0, _rskContractParser.Contract)(abi, { address, nod3 });
+      const res = await contract.call(method, params);
+      return res;
+    } catch (err) {
+      this.log.debug(err);
+    }
+  }
+
   async getStats(blockHash, blockNumber) {
     try {
       if (undefined === blockHash || undefined === blockNumber) {
@@ -31,8 +46,12 @@ class BcStats extends _BlocksBase.BlocksBase {
       const hashrate = await this.nod3.eth.netHashrate();
       const circulating = await this.getCirculating();
       let activeAccounts = await (0, _getActiveAccounts.default)(this.collections);
+      let lockingCap = await this.bridgeCall('getLockingCap');
+      // lockingCap = lockingCap.toString()
+      const bridge = (0, _utils.serialize)({ lockingCap });
       const timestamp = Date.now();
-      return Object.assign({}, { circulating, activeAccounts, hashrate, timestamp, blockHash, blockNumber });
+      const res = Object.assign({}, { circulating, activeAccounts, hashrate, timestamp, blockHash, blockNumber, bridge });
+      return res;
     } catch (err) {
       this.log.error(err);
       return Promise.reject(err);

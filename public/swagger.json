@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "1.1.6",
+    "version": "1.1.7",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",
@@ -610,7 +610,7 @@
         }
       }
     },
-    "/api?module=contractVerifier&action=getVersificationResult": {
+    "/api?module=contractVerifier&action=getVerificationResult": {
       "get": {
         "description": "Gets the result of source code verification",
         "tags": [

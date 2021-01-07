@@ -3,7 +3,7 @@ var _types = require("./types");
 var _mongodb = require("mongodb");
 var _rskUtils = require("@rsksmart/rsk-utils");
 
-Object.keys(_rskUtils).forEach(function (key) {if (key === "default" || key === "__esModule") return;if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;Object.defineProperty(exports, key, { enumerable: true, get: function () {return _rskUtils[key];} });});var _crypto = _interopRequireDefault(require("crypto"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+Object.keys(_rskUtils).forEach(function (key) {if (key === "default" || key === "__esModule") return;if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;if (key in exports && exports[key] === _rskUtils[key]) return;Object.defineProperty(exports, key, { enumerable: true, get: function () {return _rskUtils[key];} });});var _crypto = _interopRequireDefault(require("crypto"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const bigNumberDoc = bigNumber => {
   return '0x' + bigNumber.toString(16);

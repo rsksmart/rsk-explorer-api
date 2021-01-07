@@ -248,8 +248,8 @@ function getDeployedCode(tx, address) {
 }
 
 /**
-   * Address data proxy
-   */
+ * Address data proxy
+ */
 function createAddressData({ address, isNative, name }) {
   const type = isNative ? _types.addrTypes.CONTRACT : _types.addrTypes.ADDRESS;
   const dataHandler = {

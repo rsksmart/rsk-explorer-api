@@ -176,8 +176,8 @@ class Tx extends _BcThing.BcThing {
         let contract = await Addr.getContract();
 
         /* When a contract logs an event in the same block that self-destructs,
-                                                   the contract has no code in that block.
-                                                 */
+          the contract has no code in that block.
+        */
         if (!contract) {
           let { block } = addressOptions;
           let { number } = block;
