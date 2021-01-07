@@ -1,4 +1,15 @@
 # Changelog
+## [1.1.7] - 2021-01-07
+
+### Fixed
+
+- API getVerificationResults
+- Stats channel
+- Datacollector.getLatest
+
+### Added
+
+- Locking cap to stats
 
 ## [1.1.6] - 2020-08-31
 
