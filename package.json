@@ -26,6 +26,7 @@
   "license": "MIT",
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
+    "@rsksmart/nod3": "^0.4.1",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
@@ -34,7 +35,6 @@
     "google-protobuf": "^3.13.0",
     "grpc": "^1.24.3",
     "mongodb": "^3.6.1",
-    "nod3": "git+https://github.com/rsksmart/nod3.git",
     "rlp": "^2.2.5",
     "rsk-contract-parser": "git+https://github.com/rsksmart/rsk-contract-parser.git",
     "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",

@@ -1,4 +1,4 @@
-import { Nod3, Nod3Router } from 'nod3'
+import { Nod3, Nod3Router } from '@rsksmart/nod3'
 import config from './config'
 import { quantityMarks } from '../lib/utils'
 

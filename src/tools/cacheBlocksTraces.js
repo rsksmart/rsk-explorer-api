@@ -2,7 +2,7 @@
 import { setup } from '../lib/dataSource'
 import config from '../lib/config'
 import { nod3Log } from '.././lib/nod3Connect'
-import { Nod3, Nod3Router } from 'nod3'
+import { Nod3, Nod3Router } from '@rsksmart/nod3'
 import BlockTrace from '../services/classes/BlockTrace'
 import { Logger } from '../lib/Logger'
 
