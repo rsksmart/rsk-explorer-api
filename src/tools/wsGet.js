@@ -1,5 +1,5 @@
 import io from 'socket.io-client'
-import * as c from '../lib/cli'
+import { log } from '@rsksmart/rsk-js-cli'
 import fs from 'fs'
 import crypto from 'crypto'
 import * as URL from 'url'
@@ -23,32 +23,32 @@ let results = 0
 const key = createRequestKey(payload)
 payload.key = key
 
-c.info(`Waiting for WS on ${url}`)
+log.info(`Waiting for WS on ${url}`)
 
 socket.on('connect', data => {
-  c.ok('Connected! ✌')
-  c.info(`sending payload`)
+  log.ok('Connected! ✌')
+  log.info(`sending payload`)
   getPage(socket, payload)
 })
 
 socket.on('disconnect', socket => {
-  c.warn('Disconnected ☹')
+  log.warn('Disconnected ☹')
 })
 
 socket.on('data', async res => {
   try {
     let { data, error, req } = res
     if (error) {
-      c.error(error)
+      log.error(error)
       process.exit()
     }
     if (!error && req && key === req.key) {
       // multiple results
       if (res.pages) {
         let { prev, next, total, limit } = res.pages
-        if (!prev) c.info(`Total ${total}`)
+        if (!prev) log.info(`Total ${total}`)
 
-        c.info(`Adding ${data.length}`)
+        log.info(`Adding ${data.length}`)
 
         // send data to file stream
         await addDataToFile(data)
@@ -61,21 +61,21 @@ socket.on('data', async res => {
           await closeFileAndExit()
         }
       } else { // single result
-        c.ok('Saving to file')
+        log.ok('Saving to file')
         await addDataToFile(data)
         await closeFileAndExit()
       }
     }
   } catch (err) {
-    c.error(err)
+    log.error(err)
     process.exit(9)
   }
 })
 
 socket.on('Error', err => {
   let error = err.error || ''
-  c.error(`ERROR: ${error}`)
-  c.warn(err)
+  log.error(`ERROR: ${error}`)
+  log.warn(err)
 })
 
 process.on('unhandledRejection', err => {
@@ -105,11 +105,11 @@ async function addDataToFile (data) {
 async function closeFileAndExit () {
   try {
     await file.close()
-    c.ok(`Done: ${results} results`)
-    c.info(`File saved: ${destinationFile}`)
+    log.ok(`Done: ${results} results`)
+    log.info(`File saved: ${destinationFile}`)
     process.exit(0)
   } catch (err) {
-    c.error(err)
+    log.error(err)
     process.exit(9)
   }
 }
@@ -122,9 +122,9 @@ function getPage (socket, payload, next) {
   if (!next) {
     count = true
     if (params.next) next = params.next
-    c.ok(`Getting first ${limit} items`)
+    log.ok(`Getting first ${limit} items`)
   } else {
-    c.ok(`Getting next ${limit} items: ${next}`)
+    log.ok(`Getting next ${limit} items: ${next}`)
   }
   payload = Object.assign({}, payload)
   payload.params = payload.params || {}
@@ -135,33 +135,33 @@ function getPage (socket, payload, next) {
 
 function help () {
   let { name } = pkg
-  if (!isValidURL(url)) c.warn(`Invalid URL: ${url}`)
-  // if (!payload) c.warn(`Set environment variable payload, e.g. payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
-  c.ok('')
-  c.ok(`Usage:`)
-  c.info('')
-  c.info('All parameters must be provided as environment variables')
+  if (!isValidURL(url)) log.warn(`Invalid URL: ${url}`)
+  // if (!payload) log.warn(`Set environment variable payload, e.g. payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
+  log.ok('')
+  log.ok(`Usage:`)
+  log.info('')
+  log.info('All parameters must be provided as environment variables')
 
-  c.info('')
-  c.info('Required parameters:')
-  c.info('')
-  c.example(`     url: ${name} instance URL`)
-  c.example(`     payload: ${name} payload`)
-  c.info('')
-  c.info('Optionals parameters:')
-  c.info('')
-  c.example(`     outDir: destination folder`)
-  c.info('')
-  c.ok('Examples:')
-  c.example('')
-  c.info('Get block')
-  c.example(`    export url=wss://backend.explorer.rsk.co`)
-  c.example(`    export payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
-  c.example('')
-  c.info('Get blocks')
-  c.example(`    export url=wss://backend.explorer.rsk.co`)
-  c.example(`    export payload='{"module":"blocks","action":"getBlocks","params":{"next":200,"sort":{"number":-1}}}'`)
-  c.example('')
+  log.info('')
+  log.info('Required parameters:')
+  log.info('')
+  log.example(`     url: ${name} instance URL`)
+  log.example(`     payload: ${name} payload`)
+  log.info('')
+  log.info('Optionals parameters:')
+  log.info('')
+  log.example(`     outDir: destination folder`)
+  log.info('')
+  log.ok('Examples:')
+  log.example('')
+  log.info('Get block')
+  log.example(`    export url=wss://backend.explorer.rsk.co`)
+  log.example(`    export payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
+  log.example('')
+  log.info('Get blocks')
+  log.example(`    export url=wss://backend.explorer.rsk.co`)
+  log.example(`    export payload='{"module":"blocks","action":"getBlocks","params":{"next":200,"sort":{"number":-1}}}'`)
+  log.example('')
   process.exit(0)
 }
 
@@ -210,7 +210,7 @@ function isValidURL (url) {
     let { protocol } = URL.parse(url)
     return /^ws/.test(protocol)
   } catch (err) {
-    c.error(err)
+    log.error(err)
     return false
   }
 }

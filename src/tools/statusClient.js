@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 import config from '../lib/config'
-import { info, ok, warn, red, green, orange, blue, reset, error, progressBar } from '../lib/cli'
+import { red, green, orange, blue, reset, progressBar, log } from '@rsksmart/rsk-js-cli'
 
 const url = process.env.URL || `ws://localhost:${config.api.port}`
 const socket = io.connect(url, { reconnect: true })
@@ -8,16 +8,16 @@ let blocksPerSecond
 let stats = { time: 0, blocks: 0 }
 let mark = '●'
 
-info(`Waiting for: ${url}`)
+log.info(`Waiting for: ${url}`)
 
 socket.emit('subscribe', { to: 'status' })
 
 socket.on('connect', socket => {
-  ok('Connected! ✌')
+  log.ok('Connected! ✌')
 })
 
 socket.on('disconnect', socket => {
-  warn('Disconnected ☹')
+  log.warn('Disconnected ☹')
 })
 
 socket.on('data', data => {
@@ -35,7 +35,7 @@ socket.on('data', data => {
     let { dbMissingBlocks, nodeDown, requestingBlocks, dbHighBlock, dbBlocks } = status
     console.clear()
     console.log()
-    info(url)
+    log.info(url)
     console.log()
     console.log(`   Api  ${(socket.connected) ? green : red} ${mark} ${reset}`)
     console.log(`   Node ${(!nodeDown) ? green : red} ${mark} ${reset}`)
@@ -52,7 +52,7 @@ socket.on('data', data => {
       console.log(`${blue} ≈ Remaining Time:${reset} ${Math.round(endTime / 3600)} H${reset}`)
       console.log(`${blue} ≈ End:${reset} ${end.toUTCString()}${reset}`)
     }
-    if (nodeDown) error('The node is down... ☹ ')
+    if (nodeDown) log.error('The node is down... ☹ ')
     // show progress bar
     if (dbMissingBlocks > 1) {
       let bar = progressBar(dbHighBlock, dbBlocks, { steps: 30 })
@@ -63,5 +63,5 @@ socket.on('data', data => {
 })
 
 socket.on('error', err => {
-  error(err)
+  log.error(err)
 })

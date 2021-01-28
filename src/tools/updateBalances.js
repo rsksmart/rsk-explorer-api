@@ -1,7 +1,7 @@
 import dataSource from '../lib/dataSource.js'
 import { saveAddressToDb } from '../services/classes/Address'
 import { nod3 } from '../lib/nod3Connect'
-import { log } from '../lib/cli'
+import { log } from '@rsksmart/rsk-js-cli'
 
 const save = process.argv[2] === '--save'
 main().then((res) => {

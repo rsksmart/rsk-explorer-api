@@ -2,7 +2,6 @@ import dataSource from '../lib/dataSource.js'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { newBigNumber } from '../lib/utils'
 
-// import { info, orange, reset, error, ansiCode } from '../lib/cli'
 const fromBlock = parseInt(process.argv[2])
 const toBlock = parseInt(process.argv[3])
 if (!fromBlock || !toBlock) help()

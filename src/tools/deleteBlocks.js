@@ -2,7 +2,7 @@ import dataSource from '../lib/dataSource.js'
 import { deleteBlockDataFromDb, getBlockFromDb } from '../services/classes/Block'
 import { deleteBlockSummaryFromDb, getBlockSummariesByNumber } from '../services/classes/BlockSummary'
 import { BlocksBase } from '../lib/BlocksBase'
-import { info, orange, reset, error, ansiCode } from '../lib/cli'
+import { log, orange, reset, error, ansiCode } from '@rsksmart/rsk-js-cli'
 
 dataSource({ skipCheck: true }).then(async ({ db }) => {
   const options = new BlocksBase(db)
@@ -10,9 +10,9 @@ dataSource({ skipCheck: true }).then(async ({ db }) => {
   const p = path => path.split('/').pop()
   const help = () => {
     const myName = p(process.argv[1])
-    info(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`)
-    info(`e.g. ${orange} ${myName} 400`)
-    info(`e.g. ${orange} ${myName} 400-456`)
+    log.info(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`)
+    log.info(`e.g. ${orange} ${myName} 400`)
+    log.info(`e.g. ${orange} ${myName} 400-456`)
     process.exit(0)
   }
 

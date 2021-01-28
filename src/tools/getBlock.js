@@ -1,7 +1,7 @@
 import dataSource from '../lib/dataSource.js'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
-import { info } from '../lib/cli'
+import { log } from '@rsksmart/rsk-js-cli'
 import util from 'util'
 
 const hashOrNumber = process.argv[2]
@@ -10,14 +10,14 @@ const save = (opt === '--save')
 const json = (opt === '--json')
 if (!hashOrNumber) help()
 dataSource().then(({ db, initConfig }) => {
-  if (!json) info(`Getting block ${hashOrNumber}`)
+  if (!json) log.info(`Getting block ${hashOrNumber}`)
   getBlock(hashOrNumber, { db, initConfig }).then(block => {
     if (json) console.log(JSON.stringify(block))
     else {
       console.log(util.inspect(block, { showHidden: false, depth: null, colors: true }))
       console.log('')
-      info(` Get time: ${block.time}ms`)
-      if (save) info(` Save time: ${block.saved}ms`)
+      log.info(` Get time: ${block.time}ms`)
+      if (save) log.info(` Save time: ${block.saved}ms`)
     }
     process.exit(0)
   })
@@ -47,7 +47,7 @@ async function getBlock (hashOrNumber, { db, initConfig }) {
 
 function help () {
   const myName = process.argv[1].split('/').pop()
-  info(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`)
+  log.info(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`)
   process.exit(0)
 }
 
