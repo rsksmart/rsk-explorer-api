@@ -7,9 +7,8 @@ import { EVMversions } from '../../lib/types'
 
 export class ContractVerification extends DataCollectorItem {
   constructor (collections, name) {
-    const { ContractVerification, VerificationsResults } = collections
+    const { ContractVerification } = collections
     super(ContractVerification, name)
-    this.verificationsCollection = VerificationsResults
     this.publicActions = {
       /**
      * @swagger
@@ -27,9 +26,7 @@ export class ContractVerification extends DataCollectorItem {
      *          $ref: '#/responses/NotFound'
      */
       getVerifiedContracts: (params) => {
-        params.fields = { address: 1 }
-        let query = { match: true }
-        return this.getPageData(query, params)
+        return this.parent.getModule('VerificationResults').run('getResults', params)
       },
       /**
        * @swagger
@@ -163,9 +160,7 @@ export class ContractVerification extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       isVerified: async (params) => {
-        const { address } = params
-        const data = await this.verificationsCollection.findOne({ address })
-        return { data }
+        return this.parent.getModule('VerificationResults').run('getVerification', params)
       }
     }
   }
