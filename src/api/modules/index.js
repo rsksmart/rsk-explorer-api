@@ -7,6 +7,7 @@ import { TxPending } from './TxPending'
 import { Stats } from './Stats'
 import { Summary } from './Summary'
 // import { ExtendedStats } from './ExtendedStats'
+import { VerificationResults } from './VerificationResults'
 import { ContractVerification } from './ContractVerification'
 import { InternalTx } from './InternalTx'
 import { Balances } from './Balances'
@@ -22,6 +23,7 @@ const apiModules = {
   Stats,
   Summary,
   ContractVerification,
+  VerificationResults,
   InternalTx,
   Balances
 }

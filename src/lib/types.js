@@ -71,6 +71,7 @@ export const MODULES = {
   txPending: 'TxPending',
   extendedStats: 'ExtendedStats',
   contractVerifier: 'ContractVerification',
+  verificationResults: 'VerificationResults',
   internalTransactions: 'InternalTx',
   balances: 'Balances'
 }
