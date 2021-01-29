@@ -2,7 +2,7 @@
 var _Block = require("../services/classes/Block");
 var _BlockSummary = require("../services/classes/BlockSummary");
 var _BlocksBase = require("../lib/BlocksBase");
-var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskJsCli = require("@rsksmart/rsk-js-cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 (0, _dataSource.default)({ skipCheck: true }).then(async ({ db }) => {
   const options = new _BlocksBase.BlocksBase(db);
@@ -10,9 +10,9 @@ var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return ob
   const p = path => path.split('/').pop();
   const help = () => {
     const myName = p(process.argv[1]);
-    (0, _cli.info)(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`);
-    (0, _cli.info)(`e.g. ${_cli.orange} ${myName} 400`);
-    (0, _cli.info)(`e.g. ${_cli.orange} ${myName} 400-456`);
+    _rskJsCli.log.info(`Use: ${p(process.argv[0])} ${myName} [blockNumber] | [fromBlock-toBlock]`);
+    _rskJsCli.log.info(`e.g. ${_rskJsCli.orange} ${myName} 400`);
+    _rskJsCli.log.info(`e.g. ${_rskJsCli.orange} ${myName} 400-456`);
     process.exit(0);
   };
 
@@ -31,17 +31,17 @@ var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return ob
     let Q = [];
     while (t >= f) {
       let b = await (0, _Block.getBlockFromDb)(t, collections.Blocks);
-      let color = (0, _cli.ansiCode)(Number(t.toString().split('').pop()) + 30);
+      let color = (0, _rskJsCli.ansiCode)(Number(t.toString().split('').pop()) + 30);
       if (b) {
         let { hash, number } = b;
-        console.log(`${_cli.reset} ${color} ● ● ● Removing block  ${number} ${hash}`);
+        console.log(`${_rskJsCli.reset} ${color} ● ● ● Removing block  ${number} ${hash}`);
         Q.push((0, _Block.deleteBlockDataFromDb)(b.hash, number, collections));
       }
       if (deleteSummary) {
         if (b) {
           Q.push((0, _BlockSummary.deleteBlockSummaryFromDb)(b.hash, options.collections));
         } else {
-          console.log(`${_cli.reset} ${color} ● ● ● Removing ALL summaries for blockNumber: ${t}`);
+          console.log(`${_rskJsCli.reset} ${color} ● ● ● Removing ALL summaries for blockNumber: ${t}`);
           let summaries = await (0, _BlockSummary.getBlockSummariesByNumber)(t, collections);
           if (summaries.length) {
             for (let summary of summaries) {
@@ -54,6 +54,6 @@ var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return ob
     }
     Promise.all(Q).then(() => process.exit());
   } catch (err) {
-    (0, _cli.error)(err);
+    (0, _rskJsCli.error)(err);
   }
 });

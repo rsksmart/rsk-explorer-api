@@ -1,4 +1,4 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.nod3Router = exports.nod3 = exports.nod3Log = exports.nod3Instance = exports.createNod3Router = exports.nod3BySource = exports.nod3Connect = void 0;var _nod = require("nod3");
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.nod3Router = exports.nod3 = exports.nod3Log = exports.nod3Instance = exports.createNod3Router = exports.nod3BySource = exports.nod3Connect = void 0;var _nod = require("@rsksmart/nod3");
 var _config = _interopRequireDefault(require("./config"));
 var _utils = require("../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 

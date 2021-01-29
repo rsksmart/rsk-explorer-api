@@ -2,7 +2,7 @@
 var _dataSource = require("../lib/dataSource");
 var _config = _interopRequireDefault(require("../lib/config"));
 var _nod3Connect = require(".././lib/nod3Connect");
-var _nod = require("nod3");
+var _nod = require("@rsksmart/nod3");
 var _BlockTrace = _interopRequireDefault(require("../services/classes/BlockTrace"));
 var _Logger = require("../lib/Logger");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 

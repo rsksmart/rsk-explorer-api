@@ -1,7 +1,7 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _Block = _interopRequireDefault(require("../services/classes/Block"));
 var _BlocksBase = _interopRequireDefault(require("../lib/BlocksBase"));
-var _cli = require("../lib/cli");
+var _rskJsCli = require("@rsksmart/rsk-js-cli");
 var _util = _interopRequireDefault(require("util"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const hashOrNumber = process.argv[2];
@@ -10,14 +10,14 @@ const save = opt === '--save';
 const json = opt === '--json';
 if (!hashOrNumber) help();
 (0, _dataSource.default)().then(({ db, initConfig }) => {
-  if (!json) (0, _cli.info)(`Getting block ${hashOrNumber}`);
+  if (!json) _rskJsCli.log.info(`Getting block ${hashOrNumber}`);
   getBlock(hashOrNumber, { db, initConfig }).then(block => {
     if (json) console.log(JSON.stringify(block));else
     {
       console.log(_util.default.inspect(block, { showHidden: false, depth: null, colors: true }));
       console.log('');
-      (0, _cli.info)(` Get time: ${block.time}ms`);
-      if (save) (0, _cli.info)(` Save time: ${block.saved}ms`);
+      _rskJsCli.log.info(` Get time: ${block.time}ms`);
+      if (save) _rskJsCli.log.info(` Save time: ${block.saved}ms`);
     }
     process.exit(0);
   });
@@ -47,7 +47,7 @@ async function getBlock(hashOrNumber, { db, initConfig }) {
 
 function help() {
   const myName = process.argv[1].split('/').pop();
-  (0, _cli.info)(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`);
+  _rskJsCli.log.info(`Usage: ${process.argv[0]} ${myName} number|hash|latest [--json | --save ]`);
   process.exit(0);
 }
 

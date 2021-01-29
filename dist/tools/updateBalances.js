@@ -1,7 +1,7 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _Address = require("../services/classes/Address");
 var _nod3Connect = require("../lib/nod3Connect");
-var _cli = require("../lib/cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskJsCli = require("@rsksmart/rsk-js-cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const save = process.argv[2] === '--save';
 main().then(res => {
@@ -31,10 +31,10 @@ async function main() {
 
       let { address, balance } = await cursor.next();
       checked++;
-      _cli.log.info(`${address} -- ${checked} / ${addresses}`);
+      _rskJsCli.log.info(`${address} -- ${checked} / ${addresses}`);
       let newBalance = await _nod3Connect.nod3.eth.getBalance(address, 'latest');
       if (newBalance === balance) {
-        _cli.log.ok(`${logTime()} The balance for ${address} is up to date`);
+        _rskJsCli.log.ok(`${logTime()} The balance for ${address} is up to date`);
       } else {
         outdated++;
         if (save) {
@@ -43,12 +43,12 @@ async function main() {
           if (parseInt(blockNumber) < parseInt(lastBlock.number)) {
             throw new Error(`Invalid block number ${blockNumber}`);
           }
-          _cli.log.info(`${logTime()} Updating balance of: ${address} to ${newBalance}`);
+          _rskJsCli.log.info(`${logTime()} Updating balance of: ${address} to ${newBalance}`);
           let result = await (0, _Address.saveAddressToDb)({ address, blockNumber, balance: newBalance }, collection);
           if (!result.ok) throw new Error(`Error updating balance for ${address}`);
           updated++;
         } else {
-          _cli.log.warn(`${logTime()} The balance of ${address} is outdated, balance:${balance}  newBalance:${newBalance}`);
+          _rskJsCli.log.warn(`${logTime()} The balance of ${address} is outdated, balance:${balance}  newBalance:${newBalance}`);
         }
       }
     }

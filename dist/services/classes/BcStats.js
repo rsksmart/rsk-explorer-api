@@ -1,7 +1,7 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.BcStats = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 var _getCirculatingSupply = _interopRequireDefault(require("../../api/lib/getCirculatingSupply"));
 var _getActiveAccounts = _interopRequireDefault(require("../../api/lib/getActiveAccounts"));
-var _rskContractParser = require("rsk-contract-parser");
+var _rskContractParser = require("@rsksmart/rsk-contract-parser");
 var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class BcStats extends _BlocksBase.BlocksBase {

@@ -1,5 +1,5 @@
 "use strict";var _socket = _interopRequireDefault(require("socket.io-client"));
-var c = _interopRequireWildcard(require("../lib/cli"));
+var _rskJsCli = require("@rsksmart/rsk-js-cli");
 var _fs = _interopRequireDefault(require("fs"));
 var _crypto = _interopRequireDefault(require("crypto"));
 var URL = _interopRequireWildcard(require("url"));
@@ -23,32 +23,32 @@ let results = 0;
 const key = createRequestKey(payload);
 payload.key = key;
 
-c.info(`Waiting for WS on ${url}`);
+_rskJsCli.log.info(`Waiting for WS on ${url}`);
 
 socket.on('connect', data => {
-  c.ok('Connected! ✌');
-  c.info(`sending payload`);
+  _rskJsCli.log.ok('Connected! ✌');
+  _rskJsCli.log.info(`sending payload`);
   getPage(socket, payload);
 });
 
 socket.on('disconnect', socket => {
-  c.warn('Disconnected ☹');
+  _rskJsCli.log.warn('Disconnected ☹');
 });
 
 socket.on('data', async res => {
   try {
     let { data, error, req } = res;
     if (error) {
-      c.error(error);
+      _rskJsCli.log.error(error);
       process.exit();
     }
     if (!error && req && key === req.key) {
       // multiple results
       if (res.pages) {
         let { prev, next, total, limit } = res.pages;
-        if (!prev) c.info(`Total ${total}`);
+        if (!prev) _rskJsCli.log.info(`Total ${total}`);
 
-        c.info(`Adding ${data.length}`);
+        _rskJsCli.log.info(`Adding ${data.length}`);
 
         // send data to file stream
         await addDataToFile(data);
@@ -61,21 +61,21 @@ socket.on('data', async res => {
           await closeFileAndExit();
         }
       } else {// single result
-        c.ok('Saving to file');
+        _rskJsCli.log.ok('Saving to file');
         await addDataToFile(data);
         await closeFileAndExit();
       }
     }
   } catch (err) {
-    c.error(err);
+    _rskJsCli.log.error(err);
     process.exit(9);
   }
 });
 
 socket.on('Error', err => {
   let error = err.error || '';
-  c.error(`ERROR: ${error}`);
-  c.warn(err);
+  _rskJsCli.log.error(`ERROR: ${error}`);
+  _rskJsCli.log.warn(err);
 });
 
 process.on('unhandledRejection', err => {
@@ -105,11 +105,11 @@ async function addDataToFile(data) {
 async function closeFileAndExit() {
   try {
     await file.close();
-    c.ok(`Done: ${results} results`);
-    c.info(`File saved: ${destinationFile}`);
+    _rskJsCli.log.ok(`Done: ${results} results`);
+    _rskJsCli.log.info(`File saved: ${destinationFile}`);
     process.exit(0);
   } catch (err) {
-    c.error(err);
+    _rskJsCli.log.error(err);
     process.exit(9);
   }
 }
@@ -122,9 +122,9 @@ function getPage(socket, payload, next) {
   if (!next) {
     count = true;
     if (params.next) next = params.next;
-    c.ok(`Getting first ${limit} items`);
+    _rskJsCli.log.ok(`Getting first ${limit} items`);
   } else {
-    c.ok(`Getting next ${limit} items: ${next}`);
+    _rskJsCli.log.ok(`Getting next ${limit} items: ${next}`);
   }
   payload = Object.assign({}, payload);
   payload.params = payload.params || {};
@@ -135,33 +135,33 @@ function getPage(socket, payload, next) {
 
 function help() {
   let { name } = _package.default;
-  if (!isValidURL(url)) c.warn(`Invalid URL: ${url}`);
-  // if (!payload) c.warn(`Set environment variable payload, e.g. payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
-  c.ok('');
-  c.ok(`Usage:`);
-  c.info('');
-  c.info('All parameters must be provided as environment variables');
+  if (!isValidURL(url)) _rskJsCli.log.warn(`Invalid URL: ${url}`);
+  // if (!payload) log.warn(`Set environment variable payload, e.g. payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`)
+  _rskJsCli.log.ok('');
+  _rskJsCli.log.ok(`Usage:`);
+  _rskJsCli.log.info('');
+  _rskJsCli.log.info('All parameters must be provided as environment variables');
 
-  c.info('');
-  c.info('Required parameters:');
-  c.info('');
-  c.example(`     url: ${name} instance URL`);
-  c.example(`     payload: ${name} payload`);
-  c.info('');
-  c.info('Optionals parameters:');
-  c.info('');
-  c.example(`     outDir: destination folder`);
-  c.info('');
-  c.ok('Examples:');
-  c.example('');
-  c.info('Get block');
-  c.example(`    export url=wss://backend.explorer.rsk.co`);
-  c.example(`    export payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`);
-  c.example('');
-  c.info('Get blocks');
-  c.example(`    export url=wss://backend.explorer.rsk.co`);
-  c.example(`    export payload='{"module":"blocks","action":"getBlocks","params":{"next":200,"sort":{"number":-1}}}'`);
-  c.example('');
+  _rskJsCli.log.info('');
+  _rskJsCli.log.info('Required parameters:');
+  _rskJsCli.log.info('');
+  _rskJsCli.log.example(`     url: ${name} instance URL`);
+  _rskJsCli.log.example(`     payload: ${name} payload`);
+  _rskJsCli.log.info('');
+  _rskJsCli.log.info('Optionals parameters:');
+  _rskJsCli.log.info('');
+  _rskJsCli.log.example(`     outDir: destination folder`);
+  _rskJsCli.log.info('');
+  _rskJsCli.log.ok('Examples:');
+  _rskJsCli.log.example('');
+  _rskJsCli.log.info('Get block');
+  _rskJsCli.log.example(`    export url=wss://backend.explorer.rsk.co`);
+  _rskJsCli.log.example(`    export payload='{"module":"blocks","action":"getBlock","params":{"hashOrNumber":200}}'`);
+  _rskJsCli.log.example('');
+  _rskJsCli.log.info('Get blocks');
+  _rskJsCli.log.example(`    export url=wss://backend.explorer.rsk.co`);
+  _rskJsCli.log.example(`    export payload='{"module":"blocks","action":"getBlocks","params":{"next":200,"sort":{"number":-1}}}'`);
+  _rskJsCli.log.example('');
   process.exit(0);
 }
 
@@ -210,7 +210,7 @@ function isValidURL(url) {
     let { protocol } = URL.parse(url);
     return /^ws/.test(protocol);
   } catch (err) {
-    c.error(err);
+    _rskJsCli.log.error(err);
     return false;
   }
 }

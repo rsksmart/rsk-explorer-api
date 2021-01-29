@@ -2,7 +2,6 @@
 var _blocksCollections = require("../lib/blocksCollections");
 var _utils = require("../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-// import { info, orange, reset, error, ansiCode } from '../lib/cli'
 const fromBlock = parseInt(process.argv[2]);
 const toBlock = parseInt(process.argv[3]);
 if (!fromBlock || !toBlock) help();

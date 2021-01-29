@@ -2,7 +2,7 @@
 var _utils = require("../../lib/utils");
 var _types = require("../../lib/types");
 var _Contract = _interopRequireDefault(require("./Contract"));
-var _rskContractParser = require("rsk-contract-parser");
+var _rskContractParser = require("@rsksmart/rsk-contract-parser");
 var _Tx = require("./Tx");
 var _InternalTx = require("./InternalTx");
 var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}

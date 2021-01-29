@@ -1,5 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _BcThing = require("./BcThing");
-var _rskContractParser = _interopRequireDefault(require("rsk-contract-parser"));
+var _rskContractParser = _interopRequireDefault(require("@rsksmart/rsk-contract-parser"));
 var _types = require("../../lib/types");
 var _TokenAddress = _interopRequireDefault(require("./TokenAddress"));
 var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}

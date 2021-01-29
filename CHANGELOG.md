@@ -1,4 +1,11 @@
 # Changelog
+## [1.1.8] - 2021-01-28
+#### Changed
+
+- Dependencies: nod3 to @rsksmart/nod3
+- Dependencies: rsk-contract-parser to @rsksmart/rsk-contract-parser
+- Replace: lib/cli with @rsksmart/rsk-js-cli
+
 ## [1.1.7] - 2021-01-07
 
 ### Fixed

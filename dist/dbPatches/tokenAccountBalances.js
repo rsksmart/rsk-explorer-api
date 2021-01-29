@@ -1,7 +1,7 @@
 "use strict";
 var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _nod3Connect = _interopRequireDefault(require("../lib/nod3Connect"));
-var _rskContractParser = _interopRequireDefault(require("rsk-contract-parser"));
+var _rskContractParser = _interopRequireDefault(require("@rsksmart/rsk-contract-parser"));
 var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const parser = new _rskContractParser.default({ nod3: _nod3Connect.default });
