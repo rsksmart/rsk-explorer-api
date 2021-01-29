@@ -1,6 +1,6 @@
 
 import { add0x } from '@rsksmart/rsk-utils'
-import ContractParser from 'rsk-contract-parser'
+import ContractParser from '@rsksmart/rsk-contract-parser'
 
 export async function updateTokenAccountBalances (block, { nod3, collections, log }) {
   const parser = new ContractParser({ nod3 })

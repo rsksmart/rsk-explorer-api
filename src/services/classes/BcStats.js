@@ -1,7 +1,7 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import getCirculatingSupply from '../../api/lib/getCirculatingSupply'
 import getActiveAccounts from '../../api/lib/getActiveAccounts'
-import { Contract, abi as ABI } from 'rsk-contract-parser'
+import { Contract, abi as ABI } from '@rsksmart/rsk-contract-parser'
 import { serialize } from '../../lib/utils'
 
 export class BcStats extends BlocksBase {
