@@ -15,7 +15,7 @@ describe(`# BlockSummary save`, function () {
 function saveBlock (data, msg = 'save') {
   let { number } = data.block
   describe(`${msg} ${number}`, function () {
-    this.timeout(60000)
+    this.timeout(900000)
     it(`should save a blockSummary`, async () => {
       const collections = await testCollections()
       let { result } = await saveBlockSummary(data, collections, console).catch(err => console.log(err))

@@ -11,7 +11,7 @@ describe(`# BlockSummary fetch`, function () {
     let summaryData
     let { hash } = block.block
     describe(`Getting summary ${hash}`, function () {
-      this.timeout(60000)
+      this.timeout(900000)
 
       it(`should fetch block`, async () => {
         let collections = await testCollections(true)
