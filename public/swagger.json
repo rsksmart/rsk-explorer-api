@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "1.1.8",
+    "version": "1.2.0",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",
@@ -1837,6 +1837,51 @@
         "responses": {
           "200": {
             "$ref": "#/definitions/ResponseList"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=verificationResults&action=getResults": {
+      "get": {
+        "description": "Gets a list of verified contracts addresses",
+        "tags": [
+          "verification results"
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
+          },
+          "400": {
+            "$ref": "#/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api?module=verificationResults&action=getVerification": {
+      "get": {
+        "description": "Checks if a contract was verified",
+        "tags": [
+          "verification results"
+        ],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "query",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/definitions/Response"
           },
           "400": {
             "$ref": "#/responses/BadRequest"

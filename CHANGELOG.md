@@ -1,5 +1,13 @@
 # Changelog
+## [1.1.9] - 2021-01-29
+
+### Added
+
+- Support POST in /api routes.
+- API module: VerificationResults
+
 ## [1.1.8] - 2021-01-28
+
 #### Changed
 
 - Dependencies: nod3 to @rsksmart/nod3

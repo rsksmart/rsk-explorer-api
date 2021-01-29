@@ -7,6 +7,7 @@ var _TxPending = require("./TxPending");
 var _Stats = require("./Stats");
 var _Summary = require("./Summary");
 
+var _VerificationResults = require("./VerificationResults");
 var _ContractVerification = require("./ContractVerification");
 var _InternalTx = require("./InternalTx");
 var _Balances = require("./Balances");
@@ -22,6 +23,7 @@ const apiModules = {
   Stats: _Stats.Stats,
   Summary: _Summary.Summary,
   ContractVerification: _ContractVerification.ContractVerification,
+  VerificationResults: _VerificationResults.VerificationResults,
   InternalTx: _InternalTx.InternalTx,
   Balances: _Balances.Balances };
 
