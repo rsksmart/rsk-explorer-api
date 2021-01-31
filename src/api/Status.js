@@ -26,7 +26,7 @@ export class Status extends DataCollector {
     return Status.find({}, { timestamp: -1 }, 1)
       .then(res => {
         res = res.data[0]
-        delete (res._id)
+        if (res) delete (res._id)
         return res
       })
   }
@@ -57,7 +57,7 @@ export class Status extends DataCollector {
           this.getHighestBlock(),
           this.getTotalBlocks()
         ])
-      const status = Object.assign(blocksStatus, {
+      const status = Object.assign(blocksStatus || {}, {
         dbLastBlockReceived: last.number,
         dbLastBlockReceivedTime: last._received,
         dbHighBlock: high.number,
