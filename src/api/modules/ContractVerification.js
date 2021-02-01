@@ -1,8 +1,8 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { StoredConfig } from '../../lib/StoredConfig'
-import { versionsId } from '../../services/userEvents/ContractVerifierModule'
+import { versionsId, getVerificationId } from '../../services/userEvents/ContractVerifierModule'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
-import { ObjectID } from 'mongodb'
+// import { ObjectID } from 'mongodb'
 import { EVMversions } from '../../lib/types'
 
 export class ContractVerification extends DataCollectorItem {
@@ -64,6 +64,7 @@ export class ContractVerification extends DataCollectorItem {
           // Contract verifier payload
           request.bytecode = creationCode
           request.deployedBytecode = code
+          request._id = getVerificationId(request)
           return { data: request }
         } catch (err) {
           return Promise.reject(err)
@@ -130,8 +131,7 @@ export class ContractVerification extends DataCollectorItem {
         try {
           let { id } = params
           if (!id) throw new Error('Invalid id')
-          const _id = ObjectID(id)
-          const verification = await this.getOne({ _id })
+          const verification = await this.getOne({ _id: id })
           if (verification && verification.data) {
             const { result, match } = verification.data
             return { data: { result, match } }

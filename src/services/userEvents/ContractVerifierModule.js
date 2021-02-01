@@ -1,6 +1,6 @@
 import io from 'socket.io-client'
 import { StoredConfig } from '../../lib/StoredConfig'
-import { ObjectID } from 'mongodb'
+import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
 
 // id to store solc versions list on Config collection
 export const versionsId = '_contractVerifierVersions'
@@ -41,7 +41,7 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
           const result = (data) ? data.result : null
           let { _id, address } = request
           if (!_id) throw new Error(`Missing _id {$request}`)
-          _id = ObjectID(_id)
+          // _id = ObjectID(_id)
           log.debug(`New verification received ${address}`)
           // Update verification
           const match = checkResult(result || {})
@@ -81,11 +81,12 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
       const { data } = result
       const { module, action } = payload
       const { address } = data
-      delete data._id
+      // delete data._id
+      const { _id } = data
       if (!address) throw new Error(`Missing address in verification`)
-      let res = await collection.insertOne({ address, request: data, timestamp: Date.now() })
+      let res = await collection.insertOne({ _id, address, request: data, timestamp: Date.now() })
       const id = res.insertedId
-      if (!id) throw new Error(`Error creating pending verification`)
+      if (!id || id !== _id) throw new Error(`Error creating pending verification`)
       data._id = id
       log.debug(`Sending verification to verifier ID:${id}`)
       if (!socket.connected) throw new Error('Cannot connect to contract verifier')
@@ -140,6 +141,12 @@ export function extractUsedSourcesFromRequest ({ source, imports }, { usedSource
     const { contents } = imp
     return { name, contents }
   })
+}
+
+export function getVerificationId ({ address }) {
+  if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
+  const timestamp = Date.now()
+  return add0x(keccak256(`${address}${timestamp}`))
 }
 
 export default ContractVerifierModule
