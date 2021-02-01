@@ -4,9 +4,10 @@ import apiRoutes from './routes/api'
 import docRoutes from './routes/doc'
 import config from '../lib/config'
 
-export const HttpServer = ({ api, status, log }) => {
+export const HttpServer = ({ api, status, log }, send) => {
   const app = express()
   const httpServer = http.Server(app)
+
   app.set('etag', false)
   app.set('x-powered-by', false)
 
@@ -24,7 +25,7 @@ export const HttpServer = ({ api, status, log }) => {
     res.send(data)
   })
 
-  app.use('/api', apiRoutes({ log, api }))
+  app.use('/api', apiRoutes({ log, api }, send))
 
   if (config.api.exposeDoc) {
     app.use('/doc', docRoutes({ log, app }))
