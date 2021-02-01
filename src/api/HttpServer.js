@@ -32,7 +32,7 @@ export const HttpServer = ({ api, status, log }) => {
 
   // 404
   app.use((req, res, next) => res.status(404).send())
-  return httpServer
+  return { httpServer, app }
 }
 
 export default HttpServer

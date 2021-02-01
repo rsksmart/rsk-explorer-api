@@ -26,7 +26,7 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
   txPool.start()
 
   // http server
-  const httpServer = HttpServer({ api, status, log })
+  const { httpServer } = HttpServer({ api, status, log }, send)
   httpServer.listen(port, address)
   const io = new IO(httpServer)
 
