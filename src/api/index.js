@@ -25,13 +25,43 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
   status.start()
   txPool.start()
 
+  let userEvents
+
+  const delayedResult = (res, payload, socket) => {
+    const { params, result, delayed } = res
+    if (delayed && userEvents) {
+      const registry = delayed.registry || (!result.data && delayed.runIfEmpty)
+      if (payload.getDelayed) {
+        const lastBlock = api.getLastBlock()
+        const block = (lastBlock) ? lastBlock.number : null
+
+        userEvents.send({
+          action: delayed.action,
+          module: delayed.module,
+          params,
+          socketId: socket ? socket.id : undefined,
+          payload,
+          block,
+          result
+        })
+      }
+      res.result.delayed = { fields: delayed.fields, registry }
+    }
+    return res
+  }
+
+  const send = ({ res, response, payload }) => {
+    const { result } = delayedResult(response, payload)
+    res.send(result)
+  }
+
   // http server
   const { httpServer } = HttpServer({ api, status, log }, send)
   httpServer.listen(port, address)
   const io = new IO(httpServer)
 
   // start userEvents api
-  const userEvents = UserEventsApi(io, api, { log })
+  userEvents = UserEventsApi(io, api, { log })
 
   io.httpServer.on('listening', () => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
@@ -127,25 +157,9 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
     socket.on('data', async payload => {
       try {
         const res = await api.run(payload)
-        const { module, action, params, result, delayed } = res
-        if (delayed && userEvents) {
-          const registry = delayed.registry || (!result.data && delayed.runIfEmpty)
-          if (payload.getDelayed) {
-            const lastBlock = api.getLastBlock()
-            const block = (lastBlock) ? lastBlock.number : null
-            userEvents.send({
-              action: delayed.action,
-              module: delayed.module,
-              params,
-              socketId: socket.id,
-              payload,
-              block,
-              result
-            })
-          }
-          result.delayed = { fields: delayed.fields, registry }
-        }
-        socket.emit('data', formatRes({ module, action, result, req: payload }))
+        const req = payload
+        const { module, action, result } = delayedResult(res, payload, socket)
+        socket.emit('data', formatRes({ module, action, result, req }))
       } catch (err) {
         log.debug(`Action: ${payload.action}: ERROR: ${err}`)
         log.trace(err)

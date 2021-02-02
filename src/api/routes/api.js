@@ -5,27 +5,27 @@ const router = express.Router()
 const Routes = ({ log, api }, send) => {
   const getResult = async ({ module, action, params }) => {
     try {
-      const { result } = await api.run({ module, action, params })
-      if (!result) throw new Error('Missing result')
-      if (!result.data) throw new Error('Missing data')
-      return result
+      const response = await api.run({ module, action, params })
+      if (!response.result) throw new Error('Missing result')
+      // if (!result.data) throw new Error('Missing data')
+      return response
     } catch (err) {
+      log.debug({ module, action, params })
       return Promise.reject(err)
     }
   }
   const sendResult = async ({ res, req, next }, payload) => {
-    const { action } = payload
-    let result
+    const { module, action } = payload
+    let response
     try {
       if (!!module !== !!action) {
         res.status(400).send()
         return
       }
-      if (!module && !action) result = api.info()
-      else result = await getResult(payload)
-      if (!result) throw new Error('Empty result')
-      if (typeof send === 'function') send({ result, res, req, next, payload })
-      else res.send(result)
+      if (!module && !action) response = { result: api.info() }
+      else response = await getResult(payload)
+      if (typeof send === 'function') send({ response, res, req, next, payload })
+      else res.send(response.result)
     } catch (err) {
       res.status(404).send()
       log.error(err)
