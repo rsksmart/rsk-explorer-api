@@ -40,7 +40,7 @@ const Routes = ({ log, api }, send) => {
     return sendResult({ res, req, next }, { module, action, params })
   })
 
-  router.post('/', bodyParser.json(), (req, res, next) => {
+  router.post('/', bodyParser.json({ limit: '5mb' }), (req, res, next) => {
     return sendResult({ res, req, next }, req.body)
   })
 
