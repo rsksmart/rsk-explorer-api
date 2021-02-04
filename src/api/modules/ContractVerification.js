@@ -58,12 +58,13 @@ export class ContractVerification extends DataCollectorItem {
 
           // TODO Check if has pending verifications
 
-          const { creationCode, code } = data
+          // const { creationCode, code } = data
+          const { creationCode } = data
           if (!creationCode) throw new Error404('Contract creation data not found')
 
           // Contract verifier payload
           request.bytecode = creationCode
-          request.deployedBytecode = code
+          // request.deployedBytecode = code
           request._id = getVerificationId(request)
           return { data: request }
         } catch (err) {
