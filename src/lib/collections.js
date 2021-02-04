@@ -258,6 +258,10 @@ export default {
       {
         key: { match: 1 },
         name: 'verificationsResultsMatchIndex'
+      },
+      {
+        key: { address: 1, match: 1 },
+        name: 'verificationResultAddressMatchIndex'
       }
     ]
   },
