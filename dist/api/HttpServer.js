@@ -4,9 +4,10 @@ var _api = _interopRequireDefault(require("./routes/api"));
 var _doc = _interopRequireDefault(require("./routes/doc"));
 var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
-const HttpServer = ({ api, status, log }) => {
+const HttpServer = ({ api, status, log }, send) => {
   const app = (0, _express.default)();
   const httpServer = _http.default.Server(app);
+
   app.set('etag', false);
   app.set('x-powered-by', false);
 
@@ -24,7 +25,7 @@ const HttpServer = ({ api, status, log }) => {
     res.send(data);
   });
 
-  app.use('/api', (0, _api.default)({ log, api }));
+  app.use('/api', (0, _api.default)({ log, api }, send));
 
   if (_config.default.api.exposeDoc) {
     app.use('/doc', (0, _doc.default)({ log, app }));
@@ -32,7 +33,7 @@ const HttpServer = ({ api, status, log }) => {
 
   // 404
   app.use((req, res, next) => res.status(404).send());
-  return httpServer;
+  return { httpServer, app };
 };exports.HttpServer = HttpServer;var _default =
 
 HttpServer;exports.default = _default;

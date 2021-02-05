@@ -257,7 +257,11 @@
 
     {
       key: { match: 1 },
-      name: 'verificationsResultsMatchIndex' }] },
+      name: 'verificationsResultsMatchIndex' },
+
+    {
+      key: { address: 1, match: 1 },
+      name: 'verificationResultAddressMatchIndex' }] },
 
 
 

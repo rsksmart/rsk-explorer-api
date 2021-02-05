@@ -2,28 +2,30 @@
 var _bodyParser = _interopRequireDefault(require("body-parser"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const router = _express.default.Router();
 
-const Routes = ({ log, api }) => {
-  const getResult = async (api, { module, action, params }) => {
+const Routes = ({ log, api }, send) => {
+  const getResult = async ({ module, action, params }) => {
     try {
-      const { result } = await api.run({ module, action, params });
-      if (!result) throw new Error('Missing result');
-      if (!result.data) throw new Error('Missing data');
-      return result;
+      const response = await api.run({ module, action, params });
+      if (!response.result) throw new Error('Missing result');
+      // if (!result.data) throw new Error('Missing data')
+      return response;
     } catch (err) {
+      log.debug({ module, action, params });
       return Promise.reject(err);
     }
   };
-  const sendResult = async (api, res, { module, action, params }) => {
-    let result;
+  const sendResult = async ({ res, req, next }, payload) => {
+    const { module, action } = payload;
+    let response;
     try {
       if (!!module !== !!action) {
         res.status(400).send();
         return;
       }
-      if (!module && !action) result = api.info();else
-      result = await getResult(api, { module, action, params });
-      if (!result) throw new Error('Empty result');
-      res.send(result);
+      if (!module && !action) response = { result: api.info() };else
+      response = await getResult(payload);
+      if (typeof send === 'function') send({ response, res, req, next, payload });else
+      res.send(response.result);
     } catch (err) {
       res.status(404).send();
       log.error(err);
@@ -35,11 +37,11 @@ const Routes = ({ log, api }) => {
     const { module, action } = params;
     delete params.module;
     delete params.action;
-    return sendResult(api, res, { module, action, params });
+    return sendResult({ res, req, next }, { module, action, params });
   });
 
-  router.post('/', _bodyParser.default.json(), (req, res, next) => {
-    return sendResult(api, res, req.body);
+  router.post('/', _bodyParser.default.json({ limit: '5mb' }), (req, res, next) => {
+    return sendResult({ res, req, next }, req.body);
   });
 
   return router;

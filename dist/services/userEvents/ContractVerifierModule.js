@@ -1,6 +1,6 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.ContractVerifierModule = ContractVerifierModule;exports.replaceImport = replaceImport;exports.extractUsedSourcesFromRequest = extractUsedSourcesFromRequest;exports.default = exports.versionsId = void 0;var _socket = _interopRequireDefault(require("socket.io-client"));
+"use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.ContractVerifierModule = ContractVerifierModule;exports.replaceImport = replaceImport;exports.extractUsedSourcesFromRequest = extractUsedSourcesFromRequest;exports.getVerificationId = getVerificationId;exports.default = exports.versionsId = void 0;var _socket = _interopRequireDefault(require("socket.io-client"));
 var _StoredConfig = require("../../lib/StoredConfig");
-var _mongodb = require("mongodb");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 // id to store solc versions list on Config collection
 const versionsId = '_contractVerifierVersions';exports.versionsId = versionsId;
@@ -41,7 +41,7 @@ function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
           const result = data ? data.result : null;
           let { _id, address } = request;
           if (!_id) throw new Error(`Missing _id {$request}`);
-          _id = (0, _mongodb.ObjectID)(_id);
+          // _id = ObjectID(_id)
           log.debug(`New verification received ${address}`);
           // Update verification
           const match = checkResult(result || {});
@@ -81,11 +81,12 @@ function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
       const { data } = result;
       const { module, action } = payload;
       const { address } = data;
-      delete data._id;
+      // delete data._id
+      const { _id } = data;
       if (!address) throw new Error(`Missing address in verification`);
-      let res = await collection.insertOne({ address, request: data, timestamp: Date.now() });
+      let res = await collection.insertOne({ _id, address, request: data, timestamp: Date.now() });
       const id = res.insertedId;
-      if (!id) throw new Error(`Error creating pending verification`);
+      if (!id || id !== _id) throw new Error(`Error creating pending verification`);
       data._id = id;
       log.debug(`Sending verification to verifier ID:${id}`);
       if (!socket.connected) throw new Error('Cannot connect to contract verifier');
@@ -140,6 +141,12 @@ function extractUsedSourcesFromRequest({ source, imports }, { usedSources }) {
     const { contents } = imp;
     return { name, contents };
   });
+}
+
+function getVerificationId({ address }) {
+  if (!(0, _rskUtils.isAddress)(address)) throw new Error(`Invalid address ${address}`);
+  const timestamp = Date.now();
+  return (0, _rskUtils.add0x)((0, _rskUtils.keccak256)(`${address}${timestamp}`));
 }var _default =
 
 ContractVerifierModule;exports.default = _default;

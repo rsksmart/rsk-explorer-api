@@ -1,5 +1,12 @@
 # Changelog
-## [1.1.9] - 2021-01-29
+
+## [1.2.1] - 2021-02-05
+
+### Added
+
+- UserEvents support to HTTP request. 
+
+## [1.2.0] - 2021-01-29
 
 ### Added
 

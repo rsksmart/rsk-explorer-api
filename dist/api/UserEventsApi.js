@@ -20,6 +20,7 @@ const UserEventsApi = (io, api, { log }) => {
       let result = res.data;
       let req = payload;
       let error = res.error;
+      if (!msg.socketId) return;
       const socket = io.sockets.connected[msg.socketId];
       log.trace(`Sending message to client ${module}.${action} error:${JSON.stringify(error)}`);
       if (socket) socket.emit('data', (0, _apiTools.formatRes)({ module, action, result, req, error }));

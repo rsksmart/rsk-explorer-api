@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",
@@ -1928,6 +1928,8 @@
     },
     "Response": {
       "type": "object",
+      "description": "Response",
+      "name": "Item",
       "properties": {
         "pages": {
           "type": "object",
@@ -1940,7 +1942,9 @@
               "description": "sortable fields",
               "type": "object"
             },
-            "defaultSort": null,
+            "defaultSort": {
+              "type": "object"
+            },
             "sortDir": {
               "type": "boolean"
             },
@@ -1967,6 +1971,7 @@
       }
     },
     "ResponseList": {
+      "description": "ResponseList",
       "type": "object",
       "properties": {
         "pages": {
@@ -1980,7 +1985,9 @@
               "description": "sortable fields",
               "type": "object"
             },
-            "defaultSort": null,
+            "defaultSort": {
+              "type": "object"
+            },
             "sortDir": {
               "type": "boolean"
             },

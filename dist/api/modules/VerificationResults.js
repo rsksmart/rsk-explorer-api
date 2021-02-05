@@ -45,9 +45,9 @@ class VerificationResults extends _DataCollector.DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getVerification: async params => {
-        const { address } = params;
+        const { address, fields } = params;
         const query = { address, match: true };
-        return this.getItem(query, params);
+        return this.getOne(query, fields);
       } };
 
   }}exports.VerificationResults = VerificationResults;var _default =

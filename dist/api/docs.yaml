@@ -79,6 +79,8 @@ definitions:
 
   Response:
     type: object
+    description: Response
+    name: Item
     properties:
       pages:
         type: object
@@ -90,6 +92,7 @@ definitions:
             description: sortable fields
             type: object
           defaultSort:
+            type: object
           sortDir:
             type: boolean
           limit:
@@ -106,6 +109,7 @@ definitions:
           type: object
 
   ResponseList:
+    description: ResponseList
     type: object
     properties:
       pages:
@@ -118,6 +122,7 @@ definitions:
             description: sortable fields
             type: object
           defaultSort:
+            type: object
           sortDir:
             type: boolean
           limit:

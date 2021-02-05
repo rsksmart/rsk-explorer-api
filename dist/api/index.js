@@ -25,13 +25,43 @@ const address = _config.default.api.address || 'localhost';
   status.start();
   txPool.start();
 
+  let userEvents;
+
+  const delayedResult = (res, payload, socket) => {
+    const { params, result, delayed } = res;
+    if (delayed && userEvents) {
+      const registry = delayed.registry || !result.data && delayed.runIfEmpty;
+      if (payload.getDelayed) {
+        const lastBlock = api.getLastBlock();
+        const block = lastBlock ? lastBlock.number : null;
+
+        userEvents.send({
+          action: delayed.action,
+          module: delayed.module,
+          params,
+          socketId: socket ? socket.id : undefined,
+          payload,
+          block,
+          result });
+
+      }
+      res.result.delayed = { fields: delayed.fields, registry };
+    }
+    return res;
+  };
+
+  const send = ({ res, response, payload }) => {
+    const { result } = delayedResult(response, payload);
+    res.send(result);
+  };
+
   // http server
-  const httpServer = (0, _HttpServer.HttpServer)({ api, status, log: _log.default });
+  const { httpServer } = (0, _HttpServer.HttpServer)({ api, status, log: _log.default }, send);
   httpServer.listen(port, address);
   const io = new _socket.default(httpServer);
 
   // start userEvents api
-  const userEvents = (0, _UserEventsApi.default)(io, api, { log: _log.default });
+  userEvents = (0, _UserEventsApi.default)(io, api, { log: _log.default });
 
   io.httpServer.on('listening', () => {
     _log.default.info(`Server listening on: ${address || '0.0.0.0'}:${port}`);
@@ -127,25 +157,9 @@ const address = _config.default.api.address || 'localhost';
     socket.on('data', async payload => {
       try {
         const res = await api.run(payload);
-        const { module, action, params, result, delayed } = res;
-        if (delayed && userEvents) {
-          const registry = delayed.registry || !result.data && delayed.runIfEmpty;
-          if (payload.getDelayed) {
-            const lastBlock = api.getLastBlock();
-            const block = lastBlock ? lastBlock.number : null;
-            userEvents.send({
-              action: delayed.action,
-              module: delayed.module,
-              params,
-              socketId: socket.id,
-              payload,
-              block,
-              result });
-
-          }
-          result.delayed = { fields: delayed.fields, registry };
-        }
-        socket.emit('data', (0, _apiTools.formatRes)({ module, action, result, req: payload }));
+        const req = payload;
+        const { module, action, result } = delayedResult(res, payload, socket);
+        socket.emit('data', (0, _apiTools.formatRes)({ module, action, result, req }));
       } catch (err) {
         _log.default.debug(`Action: ${payload.action}: ERROR: ${err}`);
         _log.default.trace(err);

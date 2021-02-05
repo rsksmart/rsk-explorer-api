@@ -2,8 +2,8 @@
 var _StoredConfig = require("../../lib/StoredConfig");
 var _ContractVerifierModule = require("../../services/userEvents/ContractVerifierModule");
 var _Errors = require("../lib/Errors");
-var _mongodb = require("mongodb");
-var _types = require("../../lib/types");
+
+var _types = require("../../lib/types"); // import { ObjectID } from 'mongodb'
 
 class ContractVerification extends _DataCollector.DataCollectorItem {
   constructor(collections, name) {
@@ -58,12 +58,14 @@ class ContractVerification extends _DataCollector.DataCollectorItem {
 
           // TODO Check if has pending verifications
 
-          const { creationCode, code } = data;
+          // const { creationCode, code } = data
+          const { creationCode } = data;
           if (!creationCode) throw new _Errors.Error404('Contract creation data not found');
 
           // Contract verifier payload
           request.bytecode = creationCode;
-          request.deployedBytecode = code;
+          // request.deployedBytecode = code
+          request._id = (0, _ContractVerifierModule.getVerificationId)(request);
           return { data: request };
         } catch (err) {
           return Promise.reject(err);
@@ -130,8 +132,7 @@ class ContractVerification extends _DataCollector.DataCollectorItem {
         try {
           let { id } = params;
           if (!id) throw new Error('Invalid id');
-          const _id = (0, _mongodb.ObjectID)(id);
-          const verification = await this.getOne({ _id });
+          const verification = await this.getOne({ _id: id });
           if (verification && verification.data) {
             const { result, match } = verification.data;
             return { data: { result, match } };
