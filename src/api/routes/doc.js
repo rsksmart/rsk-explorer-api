@@ -1,5 +1,5 @@
 import express from 'express'
-import rskOpenapiUi from 'rsk-openapi-ui'
+import rskOpenapiUi from '@rsksmart/rsk-openapi-ui'
 import path from 'path'
 const router = express.Router()
 
