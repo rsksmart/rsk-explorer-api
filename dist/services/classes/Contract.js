@@ -1,5 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = void 0;var _BcThing = require("./BcThing");
-var _rskContractParser = _interopRequireDefault(require("@rsksmart/rsk-contract-parser"));
+var _rskContractParser = require("@rsksmart/rsk-contract-parser");
 var _types = require("../../lib/types");
 var _TokenAddress = _interopRequireDefault(require("./TokenAddress"));
 var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
@@ -35,7 +35,12 @@ class Contract extends _BcThing.BcThing {
           if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`);
           let info = await this.parser.getContractInfo(deployedCode, contract);
           let { interfaces, methods } = info;
-          if (interfaces.length) this.setData({ contractInterfaces: interfaces });
+          if (interfaces.length) {
+            this.setData({ contractInterfaces: interfaces });
+            if (interfaces.includes(_rskContractParser.types.contractsInterfaces.EIP1167)) {
+              this.setData({ masterCopy: this.parser.getEip1167MasterCopy(deployedCode) });
+            }
+          }
           if (methods) this.setData({ contractMethods: methods });
         }
         let { contractInterfaces, tokenData } = this.data;
@@ -62,7 +67,7 @@ class Contract extends _BcThing.BcThing {
       let { nod3, initConfig, log } = this;
       if (!this.parser) {
         let abi = await this.getAbi();
-        this.parser = new _rskContractParser.default({ abi, nod3, initConfig, log });
+        this.parser = new _rskContractParser.ContractParser({ abi, nod3, initConfig, log });
       }
       return this.parser;
     } catch (err) {
