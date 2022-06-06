@@ -1,5 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.start = start;var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
-var _rskContractParser = require("../../.yalc/@rsksmart/rsk-contract-parser");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskContractParser = require("@rsksmart/rsk-contract-parser");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 async function start() {
   const parser = new _rskContractParser.ContractParser();
