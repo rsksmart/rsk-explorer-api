@@ -13,7 +13,7 @@ export class Address extends BcThing {
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
     this.bcSearch = BcSearch(nod3)
-    this.address = address
+    this.address = address ? address.toLowerCase() : address;
     this.fetched = false
     this.collection = (collections) ? collections.Addrs : undefined
     this.contract = undefined
