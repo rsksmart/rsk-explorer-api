@@ -1,5 +1,5 @@
 import { BcThing } from './BcThing'
-import { ContractParser, types } from '@rsksmart/rsk-contract-parser'
+import ContractParser from '@rsksmart/rsk-contract-parser'
 import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
@@ -35,12 +35,7 @@ class Contract extends BcThing {
           if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
           let info = await this.parser.getContractInfo(deployedCode, contract)
           let { interfaces, methods } = info
-          if (interfaces.length) {
-            this.setData({ contractInterfaces: interfaces });
-            if(interfaces.includes(types.contractsInterfaces.EIP1167)){
-              this.setData({ masterCopy : this.parser.getEip1167MasterCopy(deployedCode)});
-            }
-          }
+          if (interfaces.length) this.setData({ contractInterfaces: interfaces })
           if (methods) this.setData({ contractMethods: methods })
         }
         let { contractInterfaces, tokenData } = this.data
