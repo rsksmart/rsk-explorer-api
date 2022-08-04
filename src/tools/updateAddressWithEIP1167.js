@@ -1,5 +1,5 @@
 import dataSource from '../lib/dataSource.js'
-import { ContractParser, Constants } from '@rsksmart/rsk-contract-parser'
+import { ContractParser, Constants } from '../../.yalc/@rsksmart/rsk-contract-parser'
 
 export async function start () {
   const parser = new ContractParser()
