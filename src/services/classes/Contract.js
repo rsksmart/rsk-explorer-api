@@ -36,9 +36,9 @@ class Contract extends BcThing {
           let info = await this.parser.getContractInfo(deployedCode, contract)
           let { interfaces, methods } = info
           if (interfaces.length) {
-            this.setData({ contractInterfaces: interfaces })
-            if (interfaces.includes(types.contractsInterfaces.EIP1167)) {
-              this.setData({ masterCopy: this.parser.getEip1167MasterCopy(deployedCode) })
+            this.setData({ contractInterfaces: interfaces });
+            if(interfaces.includes(types.contractsInterfaces.EIP1167)){
+              this.setData({ masterCopy : this.parser.getEip1167MasterCopy(deployedCode)});
             }
           }
           if (methods) this.setData({ contractMethods: methods })
