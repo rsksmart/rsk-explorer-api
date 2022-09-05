@@ -6,7 +6,9 @@ var _rskUtils = require("@rsksmart/rsk-utils");
 Object.keys(_rskUtils).forEach(function (key) {if (key === "default" || key === "__esModule") return;if (Object.prototype.hasOwnProperty.call(_exportNames, key)) return;if (key in exports && exports[key] === _rskUtils[key]) return;Object.defineProperty(exports, key, { enumerable: true, get: function () {return _rskUtils[key];} });});var _crypto = _interopRequireDefault(require("crypto"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const bigNumberDoc = bigNumber => {
-  return '0x' + bigNumber.toString(16);
+  return typeof bigNumber.toHexString !== 'undefined' ?
+  bigNumber.toHexString() :
+  '0x' + bigNumber.toString(16);
 };exports.bigNumberDoc = bigNumberDoc;
 
 const isBigNumber = value => {
