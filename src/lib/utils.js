@@ -6,7 +6,9 @@ import crypto from 'crypto'
 export * from '@rsksmart/rsk-utils'
 
 export const bigNumberDoc = bigNumber => {
-  return '0x' + bigNumber.toString(16)
+  return typeof bigNumber.toHexString !== 'undefined'
+    ? bigNumber.toHexString()
+    : '0x' + bigNumber.toString(16)
 }
 
 export const isBigNumber = value => {
