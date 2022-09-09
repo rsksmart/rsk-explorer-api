@@ -38,7 +38,7 @@
     "grpc": "^1.24.3",
     "mongodb": "^3.6.1",
     "rlp": "^2.2.5",
-    "rsk-openapi-ui": "git+https://git@github.com/rsksmart/rsk-openapi-ui.git",
+    "rsk-openapi-ui": "^0.0.7",
     "socket.io": "^2.2.0"
   },
   "devDependencies": {
@@ -55,7 +55,6 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.8.0",
     "eslint-plugin-standard": "^3.1.0",
-    "grpc-tools": "^1.9.1",
     "mocha": "^7.2.0",
     "nodemon": "^2.0.4",
     "swagger-jsdoc": "^3.2.9",
