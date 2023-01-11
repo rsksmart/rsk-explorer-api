@@ -2,6 +2,11 @@ import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages, countDocuments } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
 import { generateTextQuery } from './textSearch'
+import { addressRepository } from '../../../repositories/modules/address.repository'
+
+const REPOSITORIES = {
+  Address: addressRepository
+}
 
 export class DataCollectorItem {
   constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
@@ -19,6 +24,7 @@ export class DataCollectorItem {
     this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
     this.fields = {}
+    this.repository = REPOSITORIES[name]
   }
 
   getName () {
@@ -55,7 +61,7 @@ export class DataCollectorItem {
   async getOne (query, projection, sort) {
     projection = projection || this.getDefaultsFields()
     sort = sort || this.sort
-    const data = await this.db.findOne(query, { projection, sort })
+    const data = await this.repository.findOne(query, { projection, sort }, this.db)
     return { data }
   }
 
