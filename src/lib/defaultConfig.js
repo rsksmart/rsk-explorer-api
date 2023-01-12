@@ -36,6 +36,7 @@ export default {
     logToFiles: false
   },
   db: {
+    prismaDatabase: "postgres://postgres:12345678@localhost:5432/explorer_db",
     server: 'localhost',
     port: 27017,
     database: 'blockDB'
