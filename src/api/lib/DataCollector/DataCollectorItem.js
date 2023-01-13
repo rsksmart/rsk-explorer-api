@@ -1,12 +1,7 @@
 import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages, countDocuments } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
-import { generateTextQuery } from './textSearch'
-import { addressRepository } from '../../../repositories/modules/address.repository'
-
-const REPOSITORIES = {
-  Address: addressRepository
-}
+import { REPOSITORIES } from '../../../repositories/modules/repositories'
 
 export class DataCollectorItem {
   constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
@@ -47,7 +42,7 @@ export class DataCollectorItem {
 
   async count (query) {
     let collection = this.db
-    let data = await countDocuments(collection, query)
+    let data = await this.repository.countDocuments(query, collection)
     return { data }
   }
 
@@ -62,6 +57,7 @@ export class DataCollectorItem {
     projection = projection || this.getDefaultsFields()
     sort = sort || this.sort
     const data = await this.repository.findOne(query, { projection, sort }, this.db)
+
     return { data }
   }
 
