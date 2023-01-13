@@ -1,4 +1,4 @@
-export const balanceRepository = {
+export const balancesRepository = {
   async findOne (query = {}, options = {}, collection) {
     return collection.findOne(query, options)
   },
