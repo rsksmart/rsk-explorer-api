@@ -6,5 +6,5 @@ export const REPOSITORIES = fs.readdirSync(__dirname).reduce((repos, repo) => {
 
   repos[name[0].toUpperCase() + name.slice(1)] = requiredRepo
 
-  return repos;
+  return repos
 }, {})

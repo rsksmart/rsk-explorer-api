@@ -1,17 +1,14 @@
-export const internalTXRepository = {
+export const internalTxnRepository = {
   async findOne (query = {}, options = {}, collection) {
     return collection.findOne(query, options)
   },
-
-  async aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate)
-  },
-
   async find (query = {}, options = {}, collection) {
     return collection.find(query, options)
   },
-
   async countDocuments (query = {}, collection) {
     return collection.countDocuments(query)
+  },
+  async aggregate (aggregate, collection) {
+    return collection.aggregate(aggregate)
   }
 }
