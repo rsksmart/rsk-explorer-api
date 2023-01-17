@@ -7,6 +7,7 @@ import initConfig from './initialConfiguration'
 import { getDbBlocksCollections } from './blocksCollections'
 import { hash } from './utils'
 import { PrismaClient } from '@prisma/client'
+import prismaDefaultConfig from './defaultConfig'
 
 export const INIT_ID = '_explorerInitialConfiguration'
 export const COLLECTIONS_ID = '_explorerCollections'
@@ -44,13 +45,13 @@ async function loadPrismaClient(config) {
 }
 
 function generatePrismaURL(config) {
-  const { user, password, server, prismaPort, prismaDbName } = config;
+  const { db: { prismaEngine, prismaUser, prismaPassword, server, prismaPort, prismaDbName } } = config;
 
-  const credentials = `${ user || 'postgres' }:${ password || 12345678 }`
-  const database = `${ server || 'localhost' }:${ prismaPort || 5432 }/${ prismaDbName || 'explorer_db' }`
+  const engine = prismaEngine
+  const credentials = `${prismaUser}:${prismaPassword}`
+  const database = `${server}:${prismaPort}/${prismaDbName}`
 
-  let url = `postgres://${credentials}@${database}`
-  console.log(url)
+  let url = `${engine}://${credentials}@${database}`
   return url
 }
 
@@ -146,7 +147,7 @@ export async function Setup ({ log } = {}, { nod3, config, collections } = defau
     }
   }
 
-  await loadPrismaClient(config)
+  await loadPrismaClient(prismaDefaultConfig)
 
   return Object.freeze({ start, createHash })
 }

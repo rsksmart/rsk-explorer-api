@@ -4,5 +4,751 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = ""
+  url = ""
+}
+
+model abi {
+  id               Int         @id @default(autoincrement())
+  anonymous        Boolean?
+  name             String?     @db.VarChar
+  type             String?     @db.VarChar
+  state_mutability Boolean?
+  abi_input        abi_input[]
+  event            event[]
+}
+
+model abi_input {
+  abi_id Int
+  name   String  @db.VarChar
+  type   String? @db.VarChar
+  abi    abi     @relation(fields: [abi_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_abi_id")
+  input  input?  @relation(fields: [name, type], references: [name, type], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_name_type")
+
+  @@id([abi_id, name], map: "pk_abi_input")
+}
+
+model action {
+  id                   Int                    @id @default(autoincrement())
+  from                 String                 @db.VarChar(42)
+  to                   String                 @db.VarChar(42)
+  gas                  String                 @db.VarChar
+  value                String                 @db.VarChar
+  creation_method      String                 @db.VarChar
+  refund_address       String                 @db.VarChar(42)
+  balance              String                 @db.VarChar
+  init                 String                 @db.VarChar
+  internal_transaction internal_transaction[]
+}
+
+model address {
+  address                                            String             @id @db.VarChar(42)
+  block                                              Int
+  last_block_mined                                   Int?
+  balance                                            String             @db.VarChar
+  is_native                                          Boolean
+  type                                               Int
+  block_address_blockToblock                         block              @relation("address_blockToblock", fields: [block], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_block")
+  block_address_last_block_minedToblock              block?             @relation("address_last_block_minedToblock", fields: [last_block_mined], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_last_block_mined")
+  address_in_event_address_in_event_addressToaddress address_in_event[] @relation("address_in_event_addressToaddress")
+  balance_balance_addressToaddress                   balance[]          @relation("balance_addressToaddress")
+  contract_contract_addressToaddress                 contract?          @relation("contract_addressToaddress")
+  event_event_addressToaddress                       event[]            @relation("event_addressToaddress")
+  log_log_addressToaddress                           log[]              @relation("log_addressToaddress")
+  logged_address_logged_address_addressToaddress     logged_address[]   @relation("logged_address_addressToaddress")
+  receipt_receipt_fromToaddress                      receipt[]          @relation("receipt_fromToaddress")
+  receipt_receipt_toToaddress                        receipt[]          @relation("receipt_toToaddress")
+  request_request_addressToaddress                   request[]          @relation("request_addressToaddress")
+  token_address_token_address_addressToaddress       token_address[]    @relation("token_address_addressToaddress")
+  transaction_transaction_fromToaddress              transaction[]      @relation("transaction_fromToaddress")
+  transaction_transaction_toToaddress                transaction[]      @relation("transaction_toToaddress")
+}
+
+model address_in_event {
+  id                                        Int
+  address                                   String  @db.VarChar(42)
+  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_event_address")
+  event                                     event   @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_event_id")
+
+  @@id([id, address], map: "pk_address_in_event")
+}
+
+model balance {
+  id                                Int     @id @default(autoincrement())
+  address                           String  @db.VarChar(42)
+  balance                           String  @db.VarChar
+  block_number                      Int
+  block_hash                        String  @db.VarChar(66)
+  timestamp                         BigInt
+  created                           BigInt
+  address_balance_addressToaddress  address @relation("balance_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_address")
+  block_balance_block_hashToblock   block   @relation("balance_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_block_hash")
+  block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_block_number")
+}
+
+model balances_log {
+  block_hash String @db.VarChar(66)
+  created    BigInt
+
+  @@id([block_hash, created], map: "pk_balanceslog")
+}
+
+model block {
+  number                                                        Int                    @id
+  hash                                                          String?                @unique @db.VarChar(66)
+  miner                                                         String                 @db.VarChar(42)
+  parent_hash                                                   String                 @db.VarChar(66)
+  sha3_uncles                                                   String                 @db.VarChar(66)
+  logs_bloom                                                    String                 @db.VarChar
+  transaction_root                                              String                 @db.VarChar(66)
+  state_root                                                    String                 @db.VarChar(66)
+  receipts_root                                                 String                 @db.VarChar(66)
+  difficulty                                                    String                 @db.VarChar
+  extra_data                                                    String                 @db.VarChar
+  size                                                          Int
+  gas_limit                                                     Int
+  gas_used                                                      Int
+  timestamp                                                     BigInt
+  minimum_gas_price                                             String                 @db.VarChar
+  bitcoin_merged_mining_header                                  String                 @db.VarChar
+  bitcoin_merged_mining_coinbase_transaction                    String                 @db.VarChar
+  bitcoin_merged_mining_merkle_proof                            String                 @db.VarChar
+  hash_for_merged_mining                                        String                 @db.VarChar(66)
+  paid_fees                                                     String                 @db.VarChar
+  cummulative_difficulty                                        String                 @db.VarChar
+  received                                                      Int
+  address_address_blockToblock                                  address[]              @relation("address_blockToblock")
+  address_address_last_block_minedToblock                       address[]              @relation("address_last_block_minedToblock")
+  balance_balance_block_hashToblock                             balance[]              @relation("balance_block_hashToblock")
+  balance_balance_block_numberToblock                           balance[]              @relation("balance_block_numberToblock")
+  contract                                                      contract[]
+  event_event_block_hashToblock                                 event[]                @relation("event_block_hashToblock")
+  event_event_block_numberToblock                               event[]                @relation("event_block_numberToblock")
+  internal_transaction_internal_transaction_block_hashToblock   internal_transaction[] @relation("internal_transaction_block_hashToblock")
+  internal_transaction_internal_transaction_block_numberToblock internal_transaction[] @relation("internal_transaction_block_numberToblock")
+  log_log_block_hashToblock                                     log[]                  @relation("log_block_hashToblock")
+  log_log_block_numberToblock                                   log[]                  @relation("log_block_numberToblock")
+  receipt_receipt_block_hashToblock                             receipt[]              @relation("receipt_block_hashToblock")
+  receipt_receipt_block_numberToblock                           receipt[]              @relation("receipt_block_numberToblock")
+  stats_collection_stats_collection_block_hashToblock           stats_collection[]     @relation("stats_collection_block_hashToblock")
+  stats_collection_stats_collection_block_numberToblock         stats_collection[]     @relation("stats_collection_block_numberToblock")
+  token_address                                                 token_address[]
+  transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
+  transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
+  txpool                                                        txpool[]
+  uncle                                                         uncle[]
+}
+
+model bridge {
+  id               Int                @id @default(autoincrement())
+  locking_cap      String             @db.VarChar
+  stats_collection stats_collection[]
+}
+
+model circulating {
+  id                 Int                @id @default(autoincrement())
+  circulating_supply String             @db.VarChar
+  total_supply       Int
+  bridge_balance     String             @db.VarChar
+  stats_collection   stats_collection[]
+}
+
+model compiler {
+  id            Int             @id(map: "pk_compiler") @default(autoincrement())
+  key           String?         @db.VarChar
+  value         String?         @db.VarChar
+  used_settings used_settings[]
+
+  @@unique([key, value], map: "unique_compiler")
+}
+
+model config {
+  id              String            @id @db.VarChar
+  net_id          String            @db.VarChar
+  hash            String            @db.VarChar
+  updated         BigInt
+  net             net               @relation(fields: [net_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_config_net_id")
+  native_contract native_contract[]
+}
+
+model contract {
+  address                                        String                @id @db.VarChar(42)
+  name                                           String                @db.VarChar
+  created_by_tx                                  String                @db.VarChar(66)
+  code                                           String                @db.VarChar
+  code_stored_at_block                           Int
+  deployed_code                                  String                @db.VarChar
+  symbol                                         String                @db.VarChar
+  total_supply                                   String                @db.VarChar
+  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_address")
+  block                                          block                 @relation(fields: [code_stored_at_block], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
+  transaction                                    transaction           @relation(fields: [created_by_tx], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_created_by_tx")
+  contract_interface                             contract_interface[]
+  contract_method                                contract_method[]
+  token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
+  verification_result                            verification_result[]
+}
+
+model contract_interface {
+  id               Int              @id @default(autoincrement())
+  interface_id     Int
+  contract_address String           @db.VarChar(42)
+  contract         contract         @relation(fields: [contract_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
+  Renamedinterface Renamedinterface @relation(fields: [interface_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
+}
+
+model contract_method {
+  id               Int      @id @default(autoincrement())
+  method_id        Int
+  contract_address String   @db.VarChar(42)
+  contract         contract @relation(fields: [contract_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_method_contract_address")
+  method           method   @relation(fields: [method_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_method_method_id")
+}
+
+model contract_verification {
+  id                           Int                          @id(map: "pk_contract_verification") @default(autoincrement())
+  address                      String?                      @db.VarChar(42)
+  match                        Boolean
+  request_id                   Int
+  result_id                    Int
+  abi                          Int
+  contract_verification_abi    contract_verification_abi    @relation(fields: [abi], references: [abi_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abi")
+  request                      request                      @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_request_id")
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_result_id")
+  source                       source[]
+}
+
+model contract_verification_abi {
+  abi_id                          Int                               @id @default(autoincrement())
+  constant                        Boolean?
+  name                            String?                           @db.VarChar
+  payable                         Boolean?
+  satate_mutability               String?                           @db.VarChar
+  type                            String?                           @db.VarChar
+  contract_verification           contract_verification[]
+  contract_verification_abi_input contract_verification_abi_input[]
+  contract_verification_abioutput contract_verification_abioutput[]
+  contract_verification_result    contract_verification_result[]
+}
+
+model contract_verification_abi_input {
+  abi_id                    Int
+  name                      String                    @db.VarChar
+  type                      String                    @db.VarChar
+  satate_mutability         String?                   @db.VarChar
+  internal_type             String?                   @db.VarChar
+  contract_verification_abi contract_verification_abi @relation(fields: [abi_id], references: [abi_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abi_input")
+
+  @@id([abi_id, name, type], map: "pk_contract_verification_abi_input")
+}
+
+model contract_verification_abioutput {
+  abi_id                    Int
+  name                      String                    @db.VarChar
+  type                      String                    @db.VarChar
+  internal_type             String?                   @db.VarChar
+  contract_verification_abi contract_verification_abi @relation(fields: [abi_id], references: [abi_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abioutput")
+
+  @@id([abi_id, name, type], map: "pk_contract_verification_abiouput")
+}
+
+model contract_verification_result {
+  id                            Int                          @id @default(autoincrement())
+  name                          String                       @db.VarChar
+  used_settings_id              Int
+  bytecode                      String                       @db.VarChar
+  result_bytecode               String                       @db.VarChar
+  bytecodehash                  String                       @db.VarChar
+  result_bytecode_hash          String                       @db.VarChar
+  abi                           Int
+  opcodes                       String?                      @db.VarChar
+  encoded_constructor_arguments String                       @db.VarChar
+  contract_verification         contract_verification[]
+  contract_verification_abi     contract_verification_abi    @relation(fields: [abi], references: [abi_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_abi")
+  used_settings                 used_settings                @relation(fields: [used_settings_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_used_settings_id")
+  decoded_metadata              decoded_metadata[]
+  method_identifier             method_identifier[]
+  result_constructor_argument   result_constructor_argument?
+  result_used_library           result_used_library[]
+  result_warning                result_warning[]
+  used_source                   used_source[]
+}
+
+model decoded_metadata {
+  result_id                    Int
+  key                          String                       @db.VarChar
+  value                        String                       @db.VarChar
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_decoded_metadata_result_id")
+
+  @@id([result_id, key, value], map: "pk_decoded_metadata")
+}
+
+model event {
+  id                              Int                @id @default(autoincrement())
+  event_id                        String?            @db.VarChar
+  abi_id                          Int
+  transaction_hash                String             @db.VarChar(66)
+  address                         String             @db.VarChar(42)
+  block_hash                      String             @db.VarChar(66)
+  block_number                    Int
+  data                            String             @db.VarChar
+  event                           String             @db.VarChar
+  log_index                       Int
+  signature                       String             @db.VarChar
+  timestamp                       BigInt
+  transaction_index               Int
+  tx_status                       String             @db.VarChar
+  address_in_event                address_in_event[]
+  abi                             abi                @relation(fields: [abi_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_abi_id")
+  address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_address")
+  block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_block_hash")
+  block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_block_number")
+  transaction                     transaction        @relation(fields: [transaction_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_transaction_hash")
+  event_arg                       event_arg[]
+  event_topic                     event_topic[]
+}
+
+model event_arg {
+  id    Int
+  arg   String @db.VarChar
+  event event  @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_arg_id")
+
+  @@id([id, arg], map: "pk_event_arg")
+}
+
+model event_topic {
+  id    Int
+  topic String @db.VarChar
+  event event  @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_topic_id")
+
+  @@id([id, topic], map: "pk_event_topic")
+}
+
+/// This model has been renamed to 'Renamedimport' during introspection, because the original name 'import' is reserved.
+model Renamedimport {
+  request_id Int
+  name       String  @db.VarChar
+  contents   String  @db.VarChar
+  file       String  @db.VarChar
+  request    request @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_import_request_id")
+
+  @@id([request_id, name], map: "pk_import")
+  @@map("import")
+}
+
+model input {
+  name          String      @db.VarChar
+  type          String      @db.VarChar
+  internal_type String?     @db.VarChar
+  indexed       Boolean?
+  abi_input     abi_input[]
+
+  @@id([name, type], map: "pk_input")
+}
+
+/// This model has been renamed to 'Renamedinterface' during introspection, because the original name 'interface' is reserved.
+model Renamedinterface {
+  id                 Int                  @id @default(autoincrement())
+  interface          String               @db.VarChar
+  contract_interface contract_interface[]
+
+  @@map("interface")
+}
+
+model internal_transaction {
+  internal_tx_id                                 String                       @id @db.VarChar
+  transaction_hash                               String                       @db.VarChar(66)
+  block_number                                   Int
+  block_hash                                     String                       @db.VarChar(66)
+  action_id                                      Int
+  transaction_position                           Int
+  type_id                                        Int
+  subtraces                                      Int
+  index                                          Int
+  timestamp                                      BigInt
+  action                                         action                       @relation(fields: [action_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_action_id")
+  block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
+  block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
+  transaction                                    transaction                  @relation(fields: [transaction_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
+  type                                           type                         @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_type_id")
+  internal_transaction_result                    internal_transaction_result?
+  trace_address                                  trace_address[]
+}
+
+model internal_transaction_result {
+  internal_tx_id       String               @id @db.VarChar
+  gas_used             String               @db.VarChar
+  output               String               @db.VarChar
+  internal_transaction internal_transaction @relation(fields: [internal_tx_id], references: [internal_tx_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_internal_tx_id")
+}
+
+model library {
+  address               String                  @id @db.VarChar(42)
+  name                  String?                 @db.VarChar
+  request_library       request_library[]
+  result_used_library   result_used_library[]
+  used_settings_library used_settings_library[]
+}
+
+model log {
+  log_index                     Int              @id
+  transaction_hash              String           @db.VarChar(66)
+  transaction_index             Int
+  block_number                  Int
+  block_hash                    String           @db.VarChar(66)
+  address                       String           @db.VarChar(42)
+  abi                           Int
+  id                            Int
+  data                          String           @db.VarChar
+  signture                      String           @db.VarChar
+  event                         String           @db.VarChar
+  timestamp                     BigInt
+  tx_status                     String           @db.VarChar
+  address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_address")
+  block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_hash")
+  block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_number")
+  transaction                   transaction      @relation(fields: [transaction_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_transaction_hash")
+  log_arg                       log_arg[]
+  log_topic                     log_topic[]
+  logged_address                logged_address[]
+}
+
+model log_arg {
+  log_index Int
+  arg       String @db.VarChar
+  log       log    @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_arg_log_index")
+
+  @@id([log_index, arg], map: "pk_log_arg")
+}
+
+model log_topic {
+  log_index Int
+  topic     String @db.VarChar
+  log       log    @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_topic_log_index")
+
+  @@id([log_index, topic], map: "pk_log_topic")
+}
+
+model logged_address {
+  log_index                               Int
+  address                                 String  @db.VarChar(42)
+  address_logged_address_addressToaddress address @relation("logged_address_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_address")
+  log                                     log     @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_log_index")
+
+  @@id([log_index, address], map: "pk_logged_address")
+}
+
+model method {
+  id              Int               @id @default(autoincrement())
+  method          String            @db.VarChar
+  contract_method contract_method[]
+}
+
+model method_identifier {
+  result_id                    Int
+  identifier                   String                       @db.VarChar
+  method                       String?                      @db.VarChar
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_method_identifier_result_id")
+
+  @@id([result_id, identifier], map: "pk_method_identifier")
+}
+
+model native_contract {
+  config_id String @db.VarChar
+  name      String @db.VarChar
+  address   String @db.VarChar(42)
+  config    config @relation(fields: [config_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_native_contract_config_id")
+
+  @@id([config_id, name], map: "pk_native_contract")
+}
+
+model net {
+  id     String   @id @db.VarChar
+  name   String   @db.VarChar
+  config config[]
+}
+
+model optimizer {
+  id            Int             @id @default(autoincrement())
+  enabled       Boolean
+  runs          Int
+  settings      settings[]
+  used_settings used_settings[]
+}
+
+model receipt {
+  transaction_hash                  String      @id @db.VarChar(66)
+  transaction_index                 Int
+  block_hash                        String      @db.VarChar(66)
+  block_number                      Int
+  from                              String      @db.VarChar(42)
+  to                                String      @db.VarChar(42)
+  cumulative_gas_used               Int
+  gas_used                          Int
+  contract_address                  String      @db.VarChar(42)
+  status                            String      @db.VarChar
+  logs_bloom                        String      @db.VarChar
+  block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_hash")
+  block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_number")
+  address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_from")
+  address_receipt_toToaddress       address     @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_to")
+  transaction                       transaction @relation(fields: [transaction_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_transaction_hash")
+}
+
+model remapping {
+  used_settings_id Int     @id
+  old              String? @db.VarChar(42)
+  new              String? @db.VarChar(42)
+}
+
+model request {
+  id                               Int                           @id @default(autoincrement())
+  address                          String?                       @db.VarChar(42)
+  settings_id                      Int
+  version                          String                        @db.VarChar
+  name                             String                        @db.VarChar
+  source                           String                        @db.VarChar
+  bytecode                         String                        @db.VarChar
+  contract_verification            contract_verification[]
+  Renamedimport                    Renamedimport[]
+  address_request_addressToaddress address?                      @relation("request_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_address")
+  settings                         settings                      @relation(fields: [settings_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_settings_id")
+  request_constructor_argument     request_constructor_argument?
+  request_library                  request_library[]
+}
+
+model request_constructor_argument {
+  request_id Int     @id
+  position   Int     @db.SmallInt
+  value      String  @db.VarChar
+  request    request @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_constructor_argument_request_id")
+}
+
+model request_library {
+  request_id      Int
+  library_address String  @db.VarChar(42)
+  library         library @relation(fields: [library_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_library_library_address")
+  request         request @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_library_request_id")
+
+  @@id([request_id, library_address], map: "pk_request_library")
+}
+
+model result_constructor_argument {
+  result_id                    Int                          @id
+  position                     Int?                         @db.SmallInt
+  value                        String?                      @db.VarChar
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_constructor_argument_result_id")
+}
+
+model result_used_library {
+  result_id                    Int
+  library_address              String                       @db.VarChar(42)
+  library                      library                      @relation(fields: [library_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_used_library_library_address")
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_used_library_result_id")
+
+  @@id([result_id, library_address], map: "pk_result_used_library")
+}
+
+model result_warning {
+  result_id                    Int
+  warning_id                   Int
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_warning_result_id")
+  warning                      warning                      @relation(fields: [warning_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_warning_warning_id")
+
+  @@id([result_id, warning_id], map: "pk_result_warning")
+}
+
+model settings {
+  id           Int       @id @default(autoincrement())
+  evm_version  String    @db.VarChar
+  optimizer_id Int
+  request      request[]
+  optimizer    optimizer @relation(fields: [optimizer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_settings_optimizer_id")
+}
+
+model source {
+  verification_id       Int
+  name                  String                @db.VarChar
+  contents              String                @db.VarChar
+  contract_verification contract_verification @relation(fields: [verification_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_source_verification_id")
+
+  @@id([verification_id, name, contents], map: "pk_source")
+}
+
+model source_location {
+  id                                               Int       @id @default(autoincrement())
+  end                                              Int
+  file                                             String    @db.VarChar
+  start                                            Int
+  warning_warning_source_locationTosource_location warning[] @relation("warning_source_locationTosource_location")
+}
+
+model stats_collection {
+  id                                         Int         @id @default(autoincrement())
+  block_number                               Int
+  block_hash                                 String      @db.VarChar
+  circulating_id                             Int
+  bridge_id                                  Int
+  active_accounts                            Int
+  hashrate                                   BigInt
+  timestamp                                  BigInt
+  block_stats_collection_block_hashToblock   block       @relation("stats_collection_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_block_hash")
+  block_stats_collection_block_numberToblock block       @relation("stats_collection_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_block_number")
+  bridge                                     bridge      @relation(fields: [bridge_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_bridge_id")
+  circulating                                circulating @relation(fields: [circulating_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_circulating_id")
+}
+
+model status {
+  timestamp         Int     @id @default(autoincrement())
+  pending_blocks    Int
+  requesting_blocks Int
+  node_down         Boolean
+}
+
+model token_address {
+  id                                        Int      @id @default(autoincrement())
+  address                                   String   @db.VarChar(42)
+  contract                                  String   @db.VarChar(42)
+  block_number                              Int
+  balance                                   String   @db.VarChar
+  address_token_address_addressToaddress    address  @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_address")
+  block                                     block    @relation(fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_block_number")
+  contract_token_address_contractTocontract contract @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_contract")
+}
+
+model trace_address {
+  internal_tx_id       String               @db.VarChar
+  operation            Int
+  internal_transaction internal_transaction @relation(fields: [internal_tx_id], references: [internal_tx_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_trace_address_internal_tx_id")
+
+  @@id([internal_tx_id, operation], map: "pk_trace_address")
+}
+
+model transaction {
+  hash                                  String                 @id @db.VarChar(66)
+  tx_id                                 String                 @db.VarChar
+  tx_type_id                            Int
+  from                                  String                 @db.VarChar(42)
+  to                                    String                 @db.VarChar(42)
+  block_number                          Int
+  block_hash                            String                 @db.VarChar(66)
+  transaction_index                     Int
+  nonce                                 Int
+  gas                                   Int
+  gasprice                              String                 @db.VarChar
+  value                                 Int
+  input                                 String?                @db.VarChar
+  v                                     String?                @db.VarChar
+  r                                     String?                @db.VarChar
+  s                                     String?                @db.VarChar
+  timestamp                             BigInt
+  status                                String                 @db.VarChar
+  contract                              contract[]
+  event                                 event[]
+  internal_transaction                  internal_transaction[]
+  log                                   log[]
+  receipt                               receipt?
+  block_transaction_block_hashToblock   block                  @relation("transaction_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_hash")
+  block_transaction_block_numberToblock block                  @relation("transaction_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_number")
+  address_transaction_fromToaddress     address                @relation("transaction_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_from")
+  address_transaction_toToaddress       address                @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_to")
+  type                                  type                   @relation(fields: [tx_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_tx_type_id")
+}
+
+model transaction_in_pool {
+  transaction_hash    String              @db.VarChar(66)
+  pool_id             Int
+  txpool              txpool              @relation(fields: [pool_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+  transaction_pending transaction_pending @relation(fields: [transaction_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_transaction_hash")
+
+  @@id([transaction_hash, pool_id], map: "pk_transaction_in_pool")
+}
+
+model transaction_pending {
+  hash                String                @id @db.VarChar(66)
+  block_hash          String                @db.VarChar(66)
+  tx_type_id          Int
+  from                String                @db.VarChar(42)
+  to                  String                @db.VarChar(42)
+  block_number        Int
+  transaction_index   Int
+  nonce               Int
+  gas                 Int
+  gas_price           String                @db.VarChar
+  value               Int
+  input               String                @db.VarChar
+  status              String                @db.VarChar
+  transaction_in_pool transaction_in_pool[]
+}
+
+model txpool {
+  id                  Int                   @id @default(autoincrement())
+  block_number        Int
+  pending             Int
+  queued              Int
+  timestamp           BigInt
+  transaction_in_pool transaction_in_pool[]
+  block               block                 @relation(fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_txpool_block_number")
+}
+
+model type {
+  id                   Int                    @id @default(autoincrement())
+  entity               String                 @db.VarChar
+  type                 String                 @db.VarChar
+  internal_transaction internal_transaction[]
+  transaction          transaction[]
+}
+
+model uncle {
+  hash         String @id @db.VarChar(66)
+  block_number Int
+  block        block  @relation(fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_uncle_block_number")
+}
+
+model used_settings {
+  id                           Int                            @id @default(autoincrement())
+  compiler_id                  Int?
+  language                     String?                        @db.VarChar
+  evm_version                  String?                        @db.VarChar
+  optimizer_id                 Int?
+  contract_verification_result contract_verification_result[]
+  compiler                     compiler?                      @relation(fields: [compiler_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_compiler_id")
+  optimizer                    optimizer?                     @relation(fields: [optimizer_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_optimizer_id")
+  used_settings_library        used_settings_library[]
+}
+
+model used_settings_library {
+  used_settings_id Int
+  library_address  String        @db.VarChar(42)
+  library          library       @relation(fields: [library_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_library_library_address")
+  used_settings    used_settings @relation(fields: [used_settings_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_library_used_settings_id")
+
+  @@id([used_settings_id, library_address], map: "pk_used_settings_library")
+}
+
+model used_source {
+  result_id                    Int
+  name                         String                       @db.VarChar
+  contents                     String                       @db.VarChar
+  file                         String                       @db.VarChar
+  contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_source_result_id")
+
+  @@id([result_id, name], map: "pk_used_source")
+}
+
+model verification_result {
+  id       String    @id @db.VarChar
+  address  String?   @db.VarChar(42)
+  contract contract? @relation(fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_verification_result_address")
+}
+
+model warning {
+  id                                                       Int              @id @default(autoincrement())
+  component                                                String?          @db.VarChar
+  formatted_message                                        String?          @db.VarChar
+  message                                                  String?          @db.VarChar
+  severity                                                 String?          @db.VarChar
+  type                                                     String?          @db.VarChar
+  source_location                                          Int?
+  result_warning                                           result_warning[]
+  source_location_warning_source_locationTosource_location source_location? @relation("warning_source_locationTosource_location", fields: [source_location], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_warning_source_location")
 }

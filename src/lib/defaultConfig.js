@@ -39,8 +39,11 @@ export default {
     server: 'localhost',
     port: 27017,
     database: 'blockDB',
+    prismaEngine: 'postgres',
     prismaPort: 5432,
-    prismaDbName: "explorer_db",
+    prismaDbName: 'explorer_db',
+    prismaUser: 'postgres',
+    prismaPassword: 12345678
   },
   api: {
     address: 'localhost',
