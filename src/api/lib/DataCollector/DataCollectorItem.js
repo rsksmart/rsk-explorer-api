@@ -69,7 +69,7 @@ export class DataCollectorItem {
   }
 
   async setFieldsTypes () {
-    let types = await getFieldsTypes(this.db)
+    let types = await getFieldsTypes(this.db, this.repository)
     this.fieldsTypes = types
     return types
   }
@@ -101,7 +101,7 @@ export class DataCollectorItem {
   async setCursorData () {
     let { cursorField } = this
     const types = await this.getFieldsTypes()
-    this.cursorData = await getCursorData(this.db, cursorField, types)
+    this.cursorData = await getCursorData(this.db, cursorField, types, this.repository)
     return this.cursorData
   }
 
@@ -181,8 +181,8 @@ export function formatResponse (result, pages) {
   return { pages, data }
 }
 
-export async function getFieldsTypes (collection) {
-  let doc = await collection.findOne()
+export async function getFieldsTypes (collection, repository) {
+  let doc = await repository.findOne({}, {}, collection)
   let fields = {}
   for (let p in doc) {
     let value = doc[p]
@@ -227,8 +227,8 @@ export function fieldFilterParse (field, value, query) {
   return query
 }
 
-export async function getCursorData (collection, cursorField, types) {
-  types = types || await getFieldsTypes(collection)
+export async function getCursorData (collection, cursorField, types, repository) {
+  types = types || await getFieldsTypes(collection, repository)
   const cursorType = types[cursorField]
   return { cursorField, cursorType, fields: types }
 }
