@@ -1,6 +1,7 @@
 import { Collection, ObjectID } from 'mongodb'
 import { find, findPages, aggregatePages, countDocuments } from './pagination'
 import { OBJECT_ID } from '../../../lib/types'
+import { generateTextQuery } from './textSearch'
 import { REPOSITORIES } from '../../../repositories/modules/repositories'
 
 export class DataCollectorItem {
@@ -163,6 +164,7 @@ export class DataCollectorItem {
     try {
       if (typeof value !== 'string') throw new Error('The text search requires an string value')
       let query = generateTextQuery(value, params)
+      
       return this.find(query)
     } catch (err) {
       return Promise.reject(err)
