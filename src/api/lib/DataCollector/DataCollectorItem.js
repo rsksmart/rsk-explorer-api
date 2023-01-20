@@ -49,7 +49,7 @@ export class DataCollectorItem {
   async find (query, sort, limit, project) {
     let collection = this.db
     project = project || this.getDefaultsFields()
-    let data = await find(collection, query, sort, limit, project)
+    let data = await find(collection, query, sort, limit, project, this.repository)
     return { data }
   }
 
@@ -63,7 +63,7 @@ export class DataCollectorItem {
 
   async getLatest (query, project) {
     query = query || {}
-    const result = await find(this.db, query, this.sort, 1, project)
+    const result = await find(this.db, query, this.sort, 1, project, this.repository)
     const data = result.length ? result[0] : null
     return { data }
   }
@@ -122,8 +122,8 @@ export class DataCollectorItem {
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
-      let prev = (await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0]
-      let next = (await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0]
+      let prev = (await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project), this.repository)[0]
+      let next = (await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project), this.repository)[0]
       return { prev, data, next }
     } catch (err) {
       return Promise.reject(err)
@@ -151,7 +151,7 @@ export class DataCollectorItem {
       let pages = this.responseParams(params)
       let cursorData = await this.getCursorData()
       query = aggregate || query
-      let args = [this.db, cursorData, query, pages]
+      let args = [this.db, cursorData, query, pages, this.repository]
       let result = (aggregate) ? await aggregatePages(...args) : await findPages(...args)
       return formatResponse(result, pages)
     } catch (err) {
