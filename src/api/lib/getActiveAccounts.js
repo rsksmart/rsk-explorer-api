@@ -1,5 +1,5 @@
 import { addrTypes } from '../../lib/types'
-import { addressRepository } from '../../repositories/modules/address.repository.js';
+import { addressRepository } from '../../repositories/modules/address.repository';
 
 export default async function getActiveAccounts (collections) {
   try {
