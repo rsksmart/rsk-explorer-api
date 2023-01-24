@@ -1,9 +1,9 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
-import { blockRepository } from '../repositories/modules/block.repository'
+import { blockRepository } from '../repositories/block.repository'
 
 export class Status extends DataCollector {
-  constructor (db) {
+  constructor(db) {
     const collections = getDbBlocksCollections(db)
     const { Status, Blocks } = collections
     super(db, { collectionName: 'Status' })
@@ -13,17 +13,17 @@ export class Status extends DataCollector {
     this.addModule(new DataCollectorItem(Blocks, 'Blocks'))
     this.blockCollection = this.getModule('Blocks').db
   }
-  tick () {
+  tick() {
     this.updateState().then((newState) => {
       if (newState) {
         this.events.emit('newStatus', this.formatData(newState))
       }
     })
   }
-  getState () {
+  getState() {
     return this.formatData(this.state)
   }
-  getBlocksServiceStatus () {
+  getBlocksServiceStatus() {
     const Status = this.getModule('Status')
     return Status.find({}, { timestamp: -1 }, 1)
       .then(res => {
@@ -32,7 +32,7 @@ export class Status extends DataCollector {
         return res
       })
   }
-  async updateState () {
+  async updateState() {
     try {
       let status = await this.getStatus()
       status = status || {}
@@ -50,7 +50,7 @@ export class Status extends DataCollector {
     }
   }
 
-  async getStatus () {
+  async getStatus() {
     try {
       const [blocksStatus, last, high, dbBlocks] =
         await Promise.all([
@@ -73,13 +73,13 @@ export class Status extends DataCollector {
     }
   }
 
-  getHighestBlock () {
+  getHighestBlock() {
     return blockRepository.findOne({}, { sort: { number: -1 }, limit: 1 }, this.blockCollection)
   }
-  getLastblockReceived () {
+  getLastblockReceived() {
     return blockRepository.findOne({}, { sort: { _received: -1 }, limit: 1 }, this.blockCollection)
   }
-  getTotalBlocks () {
+  getTotalBlocks() {
     return blockRepository.countDocuments({}, this.blockCollection)
   }
 }
