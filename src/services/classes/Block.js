@@ -2,6 +2,7 @@ import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
 import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
 import { saveAddressToDb } from './Address'
+import { blockRepository } from '../../repositories/block.repository'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -176,7 +177,7 @@ export class Block extends BcThing {
   }
 
   insertBlock (block) {
-    return this.collections.Blocks.insertOne(block)
+    return blockRepository.insertOne(block, this.collections.Blocks) 
   }
 
   async getBlockFromDb (hashOrNumber, allData) {

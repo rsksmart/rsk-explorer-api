@@ -1,5 +1,6 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import { isHexString, base64toHex } from '../../lib/utils'
+import { txPoolRepository } from '../../repositories/txPool.repository'
 
 export class TxPool extends BlocksBase {
   constructor (db, options) {
@@ -115,7 +116,7 @@ export class TxPool extends BlocksBase {
   async savePoolToDb (pool) {
     try {
       this.log.debug(`Saving txPool to db`)
-      await this.TxPool.insertOne(pool)
+      await txPoolRepository.insertOne(pool, this.TxPool)
       await this.savePendingTxs(pool.txs)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
