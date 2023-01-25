@@ -3,7 +3,7 @@ import dataSource from '../lib/dataSource.js'
 import { Block, deleteBlockDataFromDb } from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import { deleteBlockSummaryFromDb, getBlockSummariesByNumber } from '../services/classes/BlockSummary'
-import { tokenRepository } from '../repositories/token.repository.js'
+import { tokenRepository } from '../repositories/token.repository'
 
 update().then((addresses) => {
   if (addresses.length) {

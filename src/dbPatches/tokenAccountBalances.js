@@ -3,7 +3,7 @@ import dataSource from '../lib/dataSource.js'
 import nod3 from '../lib/nod3Connect'
 import ContractParser from '@rsksmart/rsk-contract-parser'
 import { add0x } from '@rsksmart/rsk-utils'
-import { tokenRepository } from '../repositories/token.repository.js'
+import { tokenRepository } from '../repositories/token.repository'
 
 const parser = new ContractParser({ nod3 })
 
