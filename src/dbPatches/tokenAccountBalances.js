@@ -3,6 +3,7 @@ import dataSource from '../lib/dataSource.js'
 import nod3 from '../lib/nod3Connect'
 import ContractParser from '@rsksmart/rsk-contract-parser'
 import { add0x } from '@rsksmart/rsk-utils'
+import { tokenRepository } from '../repositories/token.repository.js'
 
 const parser = new ContractParser({ nod3 })
 
@@ -18,7 +19,7 @@ async function patch () {
   try {
     let { db } = await dataSource({ skipCheck: true })
     let collection = db.collection('tokensAddresses')
-    let cursor = collection.find()
+    let cursor = tokenRepository.find({}, {}, collection)
     await cursor.forEach(async account => {
       try {
         let { balance, contract, address, _id } = account
