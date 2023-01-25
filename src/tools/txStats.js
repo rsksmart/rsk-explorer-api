@@ -1,6 +1,8 @@
 import dataSource from '../lib/dataSource.js'
 import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { newBigNumber } from '../lib/utils'
+import { txRepository } from '../repositories/tx.repository'
+import { blockRepository } from '../repositories/block.repository'
 
 const fromBlock = parseInt(process.argv[2])
 const toBlock = parseInt(process.argv[3])
@@ -30,8 +32,8 @@ async function getData (fromBlock, toBlock) {
         { blockNumber: { $lte: toBlock } },
         { txType: { $ne: 'remasc' } }]
     }
-    let cursor = Txs.find(query)
-    DATA.txs = await Txs.countDocuments(query)
+    let cursor = txRepository.find(query, {}, Txs)
+    DATA.txs = await txRepository.countDocuments(query, Txs)
 
     await cursor.forEach((tx) => {
       getTxData(tx)
@@ -56,7 +58,7 @@ async function getData (fromBlock, toBlock) {
 async function getBlock ({ Blocks }, number) {
   try {
     let query = { number }
-    let data = await Blocks.findOne(query)
+    let data = await blockRepository.findOne(query, {}, Blocks)
     return data
   } catch (err) {
     return Promise.reject(err)
