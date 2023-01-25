@@ -1,6 +1,7 @@
 import io from 'socket.io-client'
 import { StoredConfig } from '../../lib/StoredConfig'
 import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
+import { contractVerificationRepository } from '../../repositories/contractVerification.repository'
 
 // id to store solc versions list on Config collection
 export const versionsId = '_contractVerifierVersions'
@@ -84,7 +85,7 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
       // delete data._id
       const { _id } = data
       if (!address) throw new Error(`Missing address in verification`)
-      let res = await collection.insertOne({ _id, address, request: data, timestamp: Date.now() })
+      let res = await contractVerificationRepository.insertOne({ _id, address, request: data, timestamp: Date.now() }, collection)
       const id = res.insertedId
       if (!id || id !== _id) throw new Error(`Error creating pending verification`)
       data._id = id

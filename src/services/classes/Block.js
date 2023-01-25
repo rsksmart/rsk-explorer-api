@@ -3,6 +3,8 @@ import BlockSummary from './BlockSummary'
 import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
 import { saveAddressToDb } from './Address'
 import { blockRepository } from '../../repositories/block.repository'
+import { txRepository } from '../../repositories/tx.repository'
+import { internalTxRepository } from '../../repositories/internalTx.repository'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -58,14 +60,14 @@ export class Block extends BcThing {
       result.block = await this.insertBlock(block)
 
       // insert txs
-      await Promise.all([...transactions.map(tx => collections.Txs.insertOne(tx))])
+      await Promise.all([...transactions.map(tx => txRepository.insertOne(tx, collections.Txs))])
         .then(res => { result.txs = res })
 
       // remove pending txs
       await Promise.all([...transactions.map(tx => collections.PendingTxs.deleteOne({ hash: tx.hash }))])
 
       // insert internal transactions
-      await Promise.all([...internalTransactions.map(itx => collections.InternalTransactions.insertOne(itx))])
+      await Promise.all([...internalTransactions.map(itx => internalTxRepository.insertOne(itx, collections.InternalTransactions))])
         .then(res => { result.internalTxs = res })
 
       // insert addresses
