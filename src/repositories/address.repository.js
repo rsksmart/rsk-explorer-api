@@ -14,5 +14,11 @@ export const addressRepository = {
   },
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
+  },
+  async updateOne (filter, update, options = {}, collection) {
+    return collection.updateOne(filter, update, options)
+  },
+  async deleteMany (filter, collection) {
+    return collection.deleteMany(filter)
   }
 }

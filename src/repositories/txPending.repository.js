@@ -14,5 +14,8 @@ export const txPendingRepository = {
   },
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
+  },
+  async deleteOne(query, collection) {
+    return collection.deleteOne(query)
   }
 }

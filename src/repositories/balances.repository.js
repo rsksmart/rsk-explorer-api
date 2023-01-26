@@ -14,5 +14,8 @@ export const balancesRepository = {
   },
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
+  },
+  async deleteMany (filter, collection) {
+    return collection.deleteMany(filter)
   }
 }

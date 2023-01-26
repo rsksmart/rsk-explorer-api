@@ -17,5 +17,11 @@ export const blockRepository = {
   },
   async insertOne (data, collection) {
     return collection.insertOne(data)
+  },
+  async updateOne (filter, update, options = {}, collection) {
+    return collection.updateOne(filter, update, options)
+  },
+  async deleteMany (filter, collection) {
+    return collection.deleteMany(filter)
   }
 }
