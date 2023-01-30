@@ -211,7 +211,7 @@ export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     let blocks = {}
     let query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, {}, false)
+    await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
       .forEach(block => {
         blocks[block.number] = block
       })
@@ -244,7 +244,7 @@ export const checkBlocksTransactions = async (blocksCollection, txsCollection, l
     let query = (lastBlock || firstBlock) ? { number: {} } : {}
     if (lastBlock) query.number.$lte = lastBlock
     if (firstBlock) query.number.$gte = firstBlock
-    let cursor = blockRepository.find(query, {}, blocksCollection, {}, {}, false)
+    let cursor = blockRepository.find(query, {}, blocksCollection, {}, 0, false)
     while (await cursor.hasNext()) {
       let block = await cursor.next()
       await Promise.all(block.transactions

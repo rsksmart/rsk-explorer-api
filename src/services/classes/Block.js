@@ -214,11 +214,11 @@ export class Block extends BcThing {
   }
 
   getBlockEventsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {})
+    return eventRepository.find({ blockHash }, {}, this.collections.event)
   }
 
   getBlockTransactionsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {})
+    return eventRepository.find({ blockHash }, {}, this.collections.event)
   }
 
   getTransactionFromDb (hash) {
@@ -266,7 +266,7 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections)
 
     result.block = await blockRepository.deleteMany({ $or: [{ hash }, { number: blockNumber }] }, collections.Blocks)
 
-    let txs = await txRepository.find(query, {}, collections.Txs, {}, {}) || []
+    let txs = await txRepository.find(query, {}, collections.Txs) || []
     let txsHashes = txs.map(tx => tx.hash)
 
     // remove txs
