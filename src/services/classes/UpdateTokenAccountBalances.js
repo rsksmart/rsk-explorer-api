@@ -12,7 +12,7 @@ export async function updateTokenAccountBalances (block, { nod3, collections, lo
   try {
     let collection = collections.TokensAddrs
     let query = { 'block.number': number }
-    let cursor = collection.find(query)
+    let cursor = tokenRepository.find(query, {} , collection, {} , {} , false)
     await cursor.forEach(async account => {
       try {
         let { balance, _id, address, contract } = account
