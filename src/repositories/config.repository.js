@@ -24,5 +24,8 @@ export const configRepository = {
   },
   async insertOne (data, collection) {
     return collection.insertOne(data)
+  },
+  async updateOne (filter, update, options = {}, collection) {
+    return collection.updateOne(filter, update, options)
   }
 }
