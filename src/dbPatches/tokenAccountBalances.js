@@ -30,7 +30,7 @@ async function patch () {
           newBalance = add0x(newBalance.toString(16))
           if (balance !== newBalance) {
             console.log(`Updating balance for ${name}`)
-            await collection.updateOne({ _id }, { $set: { balance: newBalance } })
+            await tokenRepository.updateOne({ _id }, { $set: { balance: newBalance } }, {}, collection)
           } else {
             console.log(`${name} .... OK`)
           }
