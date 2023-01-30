@@ -138,7 +138,7 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
     let block
     const current = () => currentBlock
     const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } }
-    const cursor = blocksCollection.find(query, { projection, sort })
+    const cursor = blockRepository.find(query, projection, blocksCollection, sort, {} , false)
     const next = async () => {
       if (currentBlock <= lowestBlock) return
 

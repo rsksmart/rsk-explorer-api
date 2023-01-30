@@ -251,7 +251,7 @@ export class Block extends BcThing {
 
 export const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = blockQuery(blockHashOrNumber)
-  if (query) return collection.findOne(query)
+  if (query) return blockRepository.findOne(query, {} , collection)
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
 }
 
