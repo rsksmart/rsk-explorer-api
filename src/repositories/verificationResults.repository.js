@@ -21,5 +21,8 @@ export const verificationResultsRepository = {
   },
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
+  },
+  async insertOne (data, collection) {
+    return collection.insertOne(data)
   }
 }
