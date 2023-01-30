@@ -51,7 +51,7 @@ export function StoredConfig (db, readOnlyDocsIds = []) {
         if (!old) return save(_id, newDoc)
       }
       newDoc._updated = Date.now()
-      let res = await storage.updateOne({ _id }, { $set: newDoc }, options)
+      let res = await configRepository.updateOne({ _id }, { $set: newDoc }, options, storage)
       return res
     } catch (err) {
       return Promise.reject(err)
