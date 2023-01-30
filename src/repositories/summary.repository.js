@@ -14,5 +14,11 @@ export const summaryRepository = {
   },
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
+  },
+  async updateOne (filter, update, options = {}, collection) {
+    return collection.updateOne(filter, update, options)
+  },
+  async deleteOne(query, collection) {
+    return collection.deleteOne(query)
   }
 }

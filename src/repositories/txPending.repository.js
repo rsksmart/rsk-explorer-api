@@ -17,5 +17,8 @@ export const txPendingRepository = {
   },
   async deleteOne(query, collection) {
     return collection.deleteOne(query)
+  },
+  async updateOne (filter, update, options = {}, collection) {
+    return collection.updateOne(filter, update, options)
   }
 }

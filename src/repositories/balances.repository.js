@@ -3,11 +3,11 @@ export const balancesRepository = {
     return collection.findOne(query, options)
   },
   async find (query = {}, options = {}, collection, sort = {}, limit = {}) {
-    return collection
-      .find(query, options)
-      .sort(sort)
-      .limit(limit)
-      .toArray()
+      return collection
+        .find(query, options)
+        .sort(sort)
+        .limit(limit)
+        .toArray()
   },
   async countDocuments (query = {}, collection) {
     return collection.countDocuments(query)
@@ -17,5 +17,8 @@ export const balancesRepository = {
   },
   async deleteMany (filter, collection) {
     return collection.deleteMany(filter)
+  },
+  async insertMany (doc, collection) {
+    return collection.insertMany(doc)
   }
 }
