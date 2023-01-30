@@ -25,7 +25,7 @@ export class BlockTrace extends BcThing {
   async getFromDb () {
     try {
       let { hash, collection } = this
-      let res = await blockTraceRepository.findOne({ hash }, {}, collection) 
+      let res = await blockTraceRepository.findOne({ hash }, {}, collection)
       return (res) ? res.data : null
     } catch (err) {
       return Promise.reject(err)

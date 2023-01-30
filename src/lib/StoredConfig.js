@@ -11,7 +11,7 @@ export function StoredConfig (db, readOnlyDocsIds = []) {
   const isValidId = id => typeof id === 'string'
   const get = async (_id) => {
     try {
-      const doc = await configRepository.findOne({ _id }, {}, storage) 
+      const doc = await configRepository.findOne({ _id }, {}, storage)
       if (doc) {
         // Remove all underscored properties
         for (let prop in doc) {

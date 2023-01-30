@@ -6,7 +6,7 @@ import { blockRepository } from '../../repositories/block.repository'
 import { txRepository } from '../../repositories/tx.repository'
 import { internalTxRepository } from '../../repositories/internalTx.repository'
 import { eventRepository } from '../../repositories/event.repository'
-import { tokenRepository} from '../../repositories/token.repository'
+import { tokenRepository } from '../../repositories/token.repository'
 import { txPendingRepository } from '../../repositories/txPending.repository'
 import { addressRepository } from '../../repositories/address.repository'
 import { balancesRepository } from '../../repositories/balances.repository'
@@ -185,7 +185,7 @@ export class Block extends BcThing {
   }
 
   insertBlock (block) {
-    return blockRepository.insertOne(block, this.collections.Blocks) 
+    return blockRepository.insertOne(block, this.collections.Blocks)
   }
 
   async getBlockFromDb (hashOrNumber, allData) {
@@ -214,15 +214,15 @@ export class Block extends BcThing {
   }
 
   getBlockEventsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {} )
+    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {})
   }
 
   getBlockTransactionsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {} )
+    return eventRepository.find({ blockHash }, {}, this.collections.event, {}, {})
   }
 
   getTransactionFromDb (hash) {
-    return txRepository.findOne({ hash }, {} , this.collections.Txs)
+    return txRepository.findOne({ hash }, {}, this.collections.Txs)
   }
 
   // adds contract data to addresses
@@ -251,7 +251,7 @@ export class Block extends BcThing {
 
 export const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = blockQuery(blockHashOrNumber)
-  if (query) return blockRepository.findOne(query, {} , collection)
+  if (query) return blockRepository.findOne(query, {}, collection)
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
 }
 

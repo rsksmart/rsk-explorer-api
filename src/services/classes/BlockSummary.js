@@ -187,7 +187,7 @@ export async function getBlockSummaryFromDb (hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection]
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let data = await summaryRepository.findOne({ hash }, {} , collection)
+    let data = await summaryRepository.findOne({ hash }, {}, collection)
     return data
   } catch (err) {
     return Promise.reject(err)
@@ -198,7 +198,7 @@ export async function deleteBlockSummaryFromDb (hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection]
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let res =  summaryRepository.deleteOne({ hash }, collection)
+    let res = summaryRepository.deleteOne({ hash }, collection)
     return res
   } catch (err) {
     return Promise.reject(err)
@@ -210,7 +210,7 @@ export async function getBlockSummariesByNumber (blockNumber, collections) {
     const number = parseInt(blockNumber)
     if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
     const collection = collections[BlocksSummaryCollection]
-    let res = await summaryRepository.find({ number }, {} , collection)
+    let res = await summaryRepository.find({ number }, {}, collection)
     return res
   } catch (err) {
     return Promise.reject(err)

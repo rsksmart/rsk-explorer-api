@@ -22,7 +22,7 @@ export const txPendingRepository = {
   async aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  async deleteOne(query, collection) {
+  async deleteOne (query, collection) {
     return collection.deleteOne(query)
   },
   async updateOne (filter, update, options = {}, collection) {

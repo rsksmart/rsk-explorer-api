@@ -37,7 +37,7 @@ export class BlockBalances extends BcThing {
   }
   deleteOldBalances () {
     const { blockHash, blockNumber, collection } = this
-    return Promise.all([balancesRepository.deleteMany({ blockHash }, collection), balancesRepository.deleteMany({ blockNumber }, collection) ])
+    return Promise.all([ balancesRepository.deleteMany({ blockHash }, collection), balancesRepository.deleteMany({ blockNumber }, collection) ])
   }
   async save () {
     try {

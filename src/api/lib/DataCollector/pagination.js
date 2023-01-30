@@ -224,7 +224,7 @@ export async function find (collection, query, sort, limit, project, repository)
   sort = sort || {}
   project = project || {}
   limit = limit || 0
-  
+
   let data = await repository
     .find(query, project, collection, sort, limit)
     .catch((err) => {

@@ -101,7 +101,7 @@ class Contract extends BcThing {
     try {
       let { collections, address } = this
       if (!collections) return
-      const data =  verificationResultsRepository.findOne({ address, match: true }, {} , collections.VerificationsResults)
+      const data = verificationResultsRepository.findOne({ address, match: true }, {}, collections.VerificationsResults)
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)

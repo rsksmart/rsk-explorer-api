@@ -1,7 +1,7 @@
 import { addrTypes } from '../../lib/types'
-import { addressRepository } from '../../repositories/address.repository';
+import { addressRepository } from '../../repositories/address.repository'
 
-export default async function getActiveAccounts(collections) {
+export default async function getActiveAccounts (collections) {
   try {
     let collection = collections.Addrs
     let type = addrTypes.ADDRESS

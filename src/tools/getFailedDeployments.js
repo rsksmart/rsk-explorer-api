@@ -8,7 +8,7 @@ dataSource({ skipCheck: true }).then(async ({ db }) => {
     const Addrs = db.collection(config.collections.Addrs)
     const query = { createdByTx: { $exists: true }, type: 'account' }
     const project = { address: 1, type: 1, _id: 0 }
-    
+
     let result = await addressRepository.find(query, project, Addrs)
     if (result) {
       result = result.map(r => r.address)

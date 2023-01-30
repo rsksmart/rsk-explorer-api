@@ -18,7 +18,7 @@ export const PERIODS = {
 }
 
 export class ExtendedStats extends DataCollectorItem {
-  constructor({ Blocks }, key) {
+  constructor ({ Blocks }, key) {
     super(Blocks, key)
     this.hashrateCalculator = new HashrateCalculator()
     this.difficultyCalculator = new DifficultyCalculator()
@@ -128,7 +128,7 @@ export class ExtendedStats extends DataCollectorItem {
     }
   }
 
-  async getExtendedStats(blockNumber) {
+  async getExtendedStats (blockNumber) {
     let extendedStats = {
       difficulties: {},
       hashrates: {}
@@ -152,7 +152,7 @@ export class ExtendedStats extends DataCollectorItem {
     return extendedStats
   }
 
-  async getHashrates(blockNumber) {
+  async getHashrates (blockNumber) {
     let hashrates = {}
 
     const query = { number: blockNumber }
@@ -171,7 +171,7 @@ export class ExtendedStats extends DataCollectorItem {
     return hashrates
   }
 
-  async getDifficulties(blockNumber) {
+  async getDifficulties (blockNumber) {
     let difficulties = {}
 
     const query = { number: blockNumber }

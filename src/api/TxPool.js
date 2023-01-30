@@ -5,22 +5,22 @@ import { txPoolRepository } from '../repositories/txPool.repository'
 const collectionName = config.collectionsNames.TxPool
 
 export class TxPool extends DataCollector {
-  constructor(db) {
+  constructor (db) {
     super(db, { collectionName })
     this.tickDelay = 1000
     this.state = {}
     this.chart = []
   }
-  start() {
+  start () {
     super.start()
     this.updatePool()
   }
 
-  tick() {
+  tick () {
     this.updatePool()
   }
 
-  async updatePool() {
+  async updatePool () {
     try {
       let pool = await this.getPool()
       if (pool && pool.timestamp !== this.state.timestamp) {
@@ -34,11 +34,11 @@ export class TxPool extends DataCollector {
     }
   }
 
-  getPool() {
+  getPool () {
     return txPoolRepository.findOne({}, { sort: { _id: -1 } }, this.collection)
   }
 
-  async updatePoolChart() {
+  async updatePoolChart () {
     try {
       let chart = await txPoolRepository.find({}, { txs: 0 }, this.collection, { timestamp: -1 }, 200)
       this.chart = chart
@@ -47,12 +47,12 @@ export class TxPool extends DataCollector {
     }
   }
 
-  getPoolChart() {
+  getPoolChart () {
     let chart = this.chart.concat().reverse()
     return this.formatData(chart)
   }
 
-  getState() {
+  getState () {
     let state = Object.assign({}, this.state)
     delete state._id
     return this.formatData(state)

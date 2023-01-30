@@ -162,7 +162,7 @@ export class CheckBlocks extends BlocksBase {
   }
 
   getHighDbBlock () {
-    return blockRepository.findOne({},{ sort: { number: -1 } }, this.Blocks)
+    return blockRepository.findOne({}, { sort: { number: -1 } }, this.Blocks)
   }
 
   countDbBlocks () {
@@ -244,7 +244,7 @@ export const checkBlocksTransactions = async (blocksCollection, txsCollection, l
     let query = (lastBlock || firstBlock) ? { number: {} } : {}
     if (lastBlock) query.number.$lte = lastBlock
     if (firstBlock) query.number.$gte = firstBlock
-    let cursor = blockRepository.find(query, {} , blocksCollection, {} , {} , false)
+    let cursor = blockRepository.find(query, {}, blocksCollection, {}, {}, false)
     while (await cursor.hasNext()) {
       let block = await cursor.next()
       await Promise.all(block.transactions

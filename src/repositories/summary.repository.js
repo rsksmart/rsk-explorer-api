@@ -25,7 +25,7 @@ export const summaryRepository = {
   async updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)
   },
-  async deleteOne(query, collection) {
+  async deleteOne (query, collection) {
     return collection.deleteOne(query)
   }
 }
