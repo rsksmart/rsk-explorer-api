@@ -2,12 +2,19 @@ export const internalTxRepository = {
   async findOne (query = {}, options = {}, collection) {
     return collection.findOne(query, options)
   },
-  async find (query = {}, options = {}, collection, sort = {}, limit = {}) {
-    return collection
-      .find(query, options)
-      .sort(sort)
-      .limit(limit)
-      .toArray()
+  async find (query = {}, options = {}, collection, sort = {}, limit = {}, isArray = true) {
+    if (isArray) {
+      return collection
+        .find(query, options)
+        .sort(sort)
+        .limit(limit)
+        .toArray()
+    } else {
+      return collection
+        .find(query, options)
+        .sort(sort)
+        .limit(limit)
+    }
   },
   async countDocuments (query = {}, collection) {
     return collection.countDocuments(query)
