@@ -25,7 +25,7 @@ export class BlocksStatus extends BlocksBase {
     this.updateTime = timestamp
     if (changed && elapsedTime > this.delayDbUpdate) {
       newState = Object.assign(newState, { timestamp })
-      return statusRepository.insertOne(this.Status, newState)
+      return statusRepository.insertOne(newState, this.Status)
         .then(res => {
           return newState
         })
