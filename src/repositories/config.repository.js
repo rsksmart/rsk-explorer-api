@@ -1,8 +1,8 @@
 export const configRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
       return collection
         .find(query, project)
@@ -16,16 +16,16 @@ export const configRepository = {
         .limit(limit)
     }
   },
-  async countDocuments (query = {}, collection) {
+  countDocuments (query = {}, collection) {
     return collection.countDocuments(query)
   },
-  async aggregate (aggregate, collection) {
+  aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  async insertOne (data, collection) {
+  insertOne (data, collection) {
     return collection.insertOne(data)
   },
-  async updateOne (filter, update, options = {}, collection) {
+  updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)
   }
 }

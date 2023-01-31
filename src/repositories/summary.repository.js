@@ -1,8 +1,8 @@
 export const summaryRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
       return collection
         .find(query, project)
@@ -16,16 +16,19 @@ export const summaryRepository = {
         .limit(limit)
     }
   },
-  async countDocuments (query = {}, collection) {
+  countDocuments (query = {}, collection) {
     return collection.countDocuments(query)
   },
-  async aggregate (aggregate, collection) {
+  aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  async updateOne (filter, update, options = {}, collection) {
+  updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)
   },
-  async deleteOne (query, collection) {
+  deleteOne (query, collection) {
     return collection.deleteOne(query)
+  },
+  insertOne (data, collection) {
+    return collection.insertOne(data)
   }
 }
