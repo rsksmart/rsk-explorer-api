@@ -1,7 +1,15 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.deleteBlockDataFromDb = exports.getBlockFromDb = exports.Block = void 0;var _BcThing = require("./BcThing");
 var _BlockSummary = _interopRequireDefault(require("./BlockSummary"));
 var _utils = require("../../lib/utils");
-var _Address = require("./Address");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _Address = require("./Address");
+var _block = require("../../repositories/block.repository");
+var _tx = require("../../repositories/tx.repository");
+var _internalTx = require("../../repositories/internalTx.repository");
+var _event = require("../../repositories/event.repository");
+var _token = require("../../repositories/token.repository");
+var _txPending = require("../../repositories/txPending.repository");
+var _address = require("../../repositories/address.repository");
+var _balances = require("../../repositories/balances.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Block extends _BcThing.BcThing {
   constructor(hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -39,7 +47,7 @@ class Block extends _BcThing.BcThing {
       // Skip saved blocks
       if ((0, _utils.isBlockHash)(hashOrNumber) && !overwrite) {
         let hash = hashOrNumber;
-        let exists = await collections.Blocks.findOne({ hash });
+        let exists = await _block.blockRepository.findOne({ hash }, {}, collections.Blocks);
         if (exists) throw new Error(`Block ${hash} skipped`);
       }
       await this.fetch();
@@ -57,14 +65,14 @@ class Block extends _BcThing.BcThing {
       result.block = await this.insertBlock(block);
 
       // insert txs
-      await Promise.all([...transactions.map(tx => collections.Txs.insertOne(tx))]).
+      await Promise.all([...transactions.map(tx => _tx.txRepository.insertOne(tx, collections.Txs))]).
       then(res => {result.txs = res;});
 
       // remove pending txs
-      await Promise.all([...transactions.map(tx => collections.PendingTxs.deleteOne({ hash: tx.hash }))]);
+      await Promise.all([...transactions.map(tx => _txPending.txPendingRepository.deleteOne({ hash: tx.hash }, collections.PendingTxs))]);
 
       // insert internal transactions
-      await Promise.all([...internalTransactions.map(itx => collections.InternalTransactions.insertOne(itx))]).
+      await Promise.all([...internalTransactions.map(itx => _internalTx.internalTxRepository.insertOne(itx, collections.InternalTransactions))]).
       then(res => {result.internalTxs = res;});
 
       // insert addresses
@@ -90,10 +98,11 @@ class Block extends _BcThing.BcThing {
   async insertEvents(events) {
     try {
       let { Events } = this.collections;
-      let result = await Promise.all([...events.map(e => Events.updateOne(
+      let result = await Promise.all([...events.map(e => _event.eventRepository.updateOne(
       { eventId: e.eventId },
       { $set: e },
-      { upsert: true }))]);
+      { upsert: true },
+      Events))]);
       return result;
     } catch (err) {
       this.log.error('Error inserting events');
@@ -104,8 +113,8 @@ class Block extends _BcThing.BcThing {
   async insertTokenAddresses(data) {
     try {
       let { TokensAddrs } = this.collections;
-      let result = await Promise.all([...data.map(ta => TokensAddrs.updateOne(
-      { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))]);
+      let result = await Promise.all([...data.map(ta => _token.tokenRepository.updateOne(
+      { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }, TokensAddrs))]);
       return result;
     } catch (err) {
       this.log.error('Error inserting token addresses');
@@ -176,7 +185,7 @@ class Block extends _BcThing.BcThing {
   }
 
   insertBlock(block) {
-    return this.collections.Blocks.insertOne(block);
+    return _block.blockRepository.insertOne(block, this.collections.Blocks);
   }
 
   async getBlockFromDb(hashOrNumber, allData) {
@@ -205,15 +214,15 @@ class Block extends _BcThing.BcThing {
   }
 
   getBlockEventsFromDb(blockHash) {
-    return this.collections.Events.find({ blockHash }).toArray();
+    return _event.eventRepository.find({ blockHash }, {}, this.collections.event);
   }
 
   getBlockTransactionsFromDb(blockHash) {
-    return this.collections.Txs.find({ blockHash }).toArray();
+    return _event.eventRepository.find({ blockHash }, {}, this.collections.event);
   }
 
   getTransactionFromDb(hash) {
-    return this.collections.Txs.findOne({ hash });
+    return _tx.txRepository.findOne({ hash }, {}, this.collections.Txs);
   }
 
   // adds contract data to addresses
@@ -242,7 +251,7 @@ class Block extends _BcThing.BcThing {
 
 const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = (0, _utils.blockQuery)(blockHashOrNumber);
-  if (query) return collection.findOne(query);
+  if (query) return _block.blockRepository.findOne(query, {}, collection);
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`));
 };exports.getBlockFromDb = getBlockFromDb;
 
@@ -255,28 +264,28 @@ const deleteBlockDataFromDb = async (blockHash, blockNumber, collections) => {
     let result = {};
     const query = { $or: [{ blockHash }, { blockNumber }] };
 
-    result.block = await collections.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] });
+    result.block = await _block.blockRepository.deleteMany({ $or: [{ hash }, { number: blockNumber }] }, collections.Blocks);
 
-    let txs = (await collections.Txs.find(query).toArray()) || [];
+    let txs = (await _tx.txRepository.find(query, {}, collections.Txs)) || [];
     let txsHashes = txs.map(tx => tx.hash);
 
     // remove txs
-    result.txs = await collections.Txs.deleteMany({ hash: { $in: txsHashes } });
+    result.txs = await _tx.txRepository.deleteMany({ hash: { $in: txsHashes } }, collections.Txs);
 
     // remove internal txs
-    result.itxs = await collections.InternalTransactions.deleteMany({ transactionHash: { $in: txsHashes } });
+    result.itxs = await _internalTx.internalTxRepository.deleteMany({ transactionHash: { $in: txsHashes } }, collections.InternalTransactions);
 
     // remove events by block
-    result.events = await collections.Events.deleteMany(query);
+    result.events = await _event.eventRepository.deleteMany(query, collections.Events);
 
     // remove events by txs
-    result.eventsByTxs = await collections.Events.deleteMany({ txHash: { $in: txsHashes } });
+    result.eventsByTxs = await _event.eventRepository.deleteMany({ txHash: { $in: txsHashes } }, collections.Events);
 
     // remove contracts by blockHash
-    result.addresses = await collections.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash });
+    result.addresses = await _address.addressRepository.deleteMany({ 'createdByTx.blockHash': blockHash }, collections.Addrs);
 
     // remove balances
-    result.balances = await collections.Balances.deleteMany(query);
+    result.balances = await _balances.balancesRepository.deleteMany(query, collections.Balances);
 
     return result;
   } catch (err) {

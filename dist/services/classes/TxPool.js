@@ -1,5 +1,7 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.Pool = Pool;exports.default = exports.TxPool = void 0;var _BlocksBase = require("../../lib/BlocksBase");
 var _utils = require("../../lib/utils");
+var _txPool = require("../../repositories/txPool.repository");
+var _txPending = require("../../repositories/txPending.repository");
 
 class TxPool extends _BlocksBase.BlocksBase {
   constructor(db, options) {
@@ -115,7 +117,7 @@ class TxPool extends _BlocksBase.BlocksBase {
   async savePoolToDb(pool) {
     try {
       this.log.debug(`Saving txPool to db`);
-      await this.TxPool.insertOne(pool);
+      await _txPool.txPoolRepository.insertOne(pool, this.TxPool);
       await this.savePendingTxs(pool.txs);
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`);
@@ -126,7 +128,7 @@ class TxPool extends _BlocksBase.BlocksBase {
   async savePendingTxs(txs) {
     try {
       txs = txs || [];
-      await Promise.all(txs.map(tx => this.PendingTxs.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true })));
+      await Promise.all(txs.map(tx => _txPending.txPendingRepository.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true }, this.PendingTxs)));
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`);
       return Promise.reject(err);

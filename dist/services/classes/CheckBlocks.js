@@ -2,6 +2,7 @@
 var _Block = require("./Block");
 var _RequestBlocks = require("./RequestBlocks");
 var _utils = require("../../lib/utils");
+var _block = require("../../repositories/block.repository");
 
 class CheckBlocks extends _BlocksBase.BlocksBase {
   constructor(db, options) {
@@ -161,11 +162,11 @@ class CheckBlocks extends _BlocksBase.BlocksBase {
   }
 
   getHighDbBlock() {
-    return this.Blocks.findOne({}, { sort: { number: -1 } });
+    return _block.blockRepository.findOne({}, { sort: { number: -1 } }, this.Blocks);
   }
 
   countDbBlocks() {
-    return this.Blocks.countDocuments({});
+    return _block.blockRepository.countDocuments({}, this.Blocks);
   }
   setTipBlock(number) {
     let tipBlock = this.tipBlock;
@@ -210,9 +211,7 @@ const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     let blocks = {};
     let query = lastBlock ? { number: { $lt: lastBlock } } : {};
-    await blocksCollection.find(query).
-    project({ _id: 0, number: 1, hash: 1, parentHash: 1 }).
-    sort({ number: -1 }).
+    await _block.blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false).
     forEach(block => {
       blocks[block.number] = block;
     });
@@ -245,7 +244,7 @@ const checkBlocksTransactions = async (blocksCollection, txsCollection, lastBloc
     let query = lastBlock || firstBlock ? { number: {} } : {};
     if (lastBlock) query.number.$lte = lastBlock;
     if (firstBlock) query.number.$gte = firstBlock;
-    let cursor = blocksCollection.find(query);
+    let cursor = _block.blockRepository.find(query, {}, blocksCollection, {}, 0, false);
     while (await cursor.hasNext()) {
       let block = await cursor.next();
       await Promise.all(block.transactions.

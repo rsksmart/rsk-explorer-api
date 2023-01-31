@@ -1,13 +1,12 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.GetTxBalance = void 0;var _utils = require("../../lib/utils");
+var _tx = require("../../repositories/tx.repository");
 class GetTxBalance {
   constructor(txCollection) {
     this.txCollection = txCollection;
   }
 
   async getTxs(query) {
-    let data = await this.txCollection.find(query).
-    project({ value: 1 }).
-    toArray().
+    let data = await _tx.txRepository.find(query, { value: 1 }, this.txCollection).
     catch(err => Promise.reject(err));
     return data;
   }

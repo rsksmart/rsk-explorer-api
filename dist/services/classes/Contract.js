@@ -2,7 +2,8 @@
 var _rskContractParser = _interopRequireDefault(require("@rsksmart/rsk-contract-parser"));
 var _types = require("../../lib/types");
 var _TokenAddress = _interopRequireDefault(require("./TokenAddress"));
-var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _utils = require("../../lib/utils");
+var _verificationResults = require("../../repositories/verificationResults.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Contract extends _BcThing.BcThing {
   constructor(address, deployedCode, { dbData, abi, nod3, initConfig, collections, block }) {
@@ -100,7 +101,7 @@ class Contract extends _BcThing.BcThing {
     try {
       let { collections, address } = this;
       if (!collections) return;
-      const data = await collections.VerificationsResults.findOne({ address, match: true });
+      const data = _verificationResults.verificationResultsRepository.findOne({ address, match: true }, {}, collections.VerificationsResults);
       if (data && data.abi) return data.abi;
     } catch (err) {
       return Promise.reject(err);

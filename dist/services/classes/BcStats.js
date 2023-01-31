@@ -2,7 +2,8 @@
 var _getCirculatingSupply = _interopRequireDefault(require("../../api/lib/getCirculatingSupply"));
 var _getActiveAccounts = _interopRequireDefault(require("../../api/lib/getActiveAccounts"));
 var _rskContractParser = require("@rsksmart/rsk-contract-parser");
-var _utils = require("../../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _utils = require("../../lib/utils");
+var _stats = require("../../repositories/stats.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class BcStats extends _BlocksBase.BlocksBase {
   constructor(db, options) {
@@ -70,7 +71,7 @@ class BcStats extends _BlocksBase.BlocksBase {
 
   async save(stats) {
     try {
-      const result = await this.collection.insertOne(stats);
+      const result = await _stats.statsRepository.insertOne(stats, this.collection);
       return result;
     } catch (err) {
       return Promise.reject(err);

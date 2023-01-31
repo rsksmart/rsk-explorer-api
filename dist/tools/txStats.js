@@ -1,6 +1,8 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _blocksCollections = require("../lib/blocksCollections");
-var _utils = require("../lib/utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _utils = require("../lib/utils");
+var _tx = require("../repositories/tx.repository");
+var _block = require("../repositories/block.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const fromBlock = parseInt(process.argv[2]);
 const toBlock = parseInt(process.argv[3]);
@@ -30,8 +32,8 @@ async function getData(fromBlock, toBlock) {
       { blockNumber: { $lte: toBlock } },
       { txType: { $ne: 'remasc' } }] };
 
-    let cursor = Txs.find(query);
-    DATA.txs = await Txs.countDocuments(query);
+    let cursor = _tx.txRepository.find(query, {}, Txs);
+    DATA.txs = await _tx.txRepository.countDocuments(query, Txs);
 
     await cursor.forEach(tx => {
       getTxData(tx);
@@ -56,7 +58,7 @@ async function getData(fromBlock, toBlock) {
 async function getBlock({ Blocks }, number) {
   try {
     let query = { number };
-    let data = await Blocks.findOne(query);
+    let data = await _block.blockRepository.findOne(query, {}, Blocks);
     return data;
   } catch (err) {
     return Promise.reject(err);

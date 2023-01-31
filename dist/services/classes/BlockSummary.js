@@ -4,7 +4,8 @@ var _BlockTrace = _interopRequireDefault(require("./BlockTrace"));
 var _BlockAddresses = require("./BlockAddresses");
 var _ids = require("../../lib/ids");
 var _utils = require("../../lib/utils");
-var _addresses = require("@rsksmart/rsk-utils/dist/addresses");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _addresses = require("@rsksmart/rsk-utils/dist/addresses");
+var _summary = require("../../repositories/summary.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const BlocksSummaryCollection = 'BlocksSummary';exports.BlocksSummaryCollection = BlocksSummaryCollection;
 
@@ -161,10 +162,10 @@ async function saveBlockSummary(data, collections, log) {
   const { hash, number, timestamp } = data.block;
   try {
     const collection = collections[BlocksSummaryCollection];
-    const old = await collection.findOne({ hash }, { _id: 1 });
+    const old = await _summary.summaryRepository.findOne({ hash }, { _id: 1 }, collection);
     const _id = old ? old._id : (0, _ids.getSummaryId)(data.block);
     const summary = { _id, hash, number, timestamp, data };
-    let result = await collection.updateOne({ _id }, { $set: summary }, { upsert: true });
+    let result = await _summary.summaryRepository.updateOne({ _id }, { $set: summary }, { upsert: true }, collection);
     return result;
   } catch (err) {
     log.error(`Error saving Block Summary ${hash}`);
@@ -186,7 +187,7 @@ async function getBlockSummaryFromDb(hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection];
     if (!(0, _utils.isBlockHash)(hash)) throw new Error(`Invalid blockHash ${hash}`);
-    let data = await collection.findOne({ hash });
+    let data = await _summary.summaryRepository.findOne({ hash }, {}, collection);
     return data;
   } catch (err) {
     return Promise.reject(err);
@@ -197,7 +198,7 @@ async function deleteBlockSummaryFromDb(hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection];
     if (!(0, _utils.isBlockHash)(hash)) throw new Error(`Invalid blockHash ${hash}`);
-    let res = await collection.deleteOne({ hash });
+    let res = _summary.summaryRepository.deleteOne({ hash }, collection);
     return res;
   } catch (err) {
     return Promise.reject(err);
@@ -209,7 +210,7 @@ async function getBlockSummariesByNumber(blockNumber, collections) {
     const number = parseInt(blockNumber);
     if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`);
     const collection = collections[BlocksSummaryCollection];
-    let res = await collection.find({ number }).toArray();
+    let res = await _summary.summaryRepository.find({ number }, {}, collection);
     return res;
   } catch (err) {
     return Promise.reject(err);

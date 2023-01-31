@@ -134,16 +134,16 @@ class ExtendedStats extends _DataCollector.DataCollectorItem {
       hashrates: {} };
 
 
-    const block = await this.db.findOne({ number: blockNumber });
+    const query = { number: blockNumber };
+    const block = await this.repository.findOne(query, {}, this.db);
     const end = block.timestamp;
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit;
       const start = end - timeLimit;
-
-      const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } }).
-      project({ _id: 0, miner: 1, timestamp: 1, difficulty: 1 }).
-      toArray();
+      const query = { timestamp: { $gte: start, $lte: end } };
+      const project = { _id: 0, miner: 1, timestamp: 1, difficulty: 1 };
+      const blocks = await this.repository.find(query, project, this.db);
 
       extendedStats.hashrates[period] = this.hashrateCalculator.hashrates(blocks);
       extendedStats.difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE);
@@ -155,15 +155,15 @@ class ExtendedStats extends _DataCollector.DataCollectorItem {
   async getHashrates(blockNumber) {
     let hashrates = {};
 
-    const block = await this.db.findOne({ number: blockNumber });
+    const query = { number: blockNumber };
+    const block = await this.repository.findOne(query, {}, this.db);
     const blockDate = block.timestamp;
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit;
-
-      const blocks = await this.db.find({ timestamp: { $gte: blockDate - timeLimit, $lte: blockDate } }).
-      project({ _id: 0, miner: 1, difficulty: 1 }).
-      toArray();
+      const query = { timestamp: { $gte: blockDate - timeLimit, $lte: blockDate } };
+      const project = { _id: 0, miner: 1, difficulty: 1 };
+      const blocks = await this.repository.find(query, project, this.db);
 
       hashrates[period] = this.hashrateCalculator.hashrates(blocks);
     }
@@ -174,16 +174,16 @@ class ExtendedStats extends _DataCollector.DataCollectorItem {
   async getDifficulties(blockNumber) {
     let difficulties = {};
 
-    const block = await this.db.findOne({ number: blockNumber });
+    const query = { number: blockNumber };
+    const block = await this.repository.findOne(query, {}, this.db);
     const end = block.timestamp;
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit;
       const start = end - timeLimit;
-
-      const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } }).
-      project({ _id: 0, timestamp: 1, difficulty: 1 }).
-      toArray();
+      const query = { timestamp: { $gte: start, $lte: end } };
+      const project = { _id: 0, timestamp: 1, difficulty: 1 };
+      const blocks = await this.repository.find(query, project, this.db);
 
       difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE);
     }

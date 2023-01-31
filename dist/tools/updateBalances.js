@@ -1,7 +1,8 @@
 "use strict";var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _Address = require("../services/classes/Address");
 var _nod3Connect = require("../lib/nod3Connect");
-var _rskJsCli = require("@rsksmart/rsk-js-cli");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskJsCli = require("@rsksmart/rsk-js-cli");
+var _address = require("../repositories/address.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const save = process.argv[2] === '--save';
 main().then(res => {
@@ -20,8 +21,8 @@ async function main() {
   try {
     const { collections } = await (0, _dataSource.default)();
     const collection = collections.Addrs;
-    const addresses = await collection.countDocuments();
-    const cursor = collection.find({});
+    const addresses = await _address.addressRepository.countDocuments({}, collection);
+    const cursor = _address.addressRepository.find({}, {}, collection);
     let checked = 0;
     let updated = 0;
     let outdated = 0;

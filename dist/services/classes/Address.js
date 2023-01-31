@@ -5,7 +5,8 @@ var _Contract = _interopRequireDefault(require("./Contract"));
 var _rskContractParser = require("@rsksmart/rsk-contract-parser");
 var _Tx = require("./Tx");
 var _InternalTx = require("./InternalTx");
-var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");
+var _address = require("../../repositories/address.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 class Address extends _BcThing.BcThing {
   constructor(address, { nod3, initConfig, collections, tx, block, log } = {}) {
@@ -167,7 +168,7 @@ class Address extends _BcThing.BcThing {
       let { dbData, collection, address } = this;
       if (dbData) return dbData;
       if (!collection) return;
-      dbData = await collection.findOne({ address });
+      dbData = await _address.addressRepository.findOne({ address }, {}, collection);
       this.dbData = dbData;
       return dbData;
     } catch (err) {
@@ -295,7 +296,7 @@ async function saveAddressToDb(data, collection) {
   try {
     let { address } = data;
     if (!(0, _utils.isAddress)(address)) throw new Error(`Invalid address ${address}`);
-    let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true });
+    let { result } = await _address.addressRepository.updateOne({ address }, { $set: data }, { upsert: true }, collection);
     return result;
   } catch (err) {
     return Promise.reject(err);

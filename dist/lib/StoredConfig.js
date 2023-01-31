@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.StoredConfig = StoredConfig;exports.default = exports.readOnlyError = void 0;
-var _config = _interopRequireDefault(require("./config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _config = _interopRequireDefault(require("./config"));
+var _config2 = require("../repositories/config.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 const collectionName = _config.default.collectionsNames.Config;
 
 const readOnlyError = id => `The doc with _id ${id} is read only`;exports.readOnlyError = readOnlyError;
@@ -10,7 +11,7 @@ function StoredConfig(db, readOnlyDocsIds = []) {
   const isValidId = id => typeof id === 'string';
   const get = async _id => {
     try {
-      const doc = await storage.findOne({ _id });
+      const doc = await _config2.configRepository.findOne({ _id }, {}, storage);
       if (doc) {
         // Remove all underscored properties
         for (let prop in doc) {
@@ -32,7 +33,7 @@ function StoredConfig(db, readOnlyDocsIds = []) {
       const newDoc = Object.assign({}, doc);
       newDoc._id = id;
       newDoc._created = Date.now();
-      const res = await storage.insertOne(newDoc);
+      const res = await _config2.configRepository.insertOne(newDoc, storage);
       return res;
     } catch (err) {
       return Promise.reject(err);
@@ -50,7 +51,7 @@ function StoredConfig(db, readOnlyDocsIds = []) {
         if (!old) return save(_id, newDoc);
       }
       newDoc._updated = Date.now();
-      let res = await storage.updateOne({ _id }, { $set: newDoc }, options);
+      let res = await _config2.configRepository.updateOne({ _id }, { $set: newDoc }, options, storage);
       return res;
     } catch (err) {
       return Promise.reject(err);

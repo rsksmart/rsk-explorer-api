@@ -2,7 +2,8 @@
 var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _nod3Connect = _interopRequireDefault(require("../lib/nod3Connect"));
 var _rskContractParser = _interopRequireDefault(require("@rsksmart/rsk-contract-parser"));
-var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");
+var _token = require("../repositories/token.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const parser = new _rskContractParser.default({ nod3: _nod3Connect.default });
 
@@ -18,7 +19,7 @@ async function patch() {
   try {
     let { db } = await (0, _dataSource.default)({ skipCheck: true });
     let collection = db.collection('tokensAddresses');
-    let cursor = collection.find();
+    let cursor = _token.tokenRepository.find({}, {}, collection);
     await cursor.forEach(async account => {
       try {
         let { balance, contract, address, _id } = account;
@@ -29,7 +30,7 @@ async function patch() {
           newBalance = (0, _rskUtils.add0x)(newBalance.toString(16));
           if (balance !== newBalance) {
             console.log(`Updating balance for ${name}`);
-            await collection.updateOne({ _id }, { $set: { balance: newBalance } });
+            await _token.tokenRepository.updateOne({ _id }, { $set: { balance: newBalance } }, {}, collection);
           } else {
             console.log(`${name} .... OK`);
           }

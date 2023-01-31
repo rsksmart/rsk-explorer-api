@@ -1,4 +1,5 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.BlocksStatus = void 0;var _BlocksBase = require("../../lib/BlocksBase");
+var _status = require("../../repositories/status.repository");
 class BlocksStatus extends _BlocksBase.BlocksBase {
   constructor(db, options) {
     super(db, options);
@@ -24,7 +25,7 @@ class BlocksStatus extends _BlocksBase.BlocksBase {
     this.updateTime = timestamp;
     if (changed && elapsedTime > this.delayDbUpdate) {
       newState = Object.assign(newState, { timestamp });
-      return this.Status.insertOne(newState).
+      return _status.statusRepository.insertOne(newState, this.Status).
       then(res => {
         return newState;
       }).

@@ -1,9 +1,11 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = _default;var _types = require("../../lib/types");
 var _utils = require("../../lib/utils");
+var _address = require("../../repositories/address.repository");
 
 async function _default(collection, { bridge }) {
   try {
-    const result = await collection.findOne({ address: bridge });
+    const query = { address: bridge };
+    const result = await _address.addressRepository.findOne(query, {}, collection);
     if (!result) throw new Error('Missing bridge account from db');
     let { balance, decimals } = result;
     decimals = decimals || 18;

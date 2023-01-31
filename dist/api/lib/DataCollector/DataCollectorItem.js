@@ -2,6 +2,7 @@
 var _pagination = require("./pagination");
 var _types = require("../../../lib/types");
 var _textSearch = require("./textSearch");
+var _repositories = require("../../../repositories/repositories");
 
 class DataCollectorItem {
   constructor(collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
@@ -19,6 +20,7 @@ class DataCollectorItem {
     this.sort = { [cursorField]: sortDir };
     this.publicActions = {};
     this.fields = {};
+    this.repository = _repositories.REPOSITORIES[name];
   }
 
   getName() {
@@ -41,33 +43,34 @@ class DataCollectorItem {
 
   async count(query) {
     let collection = this.db;
-    let data = await (0, _pagination.countDocuments)(collection, query);
+    let data = await this.repository.countDocuments(query, collection);
     return { data };
   }
 
   async find(query, sort, limit, project) {
     let collection = this.db;
     project = project || this.getDefaultsFields();
-    let data = await (0, _pagination.find)(collection, query, sort, limit, project);
+    let data = await (0, _pagination.find)(collection, query, sort, limit, project, this.repository);
     return { data };
   }
 
   async getOne(query, projection, sort) {
     projection = projection || this.getDefaultsFields();
     sort = sort || this.sort;
-    const data = await this.db.findOne(query, { projection, sort });
+    const data = await this.repository.findOne(query, { projection, sort }, this.db);
+
     return { data };
   }
 
   async getLatest(query, project) {
     query = query || {};
-    const result = await (0, _pagination.find)(this.db, query, this.sort, 1, project);
+    const result = await (0, _pagination.find)(this.db, query, this.sort, 1, project, this.repository);
     const data = result.length ? result[0] : null;
     return { data };
   }
 
   async setFieldsTypes() {
-    let types = await getFieldsTypes(this.db);
+    let types = await getFieldsTypes(this.db, this.repository);
     this.fieldsTypes = types;
     return types;
   }
@@ -99,7 +102,7 @@ class DataCollectorItem {
   async setCursorData() {
     let { cursorField } = this;
     const types = await this.getFieldsTypes();
-    this.cursorData = await getCursorData(this.db, cursorField, types);
+    this.cursorData = await getCursorData(this.db, cursorField, types, this.repository);
     return this.cursorData;
   }
 
@@ -120,8 +123,8 @@ class DataCollectorItem {
       if (!data) return;
       let value = query[cursorField] || data[cursorField];
       if (undefined === value) throw new Error(`Missing ${cursorField} value`);
-      let prev = (await (0, _pagination.find)(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0];
-      let next = (await (0, _pagination.find)(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0];
+      let prev = (await (0, _pagination.find)(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project), this.repository)[0];
+      let next = (await (0, _pagination.find)(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project), this.repository)[0];
       return { prev, data, next };
     } catch (err) {
       return Promise.reject(err);
@@ -149,7 +152,7 @@ class DataCollectorItem {
       let pages = this.responseParams(params);
       let cursorData = await this.getCursorData();
       query = aggregate || query;
-      let args = [this.db, cursorData, query, pages];
+      let args = [this.db, cursorData, query, pages, this.repository];
       let result = aggregate ? await (0, _pagination.aggregatePages)(...args) : await (0, _pagination.findPages)(...args);
       return formatResponse(result, pages);
     } catch (err) {
@@ -161,6 +164,7 @@ class DataCollectorItem {
     try {
       if (typeof value !== 'string') throw new Error('The text search requires an string value');
       let query = (0, _textSearch.generateTextQuery)(value, params);
+
       return this.find(query);
     } catch (err) {
       return Promise.reject(err);
@@ -179,8 +183,8 @@ function formatResponse(result, pages) {
   return { pages, data };
 }
 
-async function getFieldsTypes(collection) {
-  let doc = await collection.findOne();
+async function getFieldsTypes(collection, repository) {
+  let doc = await repository.findOne({}, {}, collection);
   let fields = {};
   for (let p in doc) {
     let value = doc[p];
@@ -225,8 +229,8 @@ function fieldFilterParse(field, value, query) {
   return query;
 }
 
-async function getCursorData(collection, cursorField, types) {
-  types = types || (await getFieldsTypes(collection));
+async function getCursorData(collection, cursorField, types, repository) {
+  types = types || (await getFieldsTypes(collection, repository));
   const cursorType = types[cursorField];
   return { cursorField, cursorType, fields: types };
 }var _default =
