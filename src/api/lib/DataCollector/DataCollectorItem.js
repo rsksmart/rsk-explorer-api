@@ -58,7 +58,6 @@ export class DataCollectorItem {
     projection = projection || this.getDefaultsFields()
     sort = sort || this.sort
     const data = await this.repository.findOne(query, { projection, sort }, this.db)
-
     return { data }
   }
 
@@ -164,7 +163,6 @@ export class DataCollectorItem {
     try {
       if (typeof value !== 'string') throw new Error('The text search requires an string value')
       let query = generateTextQuery(value, params)
-
       return this.find(query)
     } catch (err) {
       return Promise.reject(err)
