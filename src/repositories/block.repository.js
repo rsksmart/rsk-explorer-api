@@ -1,3 +1,6 @@
+import {prismaClient} from '../lib/Setup'
+import {rawBlockToEntity} from '../converters/block.converters'
+
 export const blockRepository = {
   findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
@@ -22,8 +25,10 @@ export const blockRepository = {
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async insertOne (data, collection) {
+    await prismaClient.block.create({data: rawBlockToEntity(data)})
+    const mongoRes = await collection.insertOne(data)
+    return mongoRes
   },
   updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)
