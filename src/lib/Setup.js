@@ -6,6 +6,8 @@ import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
 import { getDbBlocksCollections } from './blocksCollections'
 import { hash } from './utils'
+import { PrismaClient } from '@prisma/client'
+import prismaDefaultConfig from './defaultConfig'
 
 export const INIT_ID = '_explorerInitialConfiguration'
 export const COLLECTIONS_ID = '_explorerCollections'
@@ -27,6 +29,31 @@ export async function getNetInfo (nod3) {
 }
 
 const defaultInstances = { nod3: nod3Default, config: defaultConfig, collections: defaultCollections }
+
+export let prismaClient = null
+
+async function loadPrismaClient(config) {
+  const url = generatePrismaURL(config)
+
+  prismaClient = new PrismaClient({
+    datasources: {
+      db: {
+        url: url
+      },
+    },
+  })
+}
+
+function generatePrismaURL(config) {
+  const { db: { prismaEngine, prismaUser, prismaPassword, server, prismaPort, prismaDbName } } = config;
+
+  const engine = prismaEngine
+  const credentials = `${prismaUser}:${prismaPassword}`
+  const database = `${server}:${prismaPort}/${prismaDbName}`
+
+  let url = `${engine}://${credentials}@${database}`
+  return url
+}
 
 export async function Setup ({ log } = {}, { nod3, config, collections } = defaultInstances) {
   const database = new DB(config.db)
@@ -119,6 +146,8 @@ export async function Setup ({ log } = {}, { nod3, config, collections } = defau
       return Promise.reject(err)
     }
   }
+
+  await loadPrismaClient(prismaDefaultConfig)
 
   return Object.freeze({ start, createHash })
 }

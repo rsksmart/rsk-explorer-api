@@ -1,3 +1,4 @@
+// TODO: Delete mongodb related code after migration
 import { MongoClient } from 'mongodb'
 import { LogProxy } from './Logger'
 
