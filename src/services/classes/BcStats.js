@@ -3,6 +3,7 @@ import getCirculatingSupply from '../../api/lib/getCirculatingSupply'
 import getActiveAccounts from '../../api/lib/getActiveAccounts'
 import { Contract, abi as ABI } from '@rsksmart/rsk-contract-parser'
 import { serialize } from '../../lib/utils'
+import { statsRepository } from '../../repositories/stats.repository'
 
 export class BcStats extends BlocksBase {
   constructor (db, options) {
@@ -70,7 +71,7 @@ export class BcStats extends BlocksBase {
 
   async save (stats) {
     try {
-      const result = await this.collection.insertOne(stats)
+      const result = await statsRepository.insertOne(stats, this.collection)
       return result
     } catch (err) {
       return Promise.reject(err)

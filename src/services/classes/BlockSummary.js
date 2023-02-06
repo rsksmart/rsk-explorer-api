@@ -5,6 +5,7 @@ import { BlockAddresses } from './BlockAddresses'
 import { getSummaryId } from '../../lib/ids'
 import { arrayDifference, isBlockHash } from '../../lib/utils'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
+import { summaryRepository } from '../../repositories/summary.repository'
 
 export const BlocksSummaryCollection = 'BlocksSummary'
 
@@ -161,10 +162,10 @@ export async function saveBlockSummary (data, collections, log) {
   const { hash, number, timestamp } = data.block
   try {
     const collection = collections[BlocksSummaryCollection]
-    const old = await collection.findOne({ hash }, { _id: 1 })
+    const old = await summaryRepository.findOne({ hash }, { _id: 1 }, collection)
     const _id = (old) ? old._id : getSummaryId(data.block)
     const summary = { _id, hash, number, timestamp, data }
-    let result = await collection.updateOne({ _id }, { $set: summary }, { upsert: true })
+    let result = await summaryRepository.updateOne({ _id }, { $set: summary }, { upsert: true }, collection)
     return result
   } catch (err) {
     log.error(`Error saving Block Summary ${hash}`)
@@ -186,7 +187,7 @@ export async function getBlockSummaryFromDb (hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection]
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let data = await collection.findOne({ hash })
+    let data = await summaryRepository.findOne({ hash }, {}, collection)
     return data
   } catch (err) {
     return Promise.reject(err)
@@ -197,7 +198,7 @@ export async function deleteBlockSummaryFromDb (hash, collections) {
   try {
     const collection = collections[BlocksSummaryCollection]
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let res = await collection.deleteOne({ hash })
+    let res = summaryRepository.deleteOne({ hash }, collection)
     return res
   } catch (err) {
     return Promise.reject(err)
@@ -209,7 +210,7 @@ export async function getBlockSummariesByNumber (blockNumber, collections) {
     const number = parseInt(blockNumber)
     if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
     const collection = collections[BlocksSummaryCollection]
-    let res = await collection.find({ number }).toArray()
+    let res = await summaryRepository.find({ number }, {}, collection)
     return res
   } catch (err) {
     return Promise.reject(err)

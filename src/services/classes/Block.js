@@ -2,6 +2,14 @@ import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
 import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
 import { saveAddressToDb } from './Address'
+import { blockRepository } from '../../repositories/block.repository'
+import { txRepository } from '../../repositories/tx.repository'
+import { internalTxRepository } from '../../repositories/internalTx.repository'
+import { eventRepository } from '../../repositories/event.repository'
+import { tokenRepository } from '../../repositories/token.repository'
+import { txPendingRepository } from '../../repositories/txPending.repository'
+import { addressRepository } from '../../repositories/address.repository'
+import { balancesRepository } from '../../repositories/balances.repository'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -39,7 +47,7 @@ export class Block extends BcThing {
       // Skip saved blocks
       if (isBlockHash(hashOrNumber) && !overwrite) {
         let hash = hashOrNumber
-        let exists = await collections.Blocks.findOne({ hash })
+        let exists = await blockRepository.findOne({ hash }, {}, collections.Blocks)
         if (exists) throw new Error(`Block ${hash} skipped`)
       }
       await this.fetch()
@@ -57,14 +65,14 @@ export class Block extends BcThing {
       result.block = await this.insertBlock(block)
 
       // insert txs
-      await Promise.all([...transactions.map(tx => collections.Txs.insertOne(tx))])
+      await Promise.all([...transactions.map(tx => txRepository.insertOne(tx, collections.Txs))])
         .then(res => { result.txs = res })
 
       // remove pending txs
-      await Promise.all([...transactions.map(tx => collections.PendingTxs.deleteOne({ hash: tx.hash }))])
+      await Promise.all([...transactions.map(tx => txPendingRepository.deleteOne({ hash: tx.hash }, collections.PendingTxs))])
 
       // insert internal transactions
-      await Promise.all([...internalTransactions.map(itx => collections.InternalTransactions.insertOne(itx))])
+      await Promise.all([...internalTransactions.map(itx => internalTxRepository.insertOne(itx, collections.InternalTransactions))])
         .then(res => { result.internalTxs = res })
 
       // insert addresses
@@ -90,10 +98,11 @@ export class Block extends BcThing {
   async insertEvents (events) {
     try {
       let { Events } = this.collections
-      let result = await Promise.all([...events.map(e => Events.updateOne(
+      let result = await Promise.all([...events.map(e => eventRepository.updateOne(
         { eventId: e.eventId },
         { $set: e },
-        { upsert: true }))])
+        { upsert: true },
+        Events))])
       return result
     } catch (err) {
       this.log.error('Error inserting events')
@@ -104,8 +113,8 @@ export class Block extends BcThing {
   async insertTokenAddresses (data) {
     try {
       let { TokensAddrs } = this.collections
-      let result = await Promise.all([...data.map(ta => TokensAddrs.updateOne(
-        { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }))])
+      let result = await Promise.all([...data.map(ta => tokenRepository.updateOne(
+        { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }, TokensAddrs))])
       return result
     } catch (err) {
       this.log.error('Error inserting token addresses')
@@ -176,7 +185,7 @@ export class Block extends BcThing {
   }
 
   insertBlock (block) {
-    return this.collections.Blocks.insertOne(block)
+    return blockRepository.insertOne(block, this.collections.Blocks)
   }
 
   async getBlockFromDb (hashOrNumber, allData) {
@@ -205,15 +214,15 @@ export class Block extends BcThing {
   }
 
   getBlockEventsFromDb (blockHash) {
-    return this.collections.Events.find({ blockHash }).toArray()
+    return eventRepository.find({ blockHash }, {}, this.collections.event)
   }
 
   getBlockTransactionsFromDb (blockHash) {
-    return this.collections.Txs.find({ blockHash }).toArray()
+    return eventRepository.find({ blockHash }, {}, this.collections.event)
   }
 
   getTransactionFromDb (hash) {
-    return this.collections.Txs.findOne({ hash })
+    return txRepository.findOne({ hash }, {}, this.collections.Txs)
   }
 
   // adds contract data to addresses
@@ -242,7 +251,7 @@ export class Block extends BcThing {
 
 export const getBlockFromDb = async (blockHashOrNumber, collection) => {
   let query = blockQuery(blockHashOrNumber)
-  if (query) return collection.findOne(query)
+  if (query) return blockRepository.findOne(query, {}, collection)
   return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
 }
 
@@ -255,28 +264,28 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections)
     let result = {}
     const query = { $or: [{ blockHash }, { blockNumber }] }
 
-    result.block = await collections.Blocks.deleteMany({ $or: [{ hash }, { number: blockNumber }] })
+    result.block = await blockRepository.deleteMany({ $or: [{ hash }, { number: blockNumber }] }, collections.Blocks)
 
-    let txs = await collections.Txs.find(query).toArray() || []
+    let txs = await txRepository.find(query, {}, collections.Txs) || []
     let txsHashes = txs.map(tx => tx.hash)
 
     // remove txs
-    result.txs = await collections.Txs.deleteMany({ hash: { $in: txsHashes } })
+    result.txs = await txRepository.deleteMany({ hash: { $in: txsHashes } }, collections.Txs)
 
     // remove internal txs
-    result.itxs = await collections.InternalTransactions.deleteMany({ transactionHash: { $in: txsHashes } })
+    result.itxs = await internalTxRepository.deleteMany({ transactionHash: { $in: txsHashes } }, collections.InternalTransactions)
 
     // remove events by block
-    result.events = await collections.Events.deleteMany(query)
+    result.events = await eventRepository.deleteMany(query, collections.Events)
 
     // remove events by txs
-    result.eventsByTxs = await collections.Events.deleteMany({ txHash: { $in: txsHashes } })
+    result.eventsByTxs = await eventRepository.deleteMany({ txHash: { $in: txsHashes } }, collections.Events)
 
     // remove contracts by blockHash
-    result.addresses = await collections.Addrs.deleteMany({ 'createdByTx.blockHash': blockHash })
+    result.addresses = await addressRepository.deleteMany({ 'createdByTx.blockHash': blockHash }, collections.Addrs)
 
     // remove balances
-    result.balances = await collections.Balances.deleteMany(query)
+    result.balances = await balancesRepository.deleteMany(query, collections.Balances)
 
     return result
   } catch (err) {

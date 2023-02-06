@@ -2,6 +2,7 @@ import dataSource from '../lib/dataSource.js'
 import { saveAddressToDb } from '../services/classes/Address'
 import { nod3 } from '../lib/nod3Connect'
 import { log } from '@rsksmart/rsk-js-cli'
+import { addressRepository } from '../repositories/address.repository'
 
 const save = process.argv[2] === '--save'
 main().then((res) => {
@@ -20,8 +21,8 @@ async function main () {
   try {
     const { collections } = await dataSource()
     const collection = collections.Addrs
-    const addresses = await collection.countDocuments()
-    const cursor = collection.find({})
+    const addresses = await addressRepository.countDocuments({}, collection)
+    const cursor = addressRepository.find({}, {}, collection)
     let checked = 0
     let updated = 0
     let outdated = 0

@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.BlockTrace = void 0;var _BcThing = require("./BcThing");
 var _utils = require("../../lib/utils");
+var _blockTrace = require("../../repositories/blockTrace.repository");
 
 class BlockTrace extends _BcThing.BcThing {
   constructor(hash, { nod3, collections, log, initConfig }) {
@@ -24,7 +25,7 @@ class BlockTrace extends _BcThing.BcThing {
   async getFromDb() {
     try {
       let { hash, collection } = this;
-      let res = await collection.findOne({ hash });
+      let res = await _blockTrace.blockTraceRepository.findOne({ hash }, {}, collection);
       return res ? res.data : null;
     } catch (err) {
       return Promise.reject(err);
@@ -33,7 +34,7 @@ class BlockTrace extends _BcThing.BcThing {
   save(data) {
     if (!data) return this.fetch();
     let { hash } = this;
-    return this.collection.insertOne({ hash, data });
+    return _blockTrace.blockTraceRepository.insertOne({ hash, data }, this.collection);
   }}exports.BlockTrace = BlockTrace;var _default =
 
 

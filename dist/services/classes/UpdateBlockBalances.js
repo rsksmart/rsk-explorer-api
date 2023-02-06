@@ -3,6 +3,9 @@ var _BlockBalances = require("./BlockBalances");
 var _BlockSummary = require("./BlockSummary");
 var _utils = require("../../lib/utils");
 var _InternalTx = require("./InternalTx");
+var _balancesLog = require("../../repositories/balancesLog.repository");
+var _block = require("../../repositories/block.repository");
+var _balances = require("../../repositories/balances.repository");
 
 class UpdateBlockBalances extends _BlocksBase.BlocksBase {
   constructor(db, { log, initConfig, nod3, debug, confirmations }) {
@@ -22,7 +25,7 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
     try {
       if (!(0, _utils.isBlockHash)(blockHash)) throw new Error(`Invalid blockHash: ${blockHash}`);
       let _created = Date.now();
-      let result = await this.balancesLogCollection.insertOne({ blockHash, _created });
+      let result = await _balancesLog.balancesLogRepository.insertOne({ blockHash, _created }, this.balancesLogCollection);
       return result;
     } catch (err) {
       if (err.code === 11000) return Promise.resolve();else
@@ -30,7 +33,7 @@ class UpdateBlockBalances extends _BlocksBase.BlocksBase {
     }
   }
   getLogBalance(blockHash) {
-    return this.balancesLogCollection.findOne({ blockHash });
+    return _balancesLog.balancesLogRepository.findOne({ blockHash }, {}, this.balancesLogCollection);
   }
 
   async updateBalance(blockHash) {
@@ -135,14 +138,14 @@ async function MissingBalances(blocksCollection, balancesCollection, { highestBl
     let block;
     const current = () => currentBlock;
     const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } };
-    const cursor = blocksCollection.find(query, { projection, sort });
+    const cursor = _block.blockRepository.find(query, projection, blocksCollection, sort, 0, false);
     const next = async () => {
       if (currentBlock <= lowestBlock) return;
 
       while (await cursor.hasNext()) {
         block = await cursor.next();
         let { hash: blockHash, number } = block;
-        let balance = await balancesCollection.findOne({ blockHash });
+        let balance = await _balances.balancesRepository.findOne({ blockHash }, {}, balancesCollection);
         currentBlock = number;
         if (!balance) break;
       }
@@ -155,7 +158,7 @@ async function MissingBalances(blocksCollection, balancesCollection, { highestBl
 }
 
 function getLastBlock(blocksCollection) {
-  return blocksCollection.findOne({}, { sort: { number: -1 } });
+  return _block.blockRepository.findOne({}, { sort: { number: -1 } }, blocksCollection);
 }var _default =
 
 UpdateBlockBalances;exports.default = _default;

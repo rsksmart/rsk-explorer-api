@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import { isBlockHash, isValidBlockNumber } from '../../lib/utils'
+import { balancesRepository } from '../../repositories/balances.repository'
 
 export class BlockBalances extends BcThing {
   constructor ({ block, addresses }, { nod3, collections, log, initConfig }) {
@@ -36,7 +37,7 @@ export class BlockBalances extends BcThing {
   }
   deleteOldBalances () {
     const { blockHash, blockNumber, collection } = this
-    return Promise.all([collection.deleteMany({ blockHash }), collection.deleteMany({ blockNumber })])
+    return Promise.all([ balancesRepository.deleteMany({ blockHash }, collection), balancesRepository.deleteMany({ blockNumber }, collection) ])
   }
   async save () {
     try {
@@ -47,7 +48,7 @@ export class BlockBalances extends BcThing {
         return
       }
       await this.deleteOldBalances()
-      let result = await this.collection.insertMany(balances)
+      let result = await balancesRepository.insertMany(balances, this.collection)
       return result
     } catch (err) {
       return Promise.reject(err)

@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import { isBlockHash } from '../../lib/utils'
+import { blockTraceRepository } from '../../repositories/blockTrace.repository'
 
 export class BlockTrace extends BcThing {
   constructor (hash, { nod3, collections, log, initConfig }) {
@@ -24,7 +25,7 @@ export class BlockTrace extends BcThing {
   async getFromDb () {
     try {
       let { hash, collection } = this
-      let res = await collection.findOne({ hash })
+      let res = await blockTraceRepository.findOne({ hash }, {}, collection)
       return (res) ? res.data : null
     } catch (err) {
       return Promise.reject(err)
@@ -33,7 +34,7 @@ export class BlockTrace extends BcThing {
   save (data) {
     if (!data) return this.fetch()
     let { hash } = this
-    return this.collection.insertOne({ hash, data })
+    return blockTraceRepository.insertOne({ hash, data }, this.collection)
   }
 }
 

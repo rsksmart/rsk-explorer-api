@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.TxPool = void 0;var _DataCollector = require("./lib/DataCollector");
-var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _config = _interopRequireDefault(require("../lib/config"));
+var _txPool = require("../repositories/txPool.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 const collectionName = _config.default.collectionsNames.TxPool;
 
@@ -34,16 +35,12 @@ class TxPool extends _DataCollector.DataCollector {
   }
 
   getPool() {
-    return this.collection.findOne({}, { sort: { _id: -1 } });
+    return _txPool.txPoolRepository.findOne({}, { sort: { _id: -1 } }, this.collection);
   }
 
   async updatePoolChart() {
     try {
-      let chart = await this.collection.find({}).
-      sort({ timestamp: -1 }).
-      project({ txs: 0 }).
-      limit(200).
-      toArray();
+      let chart = await _txPool.txPoolRepository.find({}, { txs: 0 }, this.collection, { timestamp: -1 }, 200);
       this.chart = chart;
     } catch (err) {
       return Promise.reject(err);

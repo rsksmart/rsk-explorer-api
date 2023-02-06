@@ -1,6 +1,8 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.ContractVerifierModule = ContractVerifierModule;exports.replaceImport = replaceImport;exports.extractUsedSourcesFromRequest = extractUsedSourcesFromRequest;exports.getVerificationId = getVerificationId;exports.default = exports.versionsId = void 0;var _socket = _interopRequireDefault(require("socket.io-client"));
 var _StoredConfig = require("../../lib/StoredConfig");
-var _rskUtils = require("@rsksmart/rsk-utils");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _rskUtils = require("@rsksmart/rsk-utils");
+var _contractVerification = require("../../repositories/contractVerification.repository");
+var _verificationResults = require("../../repositories/verificationResults.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 // id to store solc versions list on Config collection
 const versionsId = '_contractVerifierVersions';exports.versionsId = versionsId;
@@ -46,7 +48,7 @@ function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
           // Update verification
           const match = checkResult(result || {});
           log.debug(`Updating verification ${_id}`);
-          const res = await collection.updateOne({ _id }, { $set: { error, result, match } });
+          const res = await _contractVerification.contractVerificationRepository.updateOne({ _id }, { $set: { error, result, match } }, {}, collection);
           if (!res.result.ok) throw new Error(`Error updating verification ${_id}`);
 
           // store verification positive results
@@ -55,7 +57,7 @@ function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
             const sources = extractUsedSourcesFromRequest(request, result);
             const { abi } = result;
             const doc = { address, match, request, result, abi, sources, timestamp: Date.now() };
-            const inserted = await collections.VerificationsResults.insertOne(doc);
+            const inserted = await _verificationResults.verificationResultsRepository.insertOne(doc, collection);
             if (!inserted.result.ok) throw new Error('Error inserting verification result');
             log.debug(`Verification result inserted: ${address}/${inserted.result.insertedId}`);
           }
@@ -84,7 +86,7 @@ function ContractVerifierModule(db, collections, { url } = {}, { log } = {}) {
       // delete data._id
       const { _id } = data;
       if (!address) throw new Error(`Missing address in verification`);
-      let res = await collection.insertOne({ _id, address, request: data, timestamp: Date.now() });
+      let res = await _contractVerification.contractVerificationRepository.insertOne({ _id, address, request: data, timestamp: Date.now() }, collection);
       const id = res.insertedId;
       if (!id || id !== _id) throw new Error(`Error creating pending verification`);
       data._id = id;

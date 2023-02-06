@@ -3,6 +3,9 @@ import { BlockBalances } from './BlockBalances'
 import { getBlockSummaryFromDb } from './BlockSummary'
 import { isBlockHash } from '../../lib/utils'
 import { filterValueAddresses } from './InternalTx'
+import { balancesLogRepository } from '../../repositories/balancesLog.repository'
+import { blockRepository } from '../../repositories/block.repository'
+import { balancesRepository } from '../../repositories/balances.repository'
 
 export class UpdateBlockBalances extends BlocksBase {
   constructor (db, { log, initConfig, nod3, debug, confirmations }) {
@@ -22,7 +25,7 @@ export class UpdateBlockBalances extends BlocksBase {
     try {
       if (!isBlockHash(blockHash)) throw new Error(`Invalid blockHash: ${blockHash}`)
       let _created = Date.now()
-      let result = await this.balancesLogCollection.insertOne({ blockHash, _created })
+      let result = await balancesLogRepository.insertOne({ blockHash, _created }, this.balancesLogCollection)
       return result
     } catch (err) {
       if (err.code === 11000) return Promise.resolve()
@@ -30,7 +33,7 @@ export class UpdateBlockBalances extends BlocksBase {
     }
   }
   getLogBalance (blockHash) {
-    return this.balancesLogCollection.findOne({ blockHash })
+    return balancesLogRepository.findOne({ blockHash }, {}, this.balancesLogCollection)
   }
 
   async updateBalance (blockHash) {
@@ -135,14 +138,14 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
     let block
     const current = () => currentBlock
     const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } }
-    const cursor = blocksCollection.find(query, { projection, sort })
+    const cursor = blockRepository.find(query, projection, blocksCollection, sort, 0, false)
     const next = async () => {
       if (currentBlock <= lowestBlock) return
 
       while (await cursor.hasNext()) {
         block = await cursor.next()
         let { hash: blockHash, number } = block
-        let balance = await balancesCollection.findOne({ blockHash })
+        let balance = await balancesRepository.findOne({ blockHash }, {}, balancesCollection)
         currentBlock = number
         if (!balance) break
       }
@@ -155,7 +158,7 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
 }
 
 function getLastBlock (blocksCollection) {
-  return blocksCollection.findOne({}, { sort: { number: -1 } })
+  return blockRepository.findOne({}, { sort: { number: -1 } }, blocksCollection)
 }
 
 export default UpdateBlockBalances

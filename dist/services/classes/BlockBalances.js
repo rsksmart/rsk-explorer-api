@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.BlockBalances = void 0;var _BcThing = require("./BcThing");
 var _utils = require("../../lib/utils");
+var _balances = require("../../repositories/balances.repository");
 
 class BlockBalances extends _BcThing.BcThing {
   constructor({ block, addresses }, { nod3, collections, log, initConfig }) {
@@ -36,7 +37,7 @@ class BlockBalances extends _BcThing.BcThing {
   }
   deleteOldBalances() {
     const { blockHash, blockNumber, collection } = this;
-    return Promise.all([collection.deleteMany({ blockHash }), collection.deleteMany({ blockNumber })]);
+    return Promise.all([_balances.balancesRepository.deleteMany({ blockHash }, collection), _balances.balancesRepository.deleteMany({ blockNumber }, collection)]);
   }
   async save() {
     try {
@@ -47,7 +48,7 @@ class BlockBalances extends _BcThing.BcThing {
         return;
       }
       await this.deleteOldBalances();
-      let result = await this.collection.insertMany(balances);
+      let result = await _balances.balancesRepository.insertMany(balances, this.collection);
       return result;
     } catch (err) {
       return Promise.reject(err);

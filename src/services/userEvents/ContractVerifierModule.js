@@ -1,6 +1,8 @@
 import io from 'socket.io-client'
 import { StoredConfig } from '../../lib/StoredConfig'
 import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
+import { contractVerificationRepository } from '../../repositories/contractVerification.repository'
+import { verificationResultsRepository } from '../../repositories/verificationResults.repository'
 
 // id to store solc versions list on Config collection
 export const versionsId = '_contractVerifierVersions'
@@ -46,7 +48,7 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
           // Update verification
           const match = checkResult(result || {})
           log.debug(`Updating verification ${_id}`)
-          const res = await collection.updateOne({ _id }, { $set: { error, result, match } })
+          const res = await contractVerificationRepository.updateOne({ _id }, { $set: { error, result, match } }, {}, collection)
           if (!res.result.ok) throw new Error(`Error updating verification ${_id}`)
 
           // store verification positive results
@@ -55,7 +57,7 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
             const sources = extractUsedSourcesFromRequest(request, result)
             const { abi } = result
             const doc = { address, match, request, result, abi, sources, timestamp: Date.now() }
-            const inserted = await collections.VerificationsResults.insertOne(doc)
+            const inserted = await verificationResultsRepository.insertOne(doc, collection)
             if (!inserted.result.ok) throw new Error('Error inserting verification result')
             log.debug(`Verification result inserted: ${address}/${inserted.result.insertedId}`)
           }
@@ -84,7 +86,7 @@ export function ContractVerifierModule (db, collections, { url } = {}, { log } =
       // delete data._id
       const { _id } = data
       if (!address) throw new Error(`Missing address in verification`)
-      let res = await collection.insertOne({ _id, address, request: data, timestamp: Date.now() })
+      let res = await contractVerificationRepository.insertOne({ _id, address, request: data, timestamp: Date.now() }, collection)
       const id = res.insertedId
       if (!id || id !== _id) throw new Error(`Error creating pending verification`)
       data._id = id

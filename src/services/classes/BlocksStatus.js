@@ -1,4 +1,5 @@
 import { BlocksBase } from '../../lib/BlocksBase'
+import { statusRepository } from '../../repositories/status.repository'
 export class BlocksStatus extends BlocksBase {
   constructor (db, options) {
     super(db, options)
@@ -24,7 +25,7 @@ export class BlocksStatus extends BlocksBase {
     this.updateTime = timestamp
     if (changed && elapsedTime > this.delayDbUpdate) {
       newState = Object.assign(newState, { timestamp })
-      return this.Status.insertOne(newState)
+      return statusRepository.insertOne(newState, this.Status)
         .then(res => {
           return newState
         })

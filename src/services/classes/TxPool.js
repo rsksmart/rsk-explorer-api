@@ -1,5 +1,7 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import { isHexString, base64toHex } from '../../lib/utils'
+import { txPoolRepository } from '../../repositories/txPool.repository'
+import { txPendingRepository } from '../../repositories/txPending.repository'
 
 export class TxPool extends BlocksBase {
   constructor (db, options) {
@@ -115,7 +117,7 @@ export class TxPool extends BlocksBase {
   async savePoolToDb (pool) {
     try {
       this.log.debug(`Saving txPool to db`)
-      await this.TxPool.insertOne(pool)
+      await txPoolRepository.insertOne(pool, this.TxPool)
       await this.savePendingTxs(pool.txs)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
@@ -126,7 +128,7 @@ export class TxPool extends BlocksBase {
   async savePendingTxs (txs) {
     try {
       txs = txs || []
-      await Promise.all(txs.map(tx => this.PendingTxs.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true })))
+      await Promise.all(txs.map(tx => txPendingRepository.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true }, this.PendingTxs)))
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`)
       return Promise.reject(err)

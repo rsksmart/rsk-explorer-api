@@ -3,6 +3,7 @@ import dataSource from '../lib/dataSource.js'
 import { Block, deleteBlockDataFromDb } from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import { deleteBlockSummaryFromDb, getBlockSummariesByNumber } from '../services/classes/BlockSummary'
+import { tokenRepository } from '../repositories/token.repository'
 
 update().then((addresses) => {
   if (addresses.length) {
@@ -20,7 +21,10 @@ async function update () {
     const { collections, db, initConfig } = await dataSource()
     const collection = collections.Addrs
     const q = { $type: 'object' }
-    const cursor = collection.find({ $or: [{ decimals: q }, { totalSupply: q }] }).project({ address: 1, name: 1, blockNumber: 1 })
+    const query = { $or: [{ decimals: q }, { totalSupply: q }] }
+    const project = { address: 1, name: 1, blockNumber: 1 }
+    const cursor = tokenRepository.find(query, project, collection)
+
     while (await cursor.hasNext()) {
       let { address, name, blockNumber } = await cursor.next()
       addresses[address] = { address, name }

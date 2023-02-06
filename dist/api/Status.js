@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.Status = void 0;var _DataCollector = require("./lib/DataCollector/");
 var _blocksCollections = require("../lib/blocksCollections");
+var _block = require("../repositories/block.repository");
 
 class Status extends _DataCollector.DataCollector {
   constructor(db) {
@@ -10,6 +11,7 @@ class Status extends _DataCollector.DataCollector {
     this.state = {};
     this.addModule(new _DataCollector.DataCollectorItem(Status, 'Status'));
     this.addModule(new _DataCollector.DataCollectorItem(Blocks, 'Blocks'));
+    this.blockCollection = this.getModule('Blocks').db;
   }
   tick() {
     this.updateState().then(newState => {
@@ -72,13 +74,13 @@ class Status extends _DataCollector.DataCollector {
   }
 
   getHighestBlock() {
-    return this.getModule('Blocks').db.findOne({}, { sort: { number: -1 }, limit: 1 });
+    return _block.blockRepository.findOne({}, { sort: { number: -1 }, limit: 1 }, this.blockCollection);
   }
   getLastblockReceived() {
-    return this.getModule('Blocks').db.findOne({}, { sort: { _received: -1 }, limit: 1 });
+    return _block.blockRepository.findOne({}, { sort: { _received: -1 }, limit: 1 }, this.blockCollection);
   }
   getTotalBlocks() {
-    return this.getModule('Blocks').db.countDocuments({});
+    return _block.blockRepository.countDocuments({}, this.blockCollection);
   }}exports.Status = Status;var _default =
 
 

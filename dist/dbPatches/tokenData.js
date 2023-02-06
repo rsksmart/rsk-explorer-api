@@ -2,7 +2,8 @@
 var _dataSource = _interopRequireDefault(require("../lib/dataSource.js"));
 var _Block = require("../services/classes/Block");
 var _BlocksBase = _interopRequireDefault(require("../lib/BlocksBase"));
-var _BlockSummary = require("../services/classes/BlockSummary");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
+var _BlockSummary = require("../services/classes/BlockSummary");
+var _token = require("../repositories/token.repository");function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
 
 update().then(addresses => {
   if (addresses.length) {
@@ -20,7 +21,10 @@ async function update() {
     const { collections, db, initConfig } = await (0, _dataSource.default)();
     const collection = collections.Addrs;
     const q = { $type: 'object' };
-    const cursor = collection.find({ $or: [{ decimals: q }, { totalSupply: q }] }).project({ address: 1, name: 1, blockNumber: 1 });
+    const query = { $or: [{ decimals: q }, { totalSupply: q }] };
+    const project = { address: 1, name: 1, blockNumber: 1 };
+    const cursor = _token.tokenRepository.find(query, project, collection);
+
     while (await cursor.hasNext()) {
       let { address, name, blockNumber } = await cursor.next();
       addresses[address] = { address, name };
