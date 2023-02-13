@@ -12,9 +12,9 @@ model abi {
   anonymous        Boolean?
   name             String?     @db.VarChar
   type             String?     @db.VarChar
-  state_mutability Boolean?
   abi_input        abi_input[]
   event            event[]
+  log_log_abiToabi log[]       @relation("log_abiToabi")
 }
 
 model abi_input {
@@ -96,26 +96,27 @@ model block {
   number                                                        Int                    @id
   hash                                                          String?                @unique @db.VarChar(66)
   miner                                                         String                 @db.VarChar(42)
-  parent_hash                                                   String                 @db.VarChar(66)
-  sha3_uncles                                                   String                 @db.VarChar(66)
-  logs_bloom                                                    String                 @db.VarChar
-  transaction_root                                              String                 @db.VarChar(66)
-  state_root                                                    String                 @db.VarChar(66)
-  receipts_root                                                 String                 @db.VarChar(66)
+  parentHash                                                    String                 @map("parent_hash") @db.VarChar(66)
+  sha3Uncles                                                    String                 @map("sha3_uncles") @db.VarChar(66)
+  logsBloom                                                     String                 @map("logs_bloom") @db.VarChar
+  transactionsRoot                                              String                 @map("transactions_root") @db.VarChar(66)
+  stateRoot                                                     String                 @map("state_root") @db.VarChar(66)
+  receiptsRoot                                                  String                 @map("receipts_root") @db.VarChar(66)
   difficulty                                                    String                 @db.VarChar
-  extra_data                                                    String                 @db.VarChar
+  totalDifficulty                                               String                 @map("total_difficulty") @db.VarChar
+  extraData                                                     String                 @map("extra_data") @db.VarChar
   size                                                          Int
-  gas_limit                                                     Int
-  gas_used                                                      Int
-  timestamp                                                     BigInt
-  minimum_gas_price                                             String                 @db.VarChar
-  bitcoin_merged_mining_header                                  String                 @db.VarChar
-  bitcoin_merged_mining_coinbase_transaction                    String                 @db.VarChar
-  bitcoin_merged_mining_merkle_proof                            String                 @db.VarChar
-  hash_for_merged_mining                                        String                 @db.VarChar(66)
-  paid_fees                                                     String                 @db.VarChar
-  cummulative_difficulty                                        String                 @db.VarChar
-  received                                                      Int
+  gasLimit                                                      Int                    @map("gas_limit")
+  gasUsed                                                       Int                    @map("gas_used")
+  timestamp                                                     String                 @db.VarChar
+  minimumGasPrice                                               String                 @map("minimum_gas_price") @db.VarChar
+  bitcoinMergedMiningHeader                                     String                 @map("bitcoin_merged_mining_header") @db.VarChar
+  bitcoinMergedMiningCoinbaseTransaction                        String                 @map("bitcoin_merged_mining_coinbase_transaction") @db.VarChar
+  bitcoinMergedMiningMerkleProof                                String                 @map("bitcoin_merged_mining_merkle_proof") @db.VarChar
+  hashForMergedMining                                           String                 @map("hash_for_merged_mining") @db.VarChar(66)
+  paidFees                                                      String                 @map("paid_fees") @db.VarChar
+  cumulativeDifficulty                                          String                 @map("cumulative_difficulty") @db.VarChar
+  received                                                      String                 @db.VarChar
   address_address_blockToblock                                  address[]              @relation("address_blockToblock")
   address_address_last_block_minedToblock                       address[]              @relation("address_last_block_minedToblock")
   balance_balance_block_hashToblock                             balance[]              @relation("balance_block_hashToblock")
@@ -162,12 +163,11 @@ model compiler {
 }
 
 model config {
-  id              String            @id @db.VarChar
-  net_id          String            @db.VarChar
-  hash            String            @db.VarChar
-  updated         BigInt
-  net             net               @relation(fields: [net_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_config_net_id")
-  native_contract native_contract[]
+  id      String @id @db.VarChar
+  net_id  String @db.VarChar
+  hash    String @db.VarChar
+  updated BigInt
+  net     net    @relation(fields: [net_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_config_net_id")
 }
 
 model contract {
@@ -189,11 +189,11 @@ model contract {
 }
 
 model contract_interface {
-  id               Int              @id @default(autoincrement())
+  id               Int        @id @default(autoincrement())
   interface_id     Int
-  contract_address String           @db.VarChar(42)
-  contract         contract         @relation(fields: [contract_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
-  Renamedinterface Renamedinterface @relation(fields: [interface_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
+  contract_address String     @db.VarChar(42)
+  contract         contract   @relation(fields: [contract_address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
+  interface_       interface_ @relation(fields: [interface_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
 }
 
 model contract_method {
@@ -323,8 +323,9 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
-/// This model has been renamed to 'Renamedimport' during introspection, because the original name 'import' is reserved.
-model Renamedimport {
+/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
+/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
+model import_ {
   request_id Int
   name       String  @db.VarChar
   contents   String  @db.VarChar
@@ -336,17 +337,17 @@ model Renamedimport {
 }
 
 model input {
-  name          String      @db.VarChar
-  type          String      @db.VarChar
-  internal_type String?     @db.VarChar
-  indexed       Boolean?
-  abi_input     abi_input[]
+  name      String      @db.VarChar
+  type      String      @db.VarChar
+  indexed   Boolean?
+  abi_input abi_input[]
 
   @@id([name, type], map: "pk_input")
 }
 
-/// This model has been renamed to 'Renamedinterface' during introspection, because the original name 'interface' is reserved.
-model Renamedinterface {
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
+model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @db.VarChar
   contract_interface contract_interface[]
@@ -390,19 +391,19 @@ model library {
 }
 
 model log {
-  log_index                     Int              @id
+  log_index                     Int
   transaction_hash              String           @db.VarChar(66)
   transaction_index             Int
   block_number                  Int
   block_hash                    String           @db.VarChar(66)
   address                       String           @db.VarChar(42)
-  abi                           Int
-  id                            Int
-  data                          String           @db.VarChar
-  signture                      String           @db.VarChar
-  event                         String           @db.VarChar
-  timestamp                     BigInt
-  tx_status                     String           @db.VarChar
+  abi                           Int?
+  data                          String?          @db.VarChar
+  signture                      String?          @db.VarChar
+  event                         String?          @db.VarChar
+  timestamp                     BigInt?
+  tx_status                     String?          @db.VarChar
+  abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_abi")
   address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_address")
   block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_hash")
   block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [block_number], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_number")
@@ -410,31 +411,36 @@ model log {
   log_arg                       log_arg[]
   log_topic                     log_topic[]
   logged_address                logged_address[]
+
+  @@id([log_index, transaction_hash], map: "pk_log")
 }
 
 model log_arg {
-  log_index Int
-  arg       String @db.VarChar
-  log       log    @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_arg_log_index")
+  log_index        Int
+  arg              String @db.VarChar
+  transaction_hash String @db.VarChar
+  log              log    @relation(fields: [log_index, transaction_hash], references: [log_index, transaction_hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_arg_log_index_transaction_hash")
 
-  @@id([log_index, arg], map: "pk_log_arg")
+  @@id([log_index, arg, transaction_hash], map: "pk_log_arg")
 }
 
 model log_topic {
-  log_index Int
-  topic     String @db.VarChar
-  log       log    @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_topic_log_index")
+  log_index        Int
+  topic            String @db.VarChar
+  transaction_hash String @db.VarChar
+  log              log    @relation(fields: [log_index, transaction_hash], references: [log_index, transaction_hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_topic_log_index_transaction_hash")
 
-  @@id([log_index, topic], map: "pk_log_topic")
+  @@id([log_index, topic, transaction_hash], map: "pk_log_topic")
 }
 
 model logged_address {
   log_index                               Int
   address                                 String  @db.VarChar(42)
+  transaction_hash                        String  @db.VarChar
   address_logged_address_addressToaddress address @relation("logged_address_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_address")
-  log                                     log     @relation(fields: [log_index], references: [log_index], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_log_index")
+  log                                     log     @relation(fields: [log_index, transaction_hash], references: [log_index, transaction_hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_log_index_transaction_hash")
 
-  @@id([log_index, address], map: "pk_logged_address")
+  @@id([log_index, address, transaction_hash], map: "pk_logged_address")
 }
 
 model method {
@@ -450,15 +456,6 @@ model method_identifier {
   contract_verification_result contract_verification_result @relation(fields: [result_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_method_identifier_result_id")
 
   @@id([result_id, identifier], map: "pk_method_identifier")
-}
-
-model native_contract {
-  config_id String @db.VarChar
-  name      String @db.VarChar
-  address   String @db.VarChar(42)
-  config    config @relation(fields: [config_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_native_contract_config_id")
-
-  @@id([config_id, name], map: "pk_native_contract")
 }
 
 model net {
@@ -484,7 +481,7 @@ model receipt {
   to                                String      @db.VarChar(42)
   cumulative_gas_used               Int
   gas_used                          Int
-  contract_address                  String      @db.VarChar(42)
+  contract_address                  String?     @db.VarChar(42)
   status                            String      @db.VarChar
   logs_bloom                        String      @db.VarChar
   block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [block_hash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_hash")
@@ -509,7 +506,7 @@ model request {
   source                           String                        @db.VarChar
   bytecode                         String                        @db.VarChar
   contract_verification            contract_verification[]
-  Renamedimport                    Renamedimport[]
+  import_                          import_[]
   address_request_addressToaddress address?                      @relation("request_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_address")
   settings                         settings                      @relation(fields: [settings_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_settings_id")
   request_constructor_argument     request_constructor_argument?
@@ -634,14 +631,13 @@ model transaction {
   transaction_index                     Int
   nonce                                 Int
   gas                                   Int
-  gasprice                              String                 @db.VarChar
-  value                                 Int
+  gas_price                             String                 @db.VarChar
+  value                                 String                 @db.VarChar
   input                                 String?                @db.VarChar
   v                                     String?                @db.VarChar
   r                                     String?                @db.VarChar
   s                                     String?                @db.VarChar
   timestamp                             BigInt
-  status                                String                 @db.VarChar
   contract                              contract[]
   event                                 event[]
   internal_transaction                  internal_transaction[]
@@ -674,7 +670,7 @@ model transaction_pending {
   nonce               Int
   gas                 Int
   gas_price           String                @db.VarChar
-  value               Int
+  value               String                @db.VarChar
   input               String                @db.VarChar
   status              String                @db.VarChar
   transaction_in_pool transaction_in_pool[]
