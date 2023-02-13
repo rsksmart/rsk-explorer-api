@@ -7,3 +7,4 @@ src/tmp
 tmp
 coverage
 .nyc_output
+dist
