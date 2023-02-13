@@ -1,3 +1,6 @@
+import {prismaClient} from '../lib/Setup'
+import {rawAddressToEntity} from '../converters/address.converters'
+
 export const addressRepository = {
   findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
@@ -22,8 +25,25 @@ export const addressRepository = {
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  updateOne (filter, update, options = {}, collection) {
-    return collection.updateOne(filter, update, options)
+  async updateOne (filter, update, options = {}, collection) {
+    try {
+      const {$set: data} = update
+      const thisType = {
+        type: data.type,
+        entity: 'address'
+      }
+      let existingType = await prismaClient.type.findFirst({where: thisType})
+      if (!existingType) {
+        existingType = await prismaClient.type.create({data: thisType})
+      }
+      const newAddress = rawAddressToEntity({typeId: existingType.id, ...data})
+      await prismaClient.address.upsert({ where: filter, update: newAddress, create: newAddress })
+    } catch (e) {
+      console.log(e)
+    }
+    const mongoRes = await collection.updateOne(filter, update, options)
+
+    return mongoRes
   },
   deleteMany (filter, collection) {
     return collection.deleteMany(filter)
