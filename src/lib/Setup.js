@@ -32,20 +32,20 @@ const defaultInstances = { nod3: nod3Default, config: defaultConfig, collections
 
 export let prismaClient = null
 
-async function loadPrismaClient(config) {
+async function loadPrismaClient (config) {
   const url = generatePrismaURL(config)
 
   prismaClient = new PrismaClient({
     datasources: {
       db: {
         url: url
-      },
-    },
+      }
+    }
   })
 }
 
-function generatePrismaURL(config) {
-  const { db: { prismaEngine, prismaUser, prismaPassword, server, prismaPort, prismaDbName } } = config;
+function generatePrismaURL (config) {
+  const { db: { prismaEngine, prismaUser, prismaPassword, server, prismaPort, prismaDbName } } = config
 
   const engine = prismaEngine
   const credentials = `${prismaUser}:${prismaPassword}`
