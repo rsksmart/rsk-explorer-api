@@ -63,7 +63,8 @@ export class Block extends BcThing {
 
       // insert block
       result.block = await this.insertBlock(block)
-
+      // insert addresses
+      result.addresses = await Promise.all([...addresses.map(a => saveAddressToDb(a, collections.Addrs))])
       // insert txs
       await Promise.all([...transactions.map(tx => txRepository.insertOne(tx, collections.Txs))])
         .then(res => { result.txs = res })
@@ -74,9 +75,6 @@ export class Block extends BcThing {
       // insert internal transactions
       await Promise.all([...internalTransactions.map(itx => internalTxRepository.insertOne(itx, collections.InternalTransactions))])
         .then(res => { result.internalTxs = res })
-
-      // insert addresses
-      result.addresses = await Promise.all([...addresses.map(a => saveAddressToDb(a, collections.Addrs))])
 
       // insert events
       result.events = await this.insertEvents(events)
