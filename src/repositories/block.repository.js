@@ -1,7 +1,6 @@
 import {prismaClient} from '../lib/Setup'
-import {rawBlockToEntity} from '../converters/block.converters'
-import {mongoSortToPrisma} from "./utils"
-import {blockEntityToRaw} from '../converters/readings/block.converters.readings'
+import {rawBlockToEntity, blockEntityToRaw} from '../converters/block.converters'
+import {mongoSortToPrisma} from './utils'
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {
