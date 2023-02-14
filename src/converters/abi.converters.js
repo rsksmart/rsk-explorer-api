@@ -16,7 +16,7 @@ function rawInputToEntity (data) {
 
 function rawAbiInputToEntity (data) {
   return {
-    abi_id: data.abiId,
+    abiId: data.abiId,
     name: data.name,
     type: data.type
   }
