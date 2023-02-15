@@ -26,7 +26,14 @@ export const blockRepository = {
     return collection.aggregate(aggregate).toArray()
   },
   async insertOne (data, collection) {
-    await prismaClient.block.create({data: rawBlockToEntity(data)})
+    try {
+      await prismaClient.block.create({data: rawBlockToEntity(data)})
+      for (const uncle of data.uncles) {
+        await prismaClient.uncle.create({data: {hash: uncle, blockNumber: data.number}})
+      }
+    } catch (e) {
+      console.log(e)
+    }
     const mongoRes = await collection.insertOne(data)
     return mongoRes
   },
