@@ -15,7 +15,7 @@ function rawBlockToEntity (data) {
     size: data.size,
     gasLimit: data.gasLimit,
     gasUsed: data.gasUsed,
-    timestamp: data.timestamp,
+    timestamp: String(data.timestamp),
     minimumGasPrice: data.minimumGasPrice,
     bitcoinMergedMiningHeader: data.bitcoinMergedMiningHeader,
     bitcoinMergedMiningCoinbaseTransaction: data.bitcoinMergedMiningCoinbaseTransaction,
@@ -23,7 +23,7 @@ function rawBlockToEntity (data) {
     hashForMergedMining: data.hashForMergedMining,
     paidFees: data.paidFees,
     cumulativeDifficulty: data.cumulativeDifficulty,
-    received: data._received
+    received: String(data._received)
   }
 }
 
