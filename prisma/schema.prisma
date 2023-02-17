@@ -325,7 +325,6 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
-/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -346,7 +345,6 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @db.VarChar
@@ -483,7 +481,7 @@ model receipt {
   gasUsed                           Int         @map("gas_used")
   contractAddress                   String?     @map("contract_address") @db.VarChar(42)
   status                            String      @db.VarChar
-  logsBloom                        String      @map("logs_bloom") @db.VarChar
+  logsBloom                         String      @map("logs_bloom") @db.VarChar
   block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_hash")
   block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_number")
   address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_from")
@@ -662,7 +660,6 @@ model transaction_in_pool {
 model transaction_pending {
   hash                String                @id @db.VarChar(66)
   blockHash           String                @map("block_hash") @db.VarChar(66)
-  txTypeId            Int                   @map("tx_type_id")
   from                String                @db.VarChar(42)
   to                  String                @db.VarChar(42)
   blockNumber         Int                   @map("block_number")
