@@ -51,7 +51,9 @@ export const blockRepository = {
     }
   },
   countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
+    return prismaClient.block.count({
+      where: query
+    })
   },
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
