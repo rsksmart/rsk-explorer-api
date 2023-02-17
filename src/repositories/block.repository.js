@@ -55,9 +55,6 @@ export const blockRepository = {
       where: query
     })
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
   async insertOne (data, collection) {
     await prismaClient.block.create({data: rawBlockToEntity(data)})
     const mongoRes = await collection.insertOne(data)
