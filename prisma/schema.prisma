@@ -33,10 +33,6 @@ model action {
   to                   String                 @db.VarChar(42)
   gas                  String                 @db.VarChar
   value                String                 @db.VarChar
-  creationMethod       String                 @map("creation_method") @db.VarChar
-  refundAddress        String                 @map("refund_address") @db.VarChar(42)
-  balance              String                 @db.VarChar
-  init                 String                 @db.VarChar
   internal_transaction internal_transaction[]
 }
 
@@ -325,6 +321,8 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
+/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
+/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -345,6 +343,8 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @db.VarChar
@@ -360,7 +360,6 @@ model internal_transaction {
   blockHash                                      String                       @map("block_hash") @db.VarChar(66)
   actionId                                       Int                          @map("action_id")
   transactionPosition                            Int                          @map("transaction_position")
-  typeId                                         Int                          @map("type_id")
   subtraces                                      Int
   index                                          Int
   timestamp                                      String                       @db.VarChar
@@ -368,7 +367,6 @@ model internal_transaction {
   block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
   transaction                                    transaction                  @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
-  type                                           type                         @relation(fields: [typeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_type_id")
   internal_transaction_result                    internal_transaction_result?
   trace_address                                  trace_address[]
 }
@@ -401,11 +399,12 @@ model log {
   event                         String?          @db.VarChar
   timestamp                     String?          @db.VarChar
   txStatus                      String?          @map("tx_status") @db.VarChar
+  event_id                      String?          @db.VarChar
   abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_abi")
   address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_address")
   block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_hash")
   block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_number")
-  transaction                   transaction      @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_transaction_hash")
+  transaction                   receipt          @relation(fields: [transactionHash], references: [transactionHash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_transaction_hash")
   log_arg                       log_arg[]
   log_topic                     log_topic[]
   logged_address                logged_address[]
@@ -482,6 +481,7 @@ model receipt {
   contractAddress                   String?     @map("contract_address") @db.VarChar(42)
   status                            String      @db.VarChar
   logsBloom                         String      @map("logs_bloom") @db.VarChar
+  log                               log[]
   block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_hash")
   block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_number")
   address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_from")
@@ -639,7 +639,6 @@ model transaction {
   contract                              contract[]
   event                                 event[]
   internal_transaction                  internal_transaction[]
-  log                                   log[]
   receipt                               receipt?
   block_transaction_block_hashToblock   block                  @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_hash")
   block_transaction_block_numberToblock block                  @relation("transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_number")
@@ -684,11 +683,10 @@ model txpool {
 }
 
 model type {
-  id                   Int                    @id @default(autoincrement())
-  entity               String                 @db.VarChar
-  type                 String                 @db.VarChar
-  internal_transaction internal_transaction[]
-  transaction          transaction[]
+  id          Int           @id @default(autoincrement())
+  entity      String        @db.VarChar
+  type        String        @db.VarChar
+  transaction transaction[]
 }
 
 model uncle {
