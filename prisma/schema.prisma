@@ -175,6 +175,7 @@ model contract {
   deployedCode                                   String                @map("deployed_code") @db.VarChar
   symbol                                         String                @db.VarChar
   totalSupply                                    String                @map("total_supply") @db.VarChar
+  decimals                                       Int?                  @db.SmallInt
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_address")
   block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
   transaction                                    transaction           @relation(fields: [createdByTx], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_created_by_tx")
