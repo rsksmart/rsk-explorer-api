@@ -33,21 +33,7 @@ export const txRepository = {
     return mongoRes
   },
   async insertOne (data, collection) {
-<<<<<<< Updated upstream
-    const thisType = {
-      type: data.txType,
-      entity: 'transaction'
-    }
-    let existingType = await prismaClient.type.findFirst({where: thisType})
-    if (!existingType) {
-      existingType = await prismaClient.type.create({data: thisType})
-    }
-    await prismaClient.transaction.create({data: rawTxToEntity({txTypeId: existingType.id, ...data})})
-=======
-
-      await prismaClient.transaction.create({data: rawTxToEntity(data)})
->>>>>>> Stashed changes
-
+    await prismaClient.transaction.create({data: rawTxToEntity(data)})
     await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
     const {logs} = data.receipt
@@ -92,16 +78,12 @@ export const txRepository = {
         }
       }
 
-<<<<<<< Updated upstream
       for (const address of _addresses) {
         await prismaClient.logged_address.create({data: rawLoggedAddressToEntity({address, transactionHash, logIndex})})
       }
     }
 
-=======
->>>>>>> Stashed changes
     const mongoRes = await collection.insertOne(data)
-
     return mongoRes
   }
 }
