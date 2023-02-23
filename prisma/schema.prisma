@@ -8,21 +8,23 @@ datasource db {
 }
 
 model abi {
-  id               Int        @id @default(autoincrement())
+  id               Int         @id @default(autoincrement())
   anonymous        Boolean?
-  name             String?    @db.VarChar
-  type             String?    @db.VarChar
-  abi_input        abi_input?
+  name             String?     @db.VarChar
+  type             String?     @db.VarChar
+  abi_input        abi_input[]
   event            event[]
-  log_log_abiToabi log[]      @relation("log_abiToabi")
+  log_log_abiToabi log[]       @relation("log_abiToabi")
 }
 
 model abi_input {
-  abiId Int     @id(map: "pk_abi_input") @map("abi_id")
-  name  String? @db.VarChar
+  abiId Int     @map("abi_id")
+  name  String  @db.VarChar
   type  String? @db.VarChar
   abi   abi     @relation(fields: [abiId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_abi_id")
   input input?  @relation(fields: [name, type], references: [name, type], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_name_type")
+
+  @@id([abiId, name], map: "pk_abi_input")
 }
 
 model action {
