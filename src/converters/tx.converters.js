@@ -2,7 +2,7 @@ function rawTxToEntity (data) {
   return {
     hash: data.hash,
     txId: data.txId,
-    txTypeId: data.txTypeId,
+    txType: data.txType,
     from: data.from,
     to: data.to,
     blockNumber: data.blockNumber,

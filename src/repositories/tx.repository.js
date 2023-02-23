@@ -26,10 +26,14 @@ export const txRepository = {
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  deleteMany (filter, collection) {
-    return collection.deleteMany(filter)
+  async deleteMany (filter, collection) {
+    await prismaClient.transaction.deleteMany({where: {hash: {in: filter.$in}}})
+
+    const mongoRes = await collection.deleteMany(filter)
+    return mongoRes
   },
   async insertOne (data, collection) {
+<<<<<<< Updated upstream
     const thisType = {
       type: data.txType,
       entity: 'transaction'
@@ -39,6 +43,10 @@ export const txRepository = {
       existingType = await prismaClient.type.create({data: thisType})
     }
     await prismaClient.transaction.create({data: rawTxToEntity({txTypeId: existingType.id, ...data})})
+=======
+
+      await prismaClient.transaction.create({data: rawTxToEntity(data)})
+>>>>>>> Stashed changes
 
     await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
@@ -84,11 +92,14 @@ export const txRepository = {
         }
       }
 
+<<<<<<< Updated upstream
       for (const address of _addresses) {
         await prismaClient.logged_address.create({data: rawLoggedAddressToEntity({address, transactionHash, logIndex})})
       }
     }
 
+=======
+>>>>>>> Stashed changes
     const mongoRes = await collection.insertOne(data)
 
     return mongoRes
