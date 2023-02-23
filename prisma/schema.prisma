@@ -8,23 +8,21 @@ datasource db {
 }
 
 model abi {
-  id               Int         @id @default(autoincrement())
+  id               Int        @id @default(autoincrement())
   anonymous        Boolean?
-  name             String?     @db.VarChar
-  type             String?     @db.VarChar
-  abi_input        abi_input[]
+  name             String?    @db.VarChar
+  type             String?    @db.VarChar
+  abi_input        abi_input?
   event            event[]
-  log_log_abiToabi log[]       @relation("log_abiToabi")
+  log_log_abiToabi log[]      @relation("log_abiToabi")
 }
 
 model abi_input {
-  abiId Int     @map("abi_id")
-  name  String  @db.VarChar
+  abiId Int     @id(map: "pk_abi_input") @map("abi_id")
+  name  String? @db.VarChar
   type  String? @db.VarChar
   abi   abi     @relation(fields: [abiId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_abi_id")
   input input?  @relation(fields: [name, type], references: [name, type], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_name_type")
-
-  @@id([abiId, name], map: "pk_abi_input")
 }
 
 model action {
@@ -173,12 +171,12 @@ model contract {
   name                                           String                @db.VarChar
   createdByTx                                    String                @map("created_by_tx") @db.VarChar(66)
   code                                           String                @db.VarChar
-  codeStoredAtblock                              Int                   @map("code_stored_at_block")
+  codeStoredAtBlock                              Int                   @map("code_stored_at_block")
   deployedCode                                   String                @map("deployed_code") @db.VarChar
   symbol                                         String                @db.VarChar
   totalSupply                                    String                @map("total_supply") @db.VarChar
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_address")
-  block                                          block                 @relation(fields: [codeStoredAtblock], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
+  block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
   transaction                                    transaction           @relation(fields: [createdByTx], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_created_by_tx")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
@@ -322,7 +320,6 @@ model event_topic {
 }
 
 /// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
-/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -343,7 +340,6 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 /// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
@@ -395,11 +391,11 @@ model log {
   address                       String           @db.VarChar(42)
   abi                           Int?
   data                          String?          @db.VarChar
-  signture                      String?          @db.VarChar
+  signature                     String?          @db.VarChar
   event                         String?          @db.VarChar
   timestamp                     String?          @db.VarChar
   txStatus                      String?          @map("tx_status") @db.VarChar
-  event_id                      String?          @db.VarChar
+  eventId                       String?          @map("event_id") @db.VarChar
   abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_abi")
   address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_address")
   block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_hash")
