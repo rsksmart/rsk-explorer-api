@@ -46,10 +46,11 @@ function rawLogToEntity (data) {
     address: data.address,
     abi: data.abiId,
     data: data.data,
-    signture: data.signature,
+    signature: data.signature,
     event: data.event,
     timestamp: String(data.timestamp),
-    txStatus: data.txStatus
+    txStatus: data.txStatus,
+    eventId: data.eventId
   }
 }
 
