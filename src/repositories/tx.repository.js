@@ -30,62 +30,65 @@ export const txRepository = {
     return collection.deleteMany(filter)
   },
   async insertOne (data, collection) {
-    try {
-      const thisType = {
-        type: data.txType,
-        entity: 'transaction'
-      }
-      let existingType = await prismaClient.type.findFirst({where: thisType})
-      if (!existingType) {
-        existingType = await prismaClient.type.create({data: thisType})
-      }
-      await prismaClient.transaction.create({data: rawTxToEntity({txTypeId: existingType.id, ...data})})
+    const thisType = {
+      type: data.txType,
+      entity: 'transaction'
+    }
+    let existingType = await prismaClient.type.findFirst({where: thisType})
+    if (!existingType) {
+      existingType = await prismaClient.type.create({data: thisType})
+    }
+    await prismaClient.transaction.create({data: rawTxToEntity({txTypeId: existingType.id, ...data})})
 
-      await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
+    await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
-      const {logs} = data.receipt
+    const {logs} = data.receipt
 
-      for (const log of logs) {
-        const {abi, topics, args, transactionHash, logIndex, _addresses} = log
+    for (const log of logs) {
+      const {abi, topics, args, transactionHash, logIndex, _addresses} = log
+      let existingAbi
+      if (abi) {
+        const {inputs} = abi
+        const abiToSave = rawAbiToEntity(abi)
+        existingAbi = await prismaClient.abi.findFirst({where: abiToSave})
+        if (!existingAbi) {
+          existingAbi = await prismaClient.abi.create({data: abiToSave})
+        }
 
-        if (abi) {
-          const {inputs} = abi
-          const abiToSave = rawAbiToEntity(abi)
-          let existingAbi = await prismaClient.abi.findFirst({where: abiToSave})
-          if (!existingAbi) {
-            existingAbi = await prismaClient.abi.create({data: abiToSave})
-          }
-
-          if (inputs) {
-            for (const input of inputs) {
-              let existingInput = await prismaClient.input.findFirst({where: {name: input.name, type: input.type}})
-              if (!existingInput) {
-                existingInput = await prismaClient.input.create({data: rawInputToEntity(input)})
-              }
-              await prismaClient.abi_input.create({data: rawAbiInputToEntity({abiId: existingAbi.id, ...existingInput})})
+        if (inputs) {
+          for (const input of inputs) {
+            let existingInput = await prismaClient.input.findFirst({where: {name: input.name, type: input.type}})
+            if (!existingInput) {
+              existingInput = await prismaClient.input.create({data: rawInputToEntity(input)})
+            }
+            existingInput.abiId = existingAbi.id
+            const abiInputToSave = rawAbiInputToEntity(existingInput)
+            let existingAbiInput = await prismaClient.abi_input.findFirst({where: {name: abiInputToSave.name, type: abiInputToSave.type}})
+            if (!existingAbiInput) {
+              await prismaClient.abi_input.create({data: abiInputToSave})
             }
           }
         }
+        log.abiId = existingAbi.id
+      }
 
-        await prismaClient.log.create({data: rawLogToEntity(log)})
+      await prismaClient.log.create({data: rawLogToEntity(log)})
 
-        for (const topic of topics) {
-          await prismaClient.log_topic.create({data: rawLogTopicToEntity({topic, transactionHash, logIndex})})
-        }
+      for (const topic of topics) {
+        await prismaClient.log_topic.create({data: rawLogTopicToEntity({topic, transactionHash, logIndex})})
+      }
 
-        if (args) {
-          for (const arg of args) {
-            await prismaClient.log_arg.create({data: rawLogArgToEntity({arg, transactionHash, logIndex})})
-          }
-        }
-
-        for (const address of _addresses) {
-          await prismaClient.logged_address.create({data: rawLoggedAddressToEntity({address, transactionHash, logIndex})})
+      if (args) {
+        for (const arg of args) {
+          await prismaClient.log_arg.create({data: rawLogArgToEntity({arg, transactionHash, logIndex})})
         }
       }
-    } catch (e) {
-      console.log(e)
+
+      for (const address of _addresses) {
+        await prismaClient.logged_address.create({data: rawLoggedAddressToEntity({address, transactionHash, logIndex})})
+      }
     }
+
     const mongoRes = await collection.insertOne(data)
 
     return mongoRes
