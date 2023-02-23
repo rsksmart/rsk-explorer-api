@@ -26,20 +26,14 @@ export const txRepository = {
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  deleteMany (filter, collection) {
-    return collection.deleteMany(filter)
+  async deleteMany (filter, collection) {
+    await prismaClient.transaction.deleteMany({where: {hash: {in: filter.$in}}})
+
+    const mongoRes = await collection.deleteMany(filter)
+    return mongoRes
   },
   async insertOne (data, collection) {
-    const thisType = {
-      type: data.txType,
-      entity: 'transaction'
-    }
-    let existingType = await prismaClient.type.findFirst({where: thisType})
-    if (!existingType) {
-      existingType = await prismaClient.type.create({data: thisType})
-    }
-    await prismaClient.transaction.create({data: rawTxToEntity({txTypeId: existingType.id, ...data})})
-
+    await prismaClient.transaction.create({data: rawTxToEntity(data)})
     await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
     const {logs} = data.receipt
@@ -90,7 +84,6 @@ export const txRepository = {
     }
 
     const mongoRes = await collection.insertOne(data)
-
     return mongoRes
   }
 }
