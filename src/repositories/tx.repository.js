@@ -63,7 +63,7 @@ export const txRepository = {
             }
             existingInput.abiId = existingAbi.id
             const abiInputToSave = rawAbiInputToEntity(existingInput)
-            let existingAbiInput = await prismaClient.abi_input.findFirst({where: {name: abiInputToSave.name, type: abiInputToSave.type}})
+            let existingAbiInput = await prismaClient.abi_input.findFirst({where: {name: abiInputToSave.name, abiId: abiInputToSave.abiId}})
             if (!existingAbiInput) {
               await prismaClient.abi_input.create({data: abiInputToSave})
             }
