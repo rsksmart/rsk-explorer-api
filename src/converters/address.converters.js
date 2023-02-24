@@ -6,7 +6,7 @@ function rawAddressToEntity (data) {
     lastBlockMined: lastBlockMined ? lastBlockMined.blockNumber : null,
     balance: data.balance,
     isNative: data.isNative,
-    type: data.typeId
+    type: data.type
   }
 }
 

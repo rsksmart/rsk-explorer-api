@@ -21,8 +21,8 @@ model abi_input {
   abiId Int     @map("abi_id")
   name  String  @db.VarChar
   type  String? @db.VarChar
-  abi   abi     @relation(fields: [abiId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_abi_id")
-  input input?  @relation(fields: [name, type], references: [name, type], onDelete: NoAction, onUpdate: NoAction, map: "fk_abi_input_name_type")
+  abi   abi     @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_abi_id")
+  input input?  @relation(fields: [name, type], references: [name, type], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_name_type")
 
   @@id([abiId, name], map: "pk_abi_input")
 }
@@ -43,8 +43,8 @@ model address {
   balance                                            String             @db.VarChar
   isNative                                           Boolean            @map("is_native")
   type                                               String             @db.VarChar
-  block_address_blockToblock                         block              @relation("address_blockToblock", fields: [block], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_block")
-  block_address_last_block_minedToblock              block?             @relation("address_last_block_minedToblock", fields: [lastBlockMined], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_last_block_mined")
+  block_address_blockToblock                         block              @relation("address_blockToblock", fields: [block], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_block")
+  block_address_last_block_minedToblock              block?             @relation("address_last_block_minedToblock", fields: [lastBlockMined], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_last_block_mined")
   address_in_event_address_in_event_addressToaddress address_in_event[] @relation("address_in_event_addressToaddress")
   balance_balance_addressToaddress                   balance[]          @relation("balance_addressToaddress")
   contract_contract_addressToaddress                 contract?          @relation("contract_addressToaddress")
@@ -62,8 +62,8 @@ model address {
 model address_in_event {
   id                                        Int
   address                                   String  @db.VarChar(42)
-  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_event_address")
-  event                                     event   @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_event_id")
+  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_address")
+  event                                     event   @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
 
   @@id([id, address], map: "pk_address_in_event")
 }
@@ -76,9 +76,9 @@ model balance {
   blockHash                         String  @map("block_hash") @db.VarChar(66)
   timestamp                         String  @db.VarChar
   created                           String  @db.VarChar
-  address_balance_addressToaddress  address @relation("balance_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_address")
-  block_balance_block_hashToblock   block   @relation("balance_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_block_hash")
-  block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_balance_block_number")
+  address_balance_addressToaddress  address @relation("balance_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_address")
+  block_balance_block_hashToblock   block   @relation("balance_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_hash")
+  block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
 }
 
 model balances_log {
@@ -164,7 +164,7 @@ model config {
   netId           String            @map("net_id") @db.VarChar
   hash            String            @db.VarChar
   updated         String            @db.VarChar
-  net             net               @relation(fields: [netId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_config_net_id")
+  net             net               @relation(fields: [netId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_config_net_id")
   native_contract native_contract[]
 }
 
@@ -178,9 +178,9 @@ model contract {
   symbol                                         String                @db.VarChar
   totalSupply                                    String                @map("total_supply") @db.VarChar
   decimals                                       Int?                  @db.SmallInt
-  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_address")
-  block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
-  transaction                                    transaction           @relation(fields: [createdByTx], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_created_by_tx")
+  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
+  block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
+  transaction                                    transaction           @relation(fields: [createdByTx], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_tx")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
   token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
@@ -191,16 +191,16 @@ model contract_interface {
   id              Int        @id @default(autoincrement())
   interfaceId     Int        @map("interface_id")
   contractAddress String     @map("contract_address") @db.VarChar(42)
-  contract        contract   @relation(fields: [contractAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
-  interface_      interface_ @relation(fields: [interfaceId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
+  contract        contract   @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
+  interface_      interface_ @relation(fields: [interfaceId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
 }
 
 model contract_method {
   id              Int      @id @default(autoincrement())
   methodId        Int      @map("method_id")
   contractAddress String   @map("contract_address") @db.VarChar(42)
-  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_method_contract_address")
-  method          method   @relation(fields: [methodId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_method_method_id")
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_contract_address")
+  method          method   @relation(fields: [methodId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_method_id")
 }
 
 model contract_verification {
@@ -210,9 +210,9 @@ model contract_verification {
   requestId                    Int                          @map("request_id")
   resultId                     Int                          @map("result_id")
   abi                          Int
-  contract_verification_abi    contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abi")
-  request                      request                      @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_request_id")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_result_id")
+  contract_verification_abi    contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi")
+  request                      request                      @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_request_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_result_id")
   source                       source[]
 }
 
@@ -235,7 +235,7 @@ model contract_verification_abi_input {
   type                      String                    @db.VarChar
   satate_mutability         String?                   @db.VarChar
   internalType              String?                   @map("internal_type") @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abi_input")
+  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_input")
 
   @@id([abiId, name, type], map: "pk_contract_verification_abi_input")
 }
@@ -245,7 +245,7 @@ model contract_verification_abioutput {
   name                      String                    @db.VarChar
   type                      String                    @db.VarChar
   internalType              String?                   @map("internal_type") @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: NoAction, onUpdate: NoAction, map: "fk_contract_verification_abioutput")
+  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abioutput")
 
   @@id([abiId, name, type], map: "pk_contract_verification_abiouput")
 }
@@ -262,8 +262,8 @@ model contract_verification_result {
   opcodes                     String?                      @db.VarChar
   encodedConstructorArguments String                       @map("encoded_constructor_arguments") @db.VarChar
   contract_verification       contract_verification[]
-  contract_verification_abi   contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: NoAction, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_abi")
-  used_settings               used_settings                @relation(fields: [usedSettingsId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_used_settings_id")
+  contract_verification_abi   contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_abi")
+  used_settings               used_settings                @relation(fields: [usedSettingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_used_settings_id")
   decoded_metadata            decoded_metadata[]
   method_identifier           method_identifier[]
   result_constructor_argument result_constructor_argument?
@@ -276,7 +276,7 @@ model decoded_metadata {
   resultId                     Int                          @map("result_id")
   key                          String                       @db.VarChar
   value                        String                       @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_decoded_metadata_result_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_decoded_metadata_result_id")
 
   @@id([resultId, key, value], map: "pk_decoded_metadata")
 }
@@ -297,11 +297,11 @@ model event {
   transactionIndex                Int                @map("transaction_index")
   txStatus                        String             @map("tx_status") @db.VarChar
   address_in_event                address_in_event[]
-  abi                             abi                @relation(fields: [abiId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_abi_id")
-  address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_address")
-  block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_block_hash")
-  block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_block_number")
-  transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_transaction_hash")
+  abi                             abi                @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_abi_id")
+  address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_address")
+  block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_hash")
+  block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
+  transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
   event_arg                       event_arg[]
   event_topic                     event_topic[]
 }
@@ -309,7 +309,7 @@ model event {
 model event_arg {
   id    Int
   arg   String @db.VarChar
-  event event  @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_arg_id")
+  event event  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
 
   @@id([id, arg], map: "pk_event_arg")
 }
@@ -317,7 +317,7 @@ model event_arg {
 model event_topic {
   id    Int
   topic String @db.VarChar
-  event event  @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_topic_id")
+  event event  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
 
   @@id([id, topic], map: "pk_event_topic")
 }
@@ -329,7 +329,7 @@ model import_ {
   name      String  @db.VarChar
   contents  String  @db.VarChar
   file      String  @db.VarChar
-  request   request @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_import_request_id")
+  request   request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_import_request_id")
 
   @@id([requestId, name], map: "pk_import")
   @@map("import")
@@ -365,10 +365,10 @@ model internal_transaction {
   index                                          Int
   timestamp                                      String                       @db.VarChar
   type                                           String                       @db.VarChar
-  action                                         action                       @relation(fields: [actionId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_action_id")
-  block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
-  block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
-  transaction                                    transaction                  @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
+  action                                         action                       @relation(fields: [actionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_action_id")
+  block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
+  block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
+  transaction                                    transaction                  @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
   internal_transaction_result                    internal_transaction_result?
   trace_address                                  trace_address[]
 }
@@ -377,7 +377,7 @@ model internal_transaction_result {
   internalTxId         String               @id @map("internal_tx_id") @db.VarChar
   gasUsed              String               @map("gas_used") @db.VarChar
   output               String               @db.VarChar
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_internal_tx_id")
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_internal_tx_id")
 }
 
 model library {
@@ -402,11 +402,11 @@ model log {
   timestamp                     String?          @db.VarChar
   txStatus                      String?          @map("tx_status") @db.VarChar
   eventId                       String?          @map("event_id") @db.VarChar
-  abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_abi")
-  address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_address")
-  block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_hash")
-  block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_block_number")
-  transaction                   receipt          @relation(fields: [transactionHash], references: [transactionHash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_transaction_hash")
+  abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_abi")
+  address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_address")
+  block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_block_hash")
+  block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_block_number")
+  transaction                   receipt          @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_transaction_hash")
   log_arg                       log_arg[]
   log_topic                     log_topic[]
   logged_address                logged_address[]
@@ -418,7 +418,7 @@ model log_arg {
   logIndex        Int    @map("log_index")
   arg             String @db.VarChar
   transactionHash String @map("transaction_hash") @db.VarChar
-  log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_arg_log_index_transaction_hash")
+  log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_arg_log_index_transaction_hash")
 
   @@id([logIndex, arg, transactionHash], map: "pk_log_arg")
 }
@@ -427,7 +427,7 @@ model log_topic {
   logIndex        Int    @map("log_index")
   topic           String @db.VarChar
   transactionHash String @map("transaction_hash") @db.VarChar
-  log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: NoAction, onUpdate: NoAction, map: "fk_log_topic_log_index_transaction_hash")
+  log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_topic_log_index_transaction_hash")
 
   @@id([logIndex, topic, transactionHash], map: "pk_log_topic")
 }
@@ -436,8 +436,8 @@ model logged_address {
   logIndex                                Int     @map("log_index")
   address                                 String  @db.VarChar(42)
   transactionHash                         String  @map("transaction_hash") @db.VarChar
-  address_logged_address_addressToaddress address @relation("logged_address_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_address")
-  log                                     log     @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: NoAction, onUpdate: NoAction, map: "fk_logged_address_log_index_transaction_hash")
+  address_logged_address_addressToaddress address @relation("logged_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_logged_address_address")
+  log                                     log     @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_logged_address_log_index_transaction_hash")
 
   @@id([logIndex, address, transactionHash], map: "pk_logged_address")
 }
@@ -452,7 +452,7 @@ model method_identifier {
   resultId                     Int                          @map("result_id")
   identifier                   String                       @db.VarChar
   method                       String?                      @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_method_identifier_result_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_method_identifier_result_id")
 
   @@id([resultId, identifier], map: "pk_method_identifier")
 }
@@ -484,11 +484,11 @@ model receipt {
   status                            String      @db.VarChar
   logsBloom                         String      @map("logs_bloom") @db.VarChar
   log                               log[]
-  block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_hash")
-  block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_block_number")
-  address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_from")
-  address_receipt_toToaddress       address     @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_to")
-  transaction                       transaction @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_receipt_transaction_hash")
+  block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_hash")
+  block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_number")
+  address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_from")
+  address_receipt_toToaddress       address     @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_to")
+  transaction                       transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_transaction_hash")
 }
 
 model remapping {
@@ -507,8 +507,8 @@ model request {
   bytecode                         String                        @db.VarChar
   contract_verification            contract_verification[]
   import_                          import_[]
-  address_request_addressToaddress address?                      @relation("request_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_address")
-  settings                         settings                      @relation(fields: [settingsId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_settings_id")
+  address_request_addressToaddress address?                      @relation("request_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_address")
+  settings                         settings                      @relation(fields: [settingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_settings_id")
   request_constructor_argument     request_constructor_argument?
   request_library                  request_library[]
 }
@@ -517,14 +517,14 @@ model request_constructor_argument {
   requestId Int     @id @map("request_id")
   position  Int     @db.SmallInt
   value     String  @db.VarChar
-  request   request @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_constructor_argument_request_id")
+  request   request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_constructor_argument_request_id")
 }
 
 model request_library {
   requestId      Int     @map("request_id")
   libraryAddress String  @map("library_address") @db.VarChar(42)
-  library        library @relation(fields: [libraryAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_library_library_address")
-  request        request @relation(fields: [requestId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_request_library_request_id")
+  library        library @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_library_library_address")
+  request        request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_library_request_id")
 
   @@id([requestId, libraryAddress], map: "pk_request_library")
 }
@@ -533,14 +533,14 @@ model result_constructor_argument {
   resultId                     Int                          @id @map("result_id")
   position                     Int?                         @db.SmallInt
   value                        String?                      @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_constructor_argument_result_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_constructor_argument_result_id")
 }
 
 model result_used_library {
   resultId                     Int                          @map("result_id")
   libraryAddress               String                       @map("library_address") @db.VarChar(42)
-  library                      library                      @relation(fields: [libraryAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_used_library_library_address")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_used_library_result_id")
+  library                      library                      @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_used_library_library_address")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_used_library_result_id")
 
   @@id([resultId, libraryAddress], map: "pk_result_used_library")
 }
@@ -548,8 +548,8 @@ model result_used_library {
 model result_warning {
   resultId                     Int                          @map("result_id")
   warningId                    Int                          @map("warning_id")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_warning_result_id")
-  warning                      warning                      @relation(fields: [warningId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_result_warning_warning_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_warning_result_id")
+  warning                      warning                      @relation(fields: [warningId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_warning_warning_id")
 
   @@id([resultId, warningId], map: "pk_result_warning")
 }
@@ -559,14 +559,14 @@ model settings {
   evmVersion  String    @map("evm_version") @db.VarChar
   optimizerId Int       @map("optimizer_id")
   request     request[]
-  optimizer   optimizer @relation(fields: [optimizerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_settings_optimizer_id")
+  optimizer   optimizer @relation(fields: [optimizerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_settings_optimizer_id")
 }
 
 model source {
   verificationId        Int                   @map("verification_id")
   name                  String                @db.VarChar
   contents              String                @db.VarChar
-  contract_verification contract_verification @relation(fields: [verificationId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_source_verification_id")
+  contract_verification contract_verification @relation(fields: [verificationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_source_verification_id")
 
   @@id([verificationId, name, contents], map: "pk_source")
 }
@@ -588,10 +588,10 @@ model stats_collection {
   activeAccounts                             Int         @map("active_accounts")
   hashrate                                   String      @db.VarChar
   timestamp                                  String      @db.VarChar
-  block_stats_collection_block_hashToblock   block       @relation("stats_collection_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_block_hash")
-  block_stats_collection_block_numberToblock block       @relation("stats_collection_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_block_number")
-  bridge                                     bridge      @relation(fields: [bridgeId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_bridge_id")
-  circulating                                circulating @relation(fields: [circulatingId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_stats_collection_circulating_id")
+  block_stats_collection_block_hashToblock   block       @relation("stats_collection_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_block_hash")
+  block_stats_collection_block_numberToblock block       @relation("stats_collection_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_block_number")
+  bridge                                     bridge      @relation(fields: [bridgeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_bridge_id")
+  circulating                                circulating @relation(fields: [circulatingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_circulating_id")
 }
 
 model status {
@@ -607,15 +607,15 @@ model token_address {
   contract                                  String   @db.VarChar(42)
   blockNumber                               Int      @map("block_number")
   balance                                   String   @db.VarChar
-  address_token_address_addressToaddress    address  @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_address")
-  block                                     block    @relation(fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_block_number")
-  contract_token_address_contractTocontract contract @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_contract")
+  address_token_address_addressToaddress    address  @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
+  block                                     block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
+  contract_token_address_contractTocontract contract @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
 }
 
 model trace_address {
   internalTxId         String               @map("internal_tx_id") @db.VarChar
   operation            Int
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: NoAction, onUpdate: NoAction, map: "fk_trace_address_internal_tx_id")
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_trace_address_internal_tx_id")
 
   @@id([internalTxId, operation], map: "pk_trace_address")
 }
@@ -642,17 +642,17 @@ model transaction {
   event                                 event[]
   internal_transaction                  internal_transaction[]
   receipt                               receipt?
-  block_transaction_block_hashToblock   block                  @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_hash")
-  block_transaction_block_numberToblock block                  @relation("transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_block_number")
-  address_transaction_fromToaddress     address                @relation("transaction_fromToaddress", fields: [from], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_from")
-  address_transaction_toToaddress       address                @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_to")
+  block_transaction_block_hashToblock   block                  @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
+  block_transaction_block_numberToblock block                  @relation("transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_number")
+  address_transaction_fromToaddress     address                @relation("transaction_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_from")
+  address_transaction_toToaddress       address                @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
 }
 
 model transaction_in_pool {
   transactionHash     String              @map("transaction_hash") @db.VarChar(66)
   poolId              Int                 @map("pool_id")
-  txpool              txpool              @relation(fields: [poolId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
-  transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_transaction_hash")
+  txpool              txpool              @relation(fields: [poolId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+  transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_transaction_hash")
 
   @@id([transactionHash, poolId], map: "pk_transaction_in_pool")
 }
@@ -680,13 +680,13 @@ model txpool {
   queued              Int
   timestamp           String                @db.VarChar
   transaction_in_pool transaction_in_pool[]
-  block               block                 @relation(fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_txpool_block_number")
+  block               block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_txpool_block_number")
 }
 
 model uncle {
   hash        String @id @db.VarChar(66)
   blockNumber Int    @map("block_number")
-  block       block  @relation(fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_uncle_block_number")
+  block       block  @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_uncle_block_number")
 }
 
 model used_settings {
@@ -696,16 +696,16 @@ model used_settings {
   evmVersion                   String?                        @map("evm_version") @db.VarChar
   optimizerId                  Int?                           @map("optimizer_id")
   contract_verification_result contract_verification_result[]
-  compiler                     compiler?                      @relation(fields: [compilerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_compiler_id")
-  optimizer                    optimizer?                     @relation(fields: [optimizerId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_optimizer_id")
+  compiler                     compiler?                      @relation(fields: [compilerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_compiler_id")
+  optimizer                    optimizer?                     @relation(fields: [optimizerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_optimizer_id")
   used_settings_library        used_settings_library[]
 }
 
 model used_settings_library {
   usedSettingsId Int           @map("used_settings_id")
   libraryAddress String        @map("library_address") @db.VarChar(42)
-  library        library       @relation(fields: [libraryAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_library_library_address")
-  used_settings  used_settings @relation(fields: [usedSettingsId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_settings_library_used_settings_id")
+  library        library       @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_library_library_address")
+  used_settings  used_settings @relation(fields: [usedSettingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_library_used_settings_id")
 
   @@id([usedSettingsId, libraryAddress], map: "pk_used_settings_library")
 }
@@ -715,7 +715,7 @@ model used_source {
   name                         String                       @db.VarChar
   contents                     String                       @db.VarChar
   file                         String                       @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_used_source_result_id")
+  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_source_result_id")
 
   @@id([resultId, name], map: "pk_used_source")
 }
@@ -723,7 +723,7 @@ model used_source {
 model verification_result {
   id       String    @id @db.VarChar
   address  String?   @db.VarChar(42)
-  contract contract? @relation(fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_verification_result_address")
+  contract contract? @relation(fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_verification_result_address")
 }
 
 model warning {
@@ -735,14 +735,14 @@ model warning {
   type                                                     String?          @db.VarChar
   sourceLocation                                           Int?             @map("source_location")
   result_warning                                           result_warning[]
-  source_location_warning_source_locationTosource_location source_location? @relation("warning_source_locationTosource_location", fields: [sourceLocation], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_warning_source_location")
+  source_location_warning_source_locationTosource_location source_location? @relation("warning_source_locationTosource_location", fields: [sourceLocation], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_warning_source_location")
 }
 
 model native_contract {
   configId String @map("config_id") @db.VarChar
   name     String @db.VarChar
   address  String @db.VarChar(42)
-  config   config @relation(fields: [configId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_native_contract_config_id")
+  config   config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_native_contract_config_id")
 
   @@id([configId, name], map: "pk_native_contract")
 }
