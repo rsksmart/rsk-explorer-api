@@ -1,10 +1,48 @@
 import {prismaClient} from '../lib/Setup'
-import {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity} from '../converters/tx.converters'
+import {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity, entityTransactionToRaw} from '../converters/tx.converters'
 import {rawAbiToEntity, rawInputToEntity, rawAbiInputToEntity} from '../converters/abi.converters'
+import { mongoSortToPrisma } from './utils'
 
 export const txRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async  findOne (query = {}, project = {}, collection) {
+    let orderBy = []
+    if (project.sort) {
+      const sort = Object.entries(project.sort)[0]
+      let param = sort[0]
+      const value = mongoSortToPrisma(sort[1])
+
+      const prismaSort = {
+        [param]: value
+      }
+      orderBy.push(prismaSort)
+    }
+
+    let requestedTransaction = await prismaClient.transaction.findFirst({
+      where: query,
+      orderBy: orderBy,
+      include: {
+        receipt: {
+          include: {
+            log: {
+              include: {
+                abi_log_abiToabi: {
+                  include: {
+                    abi_input: {
+                      select: {input: true}
+                    }
+                  }
+                },
+                log_topic: {select: {topic: true}},
+                log_arg: {select: {arg: true}},
+                logged_address: {select: {address: true}}
+              }
+            }
+          }
+        }
+      }
+    })
+    console.log(requestedTransaction)
+    return entityTransactionToRaw(requestedTransaction)
   },
   find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
@@ -21,7 +59,7 @@ export const txRepository = {
     }
   },
   countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
+    return prismaClient.transaction.count({where: query})
   },
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()

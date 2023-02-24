@@ -78,4 +78,33 @@ function rawLoggedAddressToEntity (data) {
   }
 }
 
-export {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity}
+function entityTransactionToRaw (requestedTransaction) {
+  const logs = requestedTransaction.receipt.log.map(log => {
+    log.topics = log.log_topic.map(t => t.topic)
+    log.args = log.log_arg.map(a => a.arg)
+    log._addresses = log.logged_address.map(la => la.address)
+    delete log.abi_log_abiToabi.id
+    log.abi = log.abi_log_abiToabi
+    delete log.log_topic
+    delete log.log_arg
+    delete log.logged_address
+
+    const abiInputs = log.abi_log_abiToabi.abi_input.map(i => {
+      const {name, type, indexed} = i.input
+      const newInput = {indexed, name, type}
+      return newInput
+    })
+    log.abi.inputs = abiInputs
+    delete log.abi_log_abiToabi
+    delete log.abi.abi_input
+    return log
+  })
+  requestedTransaction.receipt.logs = logs
+  requestedTransaction.txType = requestedTransaction.tx_type
+  delete requestedTransaction.tx_type
+  delete requestedTransaction.receipt.log
+
+  return requestedTransaction
+}
+
+export {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity, entityTransactionToRaw}
