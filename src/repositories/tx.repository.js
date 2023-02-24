@@ -27,9 +27,7 @@ export const txRepository = {
               include: {
                 abi_log_abiToabi: {
                   include: {
-                    abi_input: {
-                      select: {input: true}
-                    }
+                    abi_input: {select: {input: true}}
                   }
                 },
                 log_topic: {select: {topic: true}},
