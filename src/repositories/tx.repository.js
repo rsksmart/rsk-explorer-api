@@ -27,8 +27,6 @@ export const txRepository = {
     return collection.aggregate(aggregate).toArray()
   },
   async deleteMany (filter, collection) {
-    await prismaClient.transaction.deleteMany({where: {hash: {in: filter.$in}}})
-
     const mongoRes = await collection.deleteMany(filter)
     return mongoRes
   },
