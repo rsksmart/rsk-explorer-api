@@ -1,3 +1,5 @@
+import { prismaClient } from '../lib/Setup'
+
 export const txPendingRepository = {
   findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
@@ -22,8 +24,11 @@ export const txPendingRepository = {
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  deleteOne (query, collection) {
-    return collection.deleteOne(query)
+  async deleteOne (query, collection) {
+    await prismaClient.transaction_pending.deleteMany({where: query})
+
+    const mongoRes = collection.deleteOne(query)
+    return mongoRes
   },
   updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)

@@ -57,13 +57,18 @@ export const blockRepository = {
   },
   async insertOne (data, collection) {
     await prismaClient.block.create({data: rawBlockToEntity(data)})
+    for (const uncle of data.uncles) {
+      await prismaClient.uncle.create({data: {hash: uncle, blockNumber: data.number}})
+    }
+
     const mongoRes = await collection.insertOne(data)
     return mongoRes
   },
   updateOne (filter, update, options = {}, collection) {
     return collection.updateOne(filter, update, options)
   },
-  deleteMany (filter, collection) {
-    return collection.deleteMany(filter)
+  async deleteMany (filter, collection) {
+    const mongoRes = await collection.deleteMany(filter)
+    return mongoRes
   }
 }
