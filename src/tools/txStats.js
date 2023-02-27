@@ -26,13 +26,21 @@ async function getData (fromBlock, toBlock) {
     let { db } = await dataSource()
     let collections = getDbBlocksCollections(db)
     let { Txs } = collections
+    // TODO: change query for prisma query when txRepository.find() is ready
     let query = {
       $and: [
         { blockNumber: { $gte: fromBlock } },
         { blockNumber: { $lte: toBlock } },
         { txType: { $ne: 'remasc' } }]
     }
-    let cursor = txRepository.find(query, {}, Txs)
+    let cursor = txRepository.find(query, {}, Txs, {}, 0, false)
+
+    query = {
+      AND: [
+        { blockNumber: { gt: fromBlock } },
+        { blockNumber: { lt: toBlock } },
+        { txType: { not: 'remasc' } }]
+    }
     DATA.txs = await txRepository.countDocuments(query, Txs)
 
     await cursor.forEach((tx) => {
