@@ -39,8 +39,8 @@ export const txRepository = {
         }
       }
     })
-    console.log(requestedTransaction)
-    return entityTransactionToRaw(requestedTransaction)
+
+    return requestedTransaction ? entityTransactionToRaw(requestedTransaction) : null
   },
   find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
