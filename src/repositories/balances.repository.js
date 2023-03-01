@@ -38,9 +38,7 @@ export const balancesRepository = {
   },
   async deleteMany (filter, collection) {
     const prismaRes = await prismaClient.balance.deleteMany({where: filter})
-    console.log({calcio: prismaRes})
     const mongoRes = await collection.deleteMany(filter)
-    console.log(mongoRes)
     return mongoRes
   },
   async insertMany (data, collection) {
