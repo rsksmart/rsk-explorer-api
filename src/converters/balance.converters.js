@@ -1,8 +1,12 @@
-function rawBalanceToEntity (data) {
-  data.created = String(data._created)
-  data.timestamp = String(data.timestamp)
-  delete data._created
-  return data
+function rawBalanceToEntity ({address, _created, timestamp, balance, blockHash, blockNumber}) {
+  return {
+    address,
+    created: String(_created),
+    timestamp: String(timestamp),
+    balance,
+    blockHash,
+    blockNumber
+  }
 }
 
 export { rawBalanceToEntity }

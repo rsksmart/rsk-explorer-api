@@ -1,26 +1,16 @@
 import { prismaClient } from '../lib/Setup'
 import { rawBalanceToEntity } from '../converters/balance.converters'
-// import { mongoSortToPrisma } from './utils'
 import { createPrismaOrderBy, createPrismaSelect } from './utils'
 
 export const balancesRepository = {
   async findOne (query = {}, project = {}, collection) {
     const orderBy = createPrismaOrderBy(project)
     const select = createPrismaSelect(project)
-    let prismaResult = {}
-    if (Object.keys(select).length !== 0) {
-      prismaResult = await prismaClient.balance.findFirst({
-        where: query,
-        orderBy: orderBy,
-        select: select
-      })
-    } else {
-      prismaResult = await prismaClient.balance.findFirst({
-        where: query,
-        orderBy: orderBy
-      })
-    }
-    return prismaResult
+    return prismaClient.balance.findFirst({
+      where: query,
+      orderBy: orderBy,
+      select: select
+    })
   },
   find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
@@ -37,7 +27,7 @@ export const balancesRepository = {
     }
   },
   async deleteMany (filter, collection) {
-    const prismaRes = await prismaClient.balance.deleteMany({where: filter})
+    await prismaClient.balance.deleteMany({where: filter})
     const mongoRes = await collection.deleteMany(filter)
     return mongoRes
   },

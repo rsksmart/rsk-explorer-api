@@ -33,7 +33,7 @@ function createPrismaSelect (project) {
       }
     }
   }
-  return select
+  return (Object.keys(select).length !== 0) ? select : null
 }
 
 export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect}
