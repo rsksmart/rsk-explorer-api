@@ -1,11 +1,11 @@
 function rawBalanceToEntity ({
-    address,
-    _created,
-    timestamp,
-    balance,
-    blockHash,
-    blockNumber
-  }) {
+  address,
+  _created,
+  timestamp,
+  balance,
+  blockHash,
+  blockNumber
+}) {
   return {
     address,
     created: String(_created),
