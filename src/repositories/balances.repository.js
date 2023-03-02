@@ -1,6 +1,16 @@
+import { prismaClient } from '../lib/Setup'
+import { rawBalanceToEntity, entityToRawBalance } from '../converters/balance.converters'
+import { createPrismaOrderBy, createPrismaSelect } from './utils'
+
 export const balancesRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const orderBy = createPrismaOrderBy(project)
+    const select = createPrismaSelect(project)
+    return entityToRawBalance(await prismaClient.balance.findFirst({
+      where: query,
+      orderBy: orderBy,
+      select: select
+    }))
   },
   find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {
@@ -16,19 +26,16 @@ export const balancesRepository = {
         .limit(limit)
     }
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
+  async deleteMany (filter, collection) {
+    await prismaClient.balance.deleteMany({where: filter})
+    const mongoRes = await collection.deleteMany(filter)
+    return mongoRes
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  deleteMany (filter, collection) {
-    return collection.deleteMany(filter)
-  },
-  insertMany (doc, collection) {
-    return collection.insertMany(doc)
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async insertMany (data, collection) {
+    const balancesToSave = data.map(balance => rawBalanceToEntity(balance))
+    await prismaClient.balance.createMany({data: balancesToSave})
+
+    const mongoRes = await collection.insertMany(data)
+    return mongoRes
   }
 }
