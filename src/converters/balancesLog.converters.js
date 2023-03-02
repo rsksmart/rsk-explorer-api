@@ -1,4 +1,7 @@
-function rawBalancesLogToEntity ({_created, blockHash}) {
+function rawBalancesLogToEntity ({
+  _created,
+  blockHash
+}) {
   return {
     created: String(_created),
     blockHash: blockHash
