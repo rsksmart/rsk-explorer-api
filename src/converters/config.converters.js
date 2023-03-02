@@ -12,6 +12,17 @@ function rawConfigToEntity ({
   }
 }
 
+// "hash" and "_updated" are updated for all docs except "_explorerInitialConfiguration" (read only)
+function rawConfigUpdateToEntity ({
+  hash,
+  _updated
+}) {
+  return {
+    hash,
+    updated: _updated
+  }
+}
+
 function rawNetToEntity ({
   id,
   name
@@ -32,8 +43,4 @@ function rawNativeContractToEntity ({
   }
 }
 
-export {
-  rawConfigToEntity,
-  rawNetToEntity,
-  rawNativeContractToEntity
-}
+export { rawConfigToEntity, rawConfigUpdateToEntity, rawNetToEntity, rawNativeContractToEntity }
