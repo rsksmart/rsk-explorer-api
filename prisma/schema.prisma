@@ -159,15 +159,6 @@ model compiler {
   @@unique([key, value], map: "unique_compiler")
 }
 
-model config {
-  id              String            @id @db.VarChar
-  netId           String            @map("net_id") @db.VarChar
-  hash            String            @db.VarChar
-  updated         String            @db.VarChar
-  net             net               @relation(fields: [netId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_config_net_id")
-  native_contract native_contract[]
-}
-
 model contract {
   address                                        String                @id @db.VarChar(42)
   name                                           String                @db.VarChar
@@ -458,9 +449,10 @@ model method_identifier {
 }
 
 model net {
-  id     String   @id @db.VarChar
-  name   String   @db.VarChar
-  config config[]
+  id              String          @id @db.VarChar
+  configId        String          @map("config_id") @db.VarChar
+  name            String          @db.VarChar
+  explorer_config explorer_config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_net_explorer_config_id")
 }
 
 model optimizer {
@@ -739,10 +731,17 @@ model warning {
 }
 
 model native_contract {
-  configId String @map("config_id") @db.VarChar
-  name     String @db.VarChar
-  address  String @db.VarChar(42)
-  config   config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_native_contract_config_id")
+  address  String          @id @db.VarChar
+  configId String          @map("config_id") @db.VarChar
+  name     String          @db.VarChar
+  config   explorer_config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_native_contract_config_id")
+}
 
-  @@id([configId, name], map: "pk_native_contract")
+model explorer_config {
+  id              String            @id @db.VarChar
+  hash            String?           @db.VarChar
+  created         BigInt?
+  updated         BigInt?
+  native_contract native_contract[]
+  net             net[]
 }
