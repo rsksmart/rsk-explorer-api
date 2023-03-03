@@ -9,9 +9,7 @@ export const configRepository = {
 
     let existingConfig = await prismaClient.explorer_config.findFirst({
       where: { id: docId },
-      select: {
-        hash: true
-      }
+      select: { hash: true }
     })
 
     if (!existingConfig) return null
