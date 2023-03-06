@@ -63,7 +63,8 @@ export class BcStats extends BlocksBase {
     try {
       const stats = await this.getStats(hash, number)
       if (!stats) throw new Error('empty stats')
-      return this.save(stats)
+
+      this.save(stats)
     } catch (err) {
       return Promise.reject(err)
     }
@@ -71,12 +72,12 @@ export class BcStats extends BlocksBase {
 
   async save (stats) {
     try {
-      const result = await statsRepository.insertOne(stats, this.collection)
-      return result
+      await statsRepository.insertOne(stats, this.collection)
     } catch (err) {
       return Promise.reject(err)
     }
   }
+
   skip (hash, number) {
     const { blockHash, blockNumber } = this.stats
     return (blockHash === hash) && (blockNumber === number)
