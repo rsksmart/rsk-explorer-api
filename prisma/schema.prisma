@@ -587,7 +587,8 @@ model stats_collection {
 }
 
 model status {
-  timestamp        Int     @id @default(autoincrement())
+  id               Int     @id @default(autoincrement())
+  timestamp        BigInt
   pendingBlocks    Int     @map("pending_blocks")
   requestingBlocks Int     @map("requesting_blocks")
   nodeDown         Boolean @map("node_down")
