@@ -27,6 +27,10 @@ export const balancesRepository = {
     }
   },
   async deleteMany (filter, collection) {
+    if (filter.$or) {
+      filter.OR = filter.$or
+      delete filter.$or
+    }
     await prismaClient.balance.deleteMany({where: filter})
     const mongoRes = await collection.deleteMany(filter)
     return mongoRes
