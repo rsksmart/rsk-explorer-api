@@ -1,28 +1,51 @@
+import { prismaClient } from '../lib/Setup'
+import {rawTxPoolToEntity} from '../converters/txPending.converters'
+import {mongoQueryToPrisma} from './utils'
+
 export const txPoolRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const txPool = await prismaClient.txpool.findFirst({
+      where: mongoQueryToPrisma(query),
+      orderBy: {id: 'desc'},
+      include: {transaction_in_pool: true}
+    })
+
+    txPool.txs = [...txPool.transaction_in_pool]
+    delete txPool.transaction_in_pool
+
+    txPool._id = txPool.id
+    delete txPool.id
+
+    txPool.timestamp = Number(txPool.timestamp)
+
+    return txPool
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    let txPools = await prismaClient.txpool.findMany({
+      where: query,
+      orderBy: {timestamp: 'desc'},
+      include: {transaction_in_pool: true},
+      take: limit
+    })
+
+    txPools = txPools.map(txPool => {
+      txPool.txs = [...txPool.transaction_in_pool]
+      delete txPool.transaction_in_pool
+
+      txPool._id = txPool.id
+      delete txPool.id
+
+      txPool.timestamp = Number(txPool.timestamp)
+
+      return txPool
+    })
+
+    return txPools
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async insertOne (data, collection) {
+    const txpool = await prismaClient.txpool.create({data: rawTxPoolToEntity(data)})
+
+    const mongoRes = await collection.insertOne(data)
+    return {...mongoRes, id: txpool.id}
   }
 }
