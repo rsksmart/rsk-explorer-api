@@ -132,7 +132,6 @@ model block {
   token_address                                                 token_address[]
   transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
   transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
-  txpool                                                        txpool[]
   uncle                                                         uncle[]
 }
 
@@ -645,7 +644,7 @@ model transaction_in_pool {
   transactionHash     String              @map("transaction_hash") @db.VarChar(66)
   poolId              Int                 @map("pool_id")
   txpool              txpool              @relation(fields: [poolId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
-  transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_transaction_hash")
+  transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, map: "fk_transaction_in_pool_transaction_hash")
 
   @@id([transactionHash, poolId], map: "pk_transaction_in_pool")
 }
@@ -673,7 +672,6 @@ model txpool {
   queued              Int
   timestamp           String                @db.VarChar
   transaction_in_pool transaction_in_pool[]
-  block               block                 @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_txpool_block_number")
 }
 
 model uncle {
