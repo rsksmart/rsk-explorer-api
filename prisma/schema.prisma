@@ -127,8 +127,8 @@ model block {
   log_log_block_numberToblock                                   log[]                  @relation("log_block_numberToblock")
   receipt_receipt_block_hashToblock                             receipt[]              @relation("receipt_block_hashToblock")
   receipt_receipt_block_numberToblock                           receipt[]              @relation("receipt_block_numberToblock")
-  stats_collection_stats_collection_block_hashToblock           stats_collection[]     @relation("stats_collection_block_hashToblock")
-  stats_collection_stats_collection_block_numberToblock         stats_collection[]     @relation("stats_collection_block_numberToblock")
+  stats_stats_block_hashToblock                                 stats[]                @relation("stats_block_hashToblock")
+  stats_stats_block_numberToblock                               stats[]                @relation("stats_block_numberToblock")
   token_address                                                 token_address[]
   transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
   transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
@@ -136,17 +136,17 @@ model block {
 }
 
 model bridge {
-  id               Int                @id @default(autoincrement())
-  lockingCap       String             @map("locking_cap") @db.VarChar
-  stats_collection stats_collection[]
+  id         Int     @id @default(autoincrement())
+  lockingCap String  @map("locking_cap") @db.VarChar
+  stats      stats[]
 }
 
 model circulating {
-  id                Int                @id @default(autoincrement())
-  circulatingSupply String             @map("circulating_supply") @db.VarChar
-  totalSupply       Int                @map("total_supply")
-  bridgeBalance     String             @map("bridge_balance") @db.VarChar
-  stats_collection  stats_collection[]
+  id                Int     @id @default(autoincrement())
+  circulatingSupply String  @map("circulating_supply") @db.VarChar
+  totalSupply       Int     @map("total_supply")
+  bridgeBalance     String  @map("bridge_balance") @db.VarChar
+  stats             stats[]
 }
 
 model compiler {
@@ -570,21 +570,6 @@ model source_location {
   warning_warning_source_locationTosource_location warning[] @relation("warning_source_locationTosource_location")
 }
 
-model stats_collection {
-  id                                         Int         @id @default(autoincrement())
-  blockNumber                                Int         @map("block_number")
-  blockHash                                  String      @map("block_hash") @db.VarChar
-  circulatingId                              Int         @map("circulating_id")
-  bridgeId                                   Int         @map("bridge_id")
-  activeAccounts                             Int         @map("active_accounts")
-  hashrate                                   String      @db.VarChar
-  timestamp                                  String      @db.VarChar
-  block_stats_collection_block_hashToblock   block       @relation("stats_collection_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_block_hash")
-  block_stats_collection_block_numberToblock block       @relation("stats_collection_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_block_number")
-  bridge                                     bridge      @relation(fields: [bridgeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_bridge_id")
-  circulating                                circulating @relation(fields: [circulatingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_collection_circulating_id")
-}
-
 model status {
   id               Int     @id @default(autoincrement())
   timestamp        BigInt
@@ -743,4 +728,19 @@ model explorer_config {
   updated         BigInt?
   native_contract native_contract[]
   net             net[]
+}
+
+model stats {
+  id                              Int          @id @default(autoincrement())
+  blockNumber                     Int          @map("block_number")
+  blockHash                       String       @map("block_hash") @db.VarChar
+  circulatingId                   Int?         @map("circulating_id")
+  bridgeId                        Int          @map("bridge_id")
+  activeAccounts                  Int          @map("active_accounts")
+  hashrate                        String       @db.VarChar
+  timestamp                       String       @db.VarChar
+  block_stats_block_hashToblock   block        @relation("stats_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_block_hash")
+  block_stats_block_numberToblock block        @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_block_number")
+  bridge                          bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_bridge_id")
+  circulating                     circulating? @relation(fields: [circulatingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_circulating_id")
 }
