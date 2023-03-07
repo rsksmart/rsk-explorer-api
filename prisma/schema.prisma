@@ -626,28 +626,26 @@ model transaction {
 }
 
 model transaction_in_pool {
-  transactionHash     String              @map("transaction_hash") @db.VarChar(66)
-  poolId              Int                 @map("pool_id")
-  txpool              txpool              @relation(fields: [poolId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+  transactionHash     String              @id @map("transaction_hash") @db.VarChar(66)
+  poolId              Int?                @map("pool_id")
+  txpool              txpool?             @relation(fields: [poolId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
   transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, map: "fk_transaction_in_pool_transaction_hash")
-
-  @@id([transactionHash, poolId], map: "pk_transaction_in_pool")
 }
 
 model transaction_pending {
-  hash                String                @id @db.VarChar(66)
-  blockHash           String                @map("block_hash") @db.VarChar(66)
-  from                String                @db.VarChar(42)
-  to                  String                @db.VarChar(42)
-  blockNumber         Int                   @map("block_number")
-  transactionIndex    Int                   @map("transaction_index")
+  hash                String               @id @db.VarChar(66)
+  blockHash           String               @map("block_hash") @db.VarChar(66)
+  from                String               @db.VarChar(42)
+  to                  String               @db.VarChar(42)
+  blockNumber         Int                  @map("block_number")
+  transactionIndex    Int                  @map("transaction_index")
   nonce               Int
   gas                 Int
-  gasPrice            String                @map("gas_price") @db.VarChar
-  value               String                @db.VarChar
-  input               String                @db.VarChar
-  status              String                @db.VarChar
-  transaction_in_pool transaction_in_pool[]
+  gasPrice            String               @map("gas_price") @db.VarChar
+  value               String               @db.VarChar
+  input               String               @db.VarChar
+  status              String               @db.VarChar
+  transaction_in_pool transaction_in_pool?
 }
 
 model txpool {
