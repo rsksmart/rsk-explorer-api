@@ -122,8 +122,8 @@ export class DataCollectorItem {
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
-      let prev = (await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project), this.repository)[0]
-      let next = (await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project), this.repository)[0]
+      let prev = await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project, this.repository)[0]
+      let next = await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project, this.repository)[0]
       return { prev, data, next }
     } catch (err) {
       return Promise.reject(err)
