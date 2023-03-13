@@ -36,4 +36,24 @@ function createPrismaSelect (project) {
   return (Object.keys(select).length !== 0) ? select : null
 }
 
-export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect}
+// TODO: finish the mapping of the remaining mongo operators
+function mongoQueryToPrisma (query) {
+  const mongoOperatorToPrisma = {
+    $or: 'OR',
+    $and: 'AND'
+  }
+  const newQuery = {}
+
+  for (const key in query) {
+    const value = query[key]
+    if ((value && Object.keys(value).length > 0 && !Array.isArray(value))) {
+      newQuery[mongoOperatorToPrisma[key] || key] = mongoQueryToPrisma(value)
+    } else {
+      newQuery[mongoOperatorToPrisma[key] || key] = value
+    }
+  }
+
+  return newQuery
+}
+
+export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma}
