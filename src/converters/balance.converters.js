@@ -6,6 +6,9 @@ function rawBalanceToEntity ({
   blockHash,
   blockNumber
 }) {
+  if (balance === 0) {
+    balance = '0'
+  }
   return {
     address,
     created: String(_created),
