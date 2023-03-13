@@ -11,42 +11,27 @@ export class BlocksStatus extends BlocksBase {
     this.delayDbUpdate = 500
   }
 
-  async update (newState) {
+  async update (newState = {}) {
     let connected = await this.nod3.isConnected()
-    newState = newState || {}
     newState.nodeDown = !connected
 
-    // this.log.debug(`newState: ${JSON.stringify(newState)}`)
-    let state = Object.assign({}, this.state)
-    let changed = Object.keys(newState).find(k => newState[k] !== state[k])
-    this.state = Object.assign(state, newState)
+    let changed = Object.keys(newState).find(k => newState[k] !== this.state[k])
+
+    Object.assign(this.state, newState)
+
     let timestamp = Date.now()
     let elapsedTime = timestamp - this.updateTime
     this.updateTime = timestamp
+
     if (changed && elapsedTime > this.delayDbUpdate) {
       newState = Object.assign(newState, { timestamp })
-      return statusRepository.insertOne(newState, this.Status)
-        .then(res => {
-          return newState
-        })
-        .catch((err) => {
-          this.log.debug(`Error inserting new status`)
-          this.log.error(err)
-        })
-    } else {
-      return Promise.resolve(this.state)
-    }
-  }
 
-  getSavedState () {
-    return this.Status.find({},
-      {
-        sort: { timestamp: -1 },
-        limit: 1,
-        projection: { _id: 0 }
-      })
-      .toArray().then(savedStatus => {
-        return this.update(savedStatus[0])
-      })
+      try {
+        await statusRepository.insertOne(newState, this.Status)
+      } catch (error) {
+        this.log.debug(`Error inserting new status`)
+        this.log.error(error)
+      }
+    }
   }
 }

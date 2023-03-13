@@ -1,3 +1,6 @@
+import { rawStatusToEntity } from '../converters/status.converters'
+import {prismaClient} from '../lib/Setup'
+
 export const statusRepository = {
   findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
@@ -16,13 +19,8 @@ export const statusRepository = {
         .limit(limit)
     }
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async insertOne (data, collection) {
+    await prismaClient.status.create({ data: rawStatusToEntity(data) })
+    await collection.insertOne(data)
   }
 }
