@@ -207,37 +207,27 @@ model contract_verification {
 }
 
 model contract_verification_abi {
-  abiId                           Int                               @id @default(autoincrement()) @map("abi_id")
-  constant                        Boolean?
-  name                            String?                           @db.VarChar
-  payable                         Boolean?
-  satate_mutability               String?                           @db.VarChar
-  type                            String?                           @db.VarChar
-  contract_verification           contract_verification[]
-  contract_verification_abi_input contract_verification_abi_input[]
-  contract_verification_abioutput contract_verification_abioutput[]
-  contract_verification_result    contract_verification_result[]
+  abiId                            Int                                @id @default(autoincrement()) @map("abi_id")
+  constant                         Boolean?
+  name                             String?                            @db.VarChar
+  payable                          Boolean?
+  stateMutability                  String?                            @map("state_mutability") @db.VarChar
+  type                             String?                            @db.VarChar
+  contract_verification            contract_verification[]
+  contract_verification_abi_input  contract_verification_abi_input[]
+  contract_verification_abi_output contract_verification_abi_output[]
+  contract_verification_result     contract_verification_result[]
 }
 
 model contract_verification_abi_input {
   abiId                     Int                       @map("abi_id")
   name                      String                    @db.VarChar
   type                      String                    @db.VarChar
-  satate_mutability         String?                   @db.VarChar
+  stateMutability           String?                   @map("state_mutability") @db.VarChar
   internalType              String?                   @map("internal_type") @db.VarChar
   contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_input")
 
   @@id([abiId, name, type], map: "pk_contract_verification_abi_input")
-}
-
-model contract_verification_abioutput {
-  abiId                     Int                       @map("abi_id")
-  name                      String                    @db.VarChar
-  type                      String                    @db.VarChar
-  internalType              String?                   @map("internal_type") @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abioutput")
-
-  @@id([abiId, name, type], map: "pk_contract_verification_abiouput")
 }
 
 model contract_verification_result {
@@ -312,8 +302,7 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
-// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
-
+/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -334,8 +323,8 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
-
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
+/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @db.VarChar
@@ -626,26 +615,37 @@ model transaction {
 }
 
 model transaction_in_pool {
-  transactionHash     String              @id @map("transaction_hash") @db.VarChar(66)
-  poolId              Int?                @map("pool_id")
-  txpool              txpool?             @relation(fields: [poolId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
-  transaction_pending transaction_pending @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, map: "fk_transaction_in_pool_transaction_hash")
+  hash             String @db.VarChar(66)
+  poolId           Int    @map("pool_id")
+  blockHash        String @map("block_hash") @db.VarChar(66)
+  from             String @db.VarChar(42)
+  to               String @db.VarChar(42)
+  blockNumber      Int    @map("block_number")
+  transactionIndex Int    @map("transaction_index")
+  nonce            Int
+  gas              Int
+  gasPrice         String @map("gas_price") @db.VarChar
+  value            String @db.VarChar
+  input            String @db.VarChar
+  status           String @db.VarChar
+  txpool           txpool @relation(fields: [poolId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+
+  @@id([hash, poolId], map: "pk_transaction_in_pool_hash_poolid")
 }
 
 model transaction_pending {
-  hash                String               @id @db.VarChar(66)
-  blockHash           String               @map("block_hash") @db.VarChar(66)
-  from                String               @db.VarChar(42)
-  to                  String               @db.VarChar(42)
-  blockNumber         Int                  @map("block_number")
-  transactionIndex    Int                  @map("transaction_index")
-  nonce               Int
-  gas                 Int
-  gasPrice            String               @map("gas_price") @db.VarChar
-  value               String               @db.VarChar
-  input               String               @db.VarChar
-  status              String               @db.VarChar
-  transaction_in_pool transaction_in_pool?
+  hash             String @id @db.VarChar(66)
+  blockHash        String @map("block_hash") @db.VarChar(66)
+  from             String @db.VarChar(42)
+  to               String @db.VarChar(42)
+  blockNumber      Int    @map("block_number")
+  transactionIndex Int    @map("transaction_index")
+  nonce            Int
+  gas              Int
+  gasPrice         String @map("gas_price") @db.VarChar
+  value            String @db.VarChar
+  input            String @db.VarChar
+  status           String @db.VarChar
 }
 
 model txpool {
@@ -741,4 +741,14 @@ model stats {
   block_stats_block_numberToblock block        @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_block_number")
   bridge                          bridge       @relation(fields: [bridgeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_bridge_id")
   circulating                     circulating? @relation(fields: [circulatingId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_stats_circulating_id")
+}
+
+model contract_verification_abi_output {
+  abi_id                    Int
+  name                      String                    @db.VarChar
+  type                      String                    @db.VarChar
+  internal_type             String?                   @db.VarChar
+  contract_verification_abi contract_verification_abi @relation(fields: [abi_id], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_output")
+
+  @@id([abi_id, name, type], map: "pk_contract_verification_abi_ouput")
 }
