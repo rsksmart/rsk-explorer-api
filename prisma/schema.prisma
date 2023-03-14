@@ -29,10 +29,16 @@ model abi_input {
 
 model action {
   id                   Int                    @id @default(autoincrement())
-  from                 String                 @db.VarChar(42)
-  to                   String                 @db.VarChar(42)
-  gas                  String                 @db.VarChar
-  value                String                 @db.VarChar
+  callType             String?                @map("call_type") @db.VarChar
+  creationMethod       String?                @map("creation_method") @db.VarChar
+  from                 String?                @db.VarChar(42)
+  to                   String?                @db.VarChar(42)
+  gas                  String?                @db.VarChar
+  input                String?                @db.VarChar
+  value                String?                @db.VarChar
+  address              String?                @db.VarChar(42)
+  refundAddress        String?                @map("refund_address") @db.VarChar(42)
+  balance              String?                @db.VarChar
   internal_transaction internal_transaction[]
 }
 
@@ -129,6 +135,7 @@ model block {
   receipt_receipt_block_numberToblock                           receipt[]              @relation("receipt_block_numberToblock")
   stats_stats_block_hashToblock                                 stats[]                @relation("stats_block_hashToblock")
   stats_stats_block_numberToblock                               stats[]                @relation("stats_block_numberToblock")
+  token_address_token_address_block_hashToblock                 token_address[]        @relation("token_address_block_hashToblock")
   token_address                                                 token_address[]
   transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
   transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
@@ -161,7 +168,8 @@ model compiler {
 model contract {
   address                                        String                @id @db.VarChar(42)
   name                                           String                @db.VarChar
-  createdByTx                                    String                @map("created_by_tx") @db.VarChar(66)
+  createdByTx                                    String?               @map("created_by_tx") @db.VarChar(66)
+  created_by_internal_tx                         String?               @db.VarChar(66)
   code                                           String                @db.VarChar
   codeStoredAtBlock                              Int                   @map("code_stored_at_block")
   deployedCode                                   String                @map("deployed_code") @db.VarChar
@@ -170,7 +178,8 @@ model contract {
   decimals                                       Int?                  @db.SmallInt
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
   block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
-  transaction                                    transaction           @relation(fields: [createdByTx], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_tx")
+  internal_transaction                           internal_transaction? @relation(fields: [created_by_internal_tx], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_internal_tx")
+  transaction                                    transaction?          @relation(fields: [createdByTx], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_tx")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
   token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
@@ -302,7 +311,7 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
-/// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
+// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -323,8 +332,7 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
-/// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
+// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @db.VarChar
@@ -340,23 +348,27 @@ model internal_transaction {
   blockHash                                      String                       @map("block_hash") @db.VarChar(66)
   actionId                                       Int                          @map("action_id")
   transactionPosition                            Int                          @map("transaction_position")
+  type                                           String                       @db.VarChar
   subtraces                                      Int
   index                                          Int
   timestamp                                      String                       @db.VarChar
-  type                                           String                       @db.VarChar
+  error                                          String?                      @db.VarChar
+  resultId                                       Int?                         @map("result_id")
+  contract                                       contract[]
   action                                         action                       @relation(fields: [actionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_action_id")
   block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
+  internal_transaction_result                    internal_transaction_result? @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_result_id")
   transaction                                    transaction                  @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
-  internal_transaction_result                    internal_transaction_result?
   trace_address                                  trace_address[]
 }
 
 model internal_transaction_result {
-  internalTxId         String               @id @map("internal_tx_id") @db.VarChar
-  gasUsed              String               @map("gas_used") @db.VarChar
-  output               String               @db.VarChar
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_internal_tx_id")
+  id                   Int                    @id @default(autoincrement())
+  address              String?                @db.VarChar
+  gasUsed              String?                @map("gas_used") @db.VarChar
+  output               String?                @db.VarChar
+  internal_transaction internal_transaction[]
 }
 
 model library {
@@ -572,18 +584,21 @@ model token_address {
   address                                   String   @db.VarChar(42)
   contract                                  String   @db.VarChar(42)
   blockNumber                               Int      @map("block_number")
+  block_hash                                String   @db.VarChar
   balance                                   String   @db.VarChar
   address_token_address_addressToaddress    address  @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
+  block_token_address_block_hashToblock     block    @relation("token_address_block_hashToblock", fields: [block_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
   block                                     block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
   contract_token_address_contractTocontract contract @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
 }
 
 model trace_address {
   internalTxId         String               @map("internal_tx_id") @db.VarChar
-  operation            Int
+  index                Int
+  trace                Int
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_trace_address_internal_tx_id")
 
-  @@id([internalTxId, operation], map: "pk_trace_address")
+  @@id([internalTxId, index], map: "pk_trace_address")
 }
 
 model transaction {
