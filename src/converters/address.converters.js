@@ -1,13 +1,45 @@
-function rawAddressToEntity (data) {
-  const {lastBlockMined} = data
+function rawAddressToEntity ({
+  address,
+  blockNumber,
+  lastBlockMined,
+  balance,
+  isNative,
+  type
+}) {
   return {
-    address: data.address,
-    block: data.blockNumber,
+    address,
+    block: blockNumber,
     lastBlockMined: lastBlockMined ? lastBlockMined.blockNumber : null,
-    balance: data.balance,
-    isNative: data.isNative,
-    type: data.type
+    balance,
+    isNative,
+    type
   }
 }
 
-export {rawAddressToEntity}
+function rawContractToEntity ({
+  address,
+  name,
+  createdByTx,
+  createdByInternalTx,
+  code,
+  codeStoredAtBlock,
+  deployedCode,
+  symbol,
+  totalSupply,
+  decimals
+}) {
+  return {
+    address,
+    name,
+    createdByTx,
+    createdByInternalTx,
+    code,
+    codeStoredAtBlock,
+    deployedCode,
+    symbol,
+    totalSupply,
+    decimals
+  }
+}
+
+export {rawAddressToEntity, rawContractToEntity}
