@@ -52,18 +52,14 @@ function mongoQueryToPrisma (query) {
     const value = query[key]
 
     if (Array.isArray(value)) {
-      return {[mongoOperatorToPrisma[key] || key]: value.map(obj => mongoQueryToPrisma(obj))}
+      return {[mongoOperatorToPrisma[key] || key]: value.map(elem => ['Array', 'Object'].includes(elem.constructor.name) ? mongoQueryToPrisma(elem) : elem)}
     } else if (!(typeof value === 'string') && Object.keys(value).length > 0) {
-      return {
-        [[mongoOperatorToPrisma[key] || key]]: mongoQueryToPrisma(value)
-      }
+      return {[mongoOperatorToPrisma[key] || key]: mongoQueryToPrisma(value)}
     } else {
       if (key.includes('.')) {
         return formatRelationQuery({[key]: value})
       } else {
-        return {
-          [mongoOperatorToPrisma[key] || key]: value
-        }
+        return {[mongoOperatorToPrisma[key] || key]: value}
       }
     }
   }
