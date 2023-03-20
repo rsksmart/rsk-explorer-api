@@ -1,23 +1,50 @@
-import { rawBridgeToEntity, rawCirculatingToEntity, rawStatsToEntity } from '../converters/stats.converters'
+import { rawBridgeToEntity, rawCirculatingToEntity, rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converters'
 import {prismaClient} from '../lib/Setup'
+import { createPrismaOrderBy, mongoQueryToPrisma } from './utils'
+
+const statsEntitySelect = {
+  circulating: {
+    select: {
+      circulatingSupply: true,
+      totalSupply: true,
+      bridgeBalance: true
+    }
+  },
+  activeAccounts: true,
+  hashrate: true,
+  timestamp: true,
+  blockHash: true,
+  blockNumber: true,
+  bridge: {
+    select: { lockingCap: true }
+  }
+}
 
 export const statsRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const stats = await prismaClient.stats.findFirst({
+      where: mongoQueryToPrisma(query),
+      select: statsEntitySelect
+    })
+
+    return stats ? statsEntityToRaw(stats) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const statsArr = await prismaClient.stats.findMany({
+      where: mongoQueryToPrisma(query),
+      select: statsEntitySelect,
+      orderBy: createPrismaOrderBy(sort),
+      take: limit
+    })
+
+    return statsArr.map(stats => statsEntityToRaw(stats))
+  },
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.stats.count({
+      where: mongoQueryToPrisma(query)
+    })
+
+    return count
   },
   async insertOne (data, collection) {
     const newStats = rawStatsToEntity(data)
