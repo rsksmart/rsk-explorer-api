@@ -6,10 +6,12 @@ function mongoSortToPrisma (num) {
   }
 }
 
-function createPrismaOrderBy (project) {
+function createPrismaOrderBy (sortOrProject) {
+  const sort = sortOrProject.sort || sortOrProject
+
   let orderBy = []
-  if (project.sort) {
-    orderBy = Object.entries(project.sort).map(([param, value]) => {
+  if (sort) {
+    orderBy = Object.entries(sort).map(([param, value]) => {
       const prismaValue = mongoSortToPrisma(value)
       if (param.charAt() === '_') {
         param = param.substring(1)
@@ -40,20 +42,51 @@ function createPrismaSelect (project) {
 function mongoQueryToPrisma (query) {
   const mongoOperatorToPrisma = {
     $or: 'OR',
-    $and: 'AND'
+    $and: 'AND',
+    $lt: 'lt',
+    $gt: 'gt',
+    $eq: 'equals'
   }
-  const newQuery = {}
 
   for (const key in query) {
     const value = query[key]
-    if ((value && Object.keys(value).length > 0 && !Array.isArray(value))) {
-      newQuery[mongoOperatorToPrisma[key] || key] = mongoQueryToPrisma(value)
+
+    if (Array.isArray(value)) {
+      return {[mongoOperatorToPrisma[key] || key]: value.map(obj => mongoQueryToPrisma(obj))}
+    } else if (!(typeof value === 'string') && Object.keys(value).length > 0) {
+      return {
+        [[mongoOperatorToPrisma[key] || key]]: mongoQueryToPrisma(value)
+      }
     } else {
-      newQuery[mongoOperatorToPrisma[key] || key] = value
+      if (key.includes('.')) {
+        return formatRelationQuery({[key]: value})
+      } else {
+        return {
+          [mongoOperatorToPrisma[key] || key]: value
+        }
+      }
     }
   }
 
-  return newQuery
+  return {}
 }
 
-export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma}
+function formatRelationQuery (query) {
+  const [relation, attribute] = Object.keys(query)[0].split('.')
+
+  return {
+    [relation]: {
+      [attribute]: query[`${relation}.${attribute}`]
+    }
+  }
+}
+
+function removeNullFields (obj) {
+  for (const key in obj) {
+    if (Array.isArray(obj[key])) obj[key].forEach(arrValue => removeNullFields(arrValue))
+    if (typeof (obj[key]) === 'object') removeNullFields(obj[key])
+    if (obj[key] === null) delete obj[key]
+  }
+}
+
+export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma, removeNullFields}

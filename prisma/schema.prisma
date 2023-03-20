@@ -362,9 +362,10 @@ model internal_transaction {
 
 model internal_transaction_result {
   id                   Int                    @id @default(autoincrement())
-  address              String?                @db.VarChar
   gasUsed              String?                @map("gas_used") @db.VarChar
   output               String?                @db.VarChar
+  address              String?                @db.VarChar
+  code                 String?                @db.VarChar
   internal_transaction internal_transaction[]
 }
 

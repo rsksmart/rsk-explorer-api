@@ -1,3 +1,5 @@
+import { removeNullFields } from '../repositories/utils'
+
 function rawActionToEntity ({
   id,
   callType,
@@ -68,4 +70,36 @@ function rawInternalTransactionToEntity ({
   }
 }
 
-export {rawActionToEntity, rawInternalTransactionResultToEntity, rawInternalTransactionToEntity}
+function internalTxEntityToRaw (data) {
+  // rename or format attributes
+  data.timestamp = Number(data.timestamp)
+
+  data.traceAddress = data.trace_address.map(elem => elem.trace)
+  delete data.trace_address
+
+  data._index = data.index
+  delete data.index
+
+  data.result = data.internal_transaction_result
+  delete data.internal_transaction_result
+
+  // delete ids
+  delete data.resultId
+  delete data.actionId
+
+  // delete related tables ids
+  delete data.action.id
+  if (data.result) delete data.result.id
+
+  // remove null fields
+  removeNullFields(data)
+
+  return data
+}
+
+export {
+  rawActionToEntity,
+  rawInternalTransactionResultToEntity,
+  rawInternalTransactionToEntity,
+  internalTxEntityToRaw
+}

@@ -180,40 +180,46 @@ export async function getAggregateTotal (collection, query, repository) {
 export function paginationResponse (params, data, total) {
   total = total || null
   const { indexedPages, limit, getPages, indexedSegment, page, valueEncoded, queryLimit } = params
-  let pages = []
+  const pages = []
 
-  const hasMore = data.length > queryLimit
-  const hasPrevious = !!params.next || !!(params.prev && hasMore)
+  let next = null
+  let prev = null
+  let nextPage = null
+  let prevPage = null
 
-  let totalPages = data.length / limit
-  totalPages = (hasMore) ? Math.floor(totalPages) : Math.ceil(totalPages)
+  if (data) {
+    const hasMore = data.length > queryLimit
+    const hasPrevious = !!params.next || !!(params.prev && hasMore)
 
-  if (hasMore) data.pop()
-  if (params.prev) data.reverse()
+    let totalPages = data.length / limit
+    totalPages = (hasMore) ? Math.floor(totalPages) : Math.ceil(totalPages)
 
-  const prev = (hasPrevious) ? generateCursor(params, data[0]) : null
-  const next = (!!params.prev || hasMore) ? generateCursor(params, data[data.length - 1]) : null
-  let nextPage, prevPage
+    if (hasMore) data.pop()
+    if (params.prev) data.reverse()
 
-  if (getPages) {
-    let pageNumber
-    for (let i = 0; i < totalPages; i++) {
-      pageNumber = (indexedSegment * indexedPages) + i
-      let pageData = { page: (pageNumber + 1) }
-      if (params.next) pageData.next = valueEncoded
-      else if (params.prev) pageData.prev = valueEncoded
-      pages.push(pageData)
+    prev = (hasPrevious) ? generateCursor(params, data[0]) : null
+    next = (!!params.prev || hasMore) ? generateCursor(params, data[data.length - 1]) : null
+
+    if (getPages) {
+      let pageNumber
+      for (let i = 0; i < totalPages; i++) {
+        pageNumber = (indexedSegment * indexedPages) + i
+        let pageData = { page: (pageNumber + 1) }
+        if (params.next) pageData.next = valueEncoded
+        else if (params.prev) pageData.prev = valueEncoded
+        pages.push(pageData)
+      }
+
+      let skip = (parseInt((page - 1).toString().split('').pop())) * limit
+      if (next) {
+        nextPage = { next, page: pageNumber + 2 }
+        pages.push(nextPage)
+      }
+      if (prev) {
+        prevPage = { prev, page: pages[0].page - 1 }
+      }
+      data = data.splice(skip, limit)
     }
-
-    let skip = (parseInt((page - 1).toString().split('').pop())) * limit
-    if (next) {
-      nextPage = { next, page: pageNumber + 2 }
-      pages.push(nextPage)
-    }
-    if (prev) {
-      prevPage = { prev, page: pages[0].page - 1 }
-    }
-    data = data.splice(skip, limit)
   }
 
   const pagination = { limit, total, next, prev, page, pages, nextPage, prevPage }
