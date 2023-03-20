@@ -144,7 +144,7 @@ model block {
 
 model bridge {
   id         Int     @id @default(autoincrement())
-  lockingCap String  @map("locking_cap") @db.VarChar
+  lockingCap String? @map("locking_cap") @db.VarChar
   stats      stats[]
 }
 
@@ -169,7 +169,7 @@ model contract {
   address                                        String                @id @db.VarChar(42)
   name                                           String                @db.VarChar
   createdByTx                                    String?               @map("created_by_tx") @db.VarChar(66)
-  created_by_internal_tx                         String?               @db.VarChar(66)
+  createdByInternalTx                            String?               @map("created_by_internal_tx") @db.VarChar(66)
   code                                           String                @db.VarChar
   codeStoredAtBlock                              Int                   @map("code_stored_at_block")
   deployedCode                                   String                @map("deployed_code") @db.VarChar
@@ -178,7 +178,7 @@ model contract {
   decimals                                       Int?                  @db.SmallInt
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
   block                                          block                 @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
-  internal_transaction                           internal_transaction? @relation(fields: [created_by_internal_tx], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_internal_tx")
+  internal_transaction                           internal_transaction? @relation(fields: [createdByInternalTx], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_internal_tx")
   transaction                                    transaction?          @relation(fields: [createdByTx], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_created_by_tx")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
@@ -365,9 +365,10 @@ model internal_transaction {
 
 model internal_transaction_result {
   id                   Int                    @id @default(autoincrement())
-  address              String?                @db.VarChar
   gasUsed              String?                @map("gas_used") @db.VarChar
   output               String?                @db.VarChar
+  address              String?                @db.VarChar
+  code                 String?                @db.VarChar
   internal_transaction internal_transaction[]
 }
 
