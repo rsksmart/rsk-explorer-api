@@ -23,14 +23,12 @@ export class Status extends DataCollector {
   getState () {
     return this.formatData(this.state)
   }
-  getBlocksServiceStatus () {
+  async getBlocksServiceStatus () {
     const Status = this.getModule('Status')
-    return Status.find({}, { timestamp: -1 }, 1)
-      .then(res => {
-        res = res.data[0]
-        if (res) delete (res._id)
-        return res
-      })
+    const { data } = await Status.find({}, { timestamp: -1 }, 1)
+    const [latestStatus] = data
+
+    return latestStatus
   }
   async updateState () {
     try {
