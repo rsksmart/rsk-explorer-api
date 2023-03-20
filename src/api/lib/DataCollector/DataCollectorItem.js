@@ -182,10 +182,11 @@ export function formatResponse (result, pages) {
 }
 
 export async function getFieldsTypes (collection, repository) {
-  let doc = await repository.findOne({}, {}, collection)
-  let fields = {}
+  const doc = await repository.findOne({}, {}, collection)
+
+  const fields = {}
   for (let p in doc) {
-    let value = doc[p]
+    const value = doc[p]
     let type = typeof value
     type = (value instanceof ObjectID) ? OBJECT_ID : type
     fields[p] = type
