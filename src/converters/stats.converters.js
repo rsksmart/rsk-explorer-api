@@ -34,4 +34,24 @@ function rawBridgeToEntity ({
   }
 }
 
-export { rawStatsToEntity, rawCirculatingToEntity, rawBridgeToEntity }
+function statsEntityToRaw({
+  circulating,
+  activeAccounts,
+  hashrate,
+  timestamp,
+  blockHash,
+  blockNumber,
+  bridge,
+}) {
+  return {
+    circulating,
+    activeAccounts,
+    hashrate: Number(hashrate),
+    timestamp: Number(timestamp),
+    blockHash,
+    blockNumber,
+    bridge
+  }
+}
+
+export { rawStatsToEntity, rawCirculatingToEntity, rawBridgeToEntity, statsEntityToRaw }
