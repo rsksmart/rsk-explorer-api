@@ -1,5 +1,5 @@
 import {prismaClient} from '../lib/Setup'
-import {rawAddressToEntity} from '../converters/address.converters'
+import {rawAddressToEntity, rawContractToEntity} from '../converters/address.converters'
 
 export const addressRepository = {
   findOne (query = {}, project = {}, collection) {
@@ -27,8 +27,41 @@ export const addressRepository = {
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
-    const newAddress = rawAddressToEntity(data)
-    await prismaClient.address.upsert({ where: filter, update: newAddress, create: newAddress })
+    const addressToSave = rawAddressToEntity(data)
+    await prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })
+
+    if (data.type === 'contract') {
+      const {createdByTx, createdByInternalTx, contractMethods, contractInterfaces} = data
+
+      if (createdByTx) {
+        if (createdByTx.transactionHash) {
+          data.createdByInternalTx = createdByTx.transactionHash
+          delete data.createdByTx
+        } else if (createdByTx.hash) {
+          data.createdByTx = createdByTx.hash
+        }
+      } else if (createdByInternalTx) {
+        data.createdByInternalTx = createdByInternalTx
+        delete data.createdByTx
+      }
+
+      const contractToSave = rawContractToEntity(data)
+      const savedContract = await prismaClient.contract.upsert({where: {address: contractToSave.address}, create: contractToSave, update: contractToSave})
+
+      if (contractMethods) {
+        for (const method of contractMethods) {
+          const savedMethod = await prismaClient.method.upsert({where: {method}, create: {method}, update: {method}})
+          await prismaClient.contract_method.create({data: {methodId: savedMethod.id, contractAddress: savedContract.address}})
+        }
+      }
+
+      if (contractInterfaces) {
+        for (const interf of contractInterfaces) {
+          const savedInterface = await prismaClient.interface_.upsert({where: {interface: interf}, create: {interface: interf}, update: {interface: interf}})
+          await prismaClient.contract_interface.create({data: {interfaceId: savedInterface.id, contractAddress: savedContract.address}})
+        }
+      }
+    }
 
     const mongoRes = await collection.updateOne(filter, update, options)
     return mongoRes
