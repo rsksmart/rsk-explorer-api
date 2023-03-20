@@ -34,14 +34,14 @@ function rawBridgeToEntity ({
   }
 }
 
-function statsEntityToRaw({
+function statsEntityToRaw ({
   circulating,
   activeAccounts,
   hashrate,
   timestamp,
   blockHash,
   blockNumber,
-  bridge,
+  bridge
 }) {
   return {
     circulating,
