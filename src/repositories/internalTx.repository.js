@@ -1,33 +1,84 @@
-import { rawActionToEntity, rawInternalTransactionResultToEntity, rawInternalTransactionToEntity } from '../converters/internalTx.converters'
+import {
+  internalTxEntityToRaw,
+  rawActionToEntity,
+  rawInternalTransactionResultToEntity,
+  rawInternalTransactionToEntity
+} from '../converters/internalTx.converters'
 import {prismaClient} from '../lib/Setup'
+import {
+  createPrismaOrderBy,
+  mongoQueryToPrisma
+} from './utils'
+
+const internalTxRelatedTables = {
+  action: true,
+  internal_transaction_result: true,
+  trace_address: {
+    select: {
+      trace: true
+    },
+    orderBy: {
+      index: 'asc'
+    }
+  }
+}
 
 export const internalTxRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const internalTx = await prismaClient.internal_transaction.findFirst({
+      where: query,
+      include: internalTxRelatedTables
+    })
+
+    return internalTx ? internalTxEntityToRaw(internalTx) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const internalTxs = await prismaClient.internal_transaction.findMany({
+      where: mongoQueryToPrisma(query),
+      orderBy: createPrismaOrderBy(sort),
+      include: internalTxRelatedTables,
+      take: limit
+    })
+
+    return internalTxs.map(itx => internalTxEntityToRaw(itx))
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.internal_transaction.count({
+      where: mongoQueryToPrisma(query)
+    })
+
+    return count
   },
   async deleteMany (filter, collection) {
-    const mongoRes = await collection.deleteMany(filter)
-    return mongoRes
+    if (filter.transactionHash.$in) {
+      if (filter.transactionHash.$in.length > 0) {
+        filter.transactionHash.in = filter.transactionHash.$in
+      } else {
+        filter.transactionHash.in = []
+      }
+
+      delete filter.transactionHash.$in
+    }
+
+    const itxsToDelete = await prismaClient.internal_transaction.findMany({ where: filter })
+
+    await prismaClient.internal_transaction.deleteMany({ where: filter })
+
+    const deletedItxsData = await Promise.all(itxsToDelete.map(async (itx) => {
+      const { actionId, resultId } = itx
+
+      await prismaClient.action.deleteMany({ where: { id: actionId } })
+      await prismaClient.internal_transaction_result.deleteMany({ where: { id: resultId } })
+
+      return itx
+    }))
+
+    // mongo
+    filter.transactionHash.$in = filter.transactionHash.in
+    delete filter.transactionHash.in
+    await collection.deleteMany(filter)
+
+    return deletedItxsData
   },
   async insertOne (data, collection) {
     const {action, traceAddress, result} = data
@@ -53,7 +104,10 @@ export const internalTxRepository = {
 
     await prismaClient.trace_address.createMany({data: traceAddressToSave})
 
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
+    const { internalTxId } = internalTxToSave
+    const savedInternalTx = await this.findOne({ internalTxId }, {}, collection)
+
+    await collection.insertOne(data)
+    return savedInternalTx
   }
 }
