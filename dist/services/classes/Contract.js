@@ -37,7 +37,7 @@ class Contract extends _BcThing.BcThing {
           let { interfaces, methods } = info;
 
           if (!interfaces.length) {// if no interfaces... double check
-            const proxyCheckResult = await this.parser.getContractInfoIfProxy(this.address);
+            const proxyCheckResult = await this.parser.getEIP1967Info(this.address);
             // if proxy detected, the implementation contract interfaces are used
             if (proxyCheckResult && proxyCheckResult.interfaces.length) {
               interfaces = proxyCheckResult.interfaces;
