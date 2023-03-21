@@ -35,6 +35,19 @@ class Contract extends BcThing {
           if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
           let info = await this.parser.getContractInfo(deployedCode, contract)
           let { interfaces, methods } = info
+
+          if (!interfaces.length) { // if no interfaces... double check
+            const proxyCheckResult = await this.parser.getEIP1967Info(this.address)
+            // if proxy detected, the implementation contract interfaces are used
+            if (proxyCheckResult && proxyCheckResult.interfaces.length) {
+              interfaces = proxyCheckResult.interfaces
+            }
+
+            if (proxyCheckResult && proxyCheckResult.methods.length) {
+              methods = proxyCheckResult.methods
+            }
+          };
+
           if (interfaces.length) this.setData({ contractInterfaces: interfaces })
           if (methods) this.setData({ contractMethods: methods })
         }

@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -26,8 +26,8 @@
   "license": "MIT",
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
-    "@rsksmart/nod3": "^0.4.1",
-    "@rsksmart/rsk-contract-parser": "git+https://git@github.com/rsksmart/rsk-contract-parser.git",
+    "@rsksmart/nod3": "^0.5.0",
+    "@rsksmart/rsk-contract-parser": "^0.0.12",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
