@@ -43,6 +43,7 @@ model action {
 }
 
 model address {
+  id                                                 Int                @default(autoincrement())
   address                                            String             @id @db.VarChar(42)
   block                                              Int
   lastBlockMined                                     Int?               @map("last_block_mined")
@@ -63,6 +64,8 @@ model address {
   token_address_token_address_addressToaddress       token_address[]    @relation("token_address_addressToaddress")
   transaction_transaction_fromToaddress              transaction[]      @relation("transaction_fromToaddress")
   transaction_transaction_toToaddress                transaction[]      @relation("transaction_toToaddress")
+
+  @@index([id], map: "index_address_id")
 }
 
 model address_in_event {
@@ -190,6 +193,8 @@ model contract_interface {
   contractAddress String     @map("contract_address") @db.VarChar(42)
   contract        contract   @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
   interface_      interface_ @relation(fields: [interfaceId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
+
+  @@unique([interfaceId, contractAddress], map: "unique_contract_interface_interface_id_contract_address")
 }
 
 model contract_method {
@@ -198,6 +203,8 @@ model contract_method {
   contractAddress String   @map("contract_address") @db.VarChar(42)
   contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_contract_address")
   method          method   @relation(fields: [methodId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_method_id")
+
+  @@unique([methodId, contractAddress], map: "unique_contract_method_method_id_contract_address")
 }
 
 model contract_verification {
