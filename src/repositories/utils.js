@@ -45,7 +45,9 @@ function mongoQueryToPrisma (query) {
     $and: 'AND',
     $lt: 'lt',
     $gt: 'gt',
-    $eq: 'equals'
+    $eq: 'equals',
+    $in: 'in',
+    $ne: 'not',
   }
 
   for (const key in query) {
@@ -56,7 +58,9 @@ function mongoQueryToPrisma (query) {
     } else if (!(typeof value === 'string') && Object.keys(value).length > 0) {
       return {[mongoOperatorToPrisma[key] || key]: mongoQueryToPrisma(value)}
     } else {
-      if (key.includes('.')) {
+      if (key === '$exists') {
+        return value ? {not: null} : {equals: null}
+      } else if (key.includes('.')) {
         return formatRelationQuery({[key]: value})
       } else {
         return {[mongoOperatorToPrisma[key] || key]: value}
@@ -67,21 +71,35 @@ function mongoQueryToPrisma (query) {
   return {}
 }
 
-function formatRelationQuery (query) {
-  const [relation, attribute] = Object.keys(query)[0].split('.')
+function formatExistsQuery (query) {
+  const [key] = Object.keys(query)
 
   return {
-    [relation]: {
-      [attribute]: query[`${relation}.${attribute}`]
-    }
+    [key]: {not: null}
   }
 }
 
-function removeNullFields (obj) {
-  for (const key in obj) {
-    if (Array.isArray(obj[key])) obj[key].forEach(arrValue => removeNullFields(arrValue))
-    if (typeof (obj[key]) === 'object') removeNullFields(obj[key])
-    if (obj[key] === null) delete obj[key]
+function removeNullFields (obj, nullableFields = []) {
+  if (typeof obj === 'string') {
+    return obj
+  } else {
+    return Object.entries(obj).reduce((filtered, [key, value]) => {
+      if (value !== undefined) {
+        if (value !== null) {
+          if (value.constructor.name === 'Array') {
+            filtered[key] = value.map(v => removeNullFields(v))
+          } else if (value.constructor.name === 'Object') {
+            filtered[key] = removeNullFields(value)
+          } else {
+            filtered[key] = value
+          }
+        }
+      } else if (nullableFields.includes(key)) {
+        filtered[key] = null
+      }
+
+      return filtered
+    }, {})
   }
 }
 
