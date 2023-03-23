@@ -47,7 +47,7 @@ function mongoQueryToPrisma (query) {
     $gt: 'gt',
     $eq: 'equals',
     $in: 'in',
-    $ne: 'not',
+    $ne: 'not'
   }
 
   for (const key in query) {
@@ -71,11 +71,13 @@ function mongoQueryToPrisma (query) {
   return {}
 }
 
-function formatExistsQuery (query) {
-  const [key] = Object.keys(query)
+function formatRelationQuery (query) {
+  const [relation, attribute] = Object.keys(query)[0].split('.')
 
   return {
-    [key]: {not: null}
+    [relation]: {
+      [attribute]: query[`${relation}.${attribute}`]
+    }
   }
 }
 
