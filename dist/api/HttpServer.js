@@ -1,5 +1,6 @@
 "use strict";Object.defineProperty(exports, "__esModule", { value: true });exports.default = exports.HttpServer = void 0;var _http = _interopRequireDefault(require("http"));
 var _express = _interopRequireDefault(require("express"));
+var _cors = _interopRequireDefault(require("cors"));
 var _api = _interopRequireDefault(require("./routes/api"));
 var _doc = _interopRequireDefault(require("./routes/doc"));
 var _config = _interopRequireDefault(require("../lib/config"));function _interopRequireDefault(obj) {return obj && obj.__esModule ? obj : { default: obj };}
@@ -8,6 +9,7 @@ const HttpServer = ({ api, status, log }, send) => {
   const app = (0, _express.default)();
   const httpServer = _http.default.Server(app);
 
+  app.use((0, _cors.default)());
   app.set('etag', false);
   app.set('x-powered-by', false);
 

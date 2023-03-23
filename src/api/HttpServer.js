@@ -1,5 +1,6 @@
 import http from 'http'
 import express from 'express'
+import cors from 'cors'
 import apiRoutes from './routes/api'
 import docRoutes from './routes/doc'
 import config from '../lib/config'
@@ -8,6 +9,7 @@ export const HttpServer = ({ api, status, log }, send) => {
   const app = express()
   const httpServer = http.Server(app)
 
+  app.use(cors())
   app.set('etag', false)
   app.set('x-powered-by', false)
 

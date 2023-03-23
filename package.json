@@ -33,6 +33,7 @@
     "bignumber.js": "^7.2.1",
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
+    "cors": "^2.8.5",
     "express": "^4.17.1",
     "google-protobuf": "^3.13.0",
     "grpc": "^1.24.3",
