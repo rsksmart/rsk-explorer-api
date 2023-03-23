@@ -212,7 +212,7 @@ export class Address extends DataCollectorItem {
           const result = await this.getOne({ address }, fields)
           let { data } = result
           if (!data) throw new Error('Unknown address')
-          const { createdByTx, code } = data  
+          const { createdByTx, code } = data
           if (!code) throw new Error('The address does not have code')
           if (createdByTx) {
             // is a transaction
