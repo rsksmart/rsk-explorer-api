@@ -127,6 +127,7 @@ model block {
   address_address_last_block_minedToblock                       address[]              @relation("address_last_block_minedToblock")
   balance_balance_block_hashToblock                             balance[]              @relation("balance_block_hashToblock")
   balance_balance_block_numberToblock                           balance[]              @relation("balance_block_numberToblock")
+  block_trace                                                   block_trace[]
   contract                                                      contract[]
   event_event_block_hashToblock                                 event[]                @relation("event_block_hashToblock")
   event_event_block_numberToblock                               event[]                @relation("event_block_numberToblock")
@@ -316,7 +317,6 @@ model event_topic {
   @@id([id, topic], map: "pk_event_topic")
 }
 
-// This model has been renamed to 'import_' during introspection, because the original name 'import' is reserved.
 model import_ {
   requestId Int     @map("request_id")
   name      String  @db.VarChar
@@ -337,7 +337,6 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-// This model has been renamed to 'interface_' during introspection, because the original name 'interface' is reserved.
 model interface_ {
   id                 Int                  @id @default(autoincrement())
   interface          String               @unique @db.VarChar
@@ -359,6 +358,7 @@ model internal_transaction {
   timestamp                                      String                       @db.VarChar
   error                                          String?                      @db.VarChar
   resultId                                       Int?                         @map("result_id")
+  block_trace                                    block_trace[]
   action                                         action                       @relation(fields: [actionId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_action_id")
   block_internal_transaction_block_hashToblock   block                        @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                        @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
@@ -770,4 +770,13 @@ model contract_verification_abi_output {
   contract_verification_abi contract_verification_abi @relation(fields: [abi_id], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_output")
 
   @@id([abi_id, name, type], map: "pk_contract_verification_abi_ouput")
+}
+
+model block_trace {
+  blockHash            String               @map("block_hash") @db.VarChar(66)
+  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  block                block                @relation(fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_trace_block_hash")
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_trace_internal_tx_id")
+
+  @@id([blockHash, internalTxId], map: "pk_block_trace")
 }
