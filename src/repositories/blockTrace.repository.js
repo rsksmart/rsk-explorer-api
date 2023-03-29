@@ -1,28 +1,22 @@
+import {prismaClient} from '../lib/Setup'
+
 export const blockTraceRepository = {
   findOne (query = {}, project = {}, collection) {
     return collection.findOne(query, project)
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
+  async insertOne (internalTransactions, collection) {
+    const upsertQueries = internalTransactions.map(({blockHash, internalTxId}) => {
+      const tracedItxToSave = { blockHash, internalTxId }
+
+      return prismaClient.block_trace.upsert({ where: { blockHash_internalTxId: tracedItxToSave }, create: tracedItxToSave, update: {} })
+    })
+
+    await prismaClient.$transaction(upsertQueries)
+
+    if (internalTransactions.length) {
+      const {blockHash: hash} = internalTransactions[0]
+
+      await collection.insertOne({ hash, data: internalTransactions })
     }
-  },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
   }
 }
