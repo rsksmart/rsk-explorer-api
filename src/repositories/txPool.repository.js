@@ -10,13 +10,15 @@ export const txPoolRepository = {
       include: {transaction_in_pool: true}
     })
 
-    txPool.txs = [...txPool.transaction_in_pool]
-    delete txPool.transaction_in_pool
+    if (txPool) {
+      txPool.txs = [...txPool.transaction_in_pool]
+      delete txPool.transaction_in_pool
 
-    txPool._id = txPool.id
-    delete txPool.id
+      txPool._id = txPool.id
+      delete txPool.id
 
-    txPool.timestamp = Number(txPool.timestamp)
+      txPool.timestamp = Number(txPool.timestamp)
+    }
 
     return txPool
   },

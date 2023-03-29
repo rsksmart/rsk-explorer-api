@@ -1,17 +1,30 @@
-function rawTxPendingToEntity (data) {
+function rawTxPendingToEntity ({
+  hash,
+  blockHash,
+  from,
+  to,
+  blockNumber,
+  transactionIndex,
+  nonce,
+  gas,
+  gasPrice,
+  value,
+  input,
+  status
+}) {
   return {
-    hash: data.hash,
-    blockHash: data.blockHash,
-    from: data.from,
-    to: data.to,
-    blockNumber: data.blockNumber,
-    transactionIndex: data.transactionIndex,
-    nonce: data.nonce,
-    gas: data.gas,
-    gasPrice: data.gasPrice,
-    value: data.value,
-    input: data.input,
-    status: data.status
+    hash,
+    blockHash,
+    from,
+    to,
+    blockNumber,
+    transactionIndex,
+    nonce,
+    gas,
+    gasPrice,
+    value,
+    input,
+    status
   }
 }
 
@@ -22,12 +35,17 @@ function rawTxInPoolToEntity (data) {
   }
 }
 
-function rawTxPoolToEntity (data) {
+function rawTxPoolToEntity ({
+  blockNumber,
+  pending,
+  queued,
+  timestamp
+}) {
   return {
-    blockNumber: data.blockNumber,
-    pending: data.pending,
-    queued: data.queued,
-    timestamp: String(data.timestamp)
+    blockNumber,
+    pending,
+    queued,
+    timestamp: String(timestamp)
   }
 }
 
