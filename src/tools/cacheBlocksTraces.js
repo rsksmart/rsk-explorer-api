@@ -5,6 +5,7 @@ import { nod3Log } from '.././lib/nod3Connect'
 import { Nod3, Nod3Router } from '@rsksmart/nod3'
 import BlockTrace from '../services/classes/BlockTrace'
 import { Logger } from '../lib/Logger'
+import { blockTraceRepository } from '../repositories/blockTrace.repository'
 
 const { HttpProvider } = Nod3.providers
 const log = Logger('cacheTraces', { level: 'trace' })
@@ -86,7 +87,8 @@ async function saveBlockTrace (hash, { collections, initConfig }) {
     requested[hash] = false
     log.info(`Waiting for block_trace ${hash}`)
     let blockTrace = new BlockTrace(hash, { nod3, collections, initConfig })
-    await blockTrace.save()
+    blockTrace = blockTrace.fetchFromNode()
+    await blockTraceRepository.insertOne(blockTrace, collections.BlocksTraces)
     requested[hash] = true
     return hash
   } catch (err) {
