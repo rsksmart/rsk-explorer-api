@@ -5,7 +5,6 @@ import {
   addressEntityToRaw
 } from '../converters/address.converters'
 import {
-  createPrismaSelect,
   mongoQueryToPrisma,
   createPrismaOrderBy
 } from './utils'
@@ -24,8 +23,7 @@ export const addressRepository = {
   async findOne (query = {}, project = {}, collection) {
     const address = await prismaClient.address.findFirst({
       where: mongoQueryToPrisma(query),
-      include: addressRelatedTables,
-      select: createPrismaSelect(project)
+      include: addressRelatedTables
     })
 
     return address ? addressEntityToRaw(address) : null
@@ -34,7 +32,6 @@ export const addressRepository = {
     const addresses = await prismaClient.address.findMany({
       where: mongoQueryToPrisma(query),
       include: addressRelatedTables,
-      select: createPrismaSelect(project),
       orderBy: createPrismaOrderBy(sort),
       take: limit
     })

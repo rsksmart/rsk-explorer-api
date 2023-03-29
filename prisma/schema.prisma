@@ -589,10 +589,10 @@ model token_address {
   address                                   String   @db.VarChar(42)
   contract                                  String   @db.VarChar(42)
   blockNumber                               Int      @map("block_number")
-  block_hash                                String   @db.VarChar
+  blockHash                                 String   @map("block_hash") @db.VarChar
   balance                                   String?  @db.VarChar
   address_token_address_addressToaddress    address  @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
-  block_token_address_block_hashToblock     block    @relation("token_address_block_hashToblock", fields: [block_hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
+  block_token_address_block_hashToblock     block    @relation("token_address_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
   block                                     block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
   contract_token_address_contractTocontract contract @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
 }

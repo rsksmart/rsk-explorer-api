@@ -47,7 +47,8 @@ function mongoQueryToPrisma (query) {
     $gt: 'gt',
     $eq: 'equals',
     $in: 'in',
-    $ne: 'not'
+    $ne: 'not',
+    $lte: 'lte'
   }
 
   for (const key in query) {
@@ -55,7 +56,7 @@ function mongoQueryToPrisma (query) {
 
     if (Array.isArray(value)) {
       return {[mongoOperatorToPrisma[key] || key]: value.map(elem => ['Array', 'Object'].includes(elem.constructor.name) ? mongoQueryToPrisma(elem) : elem)}
-    } else if (!(typeof value === 'string') && Object.keys(value).length > 0) {
+    } else if (value && !(typeof value === 'string') && Object.keys(value).length > 0) {
       return {[mongoOperatorToPrisma[key] || key]: mongoQueryToPrisma(value)}
     } else {
       if (key === '$exists') {
@@ -95,9 +96,9 @@ function removeNullFields (obj, nullableFields = []) {
           } else {
             filtered[key] = value
           }
+        } else if (nullableFields.includes(key)) {
+          filtered[key] = null
         }
-      } else if (nullableFields.includes(key)) {
-        filtered[key] = null
       }
 
       return filtered

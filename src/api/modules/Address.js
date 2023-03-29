@@ -35,7 +35,7 @@ export class Address extends DataCollectorItem {
 
       getAddress: async params => {
         const { address } = params
-        const aData = await this.getOne({ address }, { _id: 0 })
+        const aData = await this.getOne({ address }, { id: 0 })
         if (aData && aData.data) {
           let { data } = aData
           if (data.type === addrTypes.CONTRACT) {
@@ -208,7 +208,7 @@ export class Address extends DataCollectorItem {
       getCode: async params => {
         try {
           const { address } = params
-          const fields = { _id: 0, address: 1, code: 1, createdByTx: 1, contractInterfaces: 1, name: 1 }
+          const fields = { id: 0, address: 1, code: 1, createdByTx: 1, contractInterfaces: 1, name: 1 }
           const result = await this.getOne({ address }, fields)
           let { data } = result
           if (!data) throw new Error('Unknown address')
@@ -257,7 +257,7 @@ export class Address extends DataCollectorItem {
       findAddresses: async params => {
         let { name } = params
         params.field = 'name'
-        params.sort = { _id: 1 }
+        params.sort = { id: 1 }
         return this.textSearch(name, params)
       }
     }

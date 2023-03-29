@@ -112,6 +112,6 @@ function contractEntityToRaw ({
     contractToReturn.contractInterfaces = contractInterfaces
   }
 
-  return removeNullFields(contractToReturn)
+  return removeNullFields(contractToReturn, ['name'])
 }
 export {rawAddressToEntity, rawContractToEntity, addressEntityToRaw, contractEntityToRaw}
