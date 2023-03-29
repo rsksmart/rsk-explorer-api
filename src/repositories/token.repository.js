@@ -1,31 +1,40 @@
+import { rawTokenToEntity, tokenEntityToRaw } from '../converters/token.converters'
+import { prismaClient } from '../lib/Setup'
+import { createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma } from './utils'
+
 export const tokenRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const token = await prismaClient.token_address.findFirst({
+      where: mongoQueryToPrisma(query),
+      orderBy: createPrismaOrderBy(project),
+      select: createPrismaSelect(project)
+    })
+
+    return token ? tokenEntityToRaw(token) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const tokens = await prismaClient.token_address.findMany({
+      where: mongoQueryToPrisma(query),
+      orderBy: createPrismaOrderBy(sort),
+      select: createPrismaSelect(project),
+      take: limit
+    })
+
+    return tokens.map(tokenEntityToRaw)
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.token_address.count({where: mongoQueryToPrisma(query)})
+
+    return count
   },
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
-  updateOne (filter, update, options = {}, collection) {
-    return collection.updateOne(filter, update, options)
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async updateOne (filter, update, options = {}, collection) {
+    const {$set: data} = update
+    const tokenToCreate = data.id ? rawTokenToEntity(data) : {}
+    const updatedToken = await prismaClient.token_address.upsert({where: filter, update: {balance: data.balance}, create: tokenToCreate})
+
+    return updatedToken
   }
 }

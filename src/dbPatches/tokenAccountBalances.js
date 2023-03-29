@@ -17,20 +17,22 @@ patch().then(() => {
 
 async function patch () {
   try {
-    let { db } = await dataSource({ skipCheck: true })
-    let collection = db.collection('tokensAddresses')
-    let cursor = tokenRepository.find({}, {}, collection)
-    await cursor.forEach(async account => {
+    const { db } = await dataSource({ skipCheck: true })
+    const collection = db.collection('tokensAddresses')
+
+    const tokens = await tokenRepository.find({}, {}, collection)
+
+    for (const token of tokens) {
       try {
-        let { balance, contract, address, _id } = account
-        let name = `${contract}--${address}`
+        const { balance, contract, address, id } = token
+        const name = `${contract}--${address}`
         if (balance !== null) {
           console.log(`Getting balance for ${name}`)
-          let newBalance = await getBalance(account)
+          let newBalance = await getBalance(token)
           newBalance = add0x(newBalance.toString(16))
           if (balance !== newBalance) {
             console.log(`Updating balance for ${name}`)
-            await tokenRepository.updateOne({ _id }, { $set: { balance: newBalance } }, {}, collection)
+            await tokenRepository.updateOne({ id }, { $set: { balance: newBalance } }, {}, collection)
           } else {
             console.log(`${name} .... OK`)
           }
@@ -38,10 +40,10 @@ async function patch () {
           console.log(`${name} has null balance, skipped`)
         }
       } catch (err) {
-        console.log(err, account)
+        console.log(err, token)
         return Promise.reject(err)
       }
-    })
+    }
   } catch (err) {
     console.log(err)
     process.exit(9)
