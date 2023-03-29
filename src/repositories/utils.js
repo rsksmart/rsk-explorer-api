@@ -45,7 +45,10 @@ function mongoQueryToPrisma (query) {
     $and: 'AND',
     $lt: 'lt',
     $gt: 'gt',
-    $eq: 'equals'
+    $eq: 'equals',
+    $in: 'in',
+    $ne: 'not',
+    $lte: 'lte'
   }
 
   for (const key in query) {
@@ -53,10 +56,12 @@ function mongoQueryToPrisma (query) {
 
     if (Array.isArray(value)) {
       return {[mongoOperatorToPrisma[key] || key]: value.map(elem => ['Array', 'Object'].includes(elem.constructor.name) ? mongoQueryToPrisma(elem) : elem)}
-    } else if (!(typeof value === 'string') && Object.keys(value).length > 0) {
+    } else if (value && !(typeof value === 'string') && Object.keys(value).length > 0) {
       return {[mongoOperatorToPrisma[key] || key]: mongoQueryToPrisma(value)}
     } else {
-      if (key.includes('.')) {
+      if (key === '$exists') {
+        return value ? {not: null} : {equals: null}
+      } else if (key.includes('.')) {
         return formatRelationQuery({[key]: value})
       } else {
         return {[mongoOperatorToPrisma[key] || key]: value}
@@ -77,11 +82,27 @@ function formatRelationQuery (query) {
   }
 }
 
-function removeNullFields (obj) {
-  for (const key in obj) {
-    if (Array.isArray(obj[key])) obj[key].forEach(arrValue => removeNullFields(arrValue))
-    if (typeof (obj[key]) === 'object') removeNullFields(obj[key])
-    if (obj[key] === null) delete obj[key]
+function removeNullFields (obj, nullableFields = []) {
+  if (typeof obj === 'string') {
+    return obj
+  } else {
+    return Object.entries(obj).reduce((filtered, [key, value]) => {
+      if (value !== undefined) {
+        if (value !== null) {
+          if (value.constructor.name === 'Array') {
+            filtered[key] = value.map(v => removeNullFields(v))
+          } else if (value.constructor.name === 'Object') {
+            filtered[key] = removeNullFields(value)
+          } else {
+            filtered[key] = value
+          }
+        } else if (nullableFields.includes(key)) {
+          filtered[key] = null
+        }
+      }
+
+      return filtered
+    }, {})
   }
 }
 

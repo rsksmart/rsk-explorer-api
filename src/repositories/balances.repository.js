@@ -1,45 +1,43 @@
 import { prismaClient } from '../lib/Setup'
 import { rawBalanceToEntity, entityToRawBalance } from '../converters/balance.converters'
-import { createPrismaOrderBy, createPrismaSelect } from './utils'
+import { createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma } from './utils'
 
 export const balancesRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const orderBy = createPrismaOrderBy(project)
-    const select = createPrismaSelect(project)
-    return entityToRawBalance(await prismaClient.balance.findFirst({
-      where: query,
-      orderBy: orderBy,
-      select: select
-    }))
+    const balance = await prismaClient.balance.findFirst({
+      where: mongoQueryToPrisma(query),
+      select: createPrismaSelect(project),
+      orderBy: createPrismaOrderBy(project)
+    })
+
+    return balance ? entityToRawBalance(balance) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const balances = await prismaClient.balance.findMany({
+      where: mongoQueryToPrisma(query),
+      select: createPrismaSelect(project),
+      orderBy: createPrismaOrderBy(sort),
+      take: limit
+    })
+
+    return balances.map(entityToRawBalance)
+  },
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.balance.count({where: mongoQueryToPrisma(query)})
+
+    return count
   },
   async deleteMany (filter, collection) {
-    const mongoRes = await collection.deleteMany(filter)
-    if (filter.$or) {
-      filter.OR = filter.$or
-      delete filter.$or
-    }
-    await prismaClient.balance.deleteMany({where: filter})
-    return mongoRes
+    const deleted = await prismaClient.balance.deleteMany({where: mongoQueryToPrisma(filter)})
+    await collection.deleteMany(filter)
+
+    return deleted
   },
   async insertMany (data, collection) {
     const balancesToSave = data.map(balance => rawBalanceToEntity(balance))
-    await prismaClient.balance.createMany({data: balancesToSave})
+    const savedBalance = await prismaClient.balance.createMany({data: balancesToSave})
 
-    const mongoRes = await collection.insertMany(data)
-    return mongoRes
+    await collection.insertMany(data)
+    return savedBalance
   }
 }

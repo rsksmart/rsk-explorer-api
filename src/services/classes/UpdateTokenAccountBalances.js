@@ -10,22 +10,23 @@ export async function updateTokenAccountBalances (block, { nod3, collections, lo
   if (number < 1) return
   log.trace(`Checking token account balances for block ${number}`)
   try {
-    let collection = collections.TokensAddrs
-    let query = { 'block.number': number }
-    let cursor = tokenRepository.find(query, {}, collection, {}, 0, false)
-    await cursor.forEach(async account => {
+    const collection = collections.TokensAddrs
+    const query = { blockNumber: number }
+    const tokens = await tokenRepository.find(query, {}, collection, {}, 0, false)
+
+    for (const token of tokens) {
       try {
-        let { balance, _id, address, contract } = account
-        let newBalance = await getBalance(account, { parser })
+        let { balance, id, address, contract } = token
+        let newBalance = await getBalance(token, { parser })
         if (balance !== newBalance) {
           log.info(`Updating token account balance ${contract}--${address}`)
-          await tokenRepository.updateOne({ _id }, { $set: { balance: newBalance } }, {}, collection)
+          await tokenRepository.updateOne({ id }, { $set: { balance: newBalance } }, {}, collection)
         }
       } catch (err) {
         log.error(err)
         return Promise.reject(err)
       }
-    })
+    }
   } catch (err) {
     return Promise.reject(err)
   }

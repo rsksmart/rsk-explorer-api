@@ -1,110 +1,285 @@
-function rawTxToEntity (data) {
+import { removeNullFields } from '../repositories/utils'
+
+function rawTxToEntity ({
+  hash,
+  txId,
+  txType,
+  from,
+  to,
+  blockNumber,
+  blockHash,
+  transactionIndex,
+  nonce,
+  gas,
+  gasPrice,
+  value,
+  input,
+  v,
+  r,
+  s,
+  timestamp
+}) {
   return {
-    hash: data.hash,
-    txId: data.txId,
-    txType: data.txType,
-    from: data.from,
-    to: data.to,
-    blockNumber: data.blockNumber,
-    blockHash: data.blockHash,
-    transactionIndex: data.transactionIndex,
-    nonce: data.nonce,
-    gas: data.gas,
-    gasPrice: data.gasPrice,
-    value: data.value,
-    input: data.input,
-    v: data.v,
-    r: data.r,
-    s: data.s,
-    timestamp: String(data.timestamp)
+    hash,
+    txId,
+    txType,
+    from,
+    to,
+    blockNumber,
+    blockHash,
+    transactionIndex,
+    nonce,
+    gas,
+    gasPrice,
+    value,
+    input,
+    v,
+    r,
+    s,
+    timestamp: String(timestamp)
   }
 }
 
-function rawReceiptToEntity (data) {
+function rawReceiptToEntity ({
+  transactionHash,
+  transactionIndex,
+  blockHash,
+  blockNumber,
+  from,
+  to,
+  cumulativeGasUsed,
+  gasUsed,
+  contractAddress,
+  status,
+  logsBloom
+}) {
   return {
-    transactionHash: data.transactionHash,
-    transactionIndex: data.transactionIndex,
-    blockHash: data.blockHash,
-    blockNumber: data.blockNumber,
-    from: data.from,
-    to: data.to,
-    cumulativeGasUsed: data.cumulativeGasUsed,
-    gasUsed: data.gasUsed,
-    contractAddress: data.contractAddress,
-    status: data.status,
-    logsBloom: data.logsBloom
+    transactionHash,
+    transactionIndex,
+    blockHash,
+    blockNumber,
+    from,
+    to,
+    cumulativeGasUsed,
+    gasUsed,
+    contractAddress,
+    status,
+    logsBloom
   }
 }
 
-function rawLogToEntity (data) {
+function rawLogToEntity ({
+  logIndex,
+  transactionHash,
+  transactionIndex,
+  blockNumber,
+  blockHash,
+  address,
+  abiId: abi,
+  data,
+  signature,
+  event,
+  timestamp,
+  txStatus,
+  eventId
+}) {
   return {
-    logIndex: data.logIndex,
-    transactionHash: data.transactionHash,
-    transactionIndex: data.transactionIndex,
-    blockNumber: data.blockNumber,
-    blockHash: data.blockHash,
-    address: data.address,
-    abi: data.abiId,
-    data: data.data,
-    signature: data.signature,
-    event: data.event,
-    timestamp: String(data.timestamp),
-    txStatus: data.txStatus,
-    eventId: data.eventId
+    logIndex,
+    transactionHash,
+    transactionIndex,
+    blockNumber,
+    blockHash,
+    address,
+    abi,
+    data,
+    signature,
+    event,
+    timestamp: String(timestamp),
+    txStatus,
+    eventId
   }
 }
 
-function rawLogTopicToEntity (data) {
+function rawLogTopicToEntity ({
+  logIndex,
+  transactionHash,
+  topic
+}) {
   return {
-    logIndex: data.logIndex,
-    transactionHash: data.transactionHash,
-    topic: data.topic
+    logIndex,
+    transactionHash,
+    topic
   }
 }
 
-function rawLogArgToEntity (data) {
+function rawLogArgToEntity ({
+  logIndex,
+  transactionHash,
+  arg
+}) {
   return {
-    logIndex: data.logIndex,
-    transactionHash: data.transactionHash,
-    arg: data.arg
+    logIndex,
+    transactionHash,
+    arg
   }
 }
 
-function rawLoggedAddressToEntity (data) {
+function rawLoggedAddressToEntity ({
+  logIndex,
+  transactionHash,
+  address
+}) {
   return {
-    logIndex: data.logIndex,
-    transactionHash: data.transactionHash,
-    address: data.address
+    logIndex,
+    transactionHash,
+    address
   }
 }
 
-function entityTransactionToRaw (requestedTransaction) {
-  const logs = requestedTransaction.receipt.log.map(log => {
-    log.topics = log.log_topic.map(t => t.topic)
-    log.args = log.log_arg.map(a => a.arg)
-    log._addresses = log.logged_address.map(la => la.address)
-    delete log.abi_log_abiToabi.id
-    log.abi = log.abi_log_abiToabi
-    delete log.log_topic
-    delete log.log_arg
-    delete log.logged_address
+function abiEntityToRaw ({
+  anonymous,
+  name,
+  type,
+  abi_input: inputs
+}) {
+  const abiToReturn = {
+    anonymous,
+    name,
+    type,
+    inputs: inputs.map(({input}) => input)
+  }
 
-    const abiInputs = log.abi_log_abiToabi.abi_input.map(i => {
-      const {name, type, indexed} = i.input
-      const newInput = {indexed, name, type}
-      return newInput
-    })
-    log.abi.inputs = abiInputs
-    delete log.abi_log_abiToabi
-    delete log.abi.abi_input
-    return log
-  })
-  requestedTransaction.receipt.logs = logs
-  requestedTransaction.txType = requestedTransaction.tx_type
-  delete requestedTransaction.tx_type
-  delete requestedTransaction.receipt.log
-
-  return requestedTransaction
+  return removeNullFields(abiToReturn)
 }
 
-export {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity, entityTransactionToRaw}
+function logEntityToRaw ({
+  logIndex,
+  transactionHash,
+  transactionIndex,
+  blockNumber,
+  blockHash,
+  address,
+  data,
+  signature,
+  event,
+  timestamp,
+  txStatus,
+  eventId,
+  abi_log_abiToabi: abi,
+  log_topic: topics,
+  log_arg: args,
+  logged_address: _addresses
+}) {
+  const logToReturn = {
+    logIndex,
+    transactionHash,
+    transactionIndex,
+    blockNumber,
+    blockHash,
+    address,
+    abi: abiEntityToRaw(abi),
+    data,
+    signature,
+    event,
+    timestamp,
+    txStatus,
+    eventId,
+    _addresses: _addresses.map(({address}) => address),
+    topics: topics.map(({topic}) => topic)
+  }
+
+  if (args.length > 0) {
+    logToReturn.args = args.map(({arg}) => arg)
+  }
+
+  return removeNullFields(logToReturn, ['event'])
+}
+
+function receiptEntityToRaw ({
+  transactionHash,
+  transactionIndex,
+  blockHash,
+  blockNumber,
+  from,
+  to,
+  cumulativeGasUsed,
+  gasUsed,
+  contractAddress,
+  status,
+  logsBloom,
+  log
+}) {
+  const receiptToReturn = {
+    transactionHash,
+    transactionIndex,
+    blockHash,
+    blockNumber,
+    from,
+    to,
+    logs: log.map(logEntityToRaw),
+    cumulativeGasUsed,
+    gasUsed,
+    contractAddress,
+    status,
+    logsBloom
+  }
+
+  return removeNullFields(receiptToReturn, ['contractAddress'])
+}
+
+function transactionEntityToRaw ({
+  hash,
+  nonce,
+  blockHash,
+  blockNumber,
+  transactionIndex,
+  from,
+  to,
+  gas,
+  gasPrice,
+  value,
+  input,
+  v,
+  r,
+  s,
+  timestamp,
+  receipt,
+  txType,
+  txId
+}) {
+  const txToReturn = {
+    hash,
+    nonce,
+    blockHash,
+    blockNumber,
+    transactionIndex,
+    from,
+    to,
+    gas,
+    gasPrice,
+    value,
+    input,
+    v,
+    r,
+    s,
+    timestamp,
+    txType,
+    txId
+  }
+
+  if (receipt) {
+    txToReturn.receipt = receiptEntityToRaw(receipt)
+  }
+
+  return txToReturn
+}
+
+export {
+  rawTxToEntity,
+  rawReceiptToEntity,
+  rawLogToEntity,
+  rawLogTopicToEntity,
+  rawLogArgToEntity,
+  rawLoggedAddressToEntity,
+  transactionEntityToRaw
+}

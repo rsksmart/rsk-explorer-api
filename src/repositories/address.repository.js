@@ -1,26 +1,47 @@
 import {prismaClient} from '../lib/Setup'
-import {rawAddressToEntity, rawContractToEntity} from '../converters/address.converters'
+import {
+  rawAddressToEntity,
+  rawContractToEntity,
+  addressEntityToRaw
+} from '../converters/address.converters'
+import {
+  mongoQueryToPrisma,
+  createPrismaOrderBy
+} from './utils'
+
+const addressRelatedTables = {
+  block_address_last_block_minedToblock: true,
+  contract_contract_addressToaddress: {
+    include: {
+      contract_method: {include: {method: {select: {method: true}}}},
+      contract_interface: {include: {interface_: {select: {interface: true}}}}
+    }
+  }
+}
 
 export const addressRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  async findOne (query = {}, project = {}, collection) {
+    const address = await prismaClient.address.findFirst({
+      where: mongoQueryToPrisma(query),
+      include: addressRelatedTables
+    })
+
+    return address ? addressEntityToRaw(address) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const addresses = await prismaClient.address.findMany({
+      where: mongoQueryToPrisma(query),
+      include: addressRelatedTables,
+      orderBy: createPrismaOrderBy(sort),
+      take: limit
+    })
+
+    return addresses.map(addressEntityToRaw)
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.address.count({where: mongoQueryToPrisma(query)})
+
+    return count
   },
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
@@ -28,7 +49,8 @@ export const addressRepository = {
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
     const addressToSave = rawAddressToEntity(data)
-    await prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })
+
+    const savedAddress = await prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })
 
     if (data.type === 'contract') {
       const {createdByTx, createdByInternalTx, contractMethods, contractInterfaces} = data
@@ -50,27 +72,45 @@ export const addressRepository = {
 
       if (contractMethods) {
         for (const method of contractMethods) {
-          const savedMethod = await prismaClient.method.upsert({where: {method}, create: {method}, update: {method}})
-          await prismaClient.contract_method.create({data: {methodId: savedMethod.id, contractAddress: savedContract.address}})
+          const savedMethod = await prismaClient.method.upsert({where: {method}, create: {method}, update: {}})
+          const contractMethodToSave = {methodId: savedMethod.id, contractAddress: savedContract.address}
+          await prismaClient.contract_method.upsert({
+            where: {
+              methodId_contractAddress: contractMethodToSave
+            },
+            create: contractMethodToSave,
+            update: {}})
         }
       }
 
       if (contractInterfaces) {
         for (const interf of contractInterfaces) {
-          const savedInterface = await prismaClient.interface_.upsert({where: {interface: interf}, create: {interface: interf}, update: {interface: interf}})
-          await prismaClient.contract_interface.create({data: {interfaceId: savedInterface.id, contractAddress: savedContract.address}})
+          const savedInterface = await prismaClient.interface_.upsert({where: {interface: interf}, create: {interface: interf}, update: {}})
+          const contractInterfaceToSave = {interfaceId: savedInterface.id, contractAddress: savedContract.address}
+          await prismaClient.contract_interface.upsert({
+            where: {
+              interfaceId_contractAddress: contractInterfaceToSave
+            },
+            create: contractInterfaceToSave,
+            update: {}})
         }
       }
     }
 
-    const mongoRes = await collection.updateOne(filter, update, options)
-    return mongoRes
+    await collection.updateOne(filter, update, options)
+
+    return savedAddress
   },
   async deleteMany (filter, collection) {
-    const mongoRes = await collection.deleteMany(filter)
-    return mongoRes
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+    const blockHash = filter['createdByTx.blockHash']
+    const txs = await prismaClient.transaction.findMany({where: {blockHash}})
+
+    const deleted = await prismaClient.address.deleteMany({
+      where: {
+        contract_contract_addressToaddress: {createdByTx: {in: txs.map(tx => tx.hash)}}
+      }
+    })
+
+    return deleted
   }
 }

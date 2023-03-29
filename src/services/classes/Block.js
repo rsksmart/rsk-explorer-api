@@ -111,8 +111,15 @@ export class Block extends BcThing {
   async insertTokenAddresses (data) {
     try {
       let { TokensAddrs } = this.collections
-      let result = await Promise.all([...data.map(ta => tokenRepository.updateOne(
-        { address: ta.address, contract: ta.contract }, { $set: ta }, { upsert: true }, TokensAddrs))])
+      let result = await Promise.all([...data.map(ta => {
+        ta.id = ta.address + '_' + ta.contract
+        tokenRepository.updateOne(
+          { id: ta.id },
+          { $set: ta },
+          { upsert: true },
+          TokensAddrs
+        )
+      })])
       return result
     } catch (err) {
       this.log.error('Error inserting token addresses')

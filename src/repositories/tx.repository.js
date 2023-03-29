@@ -1,70 +1,72 @@
 import {prismaClient} from '../lib/Setup'
-import {rawTxToEntity, rawReceiptToEntity, rawLogToEntity, rawLogTopicToEntity, rawLogArgToEntity, rawLoggedAddressToEntity, entityTransactionToRaw} from '../converters/tx.converters'
-import {rawAbiToEntity, rawInputToEntity, rawAbiInputToEntity} from '../converters/abi.converters'
-import { mongoSortToPrisma } from './utils'
+import {
+  rawTxToEntity,
+  rawReceiptToEntity,
+  rawLogToEntity,
+  rawLogTopicToEntity,
+  rawLogArgToEntity,
+  rawLoggedAddressToEntity,
+  transactionEntityToRaw
+} from '../converters/tx.converters'
+import {
+  rawAbiToEntity,
+  rawInputToEntity,
+  rawAbiInputToEntity
+} from '../converters/abi.converters'
+import {
+  createPrismaOrderBy,
+  mongoQueryToPrisma,
+  createPrismaSelect
+} from './utils'
+
+const txRelatedTables = {
+  receipt: {
+    include: {
+      log: {
+        include: {
+          abi_log_abiToabi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}},
+          log_topic: {select: {topic: true}},
+          log_arg: {select: {arg: true}},
+          logged_address: {select: {address: true}}
+        }
+      }
+    }
+  }
+}
 
 export const txRepository = {
   async  findOne (query = {}, project = {}, collection) {
-    let orderBy = []
-    if (project.sort) {
-      const sort = Object.entries(project.sort)[0]
-      let param = sort[0]
-      const value = mongoSortToPrisma(sort[1])
-
-      const prismaSort = {
-        [param]: value
-      }
-      orderBy.push(prismaSort)
-    }
-
-    let requestedTransaction = await prismaClient.transaction.findFirst({
-      where: query,
-      orderBy: orderBy,
-      include: {
-        receipt: {
-          include: {
-            log: {
-              include: {
-                abi_log_abiToabi: {
-                  include: {
-                    abi_input: {select: {input: true}}
-                  }
-                },
-                log_topic: {select: {topic: true}},
-                log_arg: {select: {arg: true}},
-                logged_address: {select: {address: true}}
-              }
-            }
-          }
-        }
-      }
+    const txToReturn = await prismaClient.transaction.findFirst({
+      where: mongoQueryToPrisma(query),
+      orderBy: createPrismaOrderBy(project),
+      include: txRelatedTables
     })
 
-    return requestedTransaction ? entityTransactionToRaw(requestedTransaction) : null
+    return txToReturn ? transactionEntityToRaw(txToReturn) : null
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const txs = await prismaClient.transaction.findMany({
+      where: mongoQueryToPrisma(query),
+      select: createPrismaSelect(project),
+      orderBy: createPrismaOrderBy(sort),
+      take: limit
+    })
+
+    return txs.map(transactionEntityToRaw)
   },
-  countDocuments (query = {}, collection) {
-    return prismaClient.transaction.count({where: query})
+  async countDocuments (query = {}, collection) {
+    const count = await prismaClient.transaction.count({where: mongoQueryToPrisma(query)})
+
+    return count
   },
   aggregate (aggregate, collection) {
     return collection.aggregate(aggregate).toArray()
   },
   async deleteMany (filter, collection) {
-    const mongoRes = await collection.deleteMany(filter)
-    return mongoRes
+    await collection.deleteMany(filter)
+    const deleted = await prismaClient.transaction.deleteMany({where: mongoQueryToPrisma(filter)})
+
+    return deleted
   },
   async insertOne (data, collection) {
     await prismaClient.transaction.create({data: rawTxToEntity(data)})

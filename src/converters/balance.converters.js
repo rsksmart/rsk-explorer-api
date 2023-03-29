@@ -1,3 +1,5 @@
+import { removeNullFields } from '../repositories/utils'
+
 function rawBalanceToEntity ({
   address,
   _created,
@@ -19,12 +21,25 @@ function rawBalanceToEntity ({
   }
 }
 
-function entityToRawBalance (data) {
-  if (data) {
-    data._created = Number(data.created)
-    data.timestamp = Number(data.timestamp)
-    delete data.created
+function entityToRawBalance ({
+  id: _id,
+  address,
+  balance,
+  blockHash,
+  blockNumber,
+  timestamp,
+  created: _created
+}) {
+  const balanceToReturn = {
+    _id,
+    address,
+    balance,
+    blockHash,
+    blockNumber,
+    timestamp: Number(timestamp),
+    _created: Number(_created)
   }
-  return data
+
+  return removeNullFields(balanceToReturn)
 }
 export { rawBalanceToEntity, entityToRawBalance }
