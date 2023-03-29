@@ -10,6 +10,7 @@ import { tokenRepository } from '../../repositories/token.repository'
 import { txPendingRepository } from '../../repositories/txPending.repository'
 import { addressRepository } from '../../repositories/address.repository'
 import { balancesRepository } from '../../repositories/balances.repository'
+import { blockTraceRepository } from '../../repositories/blockTrace.repository'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -75,6 +76,9 @@ export class Block extends BcThing {
       // insert internal transactions
       await Promise.all([...internalTransactions.map(itx => internalTxRepository.insertOne(itx, collections.InternalTransactions))])
         .then(res => { result.internalTxs = res })
+
+      // insert blockTrace
+      await blockTraceRepository.insertOne(internalTransactions, collections.BlocksTraces)
 
       // insert events
       result.events = await this.insertEvents(events)
