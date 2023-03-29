@@ -9,7 +9,7 @@ export const balancesRepository = {
       select: createPrismaSelect(project),
       orderBy: createPrismaOrderBy(project)
     })
-    
+
     return balance ? entityToRawBalance(balance) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
@@ -20,7 +20,7 @@ export const balancesRepository = {
       take: limit
     })
 
-    return balances ? balances.map(entityToRawBalance) : null
+    return balances.map(entityToRawBalance)
   },
   async countDocuments (query = {}, collection) {
     const count = await prismaClient.balance.count({where: mongoQueryToPrisma(query)})

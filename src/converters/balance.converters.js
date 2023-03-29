@@ -1,4 +1,4 @@
-import { removeNullFields } from "../repositories/utils"
+import { removeNullFields } from '../repositories/utils'
 
 function rawBalanceToEntity ({
   address,

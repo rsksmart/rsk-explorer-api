@@ -102,15 +102,19 @@ export class Balances extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
       */
       getStatus: async params => {
-        const projection = { blockHash: 1, blockNumber: 1}
+        const projection = { blockHash: 1, blockNumber: 1 }
         const fromBlock = await this.getOne({}, projection, { blockNumber: 1 })
-        delete fromBlock.data.timestamp
-        delete fromBlock.data._created
+        if (fromBlock.data) {
+          delete fromBlock.data.timestamp
+          delete fromBlock.data._created
+        }
 
         const toBlock = await this.getOne({}, projection, { blockNumber: -1 })
-        delete toBlock.data.timestamp
-        delete toBlock.data._created
-        
+        if (toBlock.data) {
+          delete toBlock.data.timestamp
+          delete toBlock.data._created
+        }
+
         return { data: { fromBlock: fromBlock.data, toBlock: toBlock.data } }
       }
     }
