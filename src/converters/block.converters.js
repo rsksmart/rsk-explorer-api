@@ -1,42 +1,113 @@
-function rawBlockToEntity (data) {
+function rawBlockToEntity ({
+  number,
+  hash,
+  miner,
+  parentHash,
+  sha3Uncles,
+  logsBloom,
+  transactionsRoot,
+  stateRoot,
+  receiptsRoot,
+  difficulty,
+  totalDifficulty,
+  extraData,
+  size,
+  gasLimit,
+  gasUsed,
+  timestamp,
+  minimumGasPrice,
+  bitcoinMergedMiningHeader,
+  bitcoinMergedMiningCoinbaseTransaction,
+  bitcoinMergedMiningMerkleProof,
+  hashForMergedMining,
+  paidFees,
+  cumulativeDifficulty,
+  received
+}) {
   return {
-    number: data.number,
-    hash: data.hash,
-    miner: data.miner,
-    parentHash: data.parentHash,
-    sha3Uncles: data.sha3Uncles,
-    logsBloom: data.logsBloom,
-    transactionsRoot: data.transactionsRoot,
-    stateRoot: data.stateRoot,
-    receiptsRoot: data.receiptsRoot,
-    difficulty: data.difficulty,
-    totalDifficulty: data.totalDifficulty,
-    extraData: data.extraData,
-    size: data.size,
-    gasLimit: data.gasLimit,
-    gasUsed: data.gasUsed,
-    timestamp: String(data.timestamp),
-    minimumGasPrice: data.minimumGasPrice,
-    bitcoinMergedMiningHeader: data.bitcoinMergedMiningHeader,
-    bitcoinMergedMiningCoinbaseTransaction: data.bitcoinMergedMiningCoinbaseTransaction,
-    bitcoinMergedMiningMerkleProof: data.bitcoinMergedMiningMerkleProof,
-    hashForMergedMining: data.hashForMergedMining,
-    paidFees: data.paidFees,
-    cumulativeDifficulty: data.cumulativeDifficulty,
-    received: String(data._received)
+    number,
+    hash,
+    miner,
+    parentHash,
+    sha3Uncles,
+    logsBloom,
+    transactionsRoot,
+    stateRoot,
+    receiptsRoot,
+    difficulty,
+    totalDifficulty,
+    extraData,
+    size,
+    gasLimit,
+    gasUsed,
+    timestamp: String(timestamp),
+    minimumGasPrice,
+    bitcoinMergedMiningHeader,
+    bitcoinMergedMiningCoinbaseTransaction,
+    bitcoinMergedMiningMerkleProof,
+    hashForMergedMining,
+    paidFees,
+    cumulativeDifficulty,
+    received: String(received)
   }
 }
 
-function blockEntityToRaw (blockEntity) {
-  blockEntity['_received'] = Number(blockEntity.received)
-  delete blockEntity['received']
-
-  blockEntity['timestamp'] = Number(blockEntity['timestamp'])
-
-  blockEntity.uncles = blockEntity.uncle.map(uncleObj => uncleObj.hash)
-  delete blockEntity['uncle']
-
-  return blockEntity
+function blockEntityToRaw ({
+  number,
+  hash,
+  miner,
+  parentHash,
+  sha3Uncles,
+  logsBloom,
+  transactionsRoot,
+  stateRoot,
+  receiptsRoot,
+  difficulty,
+  totalDifficulty,
+  extraData,
+  size,
+  gasLimit,
+  gasUsed,
+  timestamp,
+  minimumGasPrice,
+  bitcoinMergedMiningHeader,
+  bitcoinMergedMiningCoinbaseTransaction,
+  bitcoinMergedMiningMerkleProof,
+  hashForMergedMining,
+  paidFees,
+  cumulativeDifficulty,
+  received,
+  uncle,
+  transaction_transaction_block_numberToblock: transactions
+}) {
+  return {
+    number,
+    hash,
+    miner,
+    parentHash,
+    sha3Uncles,
+    logsBloom,
+    transactionsRoot,
+    stateRoot,
+    receiptsRoot,
+    difficulty,
+    totalDifficulty,
+    extraData,
+    size,
+    gasLimit,
+    gasUsed,
+    timestamp: Number(timestamp),
+    minimumGasPrice,
+    bitcoinMergedMiningHeader,
+    bitcoinMergedMiningCoinbaseTransaction,
+    bitcoinMergedMiningMerkleProof,
+    hashForMergedMining,
+    paidFees,
+    cumulativeDifficulty,
+    _received: Number(received),
+    uncles: uncle.map(({hash}) => hash),
+    transactions: transactions.map(({hash}) => hash)
+  }
 }
 
 export {rawBlockToEntity, blockEntityToRaw}

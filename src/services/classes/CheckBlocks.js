@@ -209,19 +209,20 @@ export class CheckBlocks extends BlocksBase {
 
 export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
-    let blocks = {}
-    let query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
-      .forEach(block => {
-        blocks[block.number] = block
-      })
-    let missing = []
-    let invalid = []
-    for (let number in blocks) {
+    const query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
+    const blocks = await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
+
+    for (const block of blocks) {
+      blocks[block.number] = block
+    }
+
+    const missing = []
+    const invalid = []
+    for (const number in blocks) {
       if (number > 0) {
-        let block = blocks[number]
-        let parentNumber = number - 1
-        let parent = blocks[parentNumber]
+        const block = blocks[number]
+        const parentNumber = number - 1
+        const parent = blocks[parentNumber]
         if (!parent) {
           missing.push(parentNumber)
         } else {
