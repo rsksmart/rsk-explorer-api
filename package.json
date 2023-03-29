@@ -26,7 +26,7 @@
   "license": "MIT",
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
-    "@prisma/client": "^4.8.1",
+    "@prisma/client": "^4.11.0",
     "@rsksmart/nod3": "^0.4.1",
     "@rsksmart/rsk-contract-parser": "git+https://git@github.com/rsksmart/rsk-contract-parser.git",
     "@rsksmart/rsk-js-cli": "^1.0.0",
@@ -38,7 +38,7 @@
     "google-protobuf": "^3.13.0",
     "grpc": "^1.24.3",
     "mongodb": "^3.6.1",
-    "prisma": "^4.8.1",
+    "prisma": "^4.11.0",
     "rlp": "^2.2.5",
     "rsk-openapi-ui": "^0.0.7",
     "socket.io": "^2.2.0"
