@@ -103,12 +103,14 @@ function rawLogToEntity ({
 function rawLogTopicToEntity ({
   logIndex,
   transactionHash,
-  topic
+  topic,
+  topicIndex
 }) {
   return {
     logIndex,
     transactionHash,
-    topic
+    topic,
+    topicIndex
   }
 }
 

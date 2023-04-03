@@ -91,10 +91,15 @@ export class CheckBlocks extends BlocksBase {
     return checkBlocksTransactions(this.Blocks, this.collections.Txs, lastBlock, firstBlock)
   }
 
+  // assumes "a" is an array of block numbers in desc order
   getMissing (a) {
+    // add blockNum 0
     if (a[a.length - 1] > 0) a.push(0)
+
+    // filter missing segments starting points
     return a.filter((v, i) => {
       return (a[i + 1] - v < -1)
+    // find each missing segment end and return all segments, eg: [ [10,6], [5,3] ]
     }).map(mv => [mv, a.find((v, i) => {
       return (v < mv && a[i - 1] - v > 1)
     })])
