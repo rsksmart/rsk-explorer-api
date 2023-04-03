@@ -25,7 +25,7 @@ const txRelatedTables = {
       log: {
         include: {
           abi_log_abiToabi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}},
-          log_topic: {select: {topic: true}},
+          log_topic: {select: {topic: true}, orderBy: { topicIndex: 'asc' }},
           log_arg: {select: {arg: true}},
           logged_address: {select: {address: true}}
         }
@@ -104,8 +104,13 @@ export const txRepository = {
 
       await prismaClient.log.create({data: rawLogToEntity(log)})
 
-      for (const topic of topics) {
-        await prismaClient.log_topic.create({data: rawLogTopicToEntity({topic, transactionHash, logIndex})})
+      for (const [topicIndex, topic] of topics.entries()) {
+        const newLogTopic = rawLogTopicToEntity({ topicIndex, topic, transactionHash, logIndex })
+        await prismaClient.log_topic.upsert({
+          where: { logIndex_topicIndex_topic_transactionHash: newLogTopic },
+          create: newLogTopic,
+          update: newLogTopic
+        })
       }
 
       if (args) {
