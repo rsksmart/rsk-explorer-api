@@ -20,7 +20,7 @@ export const blockRepository = {
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany({
       where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(project),
+      orderBy: createPrismaOrderBy(sort),
       include: blockRelatedTables,
       take: limit
     })
