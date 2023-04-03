@@ -6,7 +6,8 @@ export class GetTxBalance {
   }
 
   async getTxs (query) {
-    let data = await txRepository.find(query, { value: 1 }, this.txCollection)
+    // const projection = { value: 1 }
+    let data = await txRepository.find(query, {}, this.txCollection)
       .catch(err => Promise.reject(err))
     return data
   }
@@ -17,9 +18,9 @@ export class GetTxBalance {
 
   async getBalanceFromTx (address) {
     try {
-      const to = await this.getTxs({ to: address })
-      const fr = await this.getTxs({ from: address })
-      return (this.sumValues(to).minus(this.sumValues(fr)))
+      const { value: to } = await this.getTxs({ to: address })
+      const { value: from } = await this.getTxs({ from: address })
+      return (this.sumValues(to).minus(this.sumValues(from)))
     } catch (err) {
       return Promise.reject(err)
     }
