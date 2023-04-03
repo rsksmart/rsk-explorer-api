@@ -421,11 +421,12 @@ model log_arg {
 
 model log_topic {
   logIndex        Int    @map("log_index")
+  topicIndex      Int    @map("topic_index")
   topic           String @db.VarChar
   transactionHash String @map("transaction_hash") @db.VarChar
   log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_topic_log_index_transaction_hash")
 
-  @@id([logIndex, topic, transactionHash], map: "pk_log_topic")
+  @@id([logIndex, topicIndex, topic, transactionHash], map: "pk_log_topic")
 }
 
 model logged_address {
