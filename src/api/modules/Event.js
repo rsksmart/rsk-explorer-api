@@ -93,7 +93,7 @@ export class Event extends DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params
         if (address) {
-          let query = { _addresses: address }
+          let query = { address_in_event: {some: {address}} }
 
           // search by events signatures
           if (Array.isArray(signatures)) {
@@ -156,7 +156,7 @@ export class Event extends DataCollectorItem {
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {
-          return this.getPageData({ $or: [{ address }, { _addresses: address }] }, params)
+          return this.getPageData({ $or: [{ address }, { address_in_event: {some: {address}} }] }, params)
         }
       }
     }
