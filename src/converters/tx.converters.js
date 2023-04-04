@@ -1,3 +1,4 @@
+import { abiEntityToRaw } from './abi.converters'
 import { removeNullFields } from '../repositories/utils'
 
 function rawTxToEntity ({
@@ -136,22 +137,6 @@ function rawLoggedAddressToEntity ({
     transactionHash,
     address
   }
-}
-
-function abiEntityToRaw ({
-  anonymous,
-  name,
-  type,
-  abi_input: inputs
-}) {
-  const abiToReturn = {
-    anonymous,
-    name,
-    type,
-    inputs: inputs.map(({input}) => input)
-  }
-
-  return removeNullFields(abiToReturn)
 }
 
 function logEntityToRaw ({

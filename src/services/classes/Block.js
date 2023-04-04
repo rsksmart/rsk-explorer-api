@@ -288,7 +288,7 @@ export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections)
     result.events = await eventRepository.deleteMany(query, collections.Events)
 
     // remove events by txs
-    result.eventsByTxs = await eventRepository.deleteMany({ txHash: { $in: txsHashes } }, collections.Events)
+    result.eventsByTxs = await eventRepository.deleteMany({ transactionHash: { $in: txsHashes } }, collections.Events)
 
     // remove contracts by blockHash
     result.addresses = await addressRepository.deleteMany({ 'createdByTx.blockHash': blockHash }, collections.Addrs)

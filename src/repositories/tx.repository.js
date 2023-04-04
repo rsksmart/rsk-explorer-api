@@ -34,8 +34,35 @@ const txRelatedTables = {
   }
 }
 
+async function saveAbiAndGetId (abi) {
+  const {inputs} = abi
+  const abiToSave = rawAbiToEntity(abi)
+  let existingAbi = await prismaClient.abi.findFirst({where: abiToSave})
+
+  if (!existingAbi) {
+    existingAbi = await prismaClient.abi.create({data: abiToSave})
+  }
+
+  if (inputs) {
+    for (const input of inputs) {
+      let existingInput = await prismaClient.input.findFirst({where: {name: input.name, type: input.type}})
+      if (!existingInput) {
+        existingInput = await prismaClient.input.create({data: rawInputToEntity(input)})
+      }
+      existingInput.abiId = existingAbi.id
+      const abiInputToSave = rawAbiInputToEntity(existingInput)
+      let existingAbiInput = await prismaClient.abi_input.findFirst({where: {name: abiInputToSave.name, abiId: abiInputToSave.abiId}})
+      if (!existingAbiInput) {
+        await prismaClient.abi_input.create({data: abiInputToSave})
+      }
+    }
+  }
+
+  return existingAbi.id
+}
+
 export const txRepository = {
-  async  findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}, collection) {
     const txToReturn = await prismaClient.transaction.findFirst({
       where: mongoQueryToPrisma(query),
       orderBy: createPrismaOrderBy(project),
@@ -76,30 +103,8 @@ export const txRepository = {
 
     for (const log of logs) {
       const {abi, topics, args, transactionHash, logIndex, _addresses} = log
-      let existingAbi
       if (abi) {
-        const {inputs} = abi
-        const abiToSave = rawAbiToEntity(abi)
-        existingAbi = await prismaClient.abi.findFirst({where: abiToSave})
-        if (!existingAbi) {
-          existingAbi = await prismaClient.abi.create({data: abiToSave})
-        }
-
-        if (inputs) {
-          for (const input of inputs) {
-            let existingInput = await prismaClient.input.findFirst({where: {name: input.name, type: input.type}})
-            if (!existingInput) {
-              existingInput = await prismaClient.input.create({data: rawInputToEntity(input)})
-            }
-            existingInput.abiId = existingAbi.id
-            const abiInputToSave = rawAbiInputToEntity(existingInput)
-            let existingAbiInput = await prismaClient.abi_input.findFirst({where: {name: abiInputToSave.name, abiId: abiInputToSave.abiId}})
-            if (!existingAbiInput) {
-              await prismaClient.abi_input.create({data: abiInputToSave})
-            }
-          }
-        }
-        log.abiId = existingAbi.id
+        log.abiId = await saveAbiAndGetId(abi)
       }
 
       await prismaClient.log.create({data: rawLogToEntity(log)})
@@ -128,3 +133,5 @@ export const txRepository = {
     return mongoRes
   }
 }
+
+export default saveAbiAndGetId
