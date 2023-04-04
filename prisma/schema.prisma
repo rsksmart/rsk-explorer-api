@@ -69,12 +69,12 @@ model address {
 }
 
 model address_in_event {
-  id                                        Int
+  event_id                                  String  @db.VarChar
   address                                   String  @db.VarChar(42)
   address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_address")
-  event                                     event   @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
+  event                                     event   @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
 
-  @@id([id, address], map: "pk_address_in_event")
+  @@id([event_id, address], map: "pk_address_in_event")
 }
 
 model balance {
@@ -277,17 +277,16 @@ model decoded_metadata {
 }
 
 model event {
-  id                              Int                @id @default(autoincrement())
-  eventId                         String?            @map("event_id") @db.VarChar
+  eventId                         String             @id @map("event_id") @db.VarChar
   abiId                           Int                @map("abi_id")
   transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
   address                         String             @db.VarChar(42)
   blockHash                       String             @map("block_hash") @db.VarChar(66)
   blockNumber                     Int                @map("block_number")
   data                            String             @db.VarChar
-  event                           String             @db.VarChar
+  event                           String?            @db.VarChar
   logIndex                        Int                @map("log_index")
-  signature                       String             @db.VarChar
+  signature                       String?            @db.VarChar
   timestamp                       String             @db.VarChar
   transactionIndex                Int                @map("transaction_index")
   txStatus                        String             @map("tx_status") @db.VarChar
@@ -302,19 +301,19 @@ model event {
 }
 
 model event_arg {
-  id    Int
-  arg   String @db.VarChar
-  event event  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
+  event_id String @db.VarChar
+  arg      String @db.VarChar
+  event    event  @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
 
-  @@id([id, arg], map: "pk_event_arg")
+  @@id([event_id, arg], map: "pk_event_arg")
 }
 
 model event_topic {
-  id    Int
-  topic String @db.VarChar
-  event event  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
+  event_id String @db.VarChar
+  topic    String @db.VarChar
+  event    event  @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
 
-  @@id([id, topic], map: "pk_event_topic")
+  @@id([event_id, topic], map: "pk_event_topic")
 }
 
 model import_ {
