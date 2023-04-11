@@ -3,6 +3,7 @@ import { getBlockFromDb, deleteBlockDataFromDb } from './Block'
 import { getBlock } from './RequestBlocks'
 import { chunkArray } from '../../lib/utils'
 import { blockRepository } from '../../repositories/block.repository'
+import { txRepository } from '../../repositories/tx.repository'
 
 export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
@@ -215,7 +216,7 @@ export class CheckBlocks extends BlocksBase {
 export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     const query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    const blocks = await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
+    const blocks = await blockRepository.find(query, { id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
 
     for (const block of blocks) {
       blocks[block.number] = block
@@ -250,16 +251,16 @@ export const checkBlocksTransactions = async (blocksCollection, txsCollection, l
     let query = (lastBlock || firstBlock) ? { number: {} } : {}
     if (lastBlock) query.number.$lte = lastBlock
     if (firstBlock) query.number.$gte = firstBlock
-    let cursor = blockRepository.find(query, {}, blocksCollection, {}, 0, false)
-    while (await cursor.hasNext()) {
-      let block = await cursor.next()
+    const blocks = await blockRepository.find(query, {}, blocksCollection, {}, 0, false)
+
+    for (const block of blocks) {
       await Promise.all(block.transactions
-        .map(hash => txsCollection
-          .find({ hash }, { hash: 1 }).count()
-          .then(txs => {
-            if (txs < 1) missing[block.number] = block
+        .map(hash => txRepository.countDocuments({ hash })
+          .then(count => {
+            if (count < 1) missing[block.number] = block
           })))
     }
+
     return Object.values(missing)
   } catch (err) {
     return Promise.reject(err)
