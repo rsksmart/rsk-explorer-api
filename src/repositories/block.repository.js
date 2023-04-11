@@ -17,13 +17,20 @@ export const blockRepository = {
 
     return blockToReturn ? blockEntityToRaw(blockToReturn) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const blocks = await prismaClient.block.findMany({
+  async find (query = {}, select = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const options = {
       where: mongoQueryToPrisma(query),
       orderBy: createPrismaOrderBy(sort),
-      include: blockRelatedTables,
       take: limit
-    })
+    }
+
+    if (Object.keys(select).length) {
+      options.select = select
+    } else {
+      options.include = blockRelatedTables
+    }
+
+    const blocks = await prismaClient.block.findMany(options)
 
     return blocks.map(blockEntityToRaw)
   },
