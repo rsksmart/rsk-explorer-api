@@ -190,7 +190,7 @@ export class Token extends DataCollectorItem {
         if (!totalSupply) return
 
         query.contract = contract
-        let accounts = await this.find(query, null, null, { _id: 0, address: 1, balance: 1 })
+        let accounts = await this.find(query, null, null, { id: 0, address: 1, balance: 1 })
         if (accounts) accounts = accounts.data
         if (!accounts) return
 
