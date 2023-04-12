@@ -140,7 +140,6 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
 
     const blocks = await blockRepository.find(query, projection, blocksCollection, sort, 0, false)
 
-    console.dir({blocardos: blocks}, {depth: null})
     let currentBlock = highestBlock
     const current = () => currentBlock
 

@@ -1,6 +1,6 @@
 import {prismaClient} from '../lib/Setup'
 import {rawBlockToEntity, blockEntityToRaw} from '../converters/block.converters'
-import {createPrismaOrderBy, mongoQueryToPrisma} from './utils'
+import {createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma} from './utils'
 
 const blockRelatedTables = {
   uncle: {select: {hash: true}},
@@ -25,7 +25,7 @@ export const blockRepository = {
     }
 
     if (Object.keys(select).length) {
-      options.select = select
+      options.select = createPrismaSelect(select)
     } else {
       options.include = blockRelatedTables
     }
