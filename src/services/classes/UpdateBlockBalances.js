@@ -135,7 +135,11 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
 
     // find blocks with missing balances
     const query = {
-      number: { $lt: highestBlock, $gt: lowestBlock - 1 }
+      AND: [
+        { number: { lt: highestBlock } },
+        { number: { gt: lowestBlock - 1 } },
+        { balance_balance_block_numberToblock: { none: {} } }
+      ]
     }
 
     const blocks = await blockRepository.find(query, projection, blocksCollection, sort, 0, false)

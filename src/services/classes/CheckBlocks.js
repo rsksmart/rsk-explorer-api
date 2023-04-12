@@ -70,22 +70,21 @@ export class CheckBlocks extends BlocksBase {
     let query = (fromBlock || toBlock) ? { number: {} } : {}
     if (fromBlock > 0) query.number.$gte = fromBlock
     if (toBlock && toBlock > fromBlock) query.number.$lte = toBlock
-    return this.Blocks.find(query)
-      .sort({ number: -1 })
-      .project({ _id: 0, number: 1 })
-      .map(block => block.number)
-      .toArray()
-      .then(blocks => {
-        if (blocks.length === 1) {
-          blocks.push(-1)
-          return Promise.resolve([blocks])
-        }
+
+    try {
+      let blocks = await blockRepository.find(query, { number: 1 }, { }, { number: -1 })
+      blocks = blocks.map(block => block.number)
+
+      if (blocks.length === 1) {
+        blocks.push(-1)
+        return [blocks]
+      } else {
         return this.getMissing(blocks)
-      })
-      .catch(err => {
-        this.log.error(`Error getting missing blocks segments ${err}`)
-        process.exit(9)
-      })
+      }
+    } catch (err) {
+      this.log.error(`Error getting missing blocks segments ${err}`)
+      process.exit(9)
+    }
   }
 
   getMissingTransactions (lastBlock, firstBlock) {
