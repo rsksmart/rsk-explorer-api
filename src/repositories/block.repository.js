@@ -16,7 +16,6 @@ export const blockRepository = {
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
 
-
     return Object.keys(project).length ? blocks : blocks.map(blockEntityToRaw)
   },
   async countDocuments (query = {}, collection) {
