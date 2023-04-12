@@ -1,15 +1,15 @@
 import { prismaClient } from '../lib/Setup'
 import {rawTxPendingToEntity, rawTxInPoolToEntity} from '../converters/txPending.converters'
-import { mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 
 export const txPendingRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const txPending = await prismaClient.transaction_pending.findFirst({where: mongoQueryToPrisma(query)})
+    const txPending = await prismaClient.transaction_pending.findFirst(generateFindQuery(query, project, {}, project))
 
     return txPending
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const txsPending = await prismaClient.transaction_pending.findMany({where: mongoQueryToPrisma(query)})
+    const txsPending = await prismaClient.transaction_pending.findMany(generateFindQuery(query, project, {}, sort, limit))
 
     return txsPending
   },

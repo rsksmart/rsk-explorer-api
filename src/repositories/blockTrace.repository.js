@@ -1,9 +1,6 @@
 import {prismaClient} from '../lib/Setup'
 
 export const blockTraceRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
-  },
   async insertOne (internalTransactions, collection) {
     const upsertQueries = internalTransactions.map(({blockHash, internalTxId}) => {
       const tracedItxToSave = { blockHash, internalTxId }

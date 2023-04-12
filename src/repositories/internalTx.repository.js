@@ -5,10 +5,7 @@ import {
   rawInternalTransactionToEntity
 } from '../converters/internalTx.converters'
 import {prismaClient} from '../lib/Setup'
-import {
-  createPrismaOrderBy,
-  mongoQueryToPrisma
-} from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 const internalTxRelatedTables = {
   action: true,
@@ -25,20 +22,12 @@ const internalTxRelatedTables = {
 
 export const internalTxRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const internalTx = await prismaClient.internal_transaction.findFirst({
-      where: query,
-      include: internalTxRelatedTables
-    })
+    const internalTx = await prismaClient.internal_transaction.findFirst(generateFindQuery(query, project, internalTxRelatedTables, project))
 
     return internalTx ? internalTxEntityToRaw(internalTx) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const internalTxs = await prismaClient.internal_transaction.findMany({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(sort),
-      include: internalTxRelatedTables,
-      take: limit
-    })
+    const internalTxs = await prismaClient.internal_transaction.findMany(generateFindQuery(query, project, internalTxRelatedTables, sort, limit))
 
     return internalTxs.map(itx => internalTxEntityToRaw(itx))
   },

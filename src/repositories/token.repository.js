@@ -1,24 +1,15 @@
 import { rawTokenToEntity, tokenEntityToRaw } from '../converters/token.converters'
 import { prismaClient } from '../lib/Setup'
-import { createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma } from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const tokenRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const token = await prismaClient.token_address.findFirst({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(project),
-      select: createPrismaSelect(project)
-    })
+    const token = await prismaClient.token_address.findFirst(generateFindQuery(query, project, {}, project))
 
     return token ? tokenEntityToRaw(token) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const tokens = await prismaClient.token_address.findMany({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(sort),
-      select: createPrismaSelect(project),
-      take: limit
-    })
+    const tokens = await prismaClient.token_address.findMany(generateFindQuery(query, project, {}, sort, limit))
 
     return tokens.map(tokenEntityToRaw)
   },

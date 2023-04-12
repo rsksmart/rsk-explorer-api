@@ -1,24 +1,15 @@
 import { prismaClient } from '../lib/Setup'
 import { rawBalanceToEntity, entityToRawBalance } from '../converters/balance.converters'
-import { createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma } from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const balancesRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const balance = await prismaClient.balance.findFirst({
-      where: mongoQueryToPrisma(query),
-      select: createPrismaSelect(project),
-      orderBy: createPrismaOrderBy(project)
-    })
+    const balance = await prismaClient.balance.findFirst(generateFindQuery(query, project, {}, project))
 
     return balance ? entityToRawBalance(balance) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const balances = await prismaClient.balance.findMany({
-      where: mongoQueryToPrisma(query),
-      select: createPrismaSelect(project),
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const balances = await prismaClient.balance.findMany(generateFindQuery(query, project, {}, sort, limit))
 
     return balances.map(entityToRawBalance)
   },

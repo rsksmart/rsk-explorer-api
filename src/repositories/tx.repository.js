@@ -14,9 +14,8 @@ import {
   rawAbiInputToEntity
 } from '../converters/abi.converters'
 import {
-  createPrismaOrderBy,
-  mongoQueryToPrisma,
-  createPrismaSelect
+  generateFindQuery,
+  mongoQueryToPrisma
 } from './utils'
 
 const txRelatedTables = {
@@ -63,21 +62,12 @@ async function saveAbiAndGetId (abi) {
 
 export const txRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const txToReturn = await prismaClient.transaction.findFirst({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(project),
-      include: txRelatedTables
-    })
+    const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
 
     return txToReturn ? transactionEntityToRaw(txToReturn) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const txs = await prismaClient.transaction.findMany({
-      where: mongoQueryToPrisma(query),
-      select: createPrismaSelect(project),
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
 
     return txs.map(transactionEntityToRaw)
   },

@@ -4,10 +4,7 @@ import {
   rawContractToEntity,
   addressEntityToRaw
 } from '../converters/address.converters'
-import {
-  mongoQueryToPrisma,
-  createPrismaOrderBy
-} from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 const addressRelatedTables = {
   block_address_last_block_minedToblock: true,
@@ -21,20 +18,12 @@ const addressRelatedTables = {
 
 export const addressRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const address = await prismaClient.address.findFirst({
-      where: mongoQueryToPrisma(query),
-      include: addressRelatedTables
-    })
+    const address = await prismaClient.address.findFirst(generateFindQuery(query, project, addressRelatedTables, project))
 
     return address ? addressEntityToRaw(address) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const addresses = await prismaClient.address.findMany({
-      where: mongoQueryToPrisma(query),
-      include: addressRelatedTables,
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables, sort, limit))
 
     return addresses.map(addressEntityToRaw)
   },

@@ -1,6 +1,6 @@
 import {prismaClient} from '../lib/Setup'
 import {rawBlockToEntity, blockEntityToRaw} from '../converters/block.converters'
-import {createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma} from './utils'
+import {generateFindQuery, mongoQueryToPrisma} from './utils'
 
 const blockRelatedTables = {
   uncle: {select: {hash: true}},
@@ -9,30 +9,15 @@ const blockRelatedTables = {
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const blockToReturn = await prismaClient.block.findFirst({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(project),
-      include: blockRelatedTables
-    })
+    const blockToReturn = await prismaClient.block.findFirst(generateFindQuery(query, project, blockRelatedTables, project))
 
     return blockToReturn ? blockEntityToRaw(blockToReturn) : null
   },
-  async find (query = {}, select = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const options = {
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    }
+  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+    const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
 
-    if (Object.keys(select).length) {
-      options.select = createPrismaSelect(select)
-    } else {
-      options.include = blockRelatedTables
-    }
 
-    const blocks = await prismaClient.block.findMany(options)
-
-    return blocks.map(blockEntityToRaw)
+    return Object.keys(project).length ? blocks : blocks.map(blockEntityToRaw)
   },
   async countDocuments (query = {}, collection) {
     const count = await prismaClient.block.count({where: mongoQueryToPrisma(query)})

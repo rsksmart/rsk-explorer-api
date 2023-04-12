@@ -1,5 +1,5 @@
 import { prismaClient } from '../lib/Setup'
-import { createPrismaOrderBy, mongoQueryToPrisma } from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 import saveAbiAndGetId from './tx.repository'
 import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters'
 
@@ -12,20 +12,12 @@ const eventRelatedTables = {
 
 export const eventRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const event = await prismaClient.event.findFirst({
-      where: mongoQueryToPrisma(query),
-      include: eventRelatedTables
-    })
+    const event = await prismaClient.event.findFirst(generateFindQuery(query, project, eventRelatedTables, project))
 
     return event ? eventEntityToRaw(event) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const events = await prismaClient.event.findMany({
-      where: mongoQueryToPrisma(query),
-      include: eventRelatedTables,
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const events = await prismaClient.event.findMany(generateFindQuery(query, project, eventRelatedTables, sort, limit))
 
     return events.map(eventEntityToRaw)
   },
