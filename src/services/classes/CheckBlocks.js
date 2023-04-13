@@ -215,14 +215,16 @@ export class CheckBlocks extends BlocksBase {
 export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     const query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    const blocks = await blockRepository.find(query, { id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
+    const blocksInDb = await blockRepository.find(query, { id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
 
-    for (const block of blocks) {
-      blocks[block.number] = block
-    }
+    const blocks = blocksInDb.reduce((blocksMapping, block) => {
+      blocksMapping[block.number] = block
+      return blocksMapping
+    }, {})
 
     const missing = []
     const invalid = []
+
     for (const number in blocks) {
       if (number > 0) {
         const block = blocks[number]
