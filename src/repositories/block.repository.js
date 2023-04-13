@@ -9,9 +9,14 @@ const blockRelatedTables = {
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const blockToReturn = await prismaClient.block.findFirst(generateFindQuery(query, project, blockRelatedTables, project))
+    query = generateFindQuery(query, project, blockRelatedTables, project)
+    const block = await prismaClient.block.findFirst(query)
 
-    return blockToReturn ? blockEntityToRaw(blockToReturn) : null
+    if (block) {
+      return Object.keys(project).length ? block : blockEntityToRaw(block)
+    } else {
+      return null
+    }
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
@@ -24,19 +29,16 @@ export const blockRepository = {
     return count
   },
   async insertOne (data, collection) {
-    await prismaClient.block.create({data: rawBlockToEntity(data)})
+    const block = await prismaClient.block.create({data: rawBlockToEntity(data)})
     for (const uncle of data.uncles) {
       await prismaClient.uncle.create({data: {hash: uncle, blockNumber: data.number}})
     }
 
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
-  },
-  updateOne (filter, update, options = {}, collection) {
-    return collection.updateOne(filter, update, options)
+    return block
   },
   async deleteMany (filter, collection) {
-    const mongoRes = await collection.deleteMany(filter)
-    return mongoRes
+    const deleted = await prismaClient.block.deleteMany({where: mongoQueryToPrisma(filter)})
+
+    return deleted
   }
 }
