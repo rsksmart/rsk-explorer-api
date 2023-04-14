@@ -76,17 +76,13 @@ export const txRepository = {
 
     return count
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
   async deleteMany (filter, collection) {
-    await collection.deleteMany(filter)
     const deleted = await prismaClient.transaction.deleteMany({where: mongoQueryToPrisma(filter)})
 
     return deleted
   },
   async insertOne (data, collection) {
-    await prismaClient.transaction.create({data: rawTxToEntity(data)})
+    const tx = await prismaClient.transaction.create({data: rawTxToEntity(data)})
     await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
     const {logs} = data.receipt
@@ -119,8 +115,7 @@ export const txRepository = {
       }
     }
 
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
+    return tx
   }
 }
 
