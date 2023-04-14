@@ -20,7 +20,6 @@ export const balancesRepository = {
   },
   async deleteMany (filter, collection) {
     const deleted = await prismaClient.balance.deleteMany({where: mongoQueryToPrisma(filter)})
-    await collection.deleteMany(filter)
 
     return deleted
   },
@@ -28,7 +27,6 @@ export const balancesRepository = {
     const balancesToSave = data.map(balance => rawBalanceToEntity(balance))
     const savedBalance = await prismaClient.balance.createMany({data: balancesToSave})
 
-    await collection.insertMany(data)
     return savedBalance
   }
 }
