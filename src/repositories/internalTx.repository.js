@@ -62,11 +62,6 @@ export const internalTxRepository = {
       return itx
     }))
 
-    // mongo
-    filter.transactionHash.$in = filter.transactionHash.in
-    delete filter.transactionHash.in
-    await collection.deleteMany(filter)
-
     return deletedItxsData
   },
   async insertOne (data, collection) {
@@ -92,11 +87,9 @@ export const internalTxRepository = {
     })
 
     await prismaClient.trace_address.createMany({data: traceAddressToSave})
-
     const { internalTxId } = internalTxToSave
     const savedInternalTx = await this.findOne({ internalTxId }, {}, collection)
 
-    await collection.insertOne(data)
     return savedInternalTx
   }
 }
