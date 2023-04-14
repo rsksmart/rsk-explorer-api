@@ -40,7 +40,6 @@ export const txPoolRepository = {
   async insertOne (data, collection) {
     const txpool = await prismaClient.txpool.create({data: rawTxPoolToEntity(data)})
 
-    const mongoRes = await collection.insertOne(data)
-    return {...mongoRes, id: txpool.id}
+    return txpool
   }
 }
