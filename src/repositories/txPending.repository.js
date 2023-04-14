@@ -14,22 +14,19 @@ export const txPendingRepository = {
     return txsPending
   },
   async deleteOne (query, collection) {
-    await prismaClient.transaction_pending.deleteMany({where: query})
+    const deleted = await prismaClient.transaction_pending.deleteMany({where: query})
 
-    const mongoRes = await collection.deleteOne(query)
-    return mongoRes
+    return deleted
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data, poolId} = update
     const newTxPending = rawTxPendingToEntity(data)
 
-    await prismaClient.$transaction([
+    const txPending = await prismaClient.$transaction([
       prismaClient.transaction_pending.upsert({where: filter, update: newTxPending, create: newTxPending}),
       prismaClient.transaction_in_pool.create({data: rawTxInPoolToEntity({...data, poolId})})
     ])
 
-    delete update.poolId
-    const mongoRes = await collection.updateOne(filter, update, options)
-    return mongoRes
+    return txPending
   }
 }
