@@ -7,8 +7,7 @@ export const balancesLogRepository = {
     return balancesLog ? entityToRawBalancesLog(balancesLog) : null
   },
   async insertOne (data, collection) {
-    await prismaClient.balances_log.create({data: rawBalancesLogToEntity(data)})
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
+    const balanceLog = await prismaClient.balances_log.create({data: rawBalancesLogToEntity(data)})
+    return balanceLog
   }
 }
