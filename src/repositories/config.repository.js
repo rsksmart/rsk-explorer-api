@@ -88,8 +88,6 @@ export const configRepository = {
       })
     }
 
-    await collection.insertOne(data)
-
     return newConfig
   },
   async updateOne (filter, newData, options = {}, collection) {
@@ -100,8 +98,6 @@ export const configRepository = {
       where: { id: docId },
       data: newConfig
     })
-
-    await collection.updateOne(filter, newData, options)
 
     return newConfig
   }
