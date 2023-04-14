@@ -50,7 +50,5 @@ export const statsRepository = {
     newStats.bridgeId = newBridge.id
 
     await prismaClient.stats.create({ data: newStats })
-
-    await collection.insertOne(data)
   }
 }
