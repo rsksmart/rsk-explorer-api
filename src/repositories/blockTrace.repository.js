@@ -9,11 +9,5 @@ export const blockTraceRepository = {
     })
 
     await prismaClient.$transaction(upsertQueries)
-
-    if (internalTransactions.length) {
-      const {blockHash: hash} = internalTransactions[0]
-
-      await collection.insertOne({ hash, data: internalTransactions })
-    }
   }
 }
