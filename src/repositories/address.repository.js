@@ -32,9 +32,6 @@ export const addressRepository = {
 
     return count
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
     const addressToSave = rawAddressToEntity(data)
@@ -85,8 +82,6 @@ export const addressRepository = {
         }
       }
     }
-
-    await collection.updateOne(filter, update, options)
 
     return savedAddress
   },
