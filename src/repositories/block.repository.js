@@ -1,11 +1,7 @@
 import {prismaClient} from '../lib/Setup'
 import {rawBlockToEntity, blockEntityToRaw} from '../converters/block.converters'
 import {generateFindQuery, mongoQueryToPrisma} from './utils'
-
-const blockRelatedTables = {
-  uncle: {select: {hash: true}},
-  transaction_transaction_block_numberToblock: {select: {hash: true}}
-}
+import { blockRelatedTables } from './includeRelatedTables'
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {

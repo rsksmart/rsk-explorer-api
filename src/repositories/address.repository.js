@@ -5,16 +5,7 @@ import {
   addressEntityToRaw
 } from '../converters/address.converters'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
-
-const addressRelatedTables = {
-  block_address_last_block_minedToblock: true,
-  contract_contract_addressToaddress: {
-    include: {
-      contract_method: {include: {method: {select: {method: true}}}},
-      contract_interface: {include: {interface_: {select: {interface: true}}}}
-    }
-  }
-}
+import { addressRelatedTables } from './includeRelatedTables'
 
 export const addressRepository = {
   async findOne (query = {}, project = {}, collection) {

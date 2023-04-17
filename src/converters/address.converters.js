@@ -1,4 +1,5 @@
 import { removeNullFields } from '../repositories/utils'
+import { blockEntityToRaw } from './block.converters'
 
 function rawAddressToEntity ({
   address,
@@ -65,7 +66,7 @@ function addressEntityToRaw ({
 
   if (lastBlockMined) {
     delete lastBlockMined.id
-    addressToReturn.lastBlockMined = lastBlockMined
+    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined)
   }
 
   if (contract) {

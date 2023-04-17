@@ -5,20 +5,8 @@ import {
   rawInternalTransactionToEntity
 } from '../converters/internalTx.converters'
 import {prismaClient} from '../lib/Setup'
+import { internalTxRelatedTables } from './includeRelatedTables'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
-
-const internalTxRelatedTables = {
-  action: true,
-  internal_transaction_result: true,
-  trace_address: {
-    select: {
-      trace: true
-    },
-    orderBy: {
-      index: 'asc'
-    }
-  }
-}
 
 export const internalTxRepository = {
   async findOne (query = {}, project = {}, collection) {

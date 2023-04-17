@@ -70,31 +70,28 @@ function rawInternalTransactionToEntity ({
   }
 }
 
-function internalTxEntityToRaw (data) {
-  // rename or format attributes
-  data.timestamp = Number(data.timestamp)
+function internalTxEntityToRaw ({
+  timestamp,
+  trace_address: traceAddress,
+  index,
+  internal_transaction_result: result,
+  action
+}) {
 
-  data.traceAddress = data.trace_address.map(elem => elem.trace)
-  delete data.trace_address
+  if (result) {
+    delete result.id
+  }
+  if (action) {
+    delete action.id
+  }
 
-  data._index = data.index
-  delete data.index
-
-  data.result = data.internal_transaction_result
-  delete data.internal_transaction_result
-
-  // delete ids
-  delete data.resultId
-  delete data.actionId
-
-  // delete related tables ids
-  delete data.action.id
-  if (data.result) delete data.result.id
-
-  // remove null fields
-  removeNullFields(data)
-
-  return data
+  return removeNullFields({
+    timestamp,
+    traceAddress,
+    _index: index,
+    result,
+    action
+  })
 }
 
 export {

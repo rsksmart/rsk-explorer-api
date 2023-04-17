@@ -17,21 +17,7 @@ import {
   generateFindQuery,
   mongoQueryToPrisma
 } from './utils'
-
-const txRelatedTables = {
-  receipt: {
-    include: {
-      log: {
-        include: {
-          abi_log_abiToabi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}},
-          log_topic: {select: {topic: true}, orderBy: { topicIndex: 'asc' }},
-          log_arg: {select: {arg: true}},
-          logged_address: {select: {address: true}}
-        }
-      }
-    }
-  }
-}
+import { txRelatedTables } from './includeRelatedTables'
 
 async function saveAbiAndGetId (abi) {
   const {inputs} = abi

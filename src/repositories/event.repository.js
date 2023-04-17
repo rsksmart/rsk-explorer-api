@@ -2,13 +2,7 @@ import { prismaClient } from '../lib/Setup'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 import saveAbiAndGetId from './tx.repository'
 import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters'
-
-const eventRelatedTables = {
-  event_arg: {select: {arg: true}},
-  event_topic: {select: {topic: true}},
-  address_in_event: {select: {address: true}},
-  abi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}}
-}
+import { eventRelatedTables } from './includeRelatedTables'
 
 export const eventRepository = {
   async findOne (query = {}, project = {}, collection) {
