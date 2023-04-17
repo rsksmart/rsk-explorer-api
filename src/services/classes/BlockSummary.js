@@ -136,11 +136,13 @@ export class BlockSummary extends BcThing {
     }
   }
 
-  async save () {
+  async save (tokenAddressesIds) {
+    let data
     try {
-      let data = await this.fetch()
-      let { log, collections } = this
-      let res = await saveBlockSummary(data, collections, log)
+      data = await this.fetch()
+      const { log, collections } = this
+      data.tokenAddressesIds = tokenAddressesIds
+      const res = await saveBlockSummary(data, collections, log)
       return res
     } catch (err) {
       this.log.error(`Error saving block summary`)
@@ -162,10 +164,10 @@ export async function saveBlockSummary (data, collections, log) {
   const { hash, number, timestamp } = data.block
   try {
     const collection = collections[BlocksSummaryCollection]
-    const old = await summaryRepository.findOne({ hash }, { _id: 1 }, collection)
-    const _id = (old) ? old._id : getSummaryId(data.block)
-    const summary = { _id, hash, number, timestamp, data }
-    let result = await summaryRepository.updateOne({ _id }, { $set: summary }, { upsert: true }, collection)
+    const old = await summaryRepository.findOne({ hash }, { id: 1 }, collection)
+    const id = (old) ? old.id : getSummaryId(data.block)
+    const summary = { id, hash, number, timestamp, data }
+    let result = await summaryRepository.updateOne({ id }, { $set: summary }, { upsert: true }, collection)
     return result
   } catch (err) {
     log.error(`Error saving Block Summary ${hash}`)

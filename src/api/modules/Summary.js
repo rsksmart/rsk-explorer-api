@@ -2,7 +2,7 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 export class Summary extends DataCollectorItem {
   constructor ({ BlocksSummary }, key) {
-    let cursorField = '_id'
+    let cursorField = 'id'
     let sortDir = -1
     let sortable = { timestamp: -1 }
     super(BlocksSummary, key, { sortDir, cursorField, sortable })
@@ -42,7 +42,7 @@ export class Summary extends DataCollectorItem {
         const { hash } = params
         if (isBlockHash(hash)) {
           let query = { hash }
-          return this.getPrevNext(query, { number: 1 })
+          return this.getPrevNext(query, { number: 1, id: 1 })
         }
       },
       /**
