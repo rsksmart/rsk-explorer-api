@@ -77,7 +77,6 @@ function internalTxEntityToRaw ({
   internal_transaction_result: result,
   action
 }) {
-
   if (result) {
     delete result.id
   }

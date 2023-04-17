@@ -72,10 +72,10 @@ export class Status extends DataCollector {
   }
 
   getHighestBlock () {
-    return blockRepository.findOne({}, { sort: { number: -1 }}, this.blockCollection)
+    return blockRepository.findOne({}, { sort: { number: -1 } }, this.blockCollection)
   }
   getLastblockReceived () {
-    return blockRepository.findOne({}, { sort: { _received: -1 }}, this.blockCollection)
+    return blockRepository.findOne({}, { sort: { _received: -1 } }, this.blockCollection)
   }
   getTotalBlocks () {
     return blockRepository.countDocuments({}, this.blockCollection)
