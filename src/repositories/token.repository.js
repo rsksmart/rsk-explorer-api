@@ -18,8 +18,19 @@ export const tokenRepository = {
 
     return count
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
+  async aggregate ([_, address]) {
+    const tokensByAddress = []
+    await prismaClient.$transaction(async prisma => {
+      const tokens = await prisma.token_address.findMany({where: address})
+
+      for (const token of tokens) {
+        const contract = await prisma.address.findFirst({where: {address: token.contract}, include: addressRelatedTables})
+        delete contract.address
+        tokensByAddress.push({...addressEntityToRaw(contract), ...token})
+      }
+    })
+
+    return tokensByAddress
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update

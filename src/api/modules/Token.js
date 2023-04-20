@@ -1,7 +1,6 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
-
 export class Token extends DataCollectorItem {
   constructor ({ TokensAddrs }, key) {
     super(TokensAddrs, key)
@@ -68,17 +67,8 @@ export class Token extends DataCollectorItem {
        */
       getTokensByAddress: async params => {
         const address = params.address
-        const from = this.parent.collectionsNames.Addrs
         if (address) {
-          let aggregate = [
-            { $match: { address } },
-            {
-              $lookup: { from, localField: 'contract', foreignField: 'address', as: 'addressesItems' }
-            },
-            { $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ['$addressesItems', 0] }, '$$ROOT'] } } },
-            { $project: { addressesItems: 0 } }
-          ]
-          let data = await this.getAggPageData(aggregate, params)
+          const data = await this.getAggPageData([{ address }], params)
           return data
         }
       },
