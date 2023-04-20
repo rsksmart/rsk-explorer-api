@@ -7,7 +7,7 @@ dataSource({ skipCheck: true }).then(async ({ db }) => {
   try {
     const Addrs = db.collection(config.collections.Addrs)
     const query = { createdByTx: { $exists: true }, type: 'account' }
-    const project = { address: 1, type: 1, _id: 0 }
+    const project = { address: 1, type: 1, id: 0 }
 
     let result = await addressRepository.find(query, project, Addrs)
     if (result) {

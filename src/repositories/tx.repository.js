@@ -14,25 +14,10 @@ import {
   rawAbiInputToEntity
 } from '../converters/abi.converters'
 import {
-  createPrismaOrderBy,
-  mongoQueryToPrisma,
-  createPrismaSelect
+  generateFindQuery,
+  mongoQueryToPrisma
 } from './utils'
-
-const txRelatedTables = {
-  receipt: {
-    include: {
-      log: {
-        include: {
-          abi_log_abiToabi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}},
-          log_topic: {select: {topic: true}, orderBy: { topicIndex: 'asc' }},
-          log_arg: {select: {arg: true}},
-          logged_address: {select: {address: true}}
-        }
-      }
-    }
-  }
-}
+import { txRelatedTables } from './includeRelatedTables'
 
 async function saveAbiAndGetId (abi) {
   const {inputs} = abi
@@ -63,21 +48,12 @@ async function saveAbiAndGetId (abi) {
 
 export const txRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const txToReturn = await prismaClient.transaction.findFirst({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(project),
-      include: txRelatedTables
-    })
+    const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
 
     return txToReturn ? transactionEntityToRaw(txToReturn) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const txs = await prismaClient.transaction.findMany({
-      where: mongoQueryToPrisma(query),
-      select: createPrismaSelect(project),
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
 
     return txs.map(transactionEntityToRaw)
   },
@@ -86,17 +62,13 @@ export const txRepository = {
 
     return count
   },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
   async deleteMany (filter, collection) {
-    await collection.deleteMany(filter)
     const deleted = await prismaClient.transaction.deleteMany({where: mongoQueryToPrisma(filter)})
 
     return deleted
   },
   async insertOne (data, collection) {
-    await prismaClient.transaction.create({data: rawTxToEntity(data)})
+    const tx = await prismaClient.transaction.create({data: rawTxToEntity(data)})
     await prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
 
     const {logs} = data.receipt
@@ -129,8 +101,7 @@ export const txRepository = {
       }
     }
 
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
+    return tx
   }
 }
 

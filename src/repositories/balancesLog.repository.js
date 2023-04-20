@@ -3,12 +3,11 @@ import { rawBalancesLogToEntity, entityToRawBalancesLog } from '../converters/ba
 
 export const balancesLogRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const prismaRes = entityToRawBalancesLog(await prismaClient.balances_log.findFirst({where: query}))
-    return prismaRes
+    const balancesLog = await prismaClient.balances_log.findFirst({where: query})
+    return balancesLog ? entityToRawBalancesLog(balancesLog) : null
   },
   async insertOne (data, collection) {
-    await prismaClient.balances_log.create({data: rawBalancesLogToEntity(data)})
-    const mongoRes = await collection.insertOne(data)
-    return mongoRes
+    const balanceLog = await prismaClient.balances_log.create({data: rawBalancesLogToEntity(data)})
+    return balanceLog
   }
 }

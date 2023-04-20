@@ -1,6 +1,6 @@
 import { rawBridgeToEntity, rawCirculatingToEntity, rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converters'
 import {prismaClient} from '../lib/Setup'
-import { createPrismaOrderBy, mongoQueryToPrisma } from './utils'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 const statsEntitySelect = {
   circulating: {
@@ -22,20 +22,12 @@ const statsEntitySelect = {
 
 export const statsRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const stats = await prismaClient.stats.findFirst({
-      where: mongoQueryToPrisma(query),
-      select: statsEntitySelect
-    })
+    const stats = await prismaClient.stats.findFirst(generateFindQuery(query, statsEntitySelect, {}, project))
 
     return stats ? statsEntityToRaw(stats) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const statsArr = await prismaClient.stats.findMany({
-      where: mongoQueryToPrisma(query),
-      select: statsEntitySelect,
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const statsArr = await prismaClient.stats.findMany(generateFindQuery(query, statsEntitySelect, {}, sort, limit))
 
     return statsArr.map(stats => statsEntityToRaw(stats))
   },
@@ -58,7 +50,5 @@ export const statsRepository = {
     newStats.bridgeId = newBridge.id
 
     await prismaClient.stats.create({ data: newStats })
-
-    await collection.insertOne(data)
   }
 }

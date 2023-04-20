@@ -55,9 +55,6 @@ export class Block extends BcThing {
       let data = this.getData(true)
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
 
-      // save block summary
-      await summary.save()
-
       let { block, transactions, internalTransactions, events, tokenAddresses, addresses } = data
       // clean db
       block = await this.removeOldBlockData(block, transactions)
@@ -85,6 +82,9 @@ export class Block extends BcThing {
 
       // insert tokenAddresses
       result.tokenAddresses = await this.insertTokenAddresses(tokenAddresses)
+
+      // save block summary
+      await summary.save(result.tokenAddresses.map(token => token.id))
 
       return { result, data }
     } catch (err) {
@@ -117,7 +117,7 @@ export class Block extends BcThing {
       let { TokensAddrs } = this.collections
       let result = await Promise.all([...data.map(ta => {
         ta.id = ta.address + '_' + ta.contract
-        tokenRepository.updateOne(
+        return tokenRepository.updateOne(
           { id: ta.id },
           { $set: ta },
           { upsert: true },

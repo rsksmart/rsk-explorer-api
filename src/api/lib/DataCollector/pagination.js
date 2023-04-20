@@ -164,17 +164,10 @@ export function modifyAggregate (query, { match, sort, limit, fields }) {
   return aggregate
 }
 
-export async function getAggregateTotal (collection, query, repository) {
-  const aggregate = [...query]
-  try {
-    aggregate.push({
-      $group: { _id: 'result', total: { $sum: 1 } }
-    })
-    let res = await repository.aggregate(aggregate, collection)
-    return (res && res[0]) ? res[0].total : 0
-  } catch (err) {
-    return Promise.reject(err)
-  }
+export async function getAggregateTotal (collection, [query], repository) {
+  const total = await countDocuments(collection, query, repository)
+
+  return total || null
 }
 
 export function paginationResponse (params, data, total) {

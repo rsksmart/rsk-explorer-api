@@ -5,7 +5,6 @@ import { isBlockHash } from '../../lib/utils'
 import { filterValueAddresses } from './InternalTx'
 import { balancesLogRepository } from '../../repositories/balancesLog.repository'
 import { blockRepository } from '../../repositories/block.repository'
-import { balancesRepository } from '../../repositories/balances.repository'
 
 export class UpdateBlockBalances extends BlocksBase {
   constructor (db, { log, initConfig, nod3, debug, confirmations }) {
@@ -90,7 +89,7 @@ export class UpdateBlockBalances extends BlocksBase {
     try {
       let { missing } = this
       if (!missing) throw new Error('Missing balances generator is undefined')
-      let next = await missing.next()
+      const next = missing.next()
       if (!next) {
         this.started = false
         return this.start()
@@ -131,25 +130,33 @@ export async function MissingBalances (blocksCollection, balancesCollection, { h
       highestBlock = lastBlock.number
     }
 
-    const projection = { _id: 0, number: 1, hash: 1 }
-    const sort = { number: -1 }
+    const projection = { id: 0, number: 1, hash: 1 }
+    const sort = { number: 1 }
+
+    // find blocks with missing balances
+    const query = {
+      AND: [
+        { number: { lt: highestBlock } },
+        { number: { gt: lowestBlock - 1 } },
+        { balance_balance_block_numberToblock: { none: {} } }
+      ]
+    }
+
+    const blocks = await blockRepository.find(query, projection, blocksCollection, sort, 0, false)
 
     let currentBlock = highestBlock
-    let block
     const current = () => currentBlock
-    const query = { number: { $lt: highestBlock, $gt: lowestBlock - 1 } }
-    const cursor = blockRepository.find(query, projection, blocksCollection, sort, 0, false)
-    const next = async () => {
-      if (currentBlock <= lowestBlock) return
 
-      while (await cursor.hasNext()) {
-        block = await cursor.next()
-        let { hash: blockHash, number } = block
-        let balance = await balancesRepository.findOne({ blockHash }, {}, balancesCollection)
-        currentBlock = number
-        if (!balance) break
+    const next = () => {
+      if (currentBlock >= lowestBlock) {
+        const block = blocks.pop()
+
+        if (block) {
+          currentBlock = block.number
+        }
+
+        return block
       }
-      return block
     }
     return Object.freeze({ next, current })
   } catch (err) {

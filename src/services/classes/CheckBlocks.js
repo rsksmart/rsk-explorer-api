@@ -3,6 +3,7 @@ import { getBlockFromDb, deleteBlockDataFromDb } from './Block'
 import { getBlock } from './RequestBlocks'
 import { chunkArray } from '../../lib/utils'
 import { blockRepository } from '../../repositories/block.repository'
+import { txRepository } from '../../repositories/tx.repository'
 
 export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
@@ -69,22 +70,21 @@ export class CheckBlocks extends BlocksBase {
     let query = (fromBlock || toBlock) ? { number: {} } : {}
     if (fromBlock > 0) query.number.$gte = fromBlock
     if (toBlock && toBlock > fromBlock) query.number.$lte = toBlock
-    return this.Blocks.find(query)
-      .sort({ number: -1 })
-      .project({ _id: 0, number: 1 })
-      .map(block => block.number)
-      .toArray()
-      .then(blocks => {
-        if (blocks.length === 1) {
-          blocks.push(-1)
-          return Promise.resolve([blocks])
-        }
+
+    try {
+      let blocks = await blockRepository.find(query, { number: 1 }, { }, { number: -1 })
+      blocks = blocks.map(block => block.number)
+
+      if (blocks.length === 1) {
+        blocks.push(-1)
+        return [blocks]
+      } else {
         return this.getMissing(blocks)
-      })
-      .catch(err => {
-        this.log.error(`Error getting missing blocks segments ${err}`)
-        process.exit(9)
-      })
+      }
+    } catch (err) {
+      this.log.error(`Error getting missing blocks segments ${err}`)
+      process.exit(9)
+    }
   }
 
   getMissingTransactions (lastBlock, firstBlock) {
@@ -215,14 +215,16 @@ export class CheckBlocks extends BlocksBase {
 export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
   try {
     const query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    const blocks = await blockRepository.find(query, { _id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
+    const blocksInDb = await blockRepository.find(query, { id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
 
-    for (const block of blocks) {
-      blocks[block.number] = block
-    }
+    const blocks = blocksInDb.reduce((blocksMapping, block) => {
+      blocksMapping[block.number] = block
+      return blocksMapping
+    }, {})
 
     const missing = []
     const invalid = []
+
     for (const number in blocks) {
       if (number > 0) {
         const block = blocks[number]
@@ -250,16 +252,16 @@ export const checkBlocksTransactions = async (blocksCollection, txsCollection, l
     let query = (lastBlock || firstBlock) ? { number: {} } : {}
     if (lastBlock) query.number.$lte = lastBlock
     if (firstBlock) query.number.$gte = firstBlock
-    let cursor = blockRepository.find(query, {}, blocksCollection, {}, 0, false)
-    while (await cursor.hasNext()) {
-      let block = await cursor.next()
+    const blocks = await blockRepository.find(query, {}, blocksCollection, {}, 0, false)
+
+    for (const block of blocks) {
       await Promise.all(block.transactions
-        .map(hash => txsCollection
-          .find({ hash }, { hash: 1 }).count()
-          .then(txs => {
-            if (txs < 1) missing[block.number] = block
+        .map(hash => txRepository.countDocuments({ hash })
+          .then(count => {
+            if (count < 1) missing[block.number] = block
           })))
     }
+
     return Object.values(missing)
   } catch (err) {
     return Promise.reject(err)

@@ -4,37 +4,17 @@ import {
   rawContractToEntity,
   addressEntityToRaw
 } from '../converters/address.converters'
-import {
-  mongoQueryToPrisma,
-  createPrismaOrderBy
-} from './utils'
-
-const addressRelatedTables = {
-  block_address_last_block_minedToblock: true,
-  contract_contract_addressToaddress: {
-    include: {
-      contract_method: {include: {method: {select: {method: true}}}},
-      contract_interface: {include: {interface_: {select: {interface: true}}}}
-    }
-  }
-}
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { addressRelatedTables } from './includeRelatedTables'
 
 export const addressRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const address = await prismaClient.address.findFirst({
-      where: mongoQueryToPrisma(query),
-      include: addressRelatedTables
-    })
+    const address = await prismaClient.address.findFirst(generateFindQuery(query, project, addressRelatedTables, project))
 
     return address ? addressEntityToRaw(address) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const addresses = await prismaClient.address.findMany({
-      where: mongoQueryToPrisma(query),
-      include: addressRelatedTables,
-      orderBy: createPrismaOrderBy(sort),
-      take: limit
-    })
+    const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables, sort, limit))
 
     return addresses.map(addressEntityToRaw)
   },
@@ -42,9 +22,6 @@ export const addressRepository = {
     const count = await prismaClient.address.count({where: mongoQueryToPrisma(query)})
 
     return count
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
@@ -96,8 +73,6 @@ export const addressRepository = {
         }
       }
     }
-
-    await collection.updateOne(filter, update, options)
 
     return savedAddress
   },

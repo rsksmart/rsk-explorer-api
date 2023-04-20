@@ -22,7 +22,7 @@ function rawBlockToEntity ({
   hashForMergedMining,
   paidFees,
   cumulativeDifficulty,
-  received
+  _received
 }) {
   return {
     number,
@@ -48,7 +48,7 @@ function rawBlockToEntity ({
     hashForMergedMining,
     paidFees,
     cumulativeDifficulty,
-    received: String(received)
+    received: String(_received)
   }
 }
 

@@ -5,40 +5,17 @@ import {
   rawInternalTransactionToEntity
 } from '../converters/internalTx.converters'
 import {prismaClient} from '../lib/Setup'
-import {
-  createPrismaOrderBy,
-  mongoQueryToPrisma
-} from './utils'
-
-const internalTxRelatedTables = {
-  action: true,
-  internal_transaction_result: true,
-  trace_address: {
-    select: {
-      trace: true
-    },
-    orderBy: {
-      index: 'asc'
-    }
-  }
-}
+import { internalTxRelatedTables } from './includeRelatedTables'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const internalTxRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const internalTx = await prismaClient.internal_transaction.findFirst({
-      where: query,
-      include: internalTxRelatedTables
-    })
+    const internalTx = await prismaClient.internal_transaction.findFirst(generateFindQuery(query, project, internalTxRelatedTables, project))
 
     return internalTx ? internalTxEntityToRaw(internalTx) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const internalTxs = await prismaClient.internal_transaction.findMany({
-      where: mongoQueryToPrisma(query),
-      orderBy: createPrismaOrderBy(sort),
-      include: internalTxRelatedTables,
-      take: limit
-    })
+    const internalTxs = await prismaClient.internal_transaction.findMany(generateFindQuery(query, project, internalTxRelatedTables, sort, limit))
 
     return internalTxs.map(itx => internalTxEntityToRaw(itx))
   },
@@ -73,11 +50,6 @@ export const internalTxRepository = {
       return itx
     }))
 
-    // mongo
-    filter.transactionHash.$in = filter.transactionHash.in
-    delete filter.transactionHash.in
-    await collection.deleteMany(filter)
-
     return deletedItxsData
   },
   async insertOne (data, collection) {
@@ -103,11 +75,9 @@ export const internalTxRepository = {
     })
 
     await prismaClient.trace_address.createMany({data: traceAddressToSave})
-
     const { internalTxId } = internalTxToSave
     const savedInternalTx = await this.findOne({ internalTxId }, {}, collection)
 
-    await collection.insertOne(data)
     return savedInternalTx
   }
 }

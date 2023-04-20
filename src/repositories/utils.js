@@ -26,16 +26,15 @@ function createPrismaOrderBy (sortOrProject) {
 }
 
 function createPrismaSelect (project) {
-  let select = {}
-  if (project.projection) {
-    const listOfSelects = Object.keys(project.projection)
-    for (const key of listOfSelects) {
-      if (project.projection[key] === 1) {
-        select[key] = true
-      }
+  const select = project.projection || project
+  const newSelect = {}
+
+  for (const key of Object.keys(select)) {
+    if (key !== 'sort' && select[key]) {
+      newSelect[key] = true
     }
   }
-  return (Object.keys(select).length !== 0) ? select : null
+  return newSelect
 }
 
 // TODO: finish the mapping of the remaining mongo operators
@@ -48,7 +47,8 @@ function mongoQueryToPrisma (query) {
     $eq: 'equals',
     $in: 'in',
     $ne: 'not',
-    $lte: 'lte'
+    $lte: 'lte',
+    $gte: 'gte'
   }
 
   for (const key in query) {
@@ -106,4 +106,30 @@ function removeNullFields (obj, nullableFields = []) {
   }
 }
 
-export {mongoSortToPrisma, createPrismaOrderBy, createPrismaSelect, mongoQueryToPrisma, removeNullFields}
+function generateFindQuery (query, select, include, orderBy = {}, take) {
+  query = mongoQueryToPrisma(query)
+  select = createPrismaSelect(select)
+  orderBy = createPrismaOrderBy(orderBy)
+
+  const options = {
+    where: mongoQueryToPrisma(query)
+  }
+
+  if (Object.keys(select).length) {
+    options.select = select
+  } else if (Object.keys(include).length) {
+    options.include = include
+  }
+
+  if (Object.keys(orderBy).length) {
+    options.orderBy = orderBy
+  }
+
+  if (take) {
+    options.take = take
+  }
+
+  return options
+}
+
+export { removeNullFields, mongoQueryToPrisma, generateFindQuery }
