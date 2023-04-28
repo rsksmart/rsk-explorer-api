@@ -66,7 +66,6 @@ export const MODULES = {
   addresses: 'Address',
   events: 'Event',
   tokens: 'Token',
-  stats: 'Stats',
   summary: 'Summary',
   txPending: 'TxPending',
   extendedStats: 'ExtendedStats',

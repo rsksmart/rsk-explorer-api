@@ -11,6 +11,8 @@ import { txPendingRepository } from '../../repositories/txPending.repository'
 import { addressRepository } from '../../repositories/address.repository'
 import { balancesRepository } from '../../repositories/balances.repository'
 import { blockTraceRepository } from '../../repositories/blockTrace.repository'
+import { getBlockchainStats } from '../../lib/getBlockchainStats'
+import { statsRepository } from '../../repositories/stats.repository'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -85,6 +87,11 @@ export class Block extends BcThing {
 
       // save block summary
       await summary.save(result.tokenAddresses.map(token => token.id))
+
+      // save stats (requires blocks and addresses inserted)
+      const { hash: blockHash, number: blockNumber } = block
+      const blockchainStats = await getBlockchainStats({ blockHash, blockNumber })
+      await statsRepository.insertOne(blockchainStats)
 
       return { result, data }
     } catch (err) {
