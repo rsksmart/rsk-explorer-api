@@ -12,8 +12,8 @@ async function bridgeCall (method, params = []) {
     const contract = Contract(abi, { address, nod3 })
     const res = await contract.call(method, params)
     return res
-  } catch (error) {
-    console.log('Error at bridgeCall():', error)
+  } catch (err) {
+    console.debug(err)
   }
 }
 
@@ -36,7 +36,8 @@ export async function getBlockchainStats ({ blockHash, blockNumber }) {
       bridge,
       timestamp
     }
-  } catch (error) {
-    console.log('Error at getBlockchainStats():', error)
+  } catch (err) {
+    console.debug(err)
+    return Promise.reject(err)
   }
 }

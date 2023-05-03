@@ -39,17 +39,12 @@ export const statsRepository = {
     return count
   },
   async insertOne (data) {
-    try {
-      const newStats = rawStatsToEntity(data)
+    const newStats = rawStatsToEntity(data)
 
-      await prismaClient.stats.upsert({
-        where: { blockNumber: newStats.blockNumber },
-        create: newStats,
-        update: newStats
-      })
-    } catch (error) {
-      console.log('Error at statsRepository.insertOne():', error)
-      console.log({ data })
-    }
+    await prismaClient.stats.upsert({
+      where: { blockNumber: newStats.blockNumber },
+      create: newStats,
+      update: newStats
+    })
   }
 }
