@@ -6,8 +6,7 @@ export const servicesNames = {
   CHECKER: 'blocksChecker',
   TXPOOL: 'txPool',
   BALANCES: 'blocksBalances',
-  STATUS: 'blocksStatus',
-  STATS: 'blocksStats'
+  STATUS: 'blocksStatus'
 }
 
 export function createServices (address, ports, enabledServices) {

@@ -1,4 +1,4 @@
-import { rawBridgeToEntity, rawCirculatingToEntity, rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converters'
+import { rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converters'
 import {prismaClient} from '../lib/Setup'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
@@ -38,17 +38,13 @@ export const statsRepository = {
 
     return count
   },
-  async insertOne (data, collection) {
+  async insertOne (data) {
     const newStats = rawStatsToEntity(data)
 
-    if (data.circulating) {
-      const newCirculating = await prismaClient.circulating.create({ data: rawCirculatingToEntity(data.circulating) })
-      newStats.circulatingId = newCirculating.id
-    }
-
-    const newBridge = await prismaClient.bridge.create({ data: rawBridgeToEntity(data.bridge) })
-    newStats.bridgeId = newBridge.id
-
-    await prismaClient.stats.create({ data: newStats })
+    await prismaClient.stats.upsert({
+      where: { blockNumber: newStats.blockNumber },
+      create: newStats,
+      update: newStats
+    })
   }
 }

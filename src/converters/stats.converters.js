@@ -1,40 +1,4 @@
 function rawStatsToEntity ({
-  activeAccounts,
-  hashrate,
-  timestamp,
-  blockHash,
-  blockNumber
-}) {
-  return {
-    activeAccounts,
-    hashrate: String(hashrate),
-    timestamp: String(timestamp),
-    blockHash,
-    blockNumber
-  }
-}
-
-function rawCirculatingToEntity ({
-  circulatingSupply,
-  totalSupply,
-  bridgeBalance
-}) {
-  return {
-    circulatingSupply,
-    totalSupply,
-    bridgeBalance
-  }
-}
-
-function rawBridgeToEntity ({
-  lockingCap
-}) {
-  return {
-    lockingCap
-  }
-}
-
-function statsEntityToRaw ({
   circulating,
   activeAccounts,
   hashrate,
@@ -43,15 +7,55 @@ function statsEntityToRaw ({
   blockNumber,
   bridge
 }) {
-  return {
-    circulating,
+  const statsEntity = {
+    blockNumber,
+    blockHash,
+    activeAccounts,
+    hashrate: String(hashrate),
+    lockingCap: bridge.lockingCap,
+    timestamp: String(timestamp)
+  }
+
+  if (circulating) {
+    statsEntity.circulatingSupply = circulating.circulatingSupply
+    statsEntity.totalSupply = circulating.totalSupply
+    statsEntity.bridgeBalance = circulating.bridgeBalance
+  }
+
+  return statsEntity
+}
+
+function statsEntityToRaw ({
+  blockNumber,
+  blockHash,
+  activeAccounts,
+  hashrate,
+  circulatingSupply,
+  totalSupply,
+  bridgeBalance,
+  lockingCap,
+  timestamp
+}) {
+  const rawStats = {
     activeAccounts,
     hashrate: Number(hashrate),
     timestamp: Number(timestamp),
     blockHash,
     blockNumber,
-    bridge
+    bridge: {
+      lockingCap
+    }
   }
+
+  if (circulatingSupply && totalSupply && bridgeBalance) {
+    rawStats.circulating = {
+      circulatingSupply,
+      totalSupply,
+      bridgeBalance
+    }
+  }
+
+  return rawStats
 }
 
-export { rawStatsToEntity, rawCirculatingToEntity, rawBridgeToEntity, statsEntityToRaw }
+export { rawStatsToEntity, statsEntityToRaw }
