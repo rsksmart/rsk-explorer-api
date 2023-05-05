@@ -197,7 +197,7 @@ export class Block extends BcThing {
   }
 
   searchBlock ({ hash, number }) {
-    return this.collections.Blocks.find({ $or: [{ hash }, { number }] }).toArray()
+    return blockRepository.find({ $or: [{ hash }, { number }] })
   }
 
   insertBlock (block) {
