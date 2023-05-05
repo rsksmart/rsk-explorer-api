@@ -37,13 +37,15 @@ function summaryEntityToRaw ({
     hash,
     number,
     timestamp,
-    addresses: addresses.map(address => addressEntityToRaw(address.address_address_in_summary_addressToaddress)),
-    block: blockEntityToRaw(block),
-    events: events.map(event => eventEntityToRaw(event.event)),
-    internalTransactions: internalTransactions.map(itx => internalTxEntityToRaw(itx.internal_transaction)),
-    suicides: suicides.map(itx => internalTxEntityToRaw(itx.internal_transaction)),
-    tokenAddresses: tokenAddresses.map(token => tokenEntityToRaw(token.token_address)),
-    transactions: transactions.map(tx => transactionEntityToRaw(tx.transaction))
+    data: {
+      addresses: addresses.map(address => addressEntityToRaw(address.address_address_in_summary_addressToaddress)),
+      block: blockEntityToRaw(block),
+      events: events.map(event => eventEntityToRaw(event.event)),
+      internalTransactions: internalTransactions.map(itx => internalTxEntityToRaw(itx.internal_transaction)),
+      suicides: suicides.map(itx => internalTxEntityToRaw(itx.internal_transaction)),
+      tokenAddresses: tokenAddresses.map(token => tokenEntityToRaw(token.token_address)),
+      transactions: transactions.map(tx => transactionEntityToRaw(tx.transaction))
+    }
   }
 }
 
