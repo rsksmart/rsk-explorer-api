@@ -2,32 +2,14 @@ import { rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converte
 import {prismaClient} from '../lib/Setup'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
-const statsEntitySelect = {
-  circulating: {
-    select: {
-      circulatingSupply: true,
-      totalSupply: true,
-      bridgeBalance: true
-    }
-  },
-  activeAccounts: true,
-  hashrate: true,
-  timestamp: true,
-  blockHash: true,
-  blockNumber: true,
-  bridge: {
-    select: { lockingCap: true }
-  }
-}
-
 export const statsRepository = {
   async findOne (query = {}, project = {}, collection) {
-    const stats = await prismaClient.stats.findFirst(generateFindQuery(query, statsEntitySelect, {}, project))
+    const stats = await prismaClient.stats.findFirst(generateFindQuery(query, {}, {}, project))
 
     return stats ? statsEntityToRaw(stats) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    const statsArr = await prismaClient.stats.findMany(generateFindQuery(query, statsEntitySelect, {}, sort, limit))
+    const statsArr = await prismaClient.stats.findMany(generateFindQuery(query, {}, {}, sort, limit))
 
     return statsArr.map(stats => statsEntityToRaw(stats))
   },
