@@ -31,11 +31,9 @@ function rawContractToEntity ({
   totalSupply,
   decimals
 }) {
-  return {
+  const contractToReturn = {
     address,
     name,
-    createdByTx,
-    createdByInternalTx,
     code,
     codeStoredAtBlock,
     deployedCode,
@@ -43,6 +41,18 @@ function rawContractToEntity ({
     totalSupply,
     decimals
   }
+
+  if (createdByTx) {
+    if (createdByTx.transactionHash) {
+      contractToReturn.createdByInternalTx = createdByTx.transactionHash
+    } else if (createdByTx.hash) {
+      contractToReturn.createdByTx = createdByTx.hash
+    }
+  } else if (createdByInternalTx) {
+    contractToReturn.createdByInternalTx = createdByInternalTx
+  }
+
+  return contractToReturn
 }
 
 function addressEntityToRaw ({
@@ -104,13 +114,11 @@ function contractEntityToRaw ({
   }
 
   if (methods) {
-    const contractMethods = methods.map(({method: {method}}) => method)
-    contractToReturn.contractMethods = contractMethods
+    contractToReturn.contractMethods = methods.map(method => method.method)
   }
 
   if (interfaces) {
-    const contractInterfaces = interfaces.map(interface_ => interface_.interface_.interface)
-    contractToReturn.contractInterfaces = contractInterfaces
+    contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
   }
 
   return removeNullFields(contractToReturn, ['name'])

@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = ""
+  url      = "postgres://postgres:anhedonia@localhost:5479/explorer_db"
 }
 
 model abi {
@@ -170,7 +170,7 @@ model contract {
   totalSupply                                    String?               @map("total_supply") @db.VarChar
   decimals                                       Int?                  @db.SmallInt
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
-  block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_code_stored_at_block")
+  block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
   token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
@@ -178,23 +178,19 @@ model contract {
 }
 
 model contract_interface {
-  id              Int        @id @default(autoincrement())
-  interfaceId     Int        @map("interface_id")
-  contractAddress String     @map("contract_address") @db.VarChar(42)
-  contract        contract   @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
-  interface_      interface_ @relation(fields: [interfaceId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_interface_id")
+  interface       String   @db.VarChar
+  contractAddress String   @map("contract_address") @db.VarChar(42)
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
 
-  @@unique([interfaceId, contractAddress], map: "unique_contract_interface_interface_id_contract_address")
+  @@id([interface, contractAddress], map: "pk_contract_interface")
 }
 
 model contract_method {
-  id              Int      @id @default(autoincrement())
-  methodId        Int      @map("method_id")
+  method          String   @db.VarChar
   contractAddress String   @map("contract_address") @db.VarChar(42)
   contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_contract_address")
-  method          method   @relation(fields: [methodId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_method_id")
 
-  @@unique([methodId, contractAddress], map: "unique_contract_method_method_id_contract_address")
+  @@id([method, contractAddress], map: "pk_contract_method")
 }
 
 model contract_verification {
@@ -326,14 +322,6 @@ model input {
   @@id([name, type], map: "pk_input")
 }
 
-model interface_ {
-  id                 Int                  @id @default(autoincrement())
-  interface          String               @unique @db.VarChar
-  contract_interface contract_interface[]
-
-  @@map("interface")
-}
-
 model internal_transaction {
   internalTxId                                   String                            @id @map("internal_tx_id") @db.VarChar
   transactionHash                                String                            @map("transaction_hash") @db.VarChar(66)
@@ -428,12 +416,6 @@ model logged_address {
   log                                     log     @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_logged_address_log_index_transaction_hash")
 
   @@id([logIndex, address, transactionHash], map: "pk_logged_address")
-}
-
-model method {
-  id              Int               @id @default(autoincrement())
-  method          String            @unique @db.VarChar
-  contract_method contract_method[]
 }
 
 model method_identifier {
@@ -777,8 +759,8 @@ model block_trace {
 model address_in_summary {
   address                                     String        @db.VarChar(42)
   summaryId                                   String        @map("summary_id") @db.VarChar
-  address_address_in_summary_addressToaddress address       @relation("address_in_summary_addressToaddress", fields: [address], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_summary_address")
-  block_summary                               block_summary @relation(fields: [summaryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_address_in_summary_summary_id")
+  address_address_in_summary_addressToaddress address       @relation("address_in_summary_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_address")
+  block_summary                               block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_summary_id")
 
   @@id([address, summaryId], map: "pk_address_in_summary")
 }
@@ -801,8 +783,8 @@ model block_summary {
 model event_in_summary {
   eventId       String        @map("event_id") @db.VarChar
   summaryId     String        @map("summary_id") @db.VarChar
-  event         event         @relation(fields: [eventId], references: [eventId], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_in_summary_event_id")
-  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_event_in_summary_summary_id")
+  event         event         @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_event_id")
+  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_summary_id")
 
   @@id([eventId, summaryId], map: "pk_event_in_summary")
 }
@@ -819,8 +801,8 @@ model internal_transaction_in_summary {
 model suicide_in_summary {
   internalTxId         String               @map("internal_tx_id") @db.VarChar
   summaryId            String               @map("summary_id") @db.VarChar
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: NoAction, onUpdate: NoAction, map: "fk_suicide_in_summary_internal_tx_id")
-  block_summary        block_summary        @relation(fields: [summaryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_suicide_in_summary_summary_id")
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_suicide_in_summary_internal_tx_id")
+  block_summary        block_summary        @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_suicide_in_summary_summary_id")
 
   @@id([internalTxId, summaryId], map: "pk_suicide_in_summary")
 }
@@ -828,8 +810,8 @@ model suicide_in_summary {
 model token_address_in_summary {
   tokenId       String        @map("token_id") @db.VarChar
   summaryId     String        @map("summary_id") @db.VarChar
-  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_in_memory_summary_id")
-  token_address token_address @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_token_address_in_memory_token_id")
+  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_in_memory_summary_id")
+  token_address token_address @relation(fields: [tokenId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_in_memory_token_id")
 
   @@id([tokenId, summaryId], map: "pk_token_address_in_summary")
 }

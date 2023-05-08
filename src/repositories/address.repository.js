@@ -27,54 +27,38 @@ export const addressRepository = {
     const {$set: data} = update
     const addressToSave = rawAddressToEntity(data)
 
-    const savedAddress = await prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })
+    const transactionQueries = [prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })]
 
     if (data.type === 'contract') {
-      const {createdByTx, createdByInternalTx, contractMethods, contractInterfaces} = data
-
-      if (createdByTx) {
-        if (createdByTx.transactionHash) {
-          data.createdByInternalTx = createdByTx.transactionHash
-          delete data.createdByTx
-        } else if (createdByTx.hash) {
-          data.createdByTx = createdByTx.hash
-        }
-      } else if (createdByInternalTx) {
-        data.createdByInternalTx = createdByInternalTx
-        delete data.createdByTx
-      }
+      const {contractMethods, contractInterfaces} = data
 
       const contractToSave = rawContractToEntity(data)
-      const savedContract = await prismaClient.contract.upsert({where: {address: contractToSave.address}, create: contractToSave, update: contractToSave})
+
+      transactionQueries.push(prismaClient.contract.upsert({
+        where: {address: contractToSave.address},
+        create: contractToSave,
+        update: contractToSave
+      }))
+
+      const {address: contractAddress} = contractToSave
 
       if (contractMethods) {
-        for (const method of contractMethods) {
-          const savedMethod = await prismaClient.method.upsert({where: {method}, create: {method}, update: {}})
-          const contractMethodToSave = {methodId: savedMethod.id, contractAddress: savedContract.address}
-          await prismaClient.contract_method.upsert({
-            where: {
-              methodId_contractAddress: contractMethodToSave
-            },
-            create: contractMethodToSave,
-            update: {}})
-        }
+        const methodsToSave = contractMethods.map(method => {
+          return {method, contractAddress}
+        })
+        transactionQueries.push(prismaClient.contract_method.createMany({data: methodsToSave, skipDuplicates: true}))
       }
 
       if (contractInterfaces) {
-        for (const interf of contractInterfaces) {
-          const savedInterface = await prismaClient.interface_.upsert({where: {interface: interf}, create: {interface: interf}, update: {}})
-          const contractInterfaceToSave = {interfaceId: savedInterface.id, contractAddress: savedContract.address}
-          await prismaClient.contract_interface.upsert({
-            where: {
-              interfaceId_contractAddress: contractInterfaceToSave
-            },
-            create: contractInterfaceToSave,
-            update: {}})
-        }
+        const interfacesToSave = contractInterfaces.map(inter => {
+          return {interface: inter, contractAddress}
+        })
+        transactionQueries.push(prismaClient.contract_interface.createMany({data: interfacesToSave, skipDuplicates: true}))
       }
     }
 
-    return savedAddress
+    const res = await prismaClient.$transaction(transactionQueries)
+    return res
   },
   async deleteMany (filter, collection) {
     const blockHash = filter['createdByTx.blockHash']

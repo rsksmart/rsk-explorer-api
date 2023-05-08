@@ -7,8 +7,8 @@ const addressRelatedTables = {
   block_address_last_block_minedToblock: {include: blockRelatedTables},
   contract_contract_addressToaddress: {
     include: {
-      contract_method: {include: {method: {select: {method: true}}}},
-      contract_interface: {include: {interface_: {select: {interface: true}}}}
+      contract_method: {select: {method: true}},
+      contract_interface: {select: {interface: true}}
     }
   }
 }
