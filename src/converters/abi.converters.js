@@ -37,7 +37,7 @@ function abiEntityToRaw ({
     anonymous,
     name,
     type,
-    inputs: inputs.map(({...input}) => input)
+    inputs
   }
 
   return removeNullFields(abiToReturn)
