@@ -7,8 +7,8 @@ const addressRelatedTables = {
   block_address_last_block_minedToblock: {include: blockRelatedTables},
   contract_contract_addressToaddress: {
     include: {
-      contract_method: {include: {method: {select: {method: true}}}},
-      contract_interface: {include: {interface_: {select: {interface: true}}}}
+      contract_method: {select: {method: true}},
+      contract_interface: {select: {interface: true}}
     }
   }
 }
@@ -17,7 +17,7 @@ const eventRelatedTables = {
   event_arg: {select: {arg: true}},
   event_topic: {select: {topic: true}},
   address_in_event: {select: {address: true}},
-  abi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}}
+  abi: {include: {abi_input: {select: {name: true, type: true, indexed: true}}}}
 }
 
 const internalTxRelatedTables = {
@@ -38,7 +38,7 @@ const txRelatedTables = {
     include: {
       log: {
         include: {
-          abi_log_abiToabi: {include: {abi_input: {select: {input: {select: {name: true, type: true, indexed: true}}}}}},
+          abi_log_abiToabi: {include: {abi_input: {select: {name: true, type: true, indexed: true}}}},
           log_topic: {select: {topic: true}, orderBy: { topicIndex: 'asc' }},
           log_arg: {select: {arg: true}},
           logged_address: {select: {address: true}}

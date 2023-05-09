@@ -1,26 +1,29 @@
 import { removeNullFields } from '../repositories/utils'
 
-function rawAbiToEntity (data) {
+function rawAbiToEntity ({
+  anonymous,
+  name,
+  type
+}) {
   return {
-    anonymous: data.anonymous,
-    name: data.name,
-    type: data.type
+    id: `${name}_${type}_${anonymous}`,
+    anonymous,
+    name,
+    type
   }
 }
 
-function rawInputToEntity (data) {
+function rawAbiInputToEntity ({
+  abiId,
+  name,
+  type,
+  indexed
+}) {
   return {
-    name: data.name,
-    type: data.type,
-    indexed: data.indexed
-  }
-}
-
-function rawAbiInputToEntity (data) {
-  return {
-    abiId: data.abiId,
-    name: data.name,
-    type: data.type
+    abiId,
+    name,
+    type,
+    indexed
   }
 }
 
@@ -34,7 +37,7 @@ function abiEntityToRaw ({
     anonymous,
     name,
     type,
-    inputs: inputs.map(({input}) => input)
+    inputs
   }
 
   return removeNullFields(abiToReturn)
@@ -42,7 +45,6 @@ function abiEntityToRaw ({
 
 export {
   rawAbiToEntity,
-  rawInputToEntity,
   rawAbiInputToEntity,
   abiEntityToRaw
 }
