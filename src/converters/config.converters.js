@@ -25,21 +25,25 @@ function rawConfigUpdateToEntity ({
 
 function rawNetToEntity ({
   id,
-  name
+  name,
+  configId
 }) {
   return {
     id,
-    name
+    name,
+    configId
   }
 }
 
 function rawNativeContractToEntity ({
   name,
-  address
+  address,
+  configId
 }) {
   return {
     name,
-    address
+    address,
+    configId
   }
 }
 

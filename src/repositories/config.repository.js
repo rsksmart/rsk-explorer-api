@@ -18,18 +18,8 @@ export const configRepository = {
       existingConfig = await prismaClient.explorer_config.findFirst({
         where: { id: docId },
         select: {
-          native_contract: {
-            select: {
-              name: true,
-              address: true
-            }
-          },
-          net: {
-            select: {
-              id: true,
-              name: true
-            }
-          }
+          native_contract: { select: { name: true, address: true } },
+          net: { select: { id: true, name: true } }
         }
       })
 
@@ -50,43 +40,18 @@ export const configRepository = {
   async insertOne (data, collection) {
     const newConfig = rawConfigToEntity(data)
     const docId = newConfig.id
-
-    // save config document
-    await prismaClient.explorer_config.upsert({
-      where: { id: docId },
-      update: newConfig,
-      create: newConfig
-    })
+    const transactionQueries = [prismaClient.explorer_config.createMany({ data: [newConfig], skipDuplicates: true })]
 
     if (isReadOnly(docId)) {
-      const newNet = rawNetToEntity(data.net)
-      const nativeContracts = Object.entries(data.nativeContracts)
+      const newNet = rawNetToEntity({ ...data.net, configId: docId })
+      const rawNativeContracts = Object.entries(data.nativeContracts)
+      const nativeContractsToSave = rawNativeContracts.map(([name, address]) => rawNativeContractToEntity({ name, address, configId: docId }))
 
-      newNet.configId = docId
-
-      // save network
-      await prismaClient.net.upsert({
-        where: { id: docId },
-        update: newNet,
-        create: newNet
-      })
-
-      // save native contracts
-      nativeContracts.forEach(async ([name, address]) => {
-        const newNativeContract = rawNativeContractToEntity({
-          name: name,
-          address: address
-        })
-
-        newNativeContract.configId = docId
-
-        await prismaClient.native_contract.upsert({
-          where: { address: newNativeContract.address },
-          update: newNativeContract,
-          create: newNativeContract
-        })
-      })
+      transactionQueries.push(prismaClient.net.createMany({ data: [newNet], skipDuplicates: true }))
+      transactionQueries.push(prismaClient.native_contract.createMany({ data: nativeContractsToSave, skipDuplicates: true }))
     }
+
+    await prismaClient.$transaction(transactionQueries)
 
     return newConfig
   },
