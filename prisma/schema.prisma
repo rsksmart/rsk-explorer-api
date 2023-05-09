@@ -4,11 +4,11 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgres://postgres:anhedonia@localhost:5479/explorer_db"
+  url      = ""
 }
 
 model abi {
-  id               Int         @id @default(autoincrement())
+  id               String      @id @db.VarChar
   anonymous        Boolean?
   name             String?     @db.VarChar
   type             String?     @db.VarChar
@@ -18,11 +18,11 @@ model abi {
 }
 
 model abi_input {
-  abiId Int     @map("abi_id")
-  name  String  @db.VarChar
-  type  String? @db.VarChar
-  abi   abi     @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_abi_id")
-  input input?  @relation(fields: [name, type], references: [name, type], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_name_type")
+  abiId   String   @map("abi_id") @db.VarChar
+  name    String   @db.VarChar
+  type    String?  @db.VarChar
+  indexed Boolean?
+  abi     abi      @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_abi_id")
 
   @@id([abiId, name], map: "pk_abi_input")
 }
@@ -70,12 +70,12 @@ model address {
 }
 
 model address_in_event {
-  event_id                                  String  @db.VarChar
+  eventId                                   String  @map("event_id") @db.VarChar
   address                                   String  @db.VarChar(42)
   address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_address")
-  event                                     event   @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
+  event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
 
-  @@id([event_id, address], map: "pk_address_in_event")
+  @@id([eventId, address], map: "pk_address_in_event")
 }
 
 model balance {
@@ -263,7 +263,7 @@ model decoded_metadata {
 
 model event {
   eventId                         String             @id @map("event_id") @db.VarChar
-  abiId                           Int                @map("abi_id")
+  abiId                           String             @map("abi_id") @db.VarChar
   transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
   address                         String             @db.VarChar(42)
   blockHash                       String             @map("block_hash") @db.VarChar(66)
@@ -287,19 +287,19 @@ model event {
 }
 
 model event_arg {
-  event_id String @db.VarChar
-  arg      String @db.VarChar
-  event    event  @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
+  eventId String @map("event_id") @db.VarChar
+  arg     String @db.VarChar
+  event   event  @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
 
-  @@id([event_id, arg], map: "pk_event_arg")
+  @@id([eventId, arg], map: "pk_event_arg")
 }
 
 model event_topic {
-  event_id String @db.VarChar
-  topic    String @db.VarChar
-  event    event  @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
+  eventId String @map("event_id") @db.VarChar
+  topic   String @db.VarChar
+  event   event  @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
 
-  @@id([event_id, topic], map: "pk_event_topic")
+  @@id([eventId, topic], map: "pk_event_topic")
 }
 
 model import_ {
@@ -311,15 +311,6 @@ model import_ {
 
   @@id([requestId, name], map: "pk_import")
   @@map("import")
-}
-
-model input {
-  name      String      @db.VarChar
-  type      String      @db.VarChar
-  indexed   Boolean?
-  abi_input abi_input[]
-
-  @@id([name, type], map: "pk_input")
 }
 
 model internal_transaction {
@@ -370,7 +361,7 @@ model log {
   blockNumber                   Int              @map("block_number")
   blockHash                     String           @map("block_hash") @db.VarChar(66)
   address                       String           @db.VarChar(42)
-  abi                           Int?
+  abi                           String?          @db.VarChar
   data                          String?          @db.VarChar
   signature                     String?          @db.VarChar
   event                         String?          @db.VarChar

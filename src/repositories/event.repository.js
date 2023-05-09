@@ -21,44 +21,29 @@ export const eventRepository = {
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
-    const {_addresses, abi, args, topics} = data
+    const {_addresses, abi, args, topics, eventId} = data
+    const transactionQueries = []
 
-    data.abiId = await saveAbiAndGetId(abi)
-
-    const {eventId} = await prismaClient.event.upsert({
-      where: {eventId: data.eventId},
-      create: rawEventToEntity(data),
-      update: rawEventToEntity(data)
-    })
-
-    for (const address of _addresses) {
-      const addressInEventToSave = {address, event_id: eventId}
-      await prismaClient.address_in_event.upsert({
-        where: {event_id_address: addressInEventToSave},
-        create: addressInEventToSave,
-        update: addressInEventToSave
-      })
+    if (abi) {
+      const {transactionQueries: abiQueries, abiId} = saveAbiAndGetId(abi)
+      data.abiId = abiId
+      transactionQueries.push(...abiQueries)
     }
 
-    for (const topic of topics) {
-      const topicToSave = {topic, event_id: eventId}
-      await prismaClient.event_topic.upsert({
-        where: {event_id_topic: topicToSave},
-        create: topicToSave,
-        update: topicToSave
-      })
-    }
+    transactionQueries.push(prismaClient.event.createMany({data: [rawEventToEntity(data)], skipDuplicates: true}))
+
+    const addressesToSave = _addresses.map(address => ({address, eventId}))
+    transactionQueries.push(prismaClient.address_in_event.createMany({data: addressesToSave, skipDuplicates: true}))
+
+    const topicsToSave = topics.map(topic => ({topic, eventId}))
+    transactionQueries.push(prismaClient.event_topic.createMany({data: topicsToSave, skipDuplicates: true}))
 
     if (args) {
-      for (const arg of args) {
-        const argToSave = {arg, event_id: eventId}
-        await prismaClient.event_arg.upsert({
-          where: {event_id_arg: argToSave},
-          create: argToSave,
-          update: argToSave
-        })
-      }
+      const argsToSave = args.map(arg => ({arg, eventId}))
+      transactionQueries.push(prismaClient.event_arg.createMany({data: argsToSave, skipDuplicates: true}))
     }
+
+    await prismaClient.$transaction(transactionQueries)
 
     return eventId
   },
