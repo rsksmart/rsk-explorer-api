@@ -20,7 +20,7 @@ export async function updateTokenAccountBalances (block, { nod3, collections, lo
         let newBalance = await getBalance(token, { parser })
         if (balance !== newBalance) {
           log.info(`Updating token account balance ${contract}--${address}`)
-          await tokenRepository.updateOne({ id }, { $set: { balance: newBalance } }, {}, collection)
+          await Promise.all(tokenRepository.updateOne({ id }, { $set: { balance: newBalance } }, {}, collection))
         }
       } catch (err) {
         log.error(err)
