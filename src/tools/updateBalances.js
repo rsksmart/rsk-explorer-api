@@ -46,7 +46,7 @@ async function main () {
           }
           log.info(`${logTime()} Updating balance of: ${address} to ${newBalance}`)
           let result = await saveAddressToDb({ address, blockNumber, balance: newBalance }, collection)
-          if (!result.ok) throw new Error(`Error updating balance for ${address}`)
+          if (!result) throw new Error(`Error updating balance for ${address}`)
           updated++
         } else {
           log.warn(`${logTime()} The balance of ${address} is outdated, balance:${balance}  newBalance:${newBalance}`)

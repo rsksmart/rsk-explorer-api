@@ -55,7 +55,7 @@ export const txRepository = {
 
     return deleted
   },
-  async insertOne (data, collection) {
+  insertOne (data, collection) {
     const {logs} = data.receipt
     const transactionQueries = [
       prismaClient.transaction.create({data: rawTxToEntity(data)}),
@@ -85,8 +85,7 @@ export const txRepository = {
       transactionQueries.push(prismaClient.logged_address.createMany({data: loggedAddressesToSave, skipDuplicates: true}))
     }
 
-    const res = await prismaClient.$transaction(transactionQueries)
-    return res
+    return transactionQueries
   }
 }
 

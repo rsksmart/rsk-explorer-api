@@ -53,7 +53,7 @@ export const internalTxRepository = {
 
     return deletedItxsData
   },
-  async insertOne (data, collection) {
+  insertOne (data, collection) {
     const {action, traceAddress, result} = data
     const internalTxToSave = rawInternalTransactionToEntity(data)
 
@@ -66,7 +66,6 @@ export const internalTxRepository = {
       }
     })
 
-    const res = await query
-    return res
+    return [query]
   }
 }

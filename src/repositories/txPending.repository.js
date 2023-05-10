@@ -13,7 +13,7 @@ export const txPendingRepository = {
 
     return txsPending
   },
-  async deleteOne (query, collection) {
+  deleteOne (query, collection) {
     return [prismaClient.transaction_pending.deleteMany({where: query})]
   },
   async updateOne (filter, update, options = {}, collection) {

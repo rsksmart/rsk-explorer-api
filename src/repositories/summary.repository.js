@@ -1,3 +1,4 @@
+import { getSummaryId } from '../lib/ids'
 import { prismaClient } from '../lib/Setup'
 import { mongoQueryToPrisma, generateFindQuery } from './utils'
 import { rawBlockSummaryToEntity, summaryEntityToRaw } from '../converters/summary.converters'
@@ -19,13 +20,18 @@ export const summaryRepository = {
 
     return count
   },
-  async updateOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
-    const {transactions, internalTransactions, addresses, tokenAddressesIds, events, suicides} = data.data
-    const summaryToSave = rawBlockSummaryToEntity(data)
-    const summaryId = summaryToSave.id
+  insertOne (data) {
+    const {transactions, internalTransactions, addresses, tokenAddressesIds, events, suicides} = data
+    const blockData = {
+      hash: data.block.hash,
+      number: data.block.number,
+      timestamp: data.block.timestamp
+    }
+    const summaryId = getSummaryId(blockData)
+    blockData.id = summaryId
+    const summaryToSave = rawBlockSummaryToEntity(blockData)
 
-    const transactionQueries = [prismaClient.block_summary.upsert({where: filter, create: summaryToSave, update: summaryToSave})]
+    const transactionQueries = [prismaClient.block_summary.createMany({data: summaryToSave, skipDuplicates: true})]
 
     const txsToSave = transactions.map(tx => ({hash: tx.hash, summaryId}))
     transactionQueries.push(prismaClient.transaction_in_summary.createMany({data: txsToSave, skipDuplicates: true}))

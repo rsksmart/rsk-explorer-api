@@ -19,7 +19,7 @@ async function bridgeCall (method, params = []) {
 
 export async function getBlockchainStats ({ blockHash, blockNumber }) {
   try {
-    if (!blockHash) throw new Error(`Missing blockchash. blockHash: ${blockHash}`)
+    if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
 
     const circulating = await getCirculatingSupply({}, initConfig.nativeContracts)
     const activeAccounts = await getActiveAccounts()
