@@ -2,7 +2,8 @@ import {
   internalTxEntityToRaw,
   rawActionToEntity,
   rawInternalTransactionResultToEntity,
-  rawInternalTransactionToEntity
+  rawInternalTransactionToEntity,
+  rawTraceAddressToEntity
 } from '../converters/internalTx.converters'
 import {prismaClient} from '../lib/Setup'
 import { internalTxRelatedTables } from './includeRelatedTables'
@@ -56,28 +57,16 @@ export const internalTxRepository = {
     const {action, traceAddress, result} = data
     const internalTxToSave = rawInternalTransactionToEntity(data)
 
-    const createdAction = await prismaClient.action.create({data: rawActionToEntity(action)})
-    internalTxToSave.actionId = createdAction.id
-
-    if (result) {
-      const createdResult = await prismaClient.internal_transaction_result.create({data: rawInternalTransactionResultToEntity(result)})
-      internalTxToSave.resultId = createdResult.id
-    }
-
-    await prismaClient.internal_transaction.create({data: internalTxToSave})
-
-    const traceAddressToSave = traceAddress.map((trace, index) => {
-      return {
-        internalTxId: internalTxToSave.internalTxId,
-        trace,
-        index
+    const query = prismaClient.internal_transaction.create({
+      data: {
+        ...internalTxToSave,
+        action: {create: [rawActionToEntity(action)]},
+        internal_transaction_result: {create: result ? [rawInternalTransactionResultToEntity(result)] : {}},
+        trace_address: {createMany: {data: traceAddress.map(rawTraceAddressToEntity), skipDuplicates: true}}
       }
     })
 
-    await prismaClient.trace_address.createMany({data: traceAddressToSave})
-    const { internalTxId } = internalTxToSave
-    const savedInternalTx = await this.findOne({ internalTxId }, {}, collection)
-
-    return savedInternalTx
+    const res = await query
+    return res
   }
 }
