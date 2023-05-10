@@ -34,11 +34,10 @@ export const tokenRepository = {
 
     return tokensByAddress
   },
-  async updateOne (filter, update, options = {}, collection) {
+  updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
     const tokenToCreate = data.id ? rawTokenToEntity(data) : {}
-    const updatedToken = await prismaClient.token_address.upsert({where: filter, update: {balance: data.balance}, create: tokenToCreate})
 
-    return updatedToken
+    return [prismaClient.token_address.upsert({where: filter, update: {balance: data.balance}, create: tokenToCreate})]
   }
 }
