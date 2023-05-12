@@ -23,7 +23,7 @@ export const addressRepository = {
 
     return count
   },
-  async updateOne (filter, update, options = {}, collection) {
+  updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
     const addressToSave = rawAddressToEntity(data)
 
@@ -57,8 +57,7 @@ export const addressRepository = {
       }
     }
 
-    const res = await prismaClient.$transaction(transactionQueries)
-    return res
+    return transactionQueries
   },
   async deleteMany (filter, collection) {
     const blockHash = filter['createdByTx.blockHash']

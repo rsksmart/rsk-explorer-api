@@ -1,7 +1,6 @@
 import { removeNullFields } from '../repositories/utils'
 
 function rawActionToEntity ({
-  id,
   callType,
   creationMethod,
   from,
@@ -14,7 +13,6 @@ function rawActionToEntity ({
   balance
 }) {
   return {
-    id,
     callType,
     creationMethod,
     from,
@@ -29,13 +27,11 @@ function rawActionToEntity ({
 }
 
 function rawInternalTransactionResultToEntity ({
-  id,
   address,
   gasUsed,
   output
 }) {
   return {
-    id,
     address,
     gasUsed,
     output
@@ -47,8 +43,6 @@ function rawInternalTransactionToEntity ({
   transactionHash,
   blockNumber,
   blockHash,
-  actionId,
-  resultId,
   transactionPosition,
   subtraces,
   _index,
@@ -60,14 +54,16 @@ function rawInternalTransactionToEntity ({
     transactionHash,
     blockNumber,
     blockHash,
-    actionId,
-    resultId,
     transactionPosition,
     subtraces,
     index: _index,
     timestamp: String(timestamp),
     type
   }
+}
+
+function rawTraceAddressToEntity (trace, index) {
+  return { trace, index }
 }
 
 function internalTxEntityToRaw ({
@@ -77,13 +73,6 @@ function internalTxEntityToRaw ({
   internal_transaction_result: result,
   action
 }) {
-  if (result) {
-    delete result.id
-  }
-  if (action) {
-    delete action.id
-  }
-
   return removeNullFields({
     timestamp,
     traceAddress,
@@ -97,5 +86,6 @@ export {
   rawActionToEntity,
   rawInternalTransactionResultToEntity,
   rawInternalTransactionToEntity,
-  internalTxEntityToRaw
+  internalTxEntityToRaw,
+  rawTraceAddressToEntity
 }

@@ -1,17 +1,13 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
 import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
-import { saveAddressToDb } from './Address'
+import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { blockRepository } from '../../repositories/block.repository'
 import { txRepository } from '../../repositories/tx.repository'
 import { internalTxRepository } from '../../repositories/internalTx.repository'
 import { eventRepository } from '../../repositories/event.repository'
-import { tokenRepository } from '../../repositories/token.repository'
-import { txPendingRepository } from '../../repositories/txPending.repository'
 import { addressRepository } from '../../repositories/address.repository'
 import { balancesRepository } from '../../repositories/balances.repository'
-import { blockTraceRepository } from '../../repositories/blockTrace.repository'
-import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { statsRepository } from '../../repositories/stats.repository'
 
 export class Block extends BcThing {
@@ -44,9 +40,8 @@ export class Block extends BcThing {
   }
 
   async save (overwrite) {
-    let result = {}
     try {
-      let { collections, summary, hashOrNumber } = this
+      let { collections, hashOrNumber } = this
       // Skip saved blocks
       if (isBlockHash(hashOrNumber) && !overwrite) {
         let hash = hashOrNumber
@@ -57,83 +52,16 @@ export class Block extends BcThing {
       let data = this.getData(true)
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
 
-      let { block, transactions, internalTransactions, events, tokenAddresses, addresses } = data
-      // clean db
-      block = await this.removeOldBlockData(block, transactions)
-
-      // insert block
-      result.block = await this.insertBlock(block)
-      // insert addresses
-      result.addresses = await Promise.all([...addresses.map(a => saveAddressToDb(a, collections.Addrs))])
-      // insert txs
-      await Promise.all([...transactions.map(tx => txRepository.insertOne(tx, collections.Txs))])
-        .then(res => { result.txs = res })
-
-      // remove pending txs
-      await Promise.all([...transactions.map(tx => txPendingRepository.deleteOne({ hash: tx.hash }, collections.PendingTxs))])
-
-      // insert internal transactions
-      await Promise.all([...internalTransactions.map(itx => internalTxRepository.insertOne(itx, collections.InternalTransactions))])
-        .then(res => { result.internalTxs = res })
-
-      // insert blockTrace
-      await blockTraceRepository.insertOne(internalTransactions, collections.BlocksTraces)
-
-      // insert events
-      result.events = await this.insertEvents(events)
-
-      // insert tokenAddresses
-      result.tokenAddresses = await this.insertTokenAddresses(tokenAddresses)
-
-      // save block summary
-      await summary.save(result.tokenAddresses.map(token => token.id))
+      await blockRepository.saveBlockData(data)
 
       // save stats (requires blocks and addresses inserted)
-      const { hash: blockHash, number: blockNumber } = block
-      const blockchainStats = await getBlockchainStats({ blockHash, blockNumber })
+      const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
       await statsRepository.insertOne(blockchainStats)
 
-      return { result, data }
+      return { data }
     } catch (err) {
-      // remove blockData if block was inserted
-      if (result.block) {
-        let data = this.getData()
-        await this.deleteBlockDataFromDb(data.block.hash, data.block.number)
-      }
+      console.log(err)
       this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
-      return Promise.reject(err)
-    }
-  }
-  async insertEvents (events) {
-    try {
-      let { Events } = this.collections
-      let result = await Promise.all([...events.map(e => eventRepository.updateOne(
-        { eventId: e.eventId },
-        { $set: e },
-        { upsert: true },
-        Events))])
-      return result
-    } catch (err) {
-      this.log.error('Error inserting events')
-      this.log.trace(`Events: ${JSON.stringify(events, null, 2)}`)
-      return Promise.reject(err)
-    }
-  }
-  async insertTokenAddresses (data) {
-    try {
-      let { TokensAddrs } = this.collections
-      let result = await Promise.all([...data.map(ta => {
-        ta.id = ta.address + '_' + ta.contract
-        return tokenRepository.updateOne(
-          { id: ta.id },
-          { $set: ta },
-          { upsert: true },
-          TokensAddrs
-        )
-      })])
-      return result
-    } catch (err) {
-      this.log.error('Error inserting token addresses')
       return Promise.reject(err)
     }
   }
@@ -198,10 +126,6 @@ export class Block extends BcThing {
 
   searchBlock ({ hash, number }) {
     return blockRepository.find({ $or: [{ hash }, { number }] })
-  }
-
-  insertBlock (block) {
-    return blockRepository.insertOne(block, this.collections.Blocks)
   }
 
   async getBlockFromDb (hashOrNumber, allData) {

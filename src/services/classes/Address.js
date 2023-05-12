@@ -193,7 +193,7 @@ export class Address extends BcThing {
       }
       if (Object.keys(data).length < 1) return
       data.address = address
-      let result = await saveAddressToDb(data, collection)
+      const result = await saveAddressToDb(data, collection)
       return result
     } catch (err) {
       this.log.error(`Error updating address ${address}`)
@@ -296,7 +296,7 @@ export async function saveAddressToDb (data, collection) {
   try {
     let { address } = data
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
-    let { result } = await addressRepository.updateOne({ address }, { $set: data }, { upsert: true }, collection)
+    let result = await Promise.all(addressRepository.updateOne({ address }, { $set: data }, { upsert: true }, collection))
     return result
   } catch (err) {
     return Promise.reject(err)

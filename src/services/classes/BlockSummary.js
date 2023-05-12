@@ -2,7 +2,6 @@ import { BcThing } from './BcThing'
 import Tx from './Tx'
 import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
-import { getSummaryId } from '../../lib/ids'
 import { arrayDifference, isBlockHash } from '../../lib/utils'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { summaryRepository } from '../../repositories/summary.repository'
@@ -135,21 +134,6 @@ export class BlockSummary extends BcThing {
       return Promise.reject(err)
     }
   }
-
-  async save (tokenAddressesIds) {
-    let data
-    try {
-      data = await this.fetch()
-      const { log, collections } = this
-      data.tokenAddressesIds = tokenAddressesIds
-      const res = await saveBlockSummary(data, collections, log)
-      return res
-    } catch (err) {
-      this.log.error(`Error saving block summary`)
-      this.log.debug(err)
-      return Promise.resolve()
-    }
-  }
 }
 
 export const mismatchBlockTransactions = (block, transactions) => {
@@ -157,22 +141,6 @@ export const mismatchBlockTransactions = (block, transactions) => {
   if (diff.length) return diff
   let blockHash = block.hash
   return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash)
-}
-
-export async function saveBlockSummary (data, collections, log) {
-  log = log || console
-  const { hash, number, timestamp } = data.block
-  try {
-    const collection = collections[BlocksSummaryCollection]
-    const old = await summaryRepository.findOne({ hash }, { id: 1 }, collection)
-    const id = (old) ? old.id : getSummaryId(data.block)
-    const summary = { id, hash, number, timestamp, data }
-    let result = await summaryRepository.updateOne({ id }, { $set: summary }, { upsert: true }, collection)
-    return result
-  } catch (err) {
-    log.error(`Error saving Block Summary ${hash}`)
-    return Promise.reject(err)
-  }
 }
 
 export async function getBlock (hashOrNumber, txArr = false, nod3) {

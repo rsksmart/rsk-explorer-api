@@ -88,7 +88,7 @@ async function saveBlockTrace (hash, { collections, initConfig }) {
     log.info(`Waiting for block_trace ${hash}`)
     let blockTrace = new BlockTrace(hash, { nod3, collections, initConfig })
     blockTrace = blockTrace.fetchFromNode()
-    await blockTraceRepository.insertOne(blockTrace, collections.BlocksTraces)
+    await Promise.all(blockTraceRepository.insertOne(blockTrace, collections.BlocksTraces))
     requested[hash] = true
     return hash
   } catch (err) {

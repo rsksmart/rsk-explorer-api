@@ -13,10 +13,8 @@ export const txPendingRepository = {
 
     return txsPending
   },
-  async deleteOne (query, collection) {
-    const deleted = await prismaClient.transaction_pending.deleteMany({where: query})
-
-    return deleted
+  deleteOne (query, collection) {
+    return [prismaClient.transaction_pending.deleteMany({where: query})]
   },
   async updateOne (filter, update, options = {}, collection) {
     const {$set: data, poolId} = update

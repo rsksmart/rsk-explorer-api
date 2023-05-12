@@ -20,13 +20,7 @@ export const statsRepository = {
 
     return count
   },
-  async insertOne (data) {
-    const newStats = rawStatsToEntity(data)
-
-    await prismaClient.stats.upsert({
-      where: { blockNumber: newStats.blockNumber },
-      create: newStats,
-      update: newStats
-    })
+  insertOne (data) {
+    return prismaClient.stats.createMany({ data: [rawStatsToEntity(data)], skipDuplicates: true })
   }
 }

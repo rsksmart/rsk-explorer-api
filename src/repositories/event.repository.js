@@ -19,7 +19,7 @@ export const eventRepository = {
     const count = await prismaClient.event.count({where: mongoQueryToPrisma(query)})
     return count
   },
-  async updateOne (filter, update, options = {}, collection) {
+  updateOne (filter, update, options = {}, collection) {
     const {$set: data} = update
     const {_addresses, abi, args, topics, eventId} = data
     const transactionQueries = []
@@ -43,9 +43,7 @@ export const eventRepository = {
       transactionQueries.push(prismaClient.event_arg.createMany({data: argsToSave, skipDuplicates: true}))
     }
 
-    await prismaClient.$transaction(transactionQueries)
-
-    return eventId
+    return transactionQueries
   },
   async deleteMany (filter, collection) {
     const deleted = await prismaClient.event.deleteMany({where: mongoQueryToPrisma(filter)})

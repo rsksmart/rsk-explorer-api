@@ -1,3 +1,4 @@
+import { getSummaryId } from '../lib/ids'
 import { prismaClient } from '../lib/Setup'
 import { mongoQueryToPrisma, generateFindQuery } from './utils'
 import { rawBlockSummaryToEntity, summaryEntityToRaw } from '../converters/summary.converters'
@@ -19,69 +20,38 @@ export const summaryRepository = {
 
     return count
   },
-  async updateOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
-    const {transactions, internalTransactions, addresses, tokenAddressesIds, events, suicides} = data.data
-    const summaryToSave = rawBlockSummaryToEntity(data)
-    const summaryId = summaryToSave.id
-
-    const queries = [prismaClient.block_summary.upsert({where: filter, create: summaryToSave, update: summaryToSave})]
-
-    for (const tx of transactions) {
-      const txToSave = {hash: tx.hash, summaryId}
-      queries.push(prismaClient.transaction_in_summary.upsert({
-        where: {hash_summaryId: txToSave},
-        create: txToSave,
-        update: txToSave
-      }))
+  insertOne (data) {
+    const {transactions, internalTransactions, addresses, tokenAddressesIds, events, suicides} = data
+    const blockData = {
+      hash: data.block.hash,
+      number: data.block.number,
+      timestamp: data.block.timestamp
     }
+    const summaryId = getSummaryId(blockData)
+    blockData.id = summaryId
+    const summaryToSave = rawBlockSummaryToEntity(blockData)
 
-    for (const itx of internalTransactions) {
-      const internalTxToSave = {internalTxId: itx.internalTxId, summaryId}
-      queries.push(prismaClient.internal_transaction_in_summary.upsert({
-        where: {internalTxId_summaryId: internalTxToSave},
-        create: internalTxToSave,
-        update: internalTxToSave
-      }))
-    }
+    const transactionQueries = [prismaClient.block_summary.createMany({data: summaryToSave, skipDuplicates: true})]
 
-    for (const address of addresses) {
-      const addressToSave = {address: address.address, summaryId}
-      queries.push(prismaClient.address_in_summary.upsert({
-        where: {address_summaryId: addressToSave},
-        create: addressToSave,
-        update: addressToSave
-      }))
-    }
+    const txsToSave = transactions.map(tx => ({hash: tx.hash, summaryId}))
+    transactionQueries.push(prismaClient.transaction_in_summary.createMany({data: txsToSave, skipDuplicates: true}))
 
-    for (const tokenId of tokenAddressesIds) {
-      const tokenToSave = {tokenId, summaryId}
-      queries.push(prismaClient.token_address_in_summary.upsert({
-        where: {tokenId_summaryId: tokenToSave},
-        create: tokenToSave,
-        update: tokenToSave
-      }))
-    }
+    const itxsToSave = internalTransactions.map(itx => ({internalTxId: itx.internalTxId, summaryId}))
+    transactionQueries.push(prismaClient.internal_transaction_in_summary.createMany({data: itxsToSave, skipDuplicates: true}))
 
-    for (const event of events) {
-      const eventToSave = {eventId: event.eventId, summaryId}
-      queries.push(prismaClient.event_in_summary.upsert({
-        where: {eventId_summaryId: eventToSave},
-        create: eventToSave,
-        update: eventToSave
-      }))
-    }
+    const addressesToSave = addresses.map(address => ({address: address.address, summaryId}))
+    transactionQueries.push(prismaClient.address_in_summary.createMany({data: addressesToSave, skipDuplicates: true}))
 
-    for (const suicide of suicides) {
-      const suicideToSave = {internalTxId: suicide.internalTxId, summaryId}
-      queries.push(prismaClient.suicide_in_summary.upsert({
-        where: {internalTxId_summaryId: suicideToSave},
-        create: suicideToSave,
-        update: suicideToSave
-      }))
-    }
+    const tokenAddressesToSave = tokenAddressesIds.map(tokenId => ({tokenId, summaryId}))
+    transactionQueries.push(prismaClient.token_address_in_summary.createMany({data: tokenAddressesToSave, skipDuplicates: true}))
 
-    await prismaClient.$transaction(queries)
+    const eventsToSave = events.map(event => ({eventId: event.eventId, summaryId}))
+    transactionQueries.push(prismaClient.event_in_summary.createMany({data: eventsToSave, skipDuplicates: true}))
+
+    const suicidesToSave = suicides.map(suicide => ({internalTxId: suicide.internalTxId, summaryId}))
+    transactionQueries.push(prismaClient.suicide_in_summary.createMany({data: suicidesToSave, skipDuplicates: true}))
+
+    return transactionQueries
   },
   async deleteOne (query, collection) {
     const deleted = await prismaClient.block_summary.delete({where: query})
