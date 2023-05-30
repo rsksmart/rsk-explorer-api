@@ -5,7 +5,6 @@ export const servicesNames = {
   REQUESTER: 'blocksRequester',
   CHECKER: 'blocksChecker',
   TXPOOL: 'txPool',
-  BALANCES: 'blocksBalances',
   STATUS: 'blocksStatus'
 }
 

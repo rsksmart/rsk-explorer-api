@@ -1,6 +1,6 @@
-import {prismaClient} from '../lib/Setup'
-import {rawBlockToEntity, blockEntityToRaw} from '../converters/block.converters'
-import {generateFindQuery, mongoQueryToPrisma} from './utils'
+import { prismaClient } from '../lib/Setup'
+import { rawBlockToEntity, blockEntityToRaw } from '../converters/block.converters'
+import { generateFindQuery, mongoQueryToPrisma } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
 import { txRepository } from './tx.repository'
 import { internalTxRepository } from './internalTx.repository'
@@ -11,7 +11,7 @@ import { tokenRepository } from './token.repository'
 import { summaryRepository } from './summary.repository'
 import { addressRepository } from './address.repository'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { Prisma } from '@prisma/client'
+import { balancesRepository } from './balances.repository'
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {
@@ -44,7 +44,7 @@ export const blockRepository = {
     return transactionQueries
   },
   async saveBlockData (data) {
-    const { block, transactions, internalTransactions, events, tokenAddresses, addresses } = data
+    const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances } = data
     const transactionQueries = []
 
     // insert block
@@ -58,6 +58,9 @@ export const blockRepository = {
         transactionQueries.push(...addressRepository.updateOne({ address: address.address }, { $set: address }, { upsert: true }))
       }
     }
+
+    // insert balances
+    transactionQueries.push(...balancesRepository.insertMany(balances))
 
     // insert txs and delete pendings
     for (const tx of transactions) {
@@ -92,7 +95,7 @@ export const blockRepository = {
     // save block summary
     transactionQueries.push(...summaryRepository.insertOne(data))
 
-    const res = prismaClient.$transaction(transactionQueries, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })
+    const res = prismaClient.$transaction(transactionQueries)
 
     return res
   },

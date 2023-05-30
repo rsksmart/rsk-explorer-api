@@ -23,10 +23,8 @@ export const balancesRepository = {
 
     return deleted
   },
-  async insertMany (data, collection) {
+  insertMany (data) {
     const balancesToSave = data.map(balance => rawBalanceToEntity(balance))
-    const savedBalance = await prismaClient.balance.createMany({data: balancesToSave})
-
-    return savedBalance
+    return [prismaClient.balance.createMany({data: balancesToSave, skipDuplicates: true})]
   }
 }

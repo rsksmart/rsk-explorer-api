@@ -92,13 +92,6 @@ model balance {
   block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
 }
 
-model balances_log {
-  blockHash String @map("block_hash") @db.VarChar(66)
-  created   String @db.VarChar
-
-  @@id([blockHash, created], map: "pk_balanceslog")
-}
-
 model block {
   id                                                            String?                @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
   number                                                        Int                    @id
@@ -729,13 +722,13 @@ model stats {
 }
 
 model contract_verification_abi_output {
-  abi_id                    Int
+  abiId                     Int
   name                      String                    @db.VarChar
   type                      String                    @db.VarChar
   internal_type             String?                   @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abi_id], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_output")
+  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_output")
 
-  @@id([abi_id, name, type], map: "pk_contract_verification_abi_ouput")
+  @@id([abiId, name, type], map: "pk_contract_verification_abi_ouput")
 }
 
 model block_trace {
