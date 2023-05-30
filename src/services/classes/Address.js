@@ -296,7 +296,7 @@ export async function saveAddressToDb (data, collection) {
   try {
     let { address } = data
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
-    let result = await Promise.all(addressRepository.updateOne({ address }, { $set: data }, { upsert: true }, collection))
+    let result = await Promise.all(addressRepository.updateOne(data))
     return result
   } catch (err) {
     return Promise.reject(err)
