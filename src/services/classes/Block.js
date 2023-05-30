@@ -9,6 +9,7 @@ import { eventRepository } from '../../repositories/event.repository'
 import { addressRepository } from '../../repositories/address.repository'
 import { balancesRepository } from '../../repositories/balances.repository'
 import { statsRepository } from '../../repositories/stats.repository'
+import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
   constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
@@ -51,6 +52,8 @@ export class Block extends BcThing {
       await this.fetch()
       let data = this.getData(true)
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
+
+      data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
 
       await blockRepository.saveBlockData(data)
 
