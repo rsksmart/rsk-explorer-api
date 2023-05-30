@@ -43,17 +43,13 @@ export const addressRepository = {
       const {address: contractAddress} = contractToSave
 
       if (contractMethods) {
-        const methodsToSave = contractMethods.map(method => {
-          return {method, contractAddress}
-        })
-        transactionQueries.push(prismaClient.contract_method.createMany({data: methodsToSave, skipDuplicates: true}))
+        const methodsToSave = contractMethods.map(method => ({method, contractAddress}))
+        transactionQueries.push(prismaClient.contract_method.createMany({ data: methodsToSave, skipDuplicates: true }))
       }
 
       if (contractInterfaces) {
-        const interfacesToSave = contractInterfaces.map(inter => {
-          return {interface: inter, contractAddress}
-        })
-        transactionQueries.push(prismaClient.contract_interface.createMany({data: interfacesToSave, skipDuplicates: true}))
+        const interfacesToSave = contractInterfaces.map(inter => ({interface: inter, contractAddress}))
+        transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
       }
     }
 
