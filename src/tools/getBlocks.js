@@ -1,115 +1,53 @@
 import dataSource from '../lib/dataSource.js'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
-import { blockRepository } from '../repositories/block.repository.js'
+import nod3 from '../lib/nod3Connect.js'
 
-const fromBlock = parseInt(process.argv[2])
-const toBlock = parseInt(process.argv[3])
-const descOrder = process.argv[4] === 'true'
-const blocksAmount = Math.abs(fromBlock - toBlock)
+async function validateInputs (fromBlock, toBlock) {
+  const notNumbers = isNaN(fromBlock) || isNaN(toBlock)
+  const invalidSegment = fromBlock > toBlock
+  const latestBlock = await nod3.eth.getBlock('latest')
+  const inexistentBlock = toBlock > latestBlock.number
 
-const erroredBlocks = {}
-const metrics = {
-  savedBlocks: 0,
-  totalTimeInMs: 0,
-  medianBlocksPerSecond: 0,
-  medianMsPerBlock: 0,
-  spikesInMs: {}
+  function logError (msg) {
+    console.log('\n' + 'Error: ' + msg + '\n')
+    process.exit(9)
+  }
+
+  if (notNumbers) {
+    logError('Inputs must be numbers')
+  } else if (invalidSegment) {
+    logError('First block number must be higher than the second one')
+  } else if (inexistentBlock) {
+    logError(`Second block number must be lower or equal than latest block (Latest block: ${latestBlock.number})`)
+  }
 }
 
 async function syncBlocks () {
-  if (isNaN(fromBlock) || isNaN(toBlock)) help()
-  console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${blocksAmount} blocks)`)
+  const fromBlock = parseInt(process.argv[2])
+  const toBlock = parseInt(process.argv[3])
 
+  await validateInputs(fromBlock, toBlock)
+
+  console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
   const { db, initConfig } = await dataSource()
-  let step = 1
-  let start = fromBlock
-  let end = toBlock
 
-  if (descOrder) {
-    step = -1
-    start = toBlock
-    end = fromBlock
-  }
-
-  for (let currentBlock = start; descOrder ? currentBlock >= end : currentBlock <= end; currentBlock += step) {
-    // insertion
-    let block
-    let time = Date.now()
-
+  for (let b = fromBlock; b <= toBlock; b++) {
     try {
-      block = new Block(currentBlock, new BlocksBase(db, { initConfig }))
+      let time = Date.now()
+      const block = new Block(b, new BlocksBase(db, { initConfig }))
       await block.fetch()
       await block.save()
 
       time = Date.now() - time
-      console.log(`Block ${currentBlock} saved! (${time} ms)`)
+      console.log(`Block ${b} saved! (${time} ms)`)
     } catch (err) {
       console.log(err)
-
-      if (err.message.includes('prisma')) {
-        console.dir({ block: block.getData(true) }, { depth: null })
-      }
-
-      const blockInDb = await blockRepository.findOne({ number: currentBlock })
-      if (!blockInDb) {
-        erroredBlocks[currentBlock] = err
-      }
-    }
-
-    // metrics
-    const uncommonInsertionTime = metrics.averageMsPerBlock && time > 5 * metrics.averageMsPerBlock
-    if (uncommonInsertionTime) {
-      metrics.spikesInMs[currentBlock] = time
-    }
-
-    metrics.savedBlocks++
-    metrics.totalTimeInMs += time
-    metrics.averageBlocksPerSecond = metrics.savedBlocks / (metrics.totalTimeInMs / 1000)
-    metrics.averageMsPerBlock = metrics.totalTimeInMs / metrics.savedBlocks
-
-    // every x blocks
-    if (metrics.savedBlocks % 20 === 0) {
-      console.log('')
-      console.log('Status:')
-      printStatus()
     }
   }
 
-  console.log('')
-  console.log(`Finished in ${metrics.totalTimeInMs / 1000} seconds`)
-  printStatus()
-
-  if (Object.keys(erroredBlocks).length) {
-    console.log('')
-    console.log('Errored blocks:')
-    console.log({ erroredBlocks })
-  }
-
-  // TODO?: retry errored blocks
-  // TODO?: add datetime to logs
+  console.log(`Finished.`)
   process.exit(0)
 }
-
-function help () {
-  const myName = process.argv[1].split('/').pop()
-  console.log('')
-  console.log(`Usage: ${process.argv[0]} ${myName} fromBlock=number toBlock=number descOrder=boolean`)
-  console.log(`By default blocks are inserted in asc order. Set descOrder to false to reverse insertions.`)
-  console.log('')
-
-  process.exit(0)
-}
-
-function printStatus () {
-  console.log('')
-  console.log({ metrics })
-  console.log('')
-}
-
-process.on('unhandledRejection', err => {
-  console.error(err)
-  process.exit(9)
-})
 
 syncBlocks()
