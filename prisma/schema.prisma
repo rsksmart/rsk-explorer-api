@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgres://postgres:12345678@localhost:5432/explorer_db"
+  url      = ""
 }
 
 model abi {
