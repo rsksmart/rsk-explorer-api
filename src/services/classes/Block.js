@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
-import { blockQuery, isBlockHash, isBlockObject } from '../../lib/utils'
+import { blockQuery, isBlockHash, isBlockObject, isValidBlockNumber } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { blockRepository } from '../../repositories/block.repository'
 import { txRepository } from '../../repositories/tx.repository'
@@ -45,9 +45,13 @@ export class Block extends BcThing {
       let { collections, hashOrNumber } = this
       // Skip saved blocks
       if (isBlockHash(hashOrNumber) && !overwrite) {
-        let hash = hashOrNumber
-        let exists = await blockRepository.findOne({ hash }, {}, collections.Blocks)
+        const hash = hashOrNumber
+        const exists = await blockRepository.findOne({ hash }, {}, collections.Blocks)
         if (exists) throw new Error(`Block ${hash} skipped`)
+      } else if (isValidBlockNumber(hashOrNumber)) {
+        const number = hashOrNumber
+        const exists = await blockRepository.findOne({ number }, {}, collections.Blocks)
+        if (exists) throw new Error(`Block ${number} skipped`)
       }
       await this.fetch()
       let data = this.getData(true)
