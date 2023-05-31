@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = ""
+  url      = "postgres://postgres:12345678@localhost:5432/explorer_db"
 }
 
 model abi {
@@ -432,7 +432,7 @@ model receipt {
   blockHash                         String      @map("block_hash") @db.VarChar(66)
   blockNumber                       Int         @map("block_number")
   from                              String      @db.VarChar(42)
-  to                                String      @db.VarChar(42)
+  to                                String?     @db.VarChar(42)
   cumulativeGasUsed                 Int         @map("cumulative_gas_used")
   gasUsed                           Int         @map("gas_used")
   contractAddress                   String?     @map("contract_address") @db.VarChar(42)
@@ -442,7 +442,7 @@ model receipt {
   block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_hash")
   block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_number")
   address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_from")
-  address_receipt_toToaddress       address     @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_to")
+  address_receipt_toToaddress       address?    @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_to")
   transaction                       transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_transaction_hash")
 }
 
@@ -570,7 +570,7 @@ model transaction {
   txId                                  String                   @map("tx_id") @db.VarChar
   txType                                String                   @map("tx_type") @db.VarChar
   from                                  String                   @db.VarChar(42)
-  to                                    String                   @db.VarChar(42)
+  to                                    String?                  @db.VarChar(42)
   blockNumber                           Int                      @map("block_number")
   blockHash                             String                   @map("block_hash") @db.VarChar(66)
   transactionIndex                      Int                      @map("transaction_index")
@@ -589,7 +589,7 @@ model transaction {
   block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
   block_transaction_block_numberToblock block                    @relation("transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_number")
   address_transaction_fromToaddress     address                  @relation("transaction_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_from")
-  address_transaction_toToaddress       address                  @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
+  address_transaction_toToaddress       address?                 @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
   transaction_in_summary                transaction_in_summary[]
 }
 
