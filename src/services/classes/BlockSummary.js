@@ -63,8 +63,20 @@ export class BlockSummary extends BcThing {
       let { timestamp, transactions, hash } = blockData
       let blockTrace = new BlockTrace(hash, { nod3, collections, log, initConfig })
       blockTrace = await blockTrace.fetchFromNode()
-      let txs = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionByHash', hash]))
-      let receipts = await nod3.batchRequest(transactions.map(hash => ['eth.getTransactionReceipt', hash]))
+
+      let txs = []
+      let receipts = []
+
+      const txsChunks = []
+      for (let i = 0; i <= transactions.length; i += 100) {
+        txsChunks.push(transactions.slice(i, i + 100))
+      }
+
+      for (const txChunk of txsChunks) {
+        txs.push(...(await nod3.batchRequest(txChunk.map(hash => ['eth.getTransactionByHash', hash]))))
+        receipts.push(...(await nod3.batchRequest(txChunk.map(hash => ['eth.getTransactionReceipt', hash]))))
+      }
+
       return transactions.map(hash => {
         let txData = txs.find(tx => tx.hash === hash)
         let receipt = receipts.find(re => re.transactionHash === hash)
