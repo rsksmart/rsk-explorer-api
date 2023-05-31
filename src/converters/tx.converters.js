@@ -25,7 +25,7 @@ function rawTxToEntity ({
     txId,
     txType,
     from,
-    to,
+    to: to || undefined,
     blockNumber,
     blockHash,
     transactionIndex,
@@ -60,7 +60,7 @@ function rawReceiptToEntity ({
     blockHash,
     blockNumber,
     from,
-    to,
+    to: to || undefined,
     cumulativeGasUsed,
     gasUsed,
     contractAddress,
@@ -211,7 +211,7 @@ function receiptEntityToRaw ({
     logsBloom
   }
 
-  return removeNullFields(receiptToReturn, ['contractAddress'])
+  return removeNullFields(receiptToReturn, ['contractAddress', 'to'])
 }
 
 function transactionEntityToRaw ({
@@ -241,7 +241,7 @@ function transactionEntityToRaw ({
     blockNumber,
     transactionIndex,
     from,
-    to,
+    to: to || null,
     gas,
     gasPrice,
     value,
