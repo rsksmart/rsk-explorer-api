@@ -722,7 +722,7 @@ model stats {
 }
 
 model contract_verification_abi_output {
-  abiId                     Int
+  abiId                     Int                       @map("abi_id")
   name                      String                    @db.VarChar
   type                      String                    @db.VarChar
   internal_type             String?                   @db.VarChar
