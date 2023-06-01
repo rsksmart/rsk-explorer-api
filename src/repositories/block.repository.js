@@ -63,8 +63,12 @@ export const blockRepository = {
     transactionQueries.push(...balancesRepository.insertMany(balances))
 
     // insert txs and delete pendings
-    for (const tx of transactions) {
-      transactionQueries.push(...txRepository.insertOne(tx), ...txPendingRepository.deleteOne({ hash: tx.hash }))
+    if (!transactions.length) {
+      throw new Error(`Couldn't get transactions for block ${block.number}`)
+    } else {
+      for (const tx of transactions) {
+        transactionQueries.push(...txRepository.insertOne(tx), ...txPendingRepository.deleteOne({ hash: tx.hash }))
+      }
     }
 
     // insert internal transactions

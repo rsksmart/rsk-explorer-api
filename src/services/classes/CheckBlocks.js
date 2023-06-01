@@ -1,9 +1,8 @@
 import { BlocksBase } from '../../lib/BlocksBase'
-import { getBlockFromDb, deleteBlockDataFromDb } from './Block'
+import { getBlockFromDb } from './Block'
 import { getBlock } from './RequestBlocks'
 import { chunkArray } from '../../lib/utils'
 import { blockRepository } from '../../repositories/block.repository'
-import { txRepository } from '../../repositories/tx.repository'
 
 export class CheckBlocks extends BlocksBase {
   constructor (db, options) {
@@ -11,7 +10,7 @@ export class CheckBlocks extends BlocksBase {
     this.Blocks = this.collections.Blocks
     this.tipBlock = null
     this.tipCount = 0
-    this.tipSize = options.bcTipSize || 12
+    this.tipSize = options.bcTipSize || 120
   }
 
   async saveTipBlocks () {
@@ -25,7 +24,7 @@ export class CheckBlocks extends BlocksBase {
       if (!this.emit) throw new Error('The emitter should be defined')
       await this.saveTipBlocks()
       this.log.info('Checking database')
-      let res = await this.checkDb({ checkOrphans: true, skipTxs: true })
+      let res = await this.checkDb()
       this.log.info('Getting missing blocks')
       if (!res) this.log.info('There are no missing blocks')
       else this.log.trace(res)
@@ -36,74 +35,16 @@ export class CheckBlocks extends BlocksBase {
     }
   }
 
-  async checkDb ({ checkOrphans, lastBlock, firstBlock, skipTxs }) {
+  async checkDb ({ lastBlock }) {
     if (!lastBlock || !lastBlock.number) lastBlock = await this.getHighDbBlock()
     if (!lastBlock) return
     lastBlock = lastBlock.number
     let blocks = await this.countDbBlocks()
 
-    let missingSegments = []
-    if (blocks < lastBlock + 1) {
-      missingSegments = await this.getMissingSegments()
-    }
-    let missingTxs
-    if (!skipTxs) {
-      missingTxs = await this.getMissingTransactions(lastBlock, firstBlock)
-      await this.deleteMissingTxsBlocks(missingTxs)
-    }
-
-    let res = { lastBlock, blocks, missingSegments, missingTxs }
-    if (checkOrphans) {
-      let orphans = await this.getOrphans(lastBlock)
-      res = Object.assign(res, orphans)
-    }
+    let res = { lastBlock, blocks }
     return res
   }
 
-  async getOrphans (lastBlock) {
-    this.log.debug(`Checking orphan blocks from ${lastBlock}`)
-    let blocks = await checkBlocksCongruence(this.Blocks, lastBlock)
-    return blocks
-  }
-
-  async getMissingSegments (fromBlock = 0, toBlock = null) {
-    let query = (fromBlock || toBlock) ? { number: {} } : {}
-    if (fromBlock > 0) query.number.$gte = fromBlock
-    if (toBlock && toBlock > fromBlock) query.number.$lte = toBlock
-
-    try {
-      let blocks = await blockRepository.find(query, { number: 1 }, { }, { number: -1 })
-      blocks = blocks.map(block => block.number)
-
-      if (blocks.length === 1) {
-        blocks.push(-1)
-        return [blocks]
-      } else {
-        return this.getMissing(blocks)
-      }
-    } catch (err) {
-      this.log.error(`Error getting missing blocks segments ${err}`)
-      process.exit(9)
-    }
-  }
-
-  getMissingTransactions (lastBlock, firstBlock) {
-    return checkBlocksTransactions(this.Blocks, this.collections.Txs, lastBlock, firstBlock)
-  }
-
-  // assumes "a" is an array of block numbers in desc order
-  getMissing (a) {
-    // add blockNum 0
-    if (a[a.length - 1] > 0) a.push(0)
-
-    // filter missing segments starting points
-    return a.filter((v, i) => {
-      return (a[i + 1] - v < -1)
-    // find each missing segment end and return all segments, eg: [ [10,6], [5,3] ]
-    }).map(mv => [mv, a.find((v, i) => {
-      return (v < mv && a[i - 1] - v > 1)
-    })])
-  }
   getLastBlock () {
     return this.nod3.eth.getBlock('latest', false)
   }
@@ -190,7 +131,7 @@ export class CheckBlocks extends BlocksBase {
         let lastBlock = this.tipBlock
         this.tipCount = 0
         this.log.info(`Checking db / LastBlock: ${lastBlock}`)
-        let firstBlock = lastBlock - this.tipSize * 10
+        let firstBlock = lastBlock - this.tipSize
         let res = await this.checkDb({ checkOrphans: true, lastBlock, firstBlock })
         this.log.trace(`Check db: ${res}`)
         return this.getBlocks(res)
@@ -198,73 +139,6 @@ export class CheckBlocks extends BlocksBase {
     } catch (err) {
       this.log.error(`Error updating tip: ${err}`)
     }
-  }
-
-  async deleteMissingTxsBlocks (blocks) {
-    try {
-      let res = await Promise.all([...blocks
-        .map(block => deleteBlockDataFromDb(block.hash, block.number, this.collections))])
-      return res
-    } catch (err) {
-      this.log.error(`Error deleting blocks: ${blocks}`)
-      return Promise.reject(err)
-    }
-  }
-}
-
-export const checkBlocksCongruence = async (blocksCollection, lastBlock) => {
-  try {
-    const query = (lastBlock) ? { number: { $lt: lastBlock } } : {}
-    const blocksInDb = await blockRepository.find(query, { id: 0, number: 1, hash: 1, parentHash: 1 }, blocksCollection, { number: -1 }, 0, false)
-
-    const blocks = blocksInDb.reduce((blocksMapping, block) => {
-      blocksMapping[block.number] = block
-      return blocksMapping
-    }, {})
-
-    const missing = []
-    const invalid = []
-
-    for (const number in blocks) {
-      if (number > 0) {
-        const block = blocks[number]
-        const parentNumber = number - 1
-        const parent = blocks[parentNumber]
-        if (!parent) {
-          missing.push(parentNumber)
-        } else {
-          if (parent.hash !== block.parentHash) {
-            parent.validHash = block.parentHash
-            invalid.push(parent)
-          }
-        }
-      }
-    }
-    return { missing, invalid }
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}
-
-export const checkBlocksTransactions = async (blocksCollection, txsCollection, lastBlock, firstBlock) => {
-  try {
-    let missing = {}
-    let query = (lastBlock || firstBlock) ? { number: {} } : {}
-    if (lastBlock) query.number.$lte = lastBlock
-    if (firstBlock) query.number.$gte = firstBlock
-    const blocks = await blockRepository.find(query, {}, blocksCollection, {}, 0, false)
-
-    for (const block of blocks) {
-      await Promise.all(block.transactions
-        .map(hash => txRepository.countDocuments({ hash })
-          .then(count => {
-            if (count < 1) missing[block.number] = block
-          })))
-    }
-
-    return Object.values(missing)
-  } catch (err) {
-    return Promise.reject(err)
   }
 }
 
