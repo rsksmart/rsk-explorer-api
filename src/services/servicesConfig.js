@@ -3,7 +3,6 @@ export const servicesNames = {
   ROUTER: 'blocksRouter',
   LISTENER: 'blocksListener',
   REQUESTER: 'blocksRequester',
-  CHECKER: 'blocksChecker',
   TXPOOL: 'txPool',
   STATUS: 'blocksStatus'
 }
