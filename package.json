@@ -12,7 +12,8 @@
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
-    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
+    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
+    "sync": "node dist/tools/syncBlocks.js"
   },
   "repository": {
     "type": "git",

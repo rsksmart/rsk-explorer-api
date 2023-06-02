@@ -63,7 +63,7 @@ export const blockRepository = {
     transactionQueries.push(...balancesRepository.insertMany(balances))
 
     // insert txs and delete pendings
-    if (!transactions.length) {
+    if (!transactions.length && block.number > 0) {
       throw new Error(`Couldn't get transactions for block ${block.number}`)
     } else {
       for (const tx of transactions) {
