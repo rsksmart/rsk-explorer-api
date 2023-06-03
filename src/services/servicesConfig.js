@@ -1,7 +1,6 @@
 
 export const servicesNames = {
   ROUTER: 'blocksRouter',
-  REQUESTER: 'blocksRequester',
   TXPOOL: 'txPool',
   STATUS: 'blocksStatus'
 }
