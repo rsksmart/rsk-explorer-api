@@ -13,7 +13,9 @@
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
     "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
-    "sync": "node dist/tools/syncBlocks.js"
+    "service-sync-blocks": "node dist/services/syncBlocks.js",
+    "service-tx-pool": "node dist/services/txPool.js",
+    "services": "concurrently -t \"yyyy/MM/dd HH:mm:ss\" -p \"{time} [{name}]:\" \"npm:service-*\" --restart-tries -1 --restart-after 3000 > services.output.log | tail -f services.output.log"
   },
   "repository": {
     "type": "git",
@@ -51,6 +53,7 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
     "chai": "^4.2.0",
+    "concurrently": "^8.1.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.22.0",
