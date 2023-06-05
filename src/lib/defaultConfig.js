@@ -4,9 +4,13 @@
  */
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
-import { servicesNames } from '../services/servicesConfig'
 
-const services = Object.assign({}, servicesNames)
+export const enabledServices = {
+  SYNC_BLOCKS: 'syncBlocks',
+  TX_POOL: 'txPool'
+}
+
+const services = Object.assign({}, enabledServices)
 for (let s in services) {
   services[s] = true
 }
