@@ -12,6 +12,7 @@ import { summaryRepository } from './summary.repository'
 import { addressRepository } from './address.repository'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { balancesRepository } from './balances.repository'
+import { statusRepository } from './status.repository'
 
 export const blockRepository = {
   async findOne (query = {}, project = {}, collection) {
@@ -44,7 +45,7 @@ export const blockRepository = {
     return transactionQueries
   },
   async saveBlockData (data) {
-    const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances } = data
+    const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, status } = data
     const transactionQueries = []
 
     // insert block
@@ -98,6 +99,9 @@ export const blockRepository = {
 
     // save block summary
     transactionQueries.push(...summaryRepository.insertOne(data))
+
+    // insert status
+    transactionQueries.push(...statusRepository.insertOne(status))
 
     const res = prismaClient.$transaction(transactionQueries)
 

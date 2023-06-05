@@ -12,16 +12,15 @@ import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
+  constructor (hashOrNumber, status, { nod3, collections, log, initConfig }) {
     super({ nod3, collections, initConfig, log })
     this.Blocks = this.collections.Blocks
     this.fetched = false
     this.log = log || console
     this.hashOrNumber = hashOrNumber
     this.summary = new BlockSummary(hashOrNumber, { nod3, initConfig, collections, log })
-    this.data = {
-      block: null
-    }
+    this.data = { block: null }
+    this.status = status
   }
 
   async fetch (forceFetch) {
@@ -58,6 +57,7 @@ export class Block extends BcThing {
       if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
 
       data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
+      data.status = this.status
 
       await blockRepository.saveBlockData(data)
 

@@ -1,8 +1,7 @@
 
 export const servicesNames = {
   ROUTER: 'blocksRouter',
-  TXPOOL: 'txPool',
-  STATUS: 'blocksStatus'
+  TXPOOL: 'txPool'
 }
 
 export function createServices (address, ports, enabledServices) {

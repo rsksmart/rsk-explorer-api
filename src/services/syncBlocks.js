@@ -12,20 +12,25 @@ async function syncBlocks (fromBlock) {
 
   try {
     const { number: toBlock } = await nod3.eth.getBlock('latest')
-    console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
-
     const { db, initConfig } = await dataSource()
+    console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
+    const requestingBlocks = toBlock - fromBlock
+    let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
 
     while (blockToSave <= toBlock) {
-      let time = Date.now()
-      const block = new Block(blockToSave, new BlocksBase(db, { initConfig }))
-
+      const connected = await nod3.isConnected()
+      const nodeDown = !connected
+      let timestamp = Date.now()
+      const status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
+      // insert block
+      const block = new Block(blockToSave, status, new BlocksBase(db, { initConfig }))
       await block.fetch()
       await block.save()
+      timestamp = Date.now() - timestamp
 
-      time = Date.now() - time
-      console.log(`Block ${blockToSave} saved! (${time} ms)`)
+      console.log(`Block ${blockToSave} saved! (${timestamp} ms)`)
       blockToSave++
+      pendingBlocks--
       retries = 0
     }
   } catch (error) {

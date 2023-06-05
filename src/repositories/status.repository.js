@@ -15,7 +15,7 @@ export const statusRepository = {
 
     return statusArr.map(status => statusEntityToRaw(status))
   },
-  async insertOne (data, collection) {
-    await prismaClient.status.create({ data: rawStatusToEntity(data) })
+  insertOne (data) {
+    return [prismaClient.status.create({ data: rawStatusToEntity(data) })]
   }
 }
