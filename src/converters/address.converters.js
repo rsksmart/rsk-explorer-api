@@ -4,7 +4,6 @@ import { blockEntityToRaw } from './block.converters'
 function rawAddressToEntity ({
   address,
   blockNumber,
-  lastBlockMined,
   balance,
   isNative,
   type
@@ -12,7 +11,6 @@ function rawAddressToEntity ({
   return {
     address,
     block: blockNumber,
-    lastBlockMined: lastBlockMined ? lastBlockMined.number : null,
     balance,
     isNative,
     type
@@ -60,7 +58,7 @@ function addressEntityToRaw ({
   balance,
   block: blockNumber,
   isNative,
-  block_address_last_block_minedToblock: lastBlockMined,
+  miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
   name,
   type
@@ -74,9 +72,8 @@ function addressEntityToRaw ({
     type
   }
 
-  if (lastBlockMined) {
-    delete lastBlockMined.id
-    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined)
+  if (lastBlockMined[0]) {
+    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
   }
 
   if (contract) {
@@ -121,6 +118,6 @@ function contractEntityToRaw ({
     contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
   }
 
-  return removeNullFields(contractToReturn, ['name'])
+  return removeNullFields(contractToReturn, ['name', 'code'])
 }
 export {rawAddressToEntity, rawContractToEntity, addressEntityToRaw, contractEntityToRaw}

@@ -18,11 +18,7 @@ export const blockRepository = {
     query = generateFindQuery(query, project, blockRelatedTables, project)
     const block = await prismaClient.block.findFirst(query)
 
-    if (block) {
-      return Object.keys(project).length ? block : blockEntityToRaw(block)
-    } else {
-      return null
-    }
+    return block ? blockEntityToRaw(block) : null
   },
   async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
@@ -35,10 +31,10 @@ export const blockRepository = {
     return count
   },
   insertOne (data, collection) {
-    const { uncles, number } = data
+    const { uncles, number: blockNumber } = data
     const transactionQueries = [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
 
-    const unclesToSave = uncles.map(hash => ({hash, blockNumber: number}))
+    const unclesToSave = uncles.map(hash => ({hash, blockNumber}))
     transactionQueries.push(prismaClient.uncle.createMany({data: unclesToSave, skipDuplicates: true}))
 
     return transactionQueries

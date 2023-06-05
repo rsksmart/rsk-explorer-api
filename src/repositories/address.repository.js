@@ -53,6 +53,10 @@ export const addressRepository = {
       }
     }
 
+    if (data.lastBlockMined) {
+      transactionQueries.push(prismaClient.miner.createMany({data: {address: data.address, blockNumber: data.lastBlockMined.number}, skipDuplicates: true}))
+    }
+
     return transactionQueries
   },
   async deleteMany (filter, collection) {

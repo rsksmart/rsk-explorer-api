@@ -1,7 +1,6 @@
 function rawBlockToEntity ({
   number,
   hash,
-  miner,
   parentHash,
   sha3Uncles,
   logsBloom,
@@ -27,7 +26,6 @@ function rawBlockToEntity ({
   return {
     number,
     hash,
-    miner,
     parentHash,
     sha3Uncles,
     logsBloom,
@@ -83,7 +81,7 @@ function blockEntityToRaw ({
   return {
     number,
     hash,
-    miner,
+    miner: miner.address,
     parentHash,
     sha3Uncles,
     logsBloom,
