@@ -1,5 +1,5 @@
-import { dataSource } from '../../lib/dataSource'
-import { TxPool } from '../classes/TxPool'
+import { dataSource } from '../lib/dataSource'
+import { TxPool } from './classes/TxPool'
 
 async function main () {
   try {
