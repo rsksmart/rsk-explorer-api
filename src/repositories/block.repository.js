@@ -101,7 +101,9 @@ export const blockRepository = {
     transactionQueries.push(...summaryRepository.insertOne(data))
 
     // insert status
-    transactionQueries.push(...statusRepository.insertOne(status))
+    if (status) {
+      transactionQueries.push(...statusRepository.insertOne(status))
+    }
 
     const res = prismaClient.$transaction(transactionQueries)
 

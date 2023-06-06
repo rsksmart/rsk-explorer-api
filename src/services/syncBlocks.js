@@ -23,7 +23,7 @@ async function syncBlocks (fromBlock) {
       let timestamp = Date.now()
       const status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
       // insert block
-      const block = new Block(blockToSave, status, new BlocksBase(db, { initConfig }))
+      const block = new Block(blockToSave, new BlocksBase(db, { initConfig }), status)
       await block.fetch()
       await block.save()
       timestamp = Date.now() - timestamp

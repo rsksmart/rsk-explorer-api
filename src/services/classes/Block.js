@@ -12,7 +12,7 @@ import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, status, { nod3, collections, log, initConfig }) {
+  constructor (hashOrNumber, { nod3, collections, log, initConfig }, status) {
     super({ nod3, collections, initConfig, log })
     this.Blocks = this.collections.Blocks
     this.fetched = false
