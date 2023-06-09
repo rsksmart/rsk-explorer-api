@@ -23,13 +23,11 @@ export const addressRepository = {
 
     return count
   },
-  insertOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
-
+  insertOne (data) {
     const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
 
     if (data.type === 'contract') {
-      const {contractMethods, contractInterfaces} = data
+      const {contractMethods, contractInterfaces, totalSupply} = data
 
       const contractToSave = rawContractToEntity(data)
 
@@ -46,13 +44,19 @@ export const addressRepository = {
         const interfacesToSave = contractInterfaces.map(inter => ({ interface: inter, contractAddress }))
         transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
       }
+
+      if (totalSupply) {
+        const { blockNumber, totalSupply } = data
+        transactionQueries.push(prismaClient.total_supply.createMany({data: {contractAddress, blockNumber, totalSupply}, skipDuplicates: true}))
+      }
     }
 
     if (data.lastBlockMined) {
       transactionQueries.push(prismaClient.miner.createMany({data: {
         address: data.address,
         blockNumber: data.lastBlockMined.number
-      }}))
+      },
+      skipDuplicates: true}))
     }
 
     return transactionQueries

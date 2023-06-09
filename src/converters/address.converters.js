@@ -22,7 +22,6 @@ function rawContractToEntity ({
   codeStoredAtBlock,
   deployedCode,
   symbol,
-  totalSupply,
   decimals
 }) {
   const contractToReturn = {
@@ -32,7 +31,6 @@ function rawContractToEntity ({
     codeStoredAtBlock,
     deployedCode,
     symbol,
-    totalSupply,
     decimals
   }
 
@@ -88,7 +86,7 @@ function contractEntityToRaw ({
   codeStoredAtBlock,
   deployedCode,
   symbol,
-  totalSupply,
+  total_supply: totalSupply,
   decimals,
   contract_method: methods,
   contract_interface: interfaces
@@ -102,7 +100,6 @@ function contractEntityToRaw ({
     codeStoredAtBlock,
     deployedCode,
     symbol,
-    totalSupply,
     decimals
   }
 
@@ -112,6 +109,10 @@ function contractEntityToRaw ({
 
   if (interfaces) {
     contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
+  }
+
+  if (totalSupply[0]) {
+    contractToReturn.totalSupply = totalSupply[0].totalSupply
   }
 
   return removeNullFields(contractToReturn, ['name', 'code'])

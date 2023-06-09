@@ -132,6 +132,7 @@ model block {
   stats_stats_block_numberToblock                               stats?                 @relation("stats_block_numberToblock")
   token_address_token_address_block_hashToblock                 token_address[]        @relation("token_address_block_hashToblock")
   token_address                                                 token_address[]
+  total_supply                                                  total_supply[]
   transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
   transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
   uncle                                                         uncle[]
@@ -155,13 +156,13 @@ model contract {
   codeStoredAtBlock                              Int?                  @map("code_stored_at_block")
   deployedCode                                   String?               @map("deployed_code") @db.VarChar
   symbol                                         String?               @db.VarChar
-  totalSupply                                    String?               @map("total_supply") @db.VarChar
   decimals                                       Int?                  @db.SmallInt
   address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
   block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
   token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
+  total_supply                                   total_supply[]
   verification_result                            verification_result[]
 }
 
@@ -810,4 +811,14 @@ model miner {
   block                          block   @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_miner_block_number")
 
   @@id([address, blockNumber], map: "pk_miner")
+}
+
+model total_supply {
+  contractAddress String   @map("contract_address") @db.VarChar(42)
+  blockNumber     Int      @map("block_number")
+  totalSupply     String   @map("total_supply") @db.VarChar
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: NoAction, onUpdate: NoAction, map: "fk_total_supply_address")
+  block           block    @relation(fields: [blockNumber], references: [number], onDelete: NoAction, onUpdate: NoAction, map: "fk_total_supply_number")
+
+  @@id([contractAddress, blockNumber], map: "pk_total_supply")
 }

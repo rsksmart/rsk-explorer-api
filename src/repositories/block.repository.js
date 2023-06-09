@@ -51,7 +51,7 @@ export const blockRepository = {
       if (!isAddress(address.address)) {
         throw new Error(`Invalid address ${address.address}`)
       } else {
-        transactionQueries.push(...addressRepository.insertOne({ address: address.address }, { $set: address }, { upsert: true }))
+        transactionQueries.push(...addressRepository.insertOne(address))
       }
     }
 
