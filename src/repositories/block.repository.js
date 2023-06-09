@@ -73,10 +73,7 @@ export const blockRepository = {
 
     // insert events
     for (const event of events) {
-      transactionQueries.push(...eventRepository.updateOne(
-        { eventId: event.eventId },
-        { $set: event },
-        { upsert: true }))
+      transactionQueries.push(...eventRepository.insertOne(event))
     }
 
     // insert tokenAddresses
