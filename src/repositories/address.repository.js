@@ -23,22 +23,17 @@ export const addressRepository = {
 
     return count
   },
-  updateOne (filter, update, options = {}, collection) {
+  insertOne (filter, update, options = {}, collection) {
     const {$set: data} = update
-    const addressToSave = rawAddressToEntity(data)
 
-    const transactionQueries = [prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })]
+    const transactionQueries = [prismaClient.address.createMany({data: rawAddressToEntity(data)})]
 
     if (data.type === 'contract') {
       const {contractMethods, contractInterfaces} = data
 
       const contractToSave = rawContractToEntity(data)
 
-      transactionQueries.push(prismaClient.contract.upsert({
-        where: {address: contractToSave.address},
-        create: contractToSave,
-        update: contractToSave
-      }))
+      transactionQueries.push(prismaClient.contract.createMany({data: contractToSave}))
 
       const {address: contractAddress} = contractToSave
 
@@ -53,22 +48,13 @@ export const addressRepository = {
       }
     }
 
-    if (data.lastBlockMined) {
-      transactionQueries.push(prismaClient.miner.createMany({data: {address: data.address, blockNumber: data.lastBlockMined.number}, skipDuplicates: true}))
-    }
-
     return transactionQueries
   },
-  async deleteMany (filter, collection) {
-    const blockHash = filter['createdByTx.blockHash']
-    const txs = await prismaClient.transaction.findMany({where: {blockHash}})
-
-    const deleted = await prismaClient.address.deleteMany({
+  deleteMany (addresses, collection) {
+    return [prismaClient.address.deleteMany({
       where: {
-        contract_contract_addressToaddress: {createdByTx: {in: txs.map(tx => tx.hash)}}
+        address: { in: addresses }
       }
-    })
-
-    return deleted
+    })]
   }
 }

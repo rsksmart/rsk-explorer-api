@@ -46,11 +46,8 @@ model action {
 model address {
   id                                                     Int                  @default(autoincrement())
   address                                                String               @id @db.VarChar(42)
-  block                                                  Int
-  balance                                                String               @db.VarChar
   isNative                                               Boolean              @map("is_native")
   type                                                   String               @db.VarChar
-  block_address_blockToblock                             block                @relation("address_blockToblock", fields: [block], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_block")
   address_in_event_address_in_event_addressToaddress     address_in_event[]   @relation("address_in_event_addressToaddress")
   address_in_summary_address_in_summary_addressToaddress address_in_summary[] @relation("address_in_summary_addressToaddress")
   balance_balance_addressToaddress                       balance[]            @relation("balance_addressToaddress")
@@ -116,7 +113,6 @@ model block {
   paidFees                                                      String                 @map("paid_fees") @db.VarChar
   cumulativeDifficulty                                          String                 @map("cumulative_difficulty") @db.VarChar
   received                                                      String                 @db.VarChar
-  address_address_blockToblock                                  address[]              @relation("address_blockToblock")
   balance_balance_block_hashToblock                             balance[]              @relation("balance_block_hashToblock")
   balance_balance_block_numberToblock                           balance[]              @relation("balance_block_numberToblock")
   block_summary_block_summary_hashToblock                       block_summary?         @relation("block_summary_hashToblock")

@@ -3,15 +3,11 @@ import { blockEntityToRaw } from './block.converters'
 
 function rawAddressToEntity ({
   address,
-  blockNumber,
-  balance,
   isNative,
   type
 }) {
   return {
     address,
-    block: blockNumber,
-    balance,
     isNative,
     type
   }
@@ -55,8 +51,7 @@ function rawContractToEntity ({
 
 function addressEntityToRaw ({
   address,
-  balance,
-  block: blockNumber,
+  balance_balance_addressToaddress: balance,
   isNative,
   miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
@@ -65,8 +60,8 @@ function addressEntityToRaw ({
 }) {
   const addressToReturn = {
     address,
-    balance,
-    blockNumber,
+    balance: balance[0].balance,
+    blockNumber: balance[0].blockNumber,
     isNative,
     name,
     type
@@ -85,6 +80,7 @@ function addressEntityToRaw ({
 
 function contractEntityToRaw ({
   address,
+  balance_balance_addressToaddress: balance,
   name,
   createdByTx,
   createdByInternalTx,
