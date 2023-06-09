@@ -26,26 +26,33 @@ export const addressRepository = {
   insertOne (filter, update, options = {}, collection) {
     const {$set: data} = update
 
-    const transactionQueries = [prismaClient.address.createMany({data: rawAddressToEntity(data)})]
+    const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
 
     if (data.type === 'contract') {
       const {contractMethods, contractInterfaces} = data
 
       const contractToSave = rawContractToEntity(data)
 
-      transactionQueries.push(prismaClient.contract.createMany({data: contractToSave}))
+      transactionQueries.push(prismaClient.contract.createMany({data: contractToSave, skipDuplicates: true}))
 
       const {address: contractAddress} = contractToSave
 
       if (contractMethods) {
-        const methodsToSave = contractMethods.map(method => ({method, contractAddress}))
+        const methodsToSave = contractMethods.map(method => ({ method, contractAddress }))
         transactionQueries.push(prismaClient.contract_method.createMany({ data: methodsToSave, skipDuplicates: true }))
       }
 
       if (contractInterfaces) {
-        const interfacesToSave = contractInterfaces.map(inter => ({interface: inter, contractAddress}))
+        const interfacesToSave = contractInterfaces.map(inter => ({ interface: inter, contractAddress }))
         transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
       }
+    }
+
+    if (data.lastBlockMined) {
+      transactionQueries.push(prismaClient.miner.createMany({data: {
+        address: data.address,
+        blockNumber: data.lastBlockMined.number
+      }}))
     }
 
     return transactionQueries
