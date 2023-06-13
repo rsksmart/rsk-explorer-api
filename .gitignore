@@ -8,4 +8,4 @@ tmp
 coverage
 .nyc_output
 dist
-logs
+services.output.log

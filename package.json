@@ -12,7 +12,10 @@
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
-    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
+    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
+    "service-sync-blocks": "node dist/services/syncBlocks.js",
+    "service-tx-pool": "node dist/services/txPool.js",
+    "services": "concurrently -t \"yyyy/MM/dd HH:mm:ss\" -p \"{time} [{name}]:\" \"npm:service-*\" --restart-tries -1 --restart-after 3000 > services.output.log | tail -f services.output.log"
   },
   "repository": {
     "type": "git",
@@ -35,8 +38,6 @@
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
     "express": "^4.17.1",
-    "google-protobuf": "^3.13.0",
-    "grpc": "^1.24.3",
     "mongodb": "^3.6.1",
     "prisma": "^4.11.0",
     "rlp": "^2.2.5",
@@ -50,6 +51,7 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
     "chai": "^4.2.0",
+    "concurrently": "^8.1.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.22.0",
