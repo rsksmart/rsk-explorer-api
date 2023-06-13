@@ -23,48 +23,49 @@ export const addressRepository = {
 
     return count
   },
-  updateOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
-    const addressToSave = rawAddressToEntity(data)
-
-    const transactionQueries = [prismaClient.address.upsert({ where: filter, update: addressToSave, create: addressToSave })]
+  insertOne (data) {
+    const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
 
     if (data.type === 'contract') {
-      const {contractMethods, contractInterfaces} = data
+      const {contractMethods, contractInterfaces, totalSupply} = data
 
       const contractToSave = rawContractToEntity(data)
 
-      transactionQueries.push(prismaClient.contract.upsert({
-        where: {address: contractToSave.address},
-        create: contractToSave,
-        update: contractToSave
-      }))
+      transactionQueries.push(prismaClient.contract.createMany({data: contractToSave, skipDuplicates: true}))
 
       const {address: contractAddress} = contractToSave
 
       if (contractMethods) {
-        const methodsToSave = contractMethods.map(method => ({method, contractAddress}))
+        const methodsToSave = contractMethods.map(method => ({ method, contractAddress }))
         transactionQueries.push(prismaClient.contract_method.createMany({ data: methodsToSave, skipDuplicates: true }))
       }
 
       if (contractInterfaces) {
-        const interfacesToSave = contractInterfaces.map(inter => ({interface: inter, contractAddress}))
+        const interfacesToSave = contractInterfaces.map(inter => ({ interface: inter, contractAddress }))
         transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
       }
+
+      if (totalSupply) {
+        const { blockNumber, totalSupply } = data
+        transactionQueries.push(prismaClient.total_supply.createMany({data: {contractAddress, blockNumber, totalSupply}, skipDuplicates: true}))
+      }
+    }
+
+    if (data.lastBlockMined) {
+      transactionQueries.push(prismaClient.miner.createMany({data: {
+        address: data.address,
+        blockNumber: data.lastBlockMined.number
+      },
+      skipDuplicates: true}))
     }
 
     return transactionQueries
   },
-  async deleteMany (filter, collection) {
-    const blockHash = filter['createdByTx.blockHash']
-    const txs = await prismaClient.transaction.findMany({where: {blockHash}})
-
-    const deleted = await prismaClient.address.deleteMany({
+  deleteMany (addresses, collection) {
+    return [prismaClient.address.deleteMany({
       where: {
-        contract_contract_addressToaddress: {createdByTx: {in: txs.map(tx => tx.hash)}}
+        address: { in: addresses }
       }
-    })
-
-    return deleted
+    })]
   }
 }

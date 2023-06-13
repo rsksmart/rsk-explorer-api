@@ -1,18 +1,28 @@
-import { addrTypes } from '../../lib/types'
-import { addressRepository } from '../../repositories/address.repository'
+import { prismaClient } from '../../lib/Setup'
 
 export default async function getActiveAccounts () {
-  try {
-    const query = {
-      AND: [
-        { type: addrTypes.ADDRESS },
-        { balance: { not: '0x0' } },
-        { balance: { not: '0' } }
-      ]
+  const query = {
+    select: {
+      balance_balance_addressToaddress: {
+        select: {id: true},
+        where: {balance: {notIn: ['0', '0x0']}},
+        orderBy: {blockNumber: 'desc'},
+        take: 1
+      }
     }
-    const result = await addressRepository.countDocuments(query)
-    return result
-  } catch (error) {
-    console.log('Error at getActiveAccounts:', error)
+  }
+
+  try {
+    const activeAccounts = (await prismaClient.address.findMany(query))
+      .reduce((active, current) => {
+        if (current.balance_balance_addressToaddress.length) {
+          active++
+        }
+        return active
+      }, 0)
+
+    return activeAccounts
+  } catch (e) {
+    console.error(e)
   }
 }

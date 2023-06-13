@@ -1,12 +1,15 @@
 const blockRelatedTables = {
   uncle: {select: {hash: true}},
-  transaction_transaction_block_numberToblock: {select: {hash: true}}
+  transaction_transaction_block_numberToblock: {select: {hash: true}},
+  miner: {select: {address: true}}
 }
 
 const addressRelatedTables = {
-  block_address_last_block_minedToblock: {include: blockRelatedTables},
+  miner_miner_addressToaddress: {select: {block: {include: blockRelatedTables}}, orderBy: {blockNumber: 'desc'}, take: 1},
+  balance_balance_addressToaddress: {select: {balance: true, blockNumber: true}, orderBy: {blockNumber: 'desc'}, take: 1},
   contract_contract_addressToaddress: {
     include: {
+      total_supply: {select: {totalSupply: true}, orderBy: {blockNumber: 'desc'}, take: 1},
       contract_method: {select: {method: true}},
       contract_interface: {select: {interface: true}}
     }
