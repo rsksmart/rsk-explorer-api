@@ -58,8 +58,8 @@ function addressEntityToRaw ({
 }) {
   const addressToReturn = {
     address,
-    balance: balance[0].balance,
-    blockNumber: balance[0].blockNumber,
+    balance: balance[0] ? balance[0].balance : null,
+    blockNumber: balance[0] ? balance[0].blockNumber : null,
     isNative,
     name,
     type

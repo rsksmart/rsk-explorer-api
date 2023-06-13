@@ -34,10 +34,7 @@ export const tokenRepository = {
 
     return tokensByAddress
   },
-  updateOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
-    const tokenToCreate = data.id ? rawTokenToEntity(data) : {}
-
-    return [prismaClient.token_address.upsert({where: filter, update: {balance: data.balance}, create: tokenToCreate})]
+  insertOne (data) {
+    return [prismaClient.token_address.createMany({data: rawTokenToEntity(data), skipDuplicates: true})]
   }
 }

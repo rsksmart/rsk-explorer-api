@@ -77,13 +77,9 @@ export const blockRepository = {
     }
 
     // insert tokenAddresses
-    const tokenAddressesIds = []
     for (const token of tokenAddresses) {
-      token.id = token.address + '_' + token.contract
-      tokenAddressesIds.push(token.id)
-      transactionQueries.push(...tokenRepository.updateOne({ id: token.id }, { $set: token }, { upsert: true }))
+      transactionQueries.push(...tokenRepository.insertOne(token))
     }
-    data.tokenAddressesIds = tokenAddressesIds
 
     // save block summary
     transactionQueries.push(...summaryRepository.insertOne(data))
@@ -93,7 +89,7 @@ export const blockRepository = {
     return res
   },
   async deleteBlockData (blockNumber) {
-    const transactionQueries = [prismaClient.block.deleteMany({where: blockNumber})]
+    const transactionQueries = [prismaClient.block.deleteMany({where: {number: blockNumber}})]
 
     // this will delete only the addresses that have been first registered with this block;
     // if there's any other balance for the address added in another block, it won't delete the address
@@ -120,8 +116,7 @@ export const blockRepository = {
         deletableAddresses.push(address)
       }
     }
-
-    transactionQueries.push(addressRepository.deleteMany(deletableAddresses))
+    transactionQueries.push(...addressRepository.deleteMany(deletableAddresses))
 
     return transactionQueries
   }
