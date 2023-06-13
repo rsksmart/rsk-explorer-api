@@ -19,8 +19,7 @@ export const eventRepository = {
     const count = await prismaClient.event.count({where: mongoQueryToPrisma(query)})
     return count
   },
-  updateOne (filter, update, options = {}, collection) {
-    const {$set: data} = update
+  insertOne (data) {
     const {_addresses, abi, args, topics, eventId} = data
     const transactionQueries = []
 

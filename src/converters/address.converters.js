@@ -3,17 +3,11 @@ import { blockEntityToRaw } from './block.converters'
 
 function rawAddressToEntity ({
   address,
-  blockNumber,
-  lastBlockMined,
-  balance,
   isNative,
   type
 }) {
   return {
     address,
-    block: blockNumber,
-    lastBlockMined: lastBlockMined ? lastBlockMined.number : null,
-    balance,
     isNative,
     type
   }
@@ -28,7 +22,6 @@ function rawContractToEntity ({
   codeStoredAtBlock,
   deployedCode,
   symbol,
-  totalSupply,
   decimals
 }) {
   const contractToReturn = {
@@ -38,7 +31,6 @@ function rawContractToEntity ({
     codeStoredAtBlock,
     deployedCode,
     symbol,
-    totalSupply,
     decimals
   }
 
@@ -57,26 +49,24 @@ function rawContractToEntity ({
 
 function addressEntityToRaw ({
   address,
-  balance,
-  block: blockNumber,
+  balance_balance_addressToaddress: balance,
   isNative,
-  block_address_last_block_minedToblock: lastBlockMined,
+  miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
   name,
   type
 }) {
   const addressToReturn = {
     address,
-    balance,
-    blockNumber,
+    balance: balance[0] ? balance[0].balance : null,
+    blockNumber: balance[0] ? balance[0].blockNumber : null,
     isNative,
     name,
     type
   }
 
-  if (lastBlockMined) {
-    delete lastBlockMined.id
-    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined)
+  if (lastBlockMined[0]) {
+    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
   }
 
   if (contract) {
@@ -88,6 +78,7 @@ function addressEntityToRaw ({
 
 function contractEntityToRaw ({
   address,
+  balance_balance_addressToaddress: balance,
   name,
   createdByTx,
   createdByInternalTx,
@@ -95,7 +86,7 @@ function contractEntityToRaw ({
   codeStoredAtBlock,
   deployedCode,
   symbol,
-  totalSupply,
+  total_supply: totalSupply,
   decimals,
   contract_method: methods,
   contract_interface: interfaces
@@ -109,7 +100,6 @@ function contractEntityToRaw ({
     codeStoredAtBlock,
     deployedCode,
     symbol,
-    totalSupply,
     decimals
   }
 
@@ -121,6 +111,10 @@ function contractEntityToRaw ({
     contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
   }
 
-  return removeNullFields(contractToReturn, ['name'])
+  if (totalSupply[0]) {
+    contractToReturn.totalSupply = totalSupply[0].totalSupply
+  }
+
+  return removeNullFields(contractToReturn, ['name', 'code'])
 }
 export {rawAddressToEntity, rawContractToEntity, addressEntityToRaw, contractEntityToRaw}

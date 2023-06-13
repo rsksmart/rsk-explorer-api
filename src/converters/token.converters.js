@@ -1,14 +1,12 @@
 import { removeNullFields } from '../repositories/utils'
 
 function rawTokenToEntity ({
-  id,
   address,
   contract,
   balance,
   block
 }) {
   return {
-    id,
     address,
     contract,
     balance,
@@ -18,7 +16,6 @@ function rawTokenToEntity ({
 }
 
 function tokenEntityToRaw ({
-  id: _id,
   address,
   contract,
   balance,
@@ -26,7 +23,6 @@ function tokenEntityToRaw ({
   blockHash
 }) {
   const tokenToReturn = {
-    _id,
     address,
     contract,
     block: {blockNumber, blockHash},

@@ -21,7 +21,7 @@ export const summaryRepository = {
     return count
   },
   insertOne (data) {
-    const {transactions, internalTransactions, addresses, tokenAddressesIds, events, suicides} = data
+    const {transactions, internalTransactions, addresses, tokenAddresses, events, suicides} = data
     const blockData = {
       hash: data.block.hash,
       number: data.block.number,
@@ -42,7 +42,14 @@ export const summaryRepository = {
     const addressesToSave = addresses.map(address => ({address: address.address, summaryId}))
     transactionQueries.push(prismaClient.address_in_summary.createMany({data: addressesToSave, skipDuplicates: true}))
 
-    const tokenAddressesToSave = tokenAddressesIds.map(tokenId => ({tokenId, summaryId}))
+    const tokenAddressesToSave = tokenAddresses.map(token => {
+      return {
+        address: token.address,
+        contract: token.contract,
+        block: token.block.number,
+        summaryId
+      }
+    })
     transactionQueries.push(prismaClient.token_address_in_summary.createMany({data: tokenAddressesToSave, skipDuplicates: true}))
 
     const eventsToSave = events.map(event => ({eventId: event.eventId, summaryId}))
