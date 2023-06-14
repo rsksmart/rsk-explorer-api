@@ -1,9 +1,9 @@
 import { BcThing } from './BcThing'
 import { isBlockHash } from '../../lib/utils'
 export class BlockTrace extends BcThing {
-  constructor (hash, { nod3, collections, log, initConfig }) {
+  constructor (hash, { nod3, log, initConfig }) {
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    super({ nod3, collections, log, initConfig })
+    super({ nod3, log, initConfig })
     this.hash = hash
   }
 

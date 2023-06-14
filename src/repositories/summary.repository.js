@@ -5,17 +5,17 @@ import { rawBlockSummaryToEntity, summaryEntityToRaw } from '../converters/summa
 import { summaryRelatedTables } from './includeRelatedTables'
 
 export const summaryRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const summary = await prismaClient.block_summary.findFirst(generateFindQuery(query, project, summaryRelatedTables))
 
     return summary ? summaryEntityToRaw(summary) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const summaries = await prismaClient.block_summary.findMany(generateFindQuery(query, project, summaryRelatedTables, sort, limit))
 
     return Object.keys(project).length ? summaries : summaries.map(summaryEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.block_summary.count({where: mongoQueryToPrisma(query)})
 
     return count
@@ -60,7 +60,7 @@ export const summaryRepository = {
 
     return transactionQueries
   },
-  async deleteOne (query, collection) {
+  async deleteOne (query) {
     const deleted = await prismaClient.block_summary.delete({where: query})
 
     return deleted

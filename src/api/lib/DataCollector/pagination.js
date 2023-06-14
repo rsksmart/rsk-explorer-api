@@ -1,13 +1,11 @@
-import { OBJECT_ID } from '../../../lib/types'
-import { ObjectID } from 'mongodb'
 import config from '../../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
 const SEPARATOR = '__'
 
-export async function countDocuments (collection, query, repository) {
+export async function countDocuments (query, repository) {
   query = query || {}
   try {
-    let result = await repository.countDocuments(query, collection)
+    let result = await repository.countDocuments(query)
     return result
   } catch (err) {
     return Promise.reject(err)
@@ -39,7 +37,6 @@ export function generateCursorQuery ({ cursorField, sortDir, value, sortField })
 export function formatSearchValue (value, type) {
   if (value !== null && value !== undefined) {
     if (type === 'number') value = parseInt(value)
-    if (type === OBJECT_ID) value = new ObjectID(value)
   }
   return value
 }
@@ -116,29 +113,29 @@ export function parseParams (cursorData, params) {
   return params
 }
 
-export async function findPages (collection, cursorData, query, params, repository) {
+export async function findPages (cursorData, query, params, repository) {
   try {
     params = parseParams(cursorData, params)
     const { fields, count, countOnly, queryLimit } = params
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
-    let data = (!countOnly) ? await find(collection, $query, $sort, queryLimit + 1, fields, repository) : null
-    let total = (count) ? (await countDocuments(collection, query, repository)) : null
+    let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository) : null
+    let total = (count) ? (await countDocuments(query, repository)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-export async function aggregatePages (collection, cursorData, query, params, repository) {
+export async function aggregatePages (cursorData, query, params, repository) {
   try {
     params = parseParams(cursorData, params)
     const { fields, count, countOnly, queryLimit } = params
     let match = generateQuery(params)
     const sort = generateSort(params)
     const aggregate = modifyAggregate(query, { match, sort, limit: queryLimit + 1, fields })
-    let data = (!countOnly) ? await repository.aggregate(aggregate, collection) : null
-    let total = (count) ? await getAggregateTotal(collection, query, repository) : null
+    let data = (!countOnly) ? await repository.aggregate(aggregate) : null
+    let total = (count) ? await getAggregateTotal(query, repository) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)
@@ -164,8 +161,8 @@ export function modifyAggregate (query, { match, sort, limit, fields }) {
   return aggregate
 }
 
-export async function getAggregateTotal (collection, [query], repository) {
-  const total = await countDocuments(collection, query, repository)
+export async function getAggregateTotal ([query], repository) {
+  const total = await countDocuments(query, repository)
 
   return total || null
 }
@@ -219,12 +216,12 @@ export function paginationResponse (params, data, total) {
   return { pagination, data }
 }
 
-export async function find (collection, query, sort, limit, project, repository) {
+export async function find (query, sort, limit, project, repository) {
   sort = sort || {}
   project = project || {}
   limit = limit || 0
   let data = await repository
-    .find(query, project, collection, sort, limit)
+    .find(query, project, sort, limit)
     .catch((err) => {
       return Promise.reject(err)
     })

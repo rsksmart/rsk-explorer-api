@@ -1,16 +1,13 @@
-import defaultCollections from './collections'
 import { config as defaultConfig } from './config'
 import DB from './Db.js'
 import { StoredConfig } from './StoredConfig'
 import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
-import { getDbBlocksCollections } from './blocksCollections'
 import { hash } from './utils'
 import { PrismaClient } from '@prisma/client'
 import prismaDefaultConfig from './defaultConfig'
 
 export const INIT_ID = '_explorerInitialConfiguration'
-export const COLLECTIONS_ID = '_explorerCollections'
 export const CONFIG_ID = '_explorerConfig'
 
 const readOnlyDocsIds = [INIT_ID]
@@ -28,7 +25,7 @@ export async function getNetInfo (nod3) {
   }
 }
 
-const defaultInstances = { nod3: nod3Default, config: defaultConfig, collections: defaultCollections }
+const defaultInstances = { nod3: nod3Default, config: defaultConfig }
 
 export let prismaClient = null
 
@@ -55,20 +52,13 @@ function generatePrismaURL (config) {
   return url
 }
 
-export async function Setup ({ log } = {}, { nod3, config, collections } = defaultInstances) {
+export async function Setup ({ log } = {}, { nod3, config } = defaultInstances) {
   const database = new DB(config.db)
   if (undefined !== log) database.setLogger(log)
   log = database.getLogger()
-  const db = await database.db()
-  const storedConfig = StoredConfig(db, readOnlyDocsIds)
+  const storedConfig = StoredConfig(readOnlyDocsIds)
 
   const createHash = thing => hash(thing, 'sha1', 'hex')
-
-  const createCollections = async (names) => {
-    names = names || config.collectionsNames
-    const validate = config.blocks.validateCollections
-    return database.createCollections(collections, { names, validate })
-  }
 
   const getInitConfig = async () => {
     try {
@@ -93,14 +83,12 @@ export async function Setup ({ log } = {}, { nod3, config, collections } = defau
 
   const checkConfig = async () => {
     const testConfig = await checkStoredHash(CONFIG_ID, config)
-    const testCollections = await checkStoredHash(COLLECTIONS_ID, collections)
-    return !!(testConfig && testCollections)
+    return !!(testConfig)
   }
 
   const saveConfig = async () => {
     try {
       await storedConfig.update(CONFIG_ID, { hash: createHash(config) }, { create: true })
-      await storedConfig.update(COLLECTIONS_ID, { hash: createHash(collections) }, { create: true })
     } catch (err) {
       return Promise.reject(err)
     }
@@ -112,7 +100,6 @@ export async function Setup ({ log } = {}, { nod3, config, collections } = defau
       const storedInitConfig = await storedConfig.get(INIT_ID)
       const configMatches = await checkConfig()
       if (!storedInitConfig || !configMatches) {
-        await createCollections()
         await saveConfig()
         if (!storedInitConfig) {
           log.info(`Saving initial configuration to db`)
@@ -129,18 +116,16 @@ export async function Setup ({ log } = {}, { nod3, config, collections } = defau
     }
   }
 
-  const getCollections = (db) => {
-    return getDbBlocksCollections(db)
-  }
-
   const start = async (skipCheck) => {
     try {
       let initConfig
-      if (skipCheck) initConfig = await storedConfig.get(INIT_ID)
-      else initConfig = await checkSetup()
+      if (skipCheck) {
+        initConfig = await storedConfig.get(INIT_ID)
+      } else {
+        initConfig = await checkSetup()
+      }
       if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
-      const collections = await getCollections(db)
-      return { initConfig, db, collections }
+      return { initConfig }
     } catch (err) {
       log.error(err)
       return Promise.reject(err)

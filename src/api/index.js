@@ -14,13 +14,13 @@ import { evaluateError } from './lib/evaluateError'
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
-setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
+setup({ log, skipCheck: true }).then(({ initConfig }) => {
   log.info('Database connected')
 
   // data collectors
-  const api = new Api({ db, initConfig }, config.api)
-  const status = new Status(db)
-  const txPool = new TxPool(db)
+  const api = new Api({ initConfig }, config.api)
+  const status = new Status()
+  const txPool = new TxPool()
   api.start()
   status.start()
   txPool.start()

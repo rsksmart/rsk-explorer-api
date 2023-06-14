@@ -5,7 +5,7 @@ import {generateFindQuery} from './utils'
 const txPoolRelatedTables = { transaction_in_pool: true }
 
 export const txPoolRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const txPool = await prismaClient.txpool.findFirst(generateFindQuery(query, project, txPoolRelatedTables, { id: -1 }))
 
     if (txPool) {
@@ -20,7 +20,7 @@ export const txPoolRepository = {
 
     return txPool
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     let txPools = await prismaClient.txpool.findMany(generateFindQuery(query, project, txPoolRelatedTables, { timestamp: -1 }, limit))
 
     txPools = txPools.map(txPool => {
@@ -37,7 +37,7 @@ export const txPoolRepository = {
 
     return txPools
   },
-  async insertOne (data, collection) {
+  async insertOne (data) {
     const txpool = await prismaClient.txpool.create({data: rawTxPoolToEntity(data)})
 
     return txpool

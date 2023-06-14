@@ -2,7 +2,7 @@ import { TOTAL_SUPPLY } from '../../lib/types'
 import { bigNumberDifference, applyDecimals } from '../../lib/utils'
 import { addressRepository } from '../../repositories/address.repository'
 
-export default async function (collection, { bridge }) {
+export default async function ({ bridge }) {
   const bridgeAddress = await addressRepository.findOne({ address: bridge })
 
   if (!bridgeAddress) {

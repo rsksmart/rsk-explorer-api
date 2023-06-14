@@ -19,10 +19,9 @@ main().then((res) => {
 
 async function main () {
   try {
-    const { collections } = await dataSource()
-    const collection = collections.Addrs
-    const addresses = await addressRepository.countDocuments({}, collection)
-    const cursor = addressRepository.find({}, {}, collection)
+    await dataSource()
+    const addresses = await addressRepository.countDocuments({})
+    const cursor = addressRepository.find({}, {})
     let checked = 0
     let updated = 0
     let outdated = 0
@@ -45,7 +44,7 @@ async function main () {
             throw new Error(`Invalid block number ${blockNumber}`)
           }
           log.info(`${logTime()} Updating balance of: ${address} to ${newBalance}`)
-          let result = await saveAddressToDb({ address, blockNumber, balance: newBalance }, collection)
+          let result = await saveAddressToDb({ address, blockNumber, balance: newBalance })
           if (!result) throw new Error(`Error updating balance for ${address}`)
           updated++
         } else {

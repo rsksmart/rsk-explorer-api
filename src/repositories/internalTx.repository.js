@@ -10,24 +10,24 @@ import { internalTxRelatedTables } from './includeRelatedTables'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const internalTxRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const internalTx = await prismaClient.internal_transaction.findFirst(generateFindQuery(query, project, internalTxRelatedTables, project))
 
     return internalTx ? internalTxEntityToRaw(internalTx) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const internalTxs = await prismaClient.internal_transaction.findMany(generateFindQuery(query, project, internalTxRelatedTables, sort, limit))
 
     return internalTxs.map(itx => internalTxEntityToRaw(itx))
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.internal_transaction.count({
       where: mongoQueryToPrisma(query)
     })
 
     return count
   },
-  async deleteMany (filter, collection) {
+  async deleteMany (filter) {
     if (filter.transactionHash.$in) {
       if (filter.transactionHash.$in.length > 0) {
         filter.transactionHash.in = filter.transactionHash.$in
@@ -53,7 +53,7 @@ export const internalTxRepository = {
 
     return deletedItxsData
   },
-  insertOne (data, collection) {
+  insertOne (data) {
     const {action, traceAddress, result} = data
     const internalTxToSave = rawInternalTransactionToEntity(data)
 

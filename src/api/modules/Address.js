@@ -2,9 +2,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { tokensInterfaces, addrTypes, fields } from '../../lib/types'
 
 export class Address extends DataCollectorItem {
-  constructor ({ Addrs }, name) {
+  constructor (name) {
     let sortable = { 'createdByTx.timestamp': -1 }
-    super(Addrs, name, { sortDir: 1, sortable })
+    super(name, { sortDir: 1, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }
     this.publicActions = {
       /**

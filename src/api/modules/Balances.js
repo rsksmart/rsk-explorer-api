@@ -2,9 +2,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class Balances extends DataCollectorItem {
-  constructor ({ Balances }, name) {
+  constructor (name) {
     let sortable = { timestamp: -1, blockNumber: -1 }
-    super(Balances, name, { sortDir: -1, sortable })
+    super(name, { sortDir: -1, sortable })
     this.fields = {}
     this.publicActions = {
       /**

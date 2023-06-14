@@ -2,12 +2,11 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 import { addMetadataToBlocks } from '../lib/blocksMetadata'
 export class Block extends DataCollectorItem {
-  constructor (collections, key) {
-    const { Blocks } = collections
+  constructor (key) {
     let cursorField = 'number'
     let sortDir = -1
     let sortable = { timestamp: -1 }
-    super(Blocks, key, { sortDir, cursorField, sortable })
+    super(key, { sortDir, cursorField, sortable })
     this.publicActions = {
       /**
        * @swagger

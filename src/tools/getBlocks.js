@@ -13,13 +13,13 @@ async function main () {
   try {
     console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
 
-    const { db, initConfig } = await dataSource()
+    const { initConfig } = await dataSource()
 
     while (blockToSave <= toBlock) {
       let timestamp = Date.now()
 
       // insert block
-      const block = new Block(blockToSave, new BlocksBase(db, { initConfig }))
+      const block = new Block(blockToSave, new BlocksBase({ initConfig }))
       await block.fetch()
       await block.save()
       timestamp = Date.now() - timestamp
