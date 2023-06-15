@@ -1,57 +1,53 @@
 import dataSource from '../lib/dataSource.js'
-import Block from '../services/classes/Block'
-import BlocksBase from '../lib/BlocksBase'
+import { getMissingSegments } from '../lib/getMissingSegments.js'
+import { insertBlock } from '../lib/insertBlock.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
-import Setup from '../lib/Setup.js'
 
-let retries = 0
+async function main () {
+  const { initConfig } = await dataSource()
+  const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
+  const blocksNumbers = blocksInDb.map(b => b.number)
+  const { number: latestBlock } = await nod3.eth.getBlock('latest')
+  const missingSegments = await getMissingSegments(latestBlock, blocksNumbers)
+  const requestingBlocks = latestBlock - blocksNumbers.length
+  let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
 
-async function syncBlocks (fromBlock) {
-  let blockToSave = fromBlock
+  console.log('Starting sync...')
+  console.log(`Missing segments: ${JSON.stringify(missingSegments, null, 2)}`)
+  // iterate segments
+  for (let i = 0; i < missingSegments.length; i++) {
+    const currentSegment = missingSegments[i]
+    let number = currentSegment[0]
+    let status
+    let retries = 0
+    try {
+      const lastNumber = currentSegment[currentSegment.length - 1]
 
-  try {
-    const { number: toBlock } = await nod3.eth.getBlock('latest')
-    const { initConfig } = await dataSource()
-    console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
-    const requestingBlocks = toBlock - fromBlock
-    let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
+      // iterate segment numbers
+      while (number >= lastNumber) {
+        const connected = await nod3.isConnected()
+        const nodeDown = !connected
+        const timestamp = Date.now()
+        status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
 
-    while (blockToSave <= toBlock) {
-      const connected = await nod3.isConnected()
-      const nodeDown = !connected
-      let timestamp = Date.now()
-      const status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
-      // insert block
-      const block = new Block(blockToSave, new BlocksBase({ initConfig }), status)
-      await block.fetch()
-      await block.save()
-      timestamp = Date.now() - timestamp
-
-      console.log(`Block ${blockToSave} saved! (${timestamp} ms)`)
-      blockToSave++
-      pendingBlocks--
-      retries = 0
-    }
-  } catch (error) {
-    if (retries < 3) {
-      retries++
-      console.log(`Error saving block ${blockToSave}. Retries: ${retries}`)
-      await syncBlocks(blockToSave)
-    } else {
-      console.log(`There was a problem with syncing; process stopped. Last block saved was ${blockToSave - 1}`)
-      console.error(error)
+        await insertBlock({ number, status, initConfig })
+        pendingBlocks--
+        number--
+        retries = 0
+      }
+    } catch (error) {
+      const exists = await blockRepository.findOne({ number }, { number })
+      if (!exists && retries < 3) {
+        retries++
+        console.log(`Error saving block ${number}. Retrying... (attempts: ${retries})`)
+        console.log(error)
+      }
     }
   }
 
-  console.log('Finished.')
+  console.log('Syncing finished.')
   process.exit(0)
-}
-
-async function main () {
-  (await Setup()).start() // TODO: refactor once mongo references are removed
-  const lastBlockSaved = await blockRepository.findOne({ }, { sort: { number: -1 } })
-  syncBlocks(lastBlockSaved ? lastBlockSaved.number + 1 : 0)
 }
 
 main()
