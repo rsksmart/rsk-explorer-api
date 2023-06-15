@@ -15,23 +15,23 @@ import { balancesRepository } from './balances.repository'
 import { statusRepository } from './status.repository'
 
 export const blockRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     query = generateFindQuery(query, project, blockRelatedTables, project)
     const block = await prismaClient.block.findFirst(query)
 
     return block ? blockEntityToRaw(block) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
 
     return Object.keys(project).length ? blocks : blocks.map(blockEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.block.count({where: mongoQueryToPrisma(query)})
 
     return count
   },
-  insertOne (data, collection) {
+  insertOne (data) {
     const { uncles, number: blockNumber } = data
     const transactionQueries = [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
 

@@ -3,17 +3,17 @@ import {prismaClient} from '../lib/Setup'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const statsRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const stats = await prismaClient.stats.findFirst(generateFindQuery(query, {}, {}, project))
 
     return stats ? statsEntityToRaw(stats) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const statsArr = await prismaClient.stats.findMany(generateFindQuery(query, {}, {}, sort, limit))
 
     return statsArr.map(stats => statsEntityToRaw(stats))
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.stats.count({
       where: mongoQueryToPrisma(query)
     })

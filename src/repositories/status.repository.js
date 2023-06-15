@@ -10,7 +10,7 @@ const statsEntitySelect = {
 }
 
 export const statusRepository = {
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const statusArr = await prismaClient.status.findMany(generateFindQuery(query, statsEntitySelect, {}, sort, limit))
 
     return statusArr.map(status => statusEntityToRaw(status))

@@ -12,7 +12,7 @@ async function syncBlocks (fromBlock) {
 
   try {
     const { number: toBlock } = await nod3.eth.getBlock('latest')
-    const { db, initConfig } = await dataSource()
+    const { initConfig } = await dataSource()
     console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
     const requestingBlocks = toBlock - fromBlock
     let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
@@ -23,7 +23,7 @@ async function syncBlocks (fromBlock) {
       let timestamp = Date.now()
       const status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
       // insert block
-      const block = new Block(blockToSave, new BlocksBase(db, { initConfig }), status)
+      const block = new Block(blockToSave, new BlocksBase({ initConfig }), status)
       await block.fetch()
       await block.save()
       timestamp = Date.now() - timestamp

@@ -1,15 +1,12 @@
 import dataSource from '../lib/dataSource.js'
-import conf from '../lib/config'
 import { addressRepository } from '../repositories/address.repository.js'
 
-const config = Object.assign({}, conf.blocks)
-dataSource({ skipCheck: true }).then(async ({ db }) => {
+dataSource({ skipCheck: true }).then(async () => {
   try {
-    const Addrs = db.collection(config.collections.Addrs)
     const query = { createdByTx: { $exists: true }, type: 'account' }
     const project = { address: 1, type: 1, id: 0 }
 
-    let result = await addressRepository.find(query, project, Addrs)
+    let result = await addressRepository.find(query, project)
     if (result) {
       result = result.map(r => r.address)
       console.log(JSON.stringify(result))

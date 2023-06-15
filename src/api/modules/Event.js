@@ -1,11 +1,10 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
-  constructor (collections, key) {
+  constructor (key) {
     const sortable = { eventId: -1 }
-    const { Events } = collections
     let cursorField = 'eventId'
     let sortDir = -1
-    super(Events, key, { cursorField, sortDir, sortable })
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger

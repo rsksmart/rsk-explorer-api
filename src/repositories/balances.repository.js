@@ -3,22 +3,22 @@ import { rawBalanceToEntity, entityToRawBalance } from '../converters/balance.co
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const balancesRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const balance = await prismaClient.balance.findFirst(generateFindQuery(query, project, {}, project))
 
     return balance ? entityToRawBalance(balance) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const balances = await prismaClient.balance.findMany(generateFindQuery(query, project, {}, sort, limit))
 
     return balances.map(entityToRawBalance)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.balance.count({where: mongoQueryToPrisma(query)})
 
     return count
   },
-  async deleteMany (filter, collection) {
+  async deleteMany (filter) {
     const deleted = await prismaClient.balance.deleteMany({where: mongoQueryToPrisma(filter)})
 
     return deleted

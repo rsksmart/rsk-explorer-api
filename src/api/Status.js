@@ -1,17 +1,13 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { blockRepository } from '../repositories/block.repository'
 
 export class Status extends DataCollector {
-  constructor (db) {
-    const collections = getDbBlocksCollections(db)
-    const { Status, Blocks } = collections
-    super(db, { collectionName: 'Status' })
+  constructor () {
+    super()
     this.tickDelay = 5000
     this.state = {}
-    this.addModule(new DataCollectorItem(Status, 'Status'))
-    this.addModule(new DataCollectorItem(Blocks, 'Blocks'))
-    this.blockCollection = this.getModule('Blocks').db
+    this.addModule(new DataCollectorItem('Status'))
+    this.addModule(new DataCollectorItem('Blocks'))
   }
   tick () {
     this.updateState().then((newState) => {
@@ -72,13 +68,13 @@ export class Status extends DataCollector {
   }
 
   getHighestBlock () {
-    return blockRepository.findOne({}, { sort: { number: -1 } }, this.blockCollection)
+    return blockRepository.findOne({}, { sort: { number: -1 } })
   }
   getLastblockReceived () {
-    return blockRepository.findOne({}, { sort: { _received: -1 } }, this.blockCollection)
+    return blockRepository.findOne({}, { sort: { _received: -1 } })
   }
   getTotalBlocks () {
-    return blockRepository.countDocuments({}, this.blockCollection)
+    return blockRepository.countDocuments({})
   }
 }
 

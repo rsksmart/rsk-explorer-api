@@ -1,13 +1,9 @@
 import { bigNumberSum } from '../../lib/utils'
 import { txRepository } from '../../repositories/tx.repository'
 export class GetTxBalance {
-  constructor (txCollection) {
-    this.txCollection = txCollection
-  }
-
   async getTxs (query) {
     // const projection = { value: 1 }
-    let data = await txRepository.find(query, {}, this.txCollection)
+    let data = await txRepository.find(query, {})
       .catch(err => Promise.reject(err))
     return data
   }

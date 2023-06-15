@@ -4,7 +4,7 @@ import { prismaClient } from '../lib/Setup'
 const isReadOnly = id => id === '_explorerInitialConfiguration'
 
 export const configRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}) {
     const docId = query._id
 
     let existingConfig = await prismaClient.explorer_config.findFirst({
@@ -37,7 +37,7 @@ export const configRepository = {
 
     return existingConfig
   },
-  async insertOne (data, collection) {
+  async insertOne (data) {
     const newConfig = rawConfigToEntity(data)
     const docId = newConfig.id
     const transactionQueries = [prismaClient.explorer_config.createMany({ data: [newConfig], skipDuplicates: true })]
@@ -55,7 +55,7 @@ export const configRepository = {
 
     return newConfig
   },
-  async updateOne (filter, newData, options = {}, collection) {
+  async updateOne (filter, newData) {
     const newConfig = rawConfigUpdateToEntity(newData.$set)
     const docId = filter._id
 

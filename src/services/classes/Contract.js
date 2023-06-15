@@ -6,8 +6,8 @@ import { hasValue } from '../../lib/utils'
 import { verificationResultsRepository } from '../../repositories/verificationResults.repository'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, collections, block }) {
-    super({ nod3, initConfig, collections })
+  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block }) {
+    super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
     this.deployedCode = deployedCode
@@ -99,9 +99,8 @@ class Contract extends BcThing {
 
   async getAbiFromVerification () {
     try {
-      let { collections, address } = this
-      if (!collections) return
-      const data = verificationResultsRepository.findOne({ address, match: true }, {}, collections.VerificationsResults)
+      let { address } = this
+      const data = verificationResultsRepository.findOne({ address, match: true }, {})
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)

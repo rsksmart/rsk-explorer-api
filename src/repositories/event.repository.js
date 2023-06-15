@@ -5,17 +5,17 @@ import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters
 import { eventRelatedTables } from './includeRelatedTables'
 
 export const eventRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const event = await prismaClient.event.findFirst(generateFindQuery(query, project, eventRelatedTables, project))
 
     return event ? eventEntityToRaw(event) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const events = await prismaClient.event.findMany(generateFindQuery(query, project, eventRelatedTables, sort, limit))
 
     return events.map(eventEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.event.count({where: mongoQueryToPrisma(query)})
     return count
   },
@@ -44,7 +44,7 @@ export const eventRepository = {
 
     return transactionQueries
   },
-  async deleteMany (filter, collection) {
+  async deleteMany (filter) {
     const deleted = await prismaClient.event.deleteMany({where: mongoQueryToPrisma(filter)})
 
     return deleted

@@ -35,27 +35,27 @@ function saveAbiAndGetId (abi) {
 }
 
 export const txRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
 
     return txToReturn ? transactionEntityToRaw(txToReturn) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
 
     return txs.map(transactionEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.transaction.count({where: mongoQueryToPrisma(query)})
 
     return count
   },
-  async deleteMany (filter, collection) {
+  async deleteMany (filter) {
     const deleted = await prismaClient.transaction.deleteMany({where: mongoQueryToPrisma(filter)})
 
     return deleted
   },
-  insertOne (data, collection) {
+  insertOne (data) {
     const {logs} = data.receipt
     const transactionQueries = [
       prismaClient.transaction.create({data: rawTxToEntity(data)}),

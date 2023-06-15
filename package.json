@@ -38,7 +38,6 @@
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
     "express": "^4.17.1",
-    "mongodb": "^3.6.1",
     "prisma": "^4.11.0",
     "rlp": "^2.2.5",
     "rsk-openapi-ui": "^0.0.7",

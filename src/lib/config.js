@@ -48,7 +48,6 @@ export function makeConfig (config = {}) {
     defaultLogs('blocks')
   }
 
-  config.api.collectionsNames = config.collectionsNames
   return config
 }
 

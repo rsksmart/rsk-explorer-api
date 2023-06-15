@@ -9,9 +9,9 @@ const opt = process.argv[3]
 const save = (opt === '--save')
 const json = (opt === '--json')
 if (!hashOrNumber) help()
-dataSource().then(({ db, initConfig }) => {
+dataSource().then(({ initConfig }) => {
   if (!json) log.info(`Getting block ${hashOrNumber}`)
-  getBlock(hashOrNumber, { db, initConfig }).then(block => {
+  getBlock(hashOrNumber, { initConfig }).then(block => {
     if (json) console.log(JSON.stringify(block))
     else {
       console.log(util.inspect(block, { showHidden: false, depth: null, colors: true }))
@@ -23,11 +23,11 @@ dataSource().then(({ db, initConfig }) => {
   })
 })
 
-async function getBlock (hashOrNumber, { db, initConfig }) {
+async function getBlock (hashOrNumber, { initConfig }) {
   try {
     let time = getTime()
     let saved = null
-    let block = new Block(hashOrNumber, new BlocksBase(db, { initConfig }))
+    let block = new Block(hashOrNumber, new BlocksBase({ initConfig }))
     await block.fetch()
     let blockData = block.getData(true)
     time = getTime(time)

@@ -2,8 +2,8 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
 export class Token extends DataCollectorItem {
-  constructor ({ TokensAddrs }, key) {
-    super(TokensAddrs, key)
+  constructor (key) {
+    super(key)
     this.publicActions = {
       /**
        * @swagger

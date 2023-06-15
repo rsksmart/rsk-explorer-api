@@ -5,17 +5,17 @@ import { addressRelatedTables } from './includeRelatedTables'
 import { generateFindQuery, mongoQueryToPrisma } from './utils'
 
 export const tokenRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     const token = await prismaClient.token_address.findFirst(generateFindQuery(query, project, {}, project))
 
     return token ? tokenEntityToRaw(token) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const tokens = await prismaClient.token_address.findMany(generateFindQuery(query, project, {}, sort, limit))
 
     return tokens.map(tokenEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.token_address.count({where: mongoQueryToPrisma(query)})
 
     return count

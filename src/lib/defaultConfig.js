@@ -42,7 +42,7 @@ export default {
   db: {
     server: 'localhost',
     port: 27017,
-    database: 'blockDB',
+    database: 'explorer_db',
     prismaEngine: 'postgres',
     prismaPort: 5432,
     prismaDbName: 'explorer_db',
@@ -65,32 +65,11 @@ export default {
   },
   blocks: {
     blocksQueueSize: 10,
-    validateCollections: false,
     bcTipSize: 120,
     batchRequestSize: 20,
     debug: false,
-    updateTokenBalances: true, // Update token accounts balances on next block
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
     services
-  },
-  collectionsNames: {
-    Config: 'config',
-    Blocks: 'blocks',
-    Txs: 'transactions',
-    Addrs: 'addresses',
-    Status: 'status',
-    Events: 'events',
-    TokensAddrs: 'tokensAddresses',
-    TxPool: 'txPool',
-    PendingTxs: 'transactionsPending',
-    Stats: 'statsCollection',
-    BlocksSummary: 'blocksSummary',
-    ContractVerification: 'contractsVerifications',
-    VerificationsResults: 'verificationResults',
-    InternalTransactions: 'internalTransactions',
-    Balances: 'balances',
-    BalancesLog: 'balancesLog',
-    BlocksTraces: 'blockTraces'
   }
 }
