@@ -64,7 +64,6 @@ export class Block extends BcThing {
       return { data }
     } catch (err) {
       console.log(err)
-      this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
       return Promise.reject(err)
     }
   }
