@@ -17,7 +17,7 @@ export async function getMissingSegments (latestBlock, blocksNumbers) {
 
 // boundaries are included for insertions
 function findMissingSegments (array) {
-  if (array[array.length - 1] > 0) array.push(0) // since we will use index + 1, push 0 to evaluate last index too
+  if (array[array.length - 1] > 0) array.push(-1) // to also consider block 0
   return array
     .filter((value, index) => array[index + 1] - value < -1) // numbers with missing parent block (or upperBound)
     .map(upperBound => { // return boundaries
