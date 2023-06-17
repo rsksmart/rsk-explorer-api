@@ -128,6 +128,6 @@ export const blockRepository = {
     }
     transactionQueries.push(...addressRepository.deleteMany(deletableAddresses))
 
-    return transactionQueries
+    return prismaClient.$transaction(transactionQueries)
   }
 }
