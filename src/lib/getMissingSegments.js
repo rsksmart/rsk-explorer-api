@@ -2,14 +2,17 @@ export async function getMissingSegments (latestBlock, blocksNumbers) {
   const segments = []
   const dbEmpty = blocksNumbers.length === 0
 
-  if (dbEmpty) { // only segment is from latest to 0
+  if (dbEmpty) {
+    // only segment is from latest to 0
     segments.push([latestBlock, 0])
   } else {
     const latestDbBlock = blocksNumbers[0]
-    segments.push(
-      [latestBlock, latestDbBlock + 1], // append from latest to latestDbBlock
-      ...findMissingSegments([...blocksNumbers])
-    )
+    if (latestBlock !== latestDbBlock) {
+      // consider the segment from latest to latestDbBlock
+      segments.push([latestBlock, latestDbBlock + 1])
+    }
+    // consider all segments between numbers under latestDbBlock
+    segments.push(...findMissingSegments([...blocksNumbers]))
   }
 
   return segments
