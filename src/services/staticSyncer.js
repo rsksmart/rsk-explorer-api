@@ -1,10 +1,10 @@
 import dataSource from '../lib/dataSource.js'
 import { getMissingSegments } from '../lib/getMissingSegments.js'
-import { insertBlock } from '../lib/insertBlock.js'
+import { insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
 
-async function main () {
+async function staticSyncer () {
   const { initConfig } = await dataSource()
   const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
   const blocksNumbers = blocksInDb.map(b => b.number)
@@ -50,4 +50,4 @@ async function main () {
   process.exit(0)
 }
 
-main()
+staticSyncer()
