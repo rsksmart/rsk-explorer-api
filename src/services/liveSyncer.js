@@ -1,9 +1,7 @@
 import { connectToNode } from '../lib/connectToNode'
 import { dataSource } from '../lib/dataSource'
-import { deleteBadBlocks, insertBlock, insertBlocks } from '../lib/insertBlock'
+import { deleteBadBlocks, insertBlock, insertBlocks, getDbBlock, sameHash } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
-import { blockRepository } from '../repositories/block.repository'
-
 let checkingDB = false
 
 async function liveSyncer () {
@@ -16,9 +14,6 @@ async function liveSyncer () {
   }, 5000)
   console.log('Listening to new blocks...')
 }
-
-const getDbBlock = (number) => blockRepository.findOne({ number })
-const sameHash = (h1, h2) => h1 === h2
 
 async function newBlocksHandler ({ initConfig }) {
   const latestBlock = await nod3.eth.getBlock('latest')
@@ -44,8 +39,6 @@ async function newBlocksHandler ({ initConfig }) {
     console.log(`Error handling new block: ${latestBlock.number}`, error)
   }
 }
-
-liveSyncer()
 
 async function reorganize ({ latestBlock, initConfig }) {
   console.log('Checking database...')
@@ -95,3 +88,5 @@ async function reorganize ({ latestBlock, initConfig }) {
     console.log(error)
   }
 }
+
+liveSyncer()
