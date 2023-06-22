@@ -24,7 +24,7 @@ async function main () {
       await block.save()
       timestamp = Date.now() - timestamp
 
-      console.log(`Block ${blockToSave} saved! (${timestamp} ms)`)
+      console.log(`Block ${blockToSave} saved. (${timestamp} ms)`)
       blockToSave++
     }
   } catch (error) {

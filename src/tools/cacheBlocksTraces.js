@@ -106,7 +106,6 @@ const p = path => path.split('/').pop()
 function help (msg) {
   if (msg) {
     log.error(msg)
-    console.log()
   }
   const myName = p(process.argv[1])
   log.info(`Use: ${p(process.argv[0])} ${myName} [lowerBlock] [higherBlock] `)

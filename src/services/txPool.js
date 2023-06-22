@@ -1,15 +1,13 @@
 import { dataSource } from '../lib/dataSource'
 import { TxPool } from './classes/TxPool'
 
-async function main () {
+export async function txPool ({ log }) {
   try {
     const { initConfig } = await dataSource()
-    const txPool = new TxPool({ initConfig })
+    const txPool = new TxPool({ initConfig, log })
     txPool.start()
   } catch (err) {
-    console.error(err)
+    log.error(err)
     process.exit(9)
   }
 }
-
-main()

@@ -13,9 +13,8 @@
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
     "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
-    "service-static-syncer": "node dist/services/staticSyncer.js",
-    "service-live-syncer": "node dist/services/liveSyncer.js",
-    "services": "concurrently -t \"yyyy/MM/dd HH:mm:ss\" -p \"{time} [{name}]:\" \"npm:service-*\" --restart-tries -1 --restart-after 3000 > services.output.log | tail -f services.output.log"
+    "start-services": "npm run build && pm2 start dist/services/startServices.js | pm2 log --raw | npx bunyan",
+    "stop-services": "pm2 stop startServices"
   },
   "repository": {
     "type": "git",
@@ -50,7 +49,6 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
     "chai": "^4.2.0",
-    "concurrently": "^8.1.0",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.22.0",

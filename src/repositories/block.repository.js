@@ -129,5 +129,14 @@ export const blockRepository = {
     transactionQueries.push(...addressRepository.deleteMany(deletableAddresses))
 
     return prismaClient.$transaction(transactionQueries)
+  },
+  async deleteBlocksByNumbers (blocks = []) {
+    try {
+      for (const number of blocks) {
+        await this.deleteBlockData(number)
+      }
+    } catch (error) {
+      throw error
+    }
   }
 }

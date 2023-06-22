@@ -10,6 +10,8 @@ export const enabledServices = {
   TX_POOL: 'txPool'
 }
 
+const cwd = `${__dirname}`
+
 const services = Object.assign({}, enabledServices)
 for (let s in services) {
   services[s] = true
@@ -35,7 +37,7 @@ export default {
     trace: 1 // delegates trace_ module to the second node
   },
   log: {
-    dir: '/var/log/rsk-explorer',
+    dir: cwd,
     level: 'info',
     logToFiles: false
   },

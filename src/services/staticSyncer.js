@@ -4,7 +4,7 @@ import { insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
 
-async function staticSyncer () {
+export async function staticSyncer ({ syncStatus, log }) {
   const { initConfig } = await dataSource()
   const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
   const blocksNumbers = blocksInDb.map(b => b.number)
@@ -13,8 +13,8 @@ async function staticSyncer () {
   const requestingBlocks = latestBlock - blocksNumbers.length
   let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
 
-  console.log('Starting sync...')
-  console.log(`Missing segments: ${JSON.stringify(missingSegments, null, 2)}`)
+  log.info('Starting sync...')
+  log.info(`Missing segments: ${JSON.stringify(missingSegments, null, 2)}`)
   // iterate segments
   for (let i = 0; i < missingSegments.length; i++) {
     const currentSegment = missingSegments[i]
@@ -31,7 +31,7 @@ async function staticSyncer () {
         const timestamp = Date.now()
         status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
 
-        await insertBlock({ number, status, initConfig })
+        await insertBlock({ number, status, initConfig, log })
         pendingBlocks--
         number--
         retries = 0
@@ -40,14 +40,12 @@ async function staticSyncer () {
       const exists = await blockRepository.findOne({ number }, { number })
       if (!exists && retries < 3) {
         retries++
-        console.log(`Error saving block ${number}. Retrying... (attempts: ${retries})`)
-        console.log(error)
+        log.info(`Error saving block ${number}. Retrying... (attempts: ${retries})`)
+        log.info(error)
       }
     }
   }
 
-  console.log('Syncing finished.')
+  log.info('Syncing finished.')
   process.exit(0)
 }
-
-staticSyncer()

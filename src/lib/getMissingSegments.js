@@ -1,4 +1,4 @@
-export async function getMissingSegments (latestBlock, blocksNumbers) {
+export function getMissingSegments (latestBlock, blocksNumbers) {
   const segments = []
   const dbEmpty = blocksNumbers.length === 0
 

@@ -2,7 +2,7 @@ import { BcThing } from './BcThing'
 import Tx from './Tx'
 import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
-import { arrayDifference, isBlockHash } from '../../lib/utils'
+import { isBlockHash } from '../../lib/utils'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { summaryRepository } from '../../repositories/summary.repository'
 
@@ -41,7 +41,6 @@ export class BlockSummary extends BcThing {
       let txsData = await this.fetchItems(Txs)
       let transactions = txsData.map(d => d.tx)
       this.setData({ transactions })
-      this.checkTransactions()
       let events = [].concat(...txsData.map(d => d.events))
       let internalTransactions = [].concat(...txsData.map(d => d.internalTransactions))
       let tokenAddresses = [].concat(...txsData.map(d => d.tokenAddresses))
@@ -99,15 +98,6 @@ export class BlockSummary extends BcThing {
     }
   }
 
-  checkTransactions () {
-    let { block, transactions } = this.getData()
-    let txsErr = mismatchBlockTransactions(block, transactions)
-    if (txsErr.length) {
-      this.log.trace(`Block: ${block.number} - ${block.hash} Missing transactions: ${JSON.stringify(txsErr)} `)
-      throw new Error(`Block: ${block.number} - ${block.hash} Missing transactions `)
-    }
-  }
-
   fetchItems (items) {
     return Promise.all(Object.values(items).map(i => i.fetch()))
   }
@@ -142,13 +132,6 @@ export class BlockSummary extends BcThing {
       return Promise.reject(err)
     }
   }
-}
-
-export const mismatchBlockTransactions = (block, transactions) => {
-  let diff = arrayDifference(block.transactions, transactions.map(tx => tx.hash))
-  if (diff.length) return diff
-  let blockHash = block.hash
-  return transactions.filter(tx => tx.blockHash !== blockHash || tx.receipt.blockHash !== blockHash)
 }
 
 export async function getBlock (hashOrNumber, txArr = false, nod3) {
