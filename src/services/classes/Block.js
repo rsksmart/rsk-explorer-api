@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
-import { blockQuery, isBlockHash, isValidBlockNumber } from '../../lib/utils'
+import { blockQuery } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { blockRepository } from '../../repositories/block.repository'
 import { txRepository } from '../../repositories/tx.repository'
@@ -9,12 +9,12 @@ import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, { nod3, log, initConfig }, status) {
+  constructor (number, { nod3, log, initConfig }, status) {
     super({ nod3, initConfig, log })
     this.fetched = false
     this.log = log || console
-    this.hashOrNumber = hashOrNumber
-    this.summary = new BlockSummary(hashOrNumber, { nod3, initConfig, log })
+    this.number = number
+    this.summary = new BlockSummary(number, { nod3, initConfig, log })
     this.data = { block: null }
     this.status = status
   }
@@ -35,26 +35,22 @@ export class Block extends BcThing {
     }
   }
 
-  async save (overwrite) {
+  async save () {
     try {
-      let { hashOrNumber } = this
-      // Skip saved blocks
-      if (isBlockHash(hashOrNumber) && !overwrite) {
-        const hash = hashOrNumber
-        const exists = await blockRepository.findOne({ hash }, {})
-        if (exists) throw new Error(`Block ${hash} skipped`)
-      } else if (isValidBlockNumber(hashOrNumber)) {
-        const number = hashOrNumber
-        const exists = await blockRepository.findOne({ number }, {})
-        if (exists) throw new Error(`Block ${number} skipped`)
-      }
+      const { number } = this
+      console.log({ number })
+      if (number < 0) throw new Error(`Invalid block number: ${number}`)
+      const exists = await blockRepository.findOne({ number })
+      if (exists) throw new Error(`Block ${number} already in db. Skipped`)
+
       await this.fetch()
       let data = this.getData(true)
-      if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
+      if (!data) throw new Error(`Fetch returns empty data for block #${number}`)
 
       data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
       data.status = this.status
 
+      // save block and all related data
       await blockRepository.saveBlockData(data)
 
       // save stats (requires blocks and addresses inserted)
@@ -71,9 +67,9 @@ export class Block extends BcThing {
     return blockRepository.find({ $or: [{ hash }, { number }] })
   }
 
-  async getBlockFromDb (hashOrNumber, allData) {
+  async getBlockFromDb (number, allData) {
     try {
-      let block = await getBlockFromDb(hashOrNumber)
+      let block = await getBlockFromDb(number)
       if (block && allData) block = await this.getBlockDataFromDb(block)
       return block
     } catch (err) {
@@ -132,10 +128,10 @@ export class Block extends BcThing {
   }
 }
 
-export const getBlockFromDb = async (blockHashOrNumber) => {
-  let query = blockQuery(blockHashOrNumber)
+export const getBlockFromDb = async (number) => {
+  let query = blockQuery(number)
   if (query) return blockRepository.findOne(query, {})
-  return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
+  return Promise.reject(new Error(`"${number}": is not block hash or number`))
 }
 
 export default Block

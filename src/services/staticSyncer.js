@@ -3,13 +3,16 @@ import { getMissingSegments } from '../lib/getMissingSegments.js'
 import { insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
+import Logger from '../lib/Logger.js'
 
-export async function staticSyncer ({ syncStatus, log }) {
+const log = Logger('explorer-services')
+
+export async function staticSyncer ({ syncStatus } = {}) {
   const { initConfig } = await dataSource()
   const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
   const blocksNumbers = blocksInDb.map(b => b.number)
   const { number: latestBlock } = await nod3.eth.getBlock('latest')
-  const missingSegments = await getMissingSegments(latestBlock, blocksNumbers)
+  const missingSegments = getMissingSegments(latestBlock, blocksNumbers)
   const requestingBlocks = latestBlock - blocksNumbers.length
   let pendingBlocks = requestingBlocks - 1 // -1 because a status is inserted after block's insertion
 
@@ -20,32 +23,24 @@ export async function staticSyncer ({ syncStatus, log }) {
     const currentSegment = missingSegments[i]
     let number = currentSegment[0]
     let status
-    let retries = 0
-    try {
-      const lastNumber = currentSegment[currentSegment.length - 1]
+    const lastNumber = currentSegment[currentSegment.length - 1]
 
-      // iterate segment numbers
-      while (number >= lastNumber) {
+    // iterate segment numbers
+    while (number >= lastNumber) {
+      try {
         const connected = await nod3.isConnected()
         const nodeDown = !connected
         const timestamp = Date.now()
         status = { requestingBlocks, pendingBlocks, nodeDown, timestamp }
 
         await insertBlock({ number, status, initConfig, log })
-        pendingBlocks--
-        number--
-        retries = 0
+      } catch (error) {
+        throw error
       }
-    } catch (error) {
-      const exists = await blockRepository.findOne({ number }, { number })
-      if (!exists && retries < 3) {
-        retries++
-        log.info(`Error saving block ${number}. Retrying... (attempts: ${retries})`)
-        log.info(error)
-      }
+      pendingBlocks--
+      number--
     }
   }
 
-  log.info('Syncing finished.')
-  process.exit(0)
+  log.info('Static syncer finished.')
 }

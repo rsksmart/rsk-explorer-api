@@ -28,9 +28,9 @@ function deleteBlocks (blocks = []) {
   return blockRepository.deleteBlocksByNumbers(blocks)
 }
 
-async function insertBlocks ({ blocks = [], initConfig }) {
+async function insertBlocks ({ blocks = [], initConfig, log }) {
   for (const number of blocks) {
-    await insertBlock({ number, initConfig })
+    await insertBlock({ number, initConfig, log })
   }
 }
 
@@ -39,5 +39,5 @@ export async function reorganizeBlocks ({ blocksToDelete = [], blocks: missingBl
   log.info(`Deleted ${blocksToDelete.length} blocks: ${JSON.stringify(blocksToDelete)}`)
 
   log.info(`Adding ${missingBlocks.length} new chain blocks: ${JSON.stringify(missingBlocks)}`)
-  await insertBlocks({ blocks: missingBlocks, initConfig })
+  await insertBlocks({ blocks: missingBlocks, initConfig, log })
 }

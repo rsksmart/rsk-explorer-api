@@ -2,10 +2,12 @@ import { dataSource } from '../lib/dataSource'
 import { insertBlock, getDbBlock, sameHash, reorganizeBlocks } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
 import defaultConfig from '../lib/defaultConfig'
+import Logger from '../lib/Logger.js'
 
+const log = Logger('explorer-services')
 const CONFIRMATIONS_THERESHOLD = defaultConfig.blocks.bcTipSize || 120
 
-export async function liveSyncer ({ syncStatus, log }) {
+export async function liveSyncer ({ syncStatus } = {}) {
   try {
     const { initConfig } = await dataSource()
     setInterval(() => newBlocksHandler({ initConfig, syncStatus, log }), 10000)

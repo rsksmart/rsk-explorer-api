@@ -12,8 +12,6 @@ function main () {
     lastReceived: -1
   }
 
-  log.info('Logger is working!!')
-
   liveSyncer({ syncStatus, log })
   staticSyncer({ syncStatus, log })
   txPool({ log })

@@ -9,13 +9,12 @@ async function main () {
   const fromBlock = parseInt(process.argv[2])
   const toBlock = process.argv[3] ? parseInt(process.argv[3]) : latestBlock.number
 
+  console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
+  const { initConfig } = await dataSource()
+
   let blockToSave = fromBlock
-  try {
-    console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
-
-    const { initConfig } = await dataSource()
-
-    while (blockToSave <= toBlock) {
+  while (blockToSave <= toBlock) {
+    try {
       let timestamp = Date.now()
 
       // insert block
@@ -25,11 +24,11 @@ async function main () {
       timestamp = Date.now() - timestamp
 
       console.log(`Block ${blockToSave} saved. (${timestamp} ms)`)
-      blockToSave++
+    } catch (error) {
+      console.log(error)
     }
-  } catch (error) {
-    console.log(`Error saving block ${blockToSave}.`)
-    console.log(error)
+
+    blockToSave++
   }
 
   console.log('Finished.')
