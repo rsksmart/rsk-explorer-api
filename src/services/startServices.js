@@ -9,11 +9,12 @@ function main () {
   const syncStatus = {
     checkingDB: false,
     updatingTip: false,
-    lastReceived: -1
+    lastReceived: -1,
+    staticSyncingDisabled: false
   }
 
-  liveSyncer({ syncStatus, log })
-  staticSyncer({ syncStatus, log })
+  liveSyncer(syncStatus, { log })
+  staticSyncer(syncStatus, { log })
   txPool({ log })
 }
 

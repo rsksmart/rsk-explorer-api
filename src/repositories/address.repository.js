@@ -23,7 +23,7 @@ export const addressRepository = {
 
     return count
   },
-  insertOne (data) {
+  insertOne (data, { isMiner, number }) {
     const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
 
     if (data.type === 'contract') {
@@ -51,10 +51,10 @@ export const addressRepository = {
       }
     }
 
-    if (data.lastBlockMined) {
+    if (isMiner) {
       transactionQueries.push(prismaClient.miner.createMany({data: {
         address: data.address,
-        blockNumber: data.lastBlockMined.number
+        blockNumber: number
       },
       skipDuplicates: true}))
     }

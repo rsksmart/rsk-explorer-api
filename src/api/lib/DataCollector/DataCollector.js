@@ -10,13 +10,12 @@ const emitter = new Emitter()
 export class DataCollector {
   constructor (options) {
     this.options = options
-    this._keyName = options.keyName || '_id'
     this.events = emitter
     this._interval = null
     this.modules = {}
     this.tickDelay = 1000
     this.serialize = serialize
-    this.log = options.log || log
+    this.log = log
   }
   tick () { }
   stop () {

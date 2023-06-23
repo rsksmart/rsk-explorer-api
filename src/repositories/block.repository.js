@@ -52,7 +52,13 @@ export const blockRepository = {
       if (!isAddress(address.address)) {
         throw new Error(`Invalid address ${address.address}`)
       } else {
-        transactionQueries.push(...addressRepository.insertOne(address))
+        transactionQueries.push(...addressRepository.insertOne(
+          address,
+          {
+            isMiner: block.miner === address.address,
+            number: block.number
+          }
+        ))
       }
     }
 
@@ -94,9 +100,7 @@ export const blockRepository = {
       transactionQueries.push(...statusRepository.insertOne(status))
     }
 
-    const res = prismaClient.$transaction(transactionQueries)
-
-    return res
+    return prismaClient.$transaction(transactionQueries)
   },
   async deleteBlockData (blockNumber) {
     const transactionQueries = [prismaClient.block.deleteMany({where: {number: blockNumber}})]

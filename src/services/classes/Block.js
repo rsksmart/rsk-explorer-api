@@ -36,15 +36,16 @@ export class Block extends BcThing {
   }
 
   async save () {
+    const { number } = this
+    let data
     try {
-      const { number } = this
       console.log({ number })
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
       const exists = await blockRepository.findOne({ number })
       if (exists) throw new Error(`Block ${number} already in db. Skipped`)
 
       await this.fetch()
-      let data = this.getData(true)
+      data = this.getData(true)
       if (!data) throw new Error(`Fetch returns empty data for block #${number}`)
 
       data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
@@ -58,8 +59,9 @@ export class Block extends BcThing {
       await statsRepository.insertOne(blockchainStats)
 
       return { data }
-    } catch (err) {
-      throw err
+    } catch (error) {
+      this.log.error(`Error saving block ${number} data`)
+      throw error
     }
   }
 

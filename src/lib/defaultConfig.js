@@ -6,7 +6,8 @@ import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
 export const enabledServices = {
-  SYNC_BLOCKS: 'syncBlocks',
+  LIVE_SYNCER: 'liveSyncer',
+  STATIC_SYNCER: 'staticSyncer',
   TX_POOL: 'txPool'
 }
 

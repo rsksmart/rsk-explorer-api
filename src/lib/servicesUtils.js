@@ -2,7 +2,7 @@ import BlocksBase from './BlocksBase.js'
 import Block from '../services/classes/Block.js'
 import { blockRepository } from '../repositories/block.repository.js'
 
-export async function insertBlock ({ number, status, initConfig, log }) {
+export async function insertBlock (number, { initConfig, log }, status = undefined) {
   try {
     const block = new Block(number, new BlocksBase({ initConfig, log }), status)
     let fetchingTime = Date.now()
@@ -28,16 +28,19 @@ function deleteBlocks (blocks = []) {
   return blockRepository.deleteBlocksByNumbers(blocks)
 }
 
-async function insertBlocks ({ blocks = [], initConfig, log }) {
+async function insertBlocks (blocks = [], { initConfig, log }) {
   for (const number of blocks) {
-    await insertBlock({ number, initConfig, log })
+    await insertBlock(number, { initConfig, log })
   }
 }
-
 export async function reorganizeBlocks ({ blocksToDelete = [], blocks: missingBlocks = [], initConfig, log }) {
   await deleteBlocks(blocksToDelete)
   log.info(`Deleted ${blocksToDelete.length} blocks: ${JSON.stringify(blocksToDelete)}`)
 
   log.info(`Adding ${missingBlocks.length} new chain blocks: ${JSON.stringify(missingBlocks)}`)
-  await insertBlocks({ blocks: missingBlocks, initConfig, log })
+  await insertBlocks(missingBlocks, { initConfig, log })
+}
+
+export async function delay (time) {
+  return new Promise(resolve => setTimeout(resolve, time))
 }
