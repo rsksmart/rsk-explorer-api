@@ -13,8 +13,9 @@
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
     "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
-    "start-services": "npm run build && pm2 start dist/services/startServices.js | pm2 log --raw | npx bunyan",
-    "stop-services": "pm2 stop startServices"
+    "start-services": "npm run build && pm2 start dist/services/startServices.js",
+    "stop-services": "pm2 stop all",
+    "logs": "pm2 log --raw | npx bunyan"
   },
   "repository": {
     "type": "git",
