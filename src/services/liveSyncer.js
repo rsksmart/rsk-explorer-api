@@ -109,7 +109,7 @@ async function reorganize ({ latestBlock, initConfig, log }) {
     log.info(`New chain blocks: ${JSON.stringify(missingBlocks)}`)
     log.info(`Old chain blocks: ${JSON.stringify(blocksToDelete)}`)
 
-    await reorganizeBlocks({ blocksToDelete, blocks: missingBlocks, initConfig })
+    await reorganizeBlocks({ blocksToDelete, blocks: missingBlocks, initConfig, log })
 
     log.info(`Finished reorganization process!`)
   } catch (error) {
