@@ -11,8 +11,7 @@ async function main () {
   const syncStatus = {
     checkingDB: false,
     updatingTip: false,
-    lastReceived: -1,
-    staticSyncingDisabled: false
+    lastReceived: -1
   }
 
   liveSyncer(syncStatus, { initConfig, log })

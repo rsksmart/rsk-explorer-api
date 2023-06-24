@@ -50,12 +50,10 @@ async function updateDbTipBlock (number, syncStatus, { initConfig, log }) {
   // previous block is not in db OR previousBlock exists and blocks are congruent
   if (!previousBlockInDb || sameHash(previousBlockInDb.hash, nextBlock.parentHash)) {
     // normal insert
-    await insertBlock(nextBlock.number, { initConfig, log })
+    await insertBlock(nextBlock.number, { initConfig, log, tipBlock: true })
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
     log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash`)
-    log.info({ latestParentHash: nextBlock.parentHash, latestDbHash: previousBlockInDb.hash })
-
     syncStatus.checkingDB = true
     await reorganize(nextBlock, { initConfig, log })
     syncStatus.checkingDB = false
@@ -85,20 +83,7 @@ async function reorganize (toBlock, { initConfig, log }) {
       const newChainPreviousBlock = await nod3.eth.getBlock(current)
       const dbChainPreviousBlock = await getDbBlock(current)
 
-      log.info({ current, gap })
       if (dbChainPreviousBlock) {
-        log.info({
-          newChainPreviousBlock: {
-            number: newChainPreviousBlock.number,
-            hash: newChainPreviousBlock.hash,
-            parentHash: newChainPreviousBlock.parentHash
-          },
-          dbChainPreviousBlock: {
-            number: dbChainPreviousBlock.number,
-            hash: dbChainPreviousBlock.hash,
-            parentHash: dbChainPreviousBlock.parentHash
-          }
-        })
         chainsParentBlockFound = sameHash(newChainPreviousBlock.hash, dbChainPreviousBlock.hash)
         if (chainsParentBlockFound) break
       }

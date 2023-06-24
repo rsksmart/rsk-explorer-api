@@ -2,9 +2,9 @@ import BlocksBase from './BlocksBase.js'
 import Block from '../services/classes/Block.js'
 import { blockRepository } from '../repositories/block.repository.js'
 
-export async function insertBlock (number, { initConfig, log }, status = undefined) {
+export async function insertBlock (number, { initConfig, log, tipBlock = false }, status = undefined) {
   try {
-    const block = new Block(number, new BlocksBase({ initConfig, log }), status)
+    const block = new Block(number, new BlocksBase({ initConfig, log }), status, tipBlock)
     let fetchingTime = Date.now()
     await block.fetch()
     fetchingTime = Date.now() - fetchingTime

@@ -9,7 +9,7 @@ import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
-  constructor (number, { nod3, log, initConfig }, status) {
+  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
     super({ nod3, initConfig, log })
     this.fetched = false
     this.log = log || console
@@ -17,6 +17,7 @@ export class Block extends BcThing {
     this.summary = new BlockSummary(number, { nod3, initConfig, log })
     this.data = { block: null }
     this.status = status
+    this.isTipBlock = tipBlock
   }
 
   async fetch (forceFetch) {
@@ -26,12 +27,11 @@ export class Block extends BcThing {
       }
       let { summary } = this
       let data = await summary.fetch()
+      if (!data) throw new Error(`Fetch returns empty data for block #${this.number}`)
       this.setData(data)
       this.fetched = true
-      return this.getData()
     } catch (err) {
       this.log.debug('Block fetch error', err)
-      return Promise.reject(err)
     }
   }
 
@@ -39,26 +39,23 @@ export class Block extends BcThing {
     const { number } = this
     let data
     try {
-      console.log({ number })
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
+
       const exists = await blockRepository.findOne({ number })
       if (exists) throw new Error(`Block ${number} already in db. Skipped`)
 
-      await this.fetch()
       data = this.getData(true)
-      if (!data) throw new Error(`Fetch returns empty data for block #${number}`)
-
       data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
       data.status = this.status
 
       // save block and all related data
       await blockRepository.saveBlockData(data)
 
-      // save stats (requires blocks and addresses inserted)
-      const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
-      await statsRepository.insertOne(blockchainStats)
-
-      return { data }
+      // save stats (requires block and addresses inserted). Only for tip blocks
+      if (this.isTipBlock) {
+        const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
+        await statsRepository.insertOne(blockchainStats)
+      }
     } catch (error) {
       this.log.error(`Error saving block ${number} data`)
       throw error
