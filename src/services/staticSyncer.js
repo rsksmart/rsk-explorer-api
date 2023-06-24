@@ -39,7 +39,7 @@ async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks
         timestamp
       }
 
-      insertBlock(number, { initConfig, log }, status)
+      await insertBlock(number, { initConfig, log }, status)
     } catch (error) {
       log.info(`There was an error saving block ${number}`)
       log.error(error)
