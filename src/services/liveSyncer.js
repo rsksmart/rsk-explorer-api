@@ -1,78 +1,82 @@
-import { dataSource } from '../lib/dataSource'
 import { insertBlock, getDbBlock, sameHash, reorganizeBlocks } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
-import defaultConfig from '../lib/defaultConfig'
 
-const CONFIRMATIONS_THERESHOLD = defaultConfig.blocks.bcTipSize || 120
+const TIP_BLOCK_FETCH_INTERVAL = 3000
+const CONFIRMATIONS_THERESHOLD = 120
 
-export async function liveSyncer (syncStatus, { log }) {
-  try {
-    const { initConfig } = await dataSource()
-    setInterval(() => newBlocksHandler(syncStatus, { initConfig, log }), 3000)
-    log.info('Listening to new blocks...')
-  } catch (error) {
-    log.info(error)
-  }
+export async function liveSyncer (syncStatus, { initConfig, log }) {
+  setInterval(() => newBlocksHandler(syncStatus, { initConfig, log }), TIP_BLOCK_FETCH_INTERVAL)
+  log.info('Listening to new blocks...')
 }
 
 async function newBlocksHandler (syncStatus, { initConfig, log }) {
-  if (syncStatus.checkingDB) return
+  // Case 1: already updating tip
+  if (syncStatus.updatingTip) return
 
   let latestBlock
   try {
     latestBlock = await nod3.eth.getBlock('latest')
     const exists = await getDbBlock(latestBlock.number)
 
-    // latest exists
-    if (exists || latestBlock.number <= syncStatus.lastReceived) return
+    // Case 2: latest exists
+    if (exists) return
 
-    // There's a gap between latestBlock and lastReceivedBlock
+    // Case 3: latest must be added
+    syncStatus.updatingTip = true
+
+    // 3.1: Gap of 2+ blocks from latest
     if (syncStatus.lastReceived >= 0 && latestBlock.number - syncStatus.lastReceived > 1) {
-      log.info(`Filling detected gap when updating block tip [${syncStatus.lastReceived}, ${latestBlock.number}]`)
-      for (let number = syncStatus.lastReceived + 1; number <= latestBlock.number; number++) {
-        syncStatus.updatingTip = true
-        await insertBlock(number, { initConfig, log })
-        syncStatus.updatingTip = false
+      log.info(`Gap of 2 or more blocks detected from last received block (${syncStatus.lastReceived}) to latest block (${latestBlock.number}). Updating...`)
+      let next = syncStatus.lastReceived + 1
+      while (next <= latestBlock.number) {
+        await updateDbTipBlock(next, syncStatus, { initConfig, log })
+        next++
       }
     } else {
-      const previousInDb = await getDbBlock(latestBlock.number - 1)
-      if (!previousInDb || sameHash(latestBlock.parentHash, previousInDb.hash)) {
-        // previousBlock not exists OR previousBlock exists and blocks are congruent
-        syncStatus.updatingTip = true
-        await insertBlock(latestBlock.number, { initConfig, log })
-        syncStatus.updatingTip = false
-      } else {
-        // previousInDb exists and is not parent of latestBlock (possible reorganization)
-        log.info(`Latest db block (${previousInDb.number}) hash is incongruent with latest block(${latestBlock.number}) parentHash`)
-        log.info({ latestParentHash: latestBlock.parentHash, latestDbHash: previousInDb.hash })
-
-        syncStatus.checkingDB = true
-        await reorganize(latestBlock, { initConfig, log })
-        syncStatus.checkingDB = false
-      }
+      // 3.2: Gap of 1 block from latest
+      await updateDbTipBlock(latestBlock.number, syncStatus, { initConfig, log })
     }
-
-    syncStatus.lastReceived = latestBlock.number
   } catch (error) {
-    log.info(`Error handling new block: ${latestBlock.number}`, error)
+    log.info(`Error while handling new block: ${latestBlock.number}`)
+    log.info(error)
+  }
+  syncStatus.lastReceived = latestBlock.number
+  syncStatus.updatingTip = false
+}
+
+async function updateDbTipBlock (number, syncStatus, { initConfig, log }) {
+  const nextBlock = await nod3.eth.getBlock(number)
+  const previousBlockInDb = await getDbBlock(number - 1)
+  // previous block is not in db OR previousBlock exists and blocks are congruent
+  if (!previousBlockInDb || sameHash(previousBlockInDb.hash, nextBlock.parentHash)) {
+    // normal insert
+    await insertBlock(nextBlock.number, { initConfig, log })
+  } else {
+    // previousInDb exists and is not parent of latestBlock (reorganization)
+    log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash`)
+    log.info({ latestParentHash: nextBlock.parentHash, latestDbHash: previousBlockInDb.hash })
+
+    syncStatus.checkingDB = true
+    await reorganize(nextBlock, { initConfig, log })
+    syncStatus.checkingDB = false
   }
 }
 
-async function reorganize (latestBlock, { initConfig, log }) {
+async function reorganize (toBlock, { initConfig, log }) {
   log.info('Checking blocks congruence...')
   log.info({
-    latestBlock: {
-      number: latestBlock.number,
-      hash: latestBlock.hash,
-      parentHash: latestBlock.parentHash
+    toBlock: {
+      number: toBlock.number,
+      hash: toBlock.hash,
+      parentHash: toBlock.parentHash
     }
   })
 
   let chainsParentBlockFound = false
-  const missingBlocks = [latestBlock.number] // include latest by default
+  const missingBlocks = [toBlock.number] // include latest by default
   const blocksToDelete = []
 
-  let current = latestBlock.number - 1
+  let current = toBlock.number - 1
   let gap = CONFIRMATIONS_THERESHOLD - 1 // - 1 since we already know last db block is incongruent
 
   try {
@@ -108,7 +112,7 @@ async function reorganize (latestBlock, { initConfig, log }) {
 
     log.info(`Chains parent block found! (${current}). Reorg depth: ${CONFIRMATIONS_THERESHOLD - gap}`)
     log.info(`New chain blocks: ${JSON.stringify(missingBlocks)}`)
-    log.info(`Old chain blocks: ${JSON.stringify(blocksToDelete)}`)
+    log.info(`Old chain blocks: ${JSON.stringify(blocksToDelete.slice().reverse())}`)
 
     await reorganizeBlocks({ blocksToDelete, blocks: missingBlocks, initConfig, log })
 

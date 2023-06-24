@@ -1,11 +1,9 @@
-import dataSource from '../lib/dataSource.js'
 import { getMissingSegments } from '../lib/getMissingSegments.js'
 import { delay, insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
 
-export async function staticSyncer (syncStatus, { log }) {
-  const { initConfig } = await dataSource()
+export async function staticSyncer (syncStatus, { initConfig, log }) {
   const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
   const blocksNumbers = blocksInDb.map(b => b.number)
   const { number: latestBlock } = await nod3.eth.getBlock('latest')
