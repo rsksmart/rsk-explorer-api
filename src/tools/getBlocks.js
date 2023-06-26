@@ -3,51 +3,36 @@ import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import nod3 from '../lib/nod3Connect.js'
 
-async function validateInputs (fromBlock, toBlock) {
-  const notNumbers = isNaN(fromBlock) || isNaN(toBlock)
-  const invalidSegment = fromBlock > toBlock
+async function main () {
+  if (isNaN(process.argv[2])) throw new Error('fromBlock param is missing.')
   const latestBlock = await nod3.eth.getBlock('latest')
-  const inexistentBlock = toBlock > latestBlock.number
-
-  function logError (msg) {
-    console.log('\n' + 'Error: ' + msg + '\n')
-    process.exit(9)
-  }
-
-  if (notNumbers) {
-    logError('Inputs must be numbers')
-  } else if (invalidSegment) {
-    logError('First block number must be higher than the second one')
-  } else if (inexistentBlock) {
-    logError(`Second block number must be lower or equal than latest block (Latest block: ${latestBlock.number})`)
-  }
-}
-
-async function syncBlocks () {
   const fromBlock = parseInt(process.argv[2])
-  const toBlock = parseInt(process.argv[3])
-
-  await validateInputs(fromBlock, toBlock)
+  const toBlock = process.argv[3] ? parseInt(process.argv[3]) : latestBlock.number
 
   console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
-  const { db, initConfig } = await dataSource()
+  const { initConfig } = await dataSource()
 
-  for (let b = fromBlock; b <= toBlock; b++) {
+  let blockToSave = fromBlock
+  while (blockToSave <= toBlock) {
     try {
-      let time = Date.now()
-      const block = new Block(b, new BlocksBase(db, { initConfig }))
+      let timestamp = Date.now()
+
+      // insert block
+      const block = new Block(blockToSave, new BlocksBase({ initConfig }))
       await block.fetch()
       await block.save()
+      timestamp = Date.now() - timestamp
 
-      time = Date.now() - time
-      console.log(`Block ${b} saved! (${time} ms)`)
-    } catch (err) {
-      console.log(err)
+      console.log(`Block ${blockToSave} saved. (${timestamp} ms)`)
+    } catch (error) {
+      console.log(error)
     }
+
+    blockToSave++
   }
 
-  console.log(`Finished.`)
+  console.log('Finished.')
   process.exit(0)
 }
 
-syncBlocks()
+main()

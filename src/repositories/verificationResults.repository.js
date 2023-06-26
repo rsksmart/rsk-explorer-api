@@ -1,6 +1,7 @@
 export const verificationResultsRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  findOne (query = {}, project = {}) {
+    // Not implemented
+    return {}
   },
   find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
     if (isArray) {

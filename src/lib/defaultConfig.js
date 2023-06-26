@@ -4,9 +4,16 @@
  */
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
-import { servicesNames } from '../services/servicesConfig'
 
-const services = Object.assign({}, servicesNames)
+export const enabledServices = {
+  LIVE_SYNCER: 'liveSyncer',
+  STATIC_SYNCER: 'staticSyncer',
+  TX_POOL: 'txPool'
+}
+
+const cwd = `${__dirname}`
+
+const services = Object.assign({}, enabledServices)
 for (let s in services) {
   services[s] = true
 }
@@ -31,14 +38,14 @@ export default {
     trace: 1 // delegates trace_ module to the second node
   },
   log: {
-    dir: '/var/log/rsk-explorer',
+    dir: cwd,
     level: 'info',
     logToFiles: false
   },
   db: {
     server: 'localhost',
     port: 27017,
-    database: 'blockDB',
+    database: 'explorer_db',
     prismaEngine: 'postgres',
     prismaPort: 5432,
     prismaDbName: 'explorer_db',
@@ -61,32 +68,11 @@ export default {
   },
   blocks: {
     blocksQueueSize: 10,
-    validateCollections: false,
     bcTipSize: 120,
     batchRequestSize: 20,
     debug: false,
-    updateTokenBalances: true, // Update token accounts balances on next block
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
     services
-  },
-  collectionsNames: {
-    Config: 'config',
-    Blocks: 'blocks',
-    Txs: 'transactions',
-    Addrs: 'addresses',
-    Status: 'status',
-    Events: 'events',
-    TokensAddrs: 'tokensAddresses',
-    TxPool: 'txPool',
-    PendingTxs: 'transactionsPending',
-    Stats: 'statsCollection',
-    BlocksSummary: 'blocksSummary',
-    ContractVerification: 'contractsVerifications',
-    VerificationsResults: 'verificationResults',
-    InternalTransactions: 'internalTransactions',
-    Balances: 'balances',
-    BalancesLog: 'balancesLog',
-    BlocksTraces: 'blockTraces'
   }
 }

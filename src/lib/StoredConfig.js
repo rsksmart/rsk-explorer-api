@@ -1,17 +1,14 @@
 
-import config from './config'
 import { configRepository } from '../repositories/config.repository'
-const collectionName = config.collectionsNames.Config
 
 export const readOnlyError = id => `The doc with _id ${id} is read only`
 
-export function StoredConfig (db, readOnlyDocsIds = []) {
-  const storage = db.collection(collectionName)
+export function StoredConfig (readOnlyDocsIds = []) {
   const isReadOnly = _id => readOnlyDocsIds.includes(_id)
   const isValidId = id => typeof id === 'string'
   const get = async (_id) => {
     try {
-      const doc = await configRepository.findOne({ _id }, {}, storage)
+      const doc = await configRepository.findOne({ _id }, {})
       if (doc) {
         // Remove all underscored properties
         for (let prop in doc) {
@@ -33,7 +30,7 @@ export function StoredConfig (db, readOnlyDocsIds = []) {
       const newDoc = Object.assign({}, doc)
       newDoc._id = id
       newDoc._created = Date.now()
-      const res = await configRepository.insertOne(newDoc, storage)
+      const res = await configRepository.insertOne(newDoc)
       return res
     } catch (err) {
       return Promise.reject(err)
@@ -51,7 +48,7 @@ export function StoredConfig (db, readOnlyDocsIds = []) {
         if (!old) return save(_id, newDoc)
       }
       newDoc._updated = Date.now()
-      let res = await configRepository.updateOne({ _id }, { $set: newDoc }, options, storage)
+      let res = await configRepository.updateOne({ _id }, { $set: newDoc }, options)
       return res
     } catch (err) {
       return Promise.reject(err)

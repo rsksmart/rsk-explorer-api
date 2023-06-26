@@ -1,5 +1,4 @@
 import dataSource from '../../lib/dataSource.js'
-import { getDbBlocksCollections } from '../../lib/blocksCollections'
 import config from '../../lib/config'
 import Logger from '../../lib/Logger'
 import { serialize } from '../../lib/utils'
@@ -11,11 +10,10 @@ import { errors } from '../../lib/types'
 const log = Logger('UserRequests', config.blocks.log)
 const verifierConfig = config.api.contractVerifier
 
-dataSource({ log, skipCheck: true }).then(({ db, initConfig }) => {
-  const collections = getDbBlocksCollections(db)
+dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   // const cache = new RequestCache()
   // TODO, conditional creation
-  const verifierModule = ContractVerifierModule(db, collections, verifierConfig, { log })
+  const verifierModule = ContractVerifierModule(verifierConfig, { log })
   // const addressModule = AddressModule({ db, collections, initConfig, log })
 
   process.on('message', async msg => {

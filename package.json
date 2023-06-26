@@ -12,7 +12,10 @@
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha",
-    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json"
+    "api-docs": "npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
+    "stop-services": "pm2 stop startServices && pm2 delete startServices",
+    "start-services": "npm run build && pm2 start dist/services/startServices.js",
+    "logs": "pm2 log --raw | npx bunyan -o short"
   },
   "repository": {
     "type": "git",
@@ -35,9 +38,6 @@
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
     "express": "^4.17.1",
-    "google-protobuf": "^3.13.0",
-    "grpc": "^1.24.3",
-    "mongodb": "^3.6.1",
     "prisma": "^4.11.0",
     "rlp": "^2.2.5",
     "rsk-openapi-ui": "^0.0.7",

@@ -2,12 +2,11 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class Tx extends DataCollectorItem {
-  constructor (collections, key) {
-    const { Txs } = collections
+  constructor (key) {
     let cursorField = 'txId'
     let sortDir = -1
     const sortable = { txId: -1 }
-    super(Txs, key, { cursorField, sortDir, sortable })
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger

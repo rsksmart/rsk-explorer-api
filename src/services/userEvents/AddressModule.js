@@ -2,7 +2,7 @@ import { errors } from '../../lib/types'
 import nod3 from '../../lib/nod3Connect'
 import Address from '../classes/Address'
 
-export function AddressModule ({ db, collections, initConfig, log }) {
+export function AddressModule ({ initConfig, log }) {
   log = log || console
 
   const updateAddress = async ({ msg, cache }, { address }) => {
@@ -14,7 +14,7 @@ export function AddressModule ({ db, collections, initConfig, log }) {
         msg.data = cached
         return msg
       } else {
-        const Addr = new Address(address, { initConfig, nod3, collections })
+        const Addr = new Address(address, { initConfig, nod3 })
         let result = await Addr.fetch().catch(err => {
           log.error(err)
           msg.error = errors.TEMPORARILY_UNAVAILABLE

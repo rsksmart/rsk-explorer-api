@@ -6,38 +6,29 @@ import initConfig from './initialConfiguration'
 import nod3 from './nod3Connect'
 
 async function bridgeCall (method, params = []) {
-  try {
-    const address = initConfig.nativeContracts.bridge
-    const abi = ABI.bridge
-    const contract = Contract(abi, { address, nod3 })
-    const res = await contract.call(method, params)
-    return res
-  } catch (err) {
-    console.debug(err)
-  }
+  const address = initConfig.nativeContracts.bridge
+  const abi = ABI.bridge
+  const contract = Contract(abi, { address, nod3 })
+  const res = await contract.call(method, params)
+  return res
 }
 
 export async function getBlockchainStats ({ blockHash, blockNumber }) {
-  try {
-    if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
+  if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
 
-    const circulating = await getCirculatingSupply({}, initConfig.nativeContracts)
-    const activeAccounts = await getActiveAccounts()
-    const hashrate = await nod3.eth.netHashrate()
-    const bridge = serialize({ lockingCap: await bridgeCall('getLockingCap') })
-    const timestamp = Date.now()
+  const circulating = await getCirculatingSupply({}, initConfig.nativeContracts)
+  const activeAccounts = await getActiveAccounts()
+  const hashrate = await nod3.eth.netHashrate()
+  const bridge = serialize({ lockingCap: await bridgeCall('getLockingCap') })
+  const timestamp = Date.now()
 
-    return {
-      circulating,
-      activeAccounts,
-      hashrate,
-      blockHash,
-      blockNumber,
-      bridge,
-      timestamp
-    }
-  } catch (err) {
-    console.debug(err)
-    return Promise.reject(err)
+  return {
+    circulating,
+    activeAccounts,
+    hashrate,
+    blockHash,
+    blockNumber,
+    bridge,
+    timestamp
   }
 }

@@ -9,14 +9,13 @@ import { isZeroAddress } from '@rsksmart/rsk-utils'
 import { addressRepository } from '../../repositories/address.repository'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, initConfig, collections, tx, block, log } = {}) {
-    super({ nod3, initConfig, collections, log })
+  constructor (address, { nod3, initConfig, tx, block, log } = {}) {
+    super({ nod3, initConfig, log })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
     this.bcSearch = BcSearch(nod3)
     this.address = address
     this.fetched = false
-    this.collection = (collections) ? collections.Addrs : undefined
     this.contract = undefined
     this.block = undefined
     this.blockNumber = undefined
@@ -165,10 +164,9 @@ export class Address extends BcThing {
 
   async getFromDb () {
     try {
-      let { dbData, collection, address } = this
+      let { dbData, address } = this
       if (dbData) return dbData
-      if (!collection) return
-      dbData = await addressRepository.findOne({ address }, {}, collection)
+      dbData = await addressRepository.findOne({ address }, {})
       this.dbData = dbData
       return dbData
     } catch (err) {
@@ -186,14 +184,14 @@ export class Address extends BcThing {
     try {
       await this.fetch()
       let data = this.getData(true)
-      let { collection, dbData } = this
+      let { dbData } = this
       // Optimization
       for (let p in dbData) {
         if (data[p] === dbData[p]) delete data[p]
       }
       if (Object.keys(data).length < 1) return
       data.address = address
-      const result = await saveAddressToDb(data, collection)
+      const result = await saveAddressToDb(data)
       return result
     } catch (err) {
       this.log.error(`Error updating address ${address}`)
@@ -212,8 +210,8 @@ export class Address extends BcThing {
   makeContract (deployedCode) {
     const dbData = Object.assign({}, this.getData(true))
     if (this.contract) return this.contract
-    let { address, nod3, initConfig, collections, block } = this
-    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections, block })
+    let { address, nod3, initConfig, block } = this
+    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, block })
   }
 
   async getContract () {
@@ -292,7 +290,7 @@ function createAddressData ({ address, isNative, name }) {
   return new Proxy({ address, type, name, isNative }, dataHandler)
 }
 
-export async function saveAddressToDb (data, collection) {
+export async function saveAddressToDb (data) {
   try {
     let { address } = data
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)

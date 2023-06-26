@@ -37,7 +37,6 @@ export function makeConfig (config = {}) {
   for (let s in defaultConf.blocks.services) {
     services[s] = config.blocks.services[s] !== false
   }
-  services.ROUTER = true
   config.blocks.services = services
   // defaults  servers/ports
   config.source = nodeSources(config.source)
@@ -49,7 +48,6 @@ export function makeConfig (config = {}) {
     defaultLogs('blocks')
   }
 
-  config.api.collectionsNames = config.collectionsNames
   return config
 }
 

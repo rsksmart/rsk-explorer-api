@@ -12,25 +12,26 @@ import { summaryRepository } from './summary.repository'
 import { addressRepository } from './address.repository'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { balancesRepository } from './balances.repository'
+import { statusRepository } from './status.repository'
 
 export const blockRepository = {
-  async findOne (query = {}, project = {}, collection) {
+  async findOne (query = {}, project = {}) {
     query = generateFindQuery(query, project, blockRelatedTables, project)
     const block = await prismaClient.block.findFirst(query)
 
     return block ? blockEntityToRaw(block) : null
   },
-  async find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
+  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
     const blocks = await prismaClient.block.findMany(generateFindQuery(query, project, blockRelatedTables, sort, limit))
 
     return Object.keys(project).length ? blocks : blocks.map(blockEntityToRaw)
   },
-  async countDocuments (query = {}, collection) {
+  async countDocuments (query = {}) {
     const count = await prismaClient.block.count({where: mongoQueryToPrisma(query)})
 
     return count
   },
-  insertOne (data, collection) {
+  insertOne (data) {
     const { uncles, number: blockNumber } = data
     const transactionQueries = [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
 
@@ -40,7 +41,7 @@ export const blockRepository = {
     return transactionQueries
   },
   async saveBlockData (data) {
-    const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances } = data
+    const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, status } = data
     const transactionQueries = []
 
     // insert block
@@ -51,7 +52,13 @@ export const blockRepository = {
       if (!isAddress(address.address)) {
         throw new Error(`Invalid address ${address.address}`)
       } else {
-        transactionQueries.push(...addressRepository.insertOne(address))
+        transactionQueries.push(...addressRepository.insertOne(
+          address,
+          {
+            isMiner: block.miner === address.address,
+            number: block.number
+          }
+        ))
       }
     }
 
@@ -59,8 +66,12 @@ export const blockRepository = {
     transactionQueries.push(...balancesRepository.insertMany(balances))
 
     // insert txs and delete pendings
-    for (const tx of transactions) {
-      transactionQueries.push(...txRepository.insertOne(tx), ...txPendingRepository.deleteOne({ hash: tx.hash }))
+    if (!transactions.length && block.number > 0) {
+      throw new Error(`Couldn't get transactions for block ${block.number}`)
+    } else {
+      for (const tx of transactions) {
+        transactionQueries.push(...txRepository.insertOne(tx), ...txPendingRepository.deleteOne({ hash: tx.hash }))
+      }
     }
 
     // insert internal transactions
@@ -84,9 +95,12 @@ export const blockRepository = {
     // save block summary
     transactionQueries.push(...summaryRepository.insertOne(data))
 
-    const res = prismaClient.$transaction(transactionQueries)
+    // insert status
+    if (status) {
+      transactionQueries.push(...statusRepository.insertOne(status))
+    }
 
-    return res
+    return prismaClient.$transaction(transactionQueries)
   },
   async deleteBlockData (blockNumber) {
     const transactionQueries = [prismaClient.block.deleteMany({where: {number: blockNumber}})]
@@ -118,6 +132,15 @@ export const blockRepository = {
     }
     transactionQueries.push(...addressRepository.deleteMany(deletableAddresses))
 
-    return transactionQueries
+    return prismaClient.$transaction(transactionQueries)
+  },
+  async deleteBlocksByNumbers (blocks = []) {
+    try {
+      for (const number of blocks) {
+        await this.deleteBlockData(number)
+      }
+    } catch (error) {
+      throw error
+    }
   }
 }

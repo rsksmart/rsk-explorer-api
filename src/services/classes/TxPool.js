@@ -3,12 +3,10 @@ import { isHexString, base64toHex } from '../../lib/utils'
 import { txPoolRepository } from '../../repositories/txPool.repository'
 import { txPendingRepository } from '../../repositories/txPending.repository'
 export class TxPool extends BlocksBase {
-  constructor (db, options) {
-    super(db, options)
+  constructor (options) {
+    super(options)
     this.status = {}
     this.pool = {}
-    this.TxPool = this.collections.TxPool
-    this.PendingTxs = this.collections.PendingTxs
   }
 
   async start () {
@@ -34,7 +32,7 @@ export class TxPool extends BlocksBase {
     const status = Object.assign({}, this.status)
     let changed = Object.keys(newStatus).find(k => newStatus[k] !== status[k])
     if (changed) {
-      this.log.debug(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
+      this.log.info(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
       this.status = Object.assign({}, newStatus)
       this.updatePool()
     }
@@ -115,8 +113,8 @@ export class TxPool extends BlocksBase {
 
   async savePoolToDb (pool) {
     try {
-      this.log.debug(`Saving txPool to db`)
-      const txpool = await txPoolRepository.insertOne(pool, this.TxPool)
+      this.log.info(`Saving txPool to db`)
+      const txpool = await txPoolRepository.insertOne(pool)
       await this.savePendingTxs(pool.txs, txpool.id)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
@@ -127,7 +125,7 @@ export class TxPool extends BlocksBase {
   async savePendingTxs (txs, poolId) {
     try {
       txs = txs || []
-      const savedTxs = await Promise.all(txs.map(tx => txPendingRepository.updateOne({ hash: tx.hash }, { $set: tx, poolId }, { upsert: true }, this.PendingTxs)))
+      const savedTxs = await Promise.all(txs.map(tx => txPendingRepository.updateOne({ hash: tx.hash }, { $set: tx, poolId }, { upsert: true })))
       return savedTxs
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`)
@@ -136,8 +134,8 @@ export class TxPool extends BlocksBase {
   }
 }
 
-export function Pool (db, config) {
-  return new TxPool(db, config)
+export function Pool (config) {
+  return new TxPool(config)
 }
 
 export default Pool

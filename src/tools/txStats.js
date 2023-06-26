@@ -1,5 +1,4 @@
 import dataSource from '../lib/dataSource.js'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { newBigNumber } from '../lib/utils'
 import { txRepository } from '../repositories/tx.repository'
 import { blockRepository } from '../repositories/block.repository'
@@ -23,9 +22,7 @@ getData(fromBlock, toBlock)
 
 async function getData (fromBlock, toBlock) {
   try {
-    let { db } = await dataSource()
-    let collections = getDbBlocksCollections(db)
-    let { Txs } = collections
+    await dataSource()
     // TODO: change query for prisma query when txRepository.find() is ready
     let query = {
       $and: [
@@ -33,7 +30,7 @@ async function getData (fromBlock, toBlock) {
         { blockNumber: { $lte: toBlock } },
         { txType: { $ne: 'remasc' } }]
     }
-    let cursor = txRepository.find(query, {}, Txs, {}, 0, false)
+    let cursor = txRepository.find(query, {}, {}, 0, false)
 
     query = {
       AND: [
@@ -41,7 +38,7 @@ async function getData (fromBlock, toBlock) {
         { blockNumber: { lt: toBlock } },
         { txType: { not: 'remasc' } }]
     }
-    DATA.txs = await txRepository.countDocuments(query, Txs)
+    DATA.txs = await txRepository.countDocuments(query)
 
     await cursor.forEach((tx) => {
       getTxData(tx)
@@ -50,8 +47,8 @@ async function getData (fromBlock, toBlock) {
     printObj(accounts)
     console.log(`Accounts that sent txs: ${Object.keys(accounts).length}`)
 
-    let fb = await getBlock(collections, fromBlock)
-    let tb = await getBlock(collections, toBlock)
+    let fb = await getBlock(fromBlock)
+    let tb = await getBlock(toBlock)
     let diff = getDiff(fb, tb)
 
     printObj(diff)

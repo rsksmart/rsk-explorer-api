@@ -1,27 +1,23 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
-import { blockQuery, isBlockHash, isBlockObject, isValidBlockNumber } from '../../lib/utils'
+import { blockQuery } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { blockRepository } from '../../repositories/block.repository'
 import { txRepository } from '../../repositories/tx.repository'
-import { internalTxRepository } from '../../repositories/internalTx.repository'
 import { eventRepository } from '../../repositories/event.repository'
-import { addressRepository } from '../../repositories/address.repository'
-import { balancesRepository } from '../../repositories/balances.repository'
 import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 
 export class Block extends BcThing {
-  constructor (hashOrNumber, { nod3, collections, log, initConfig }) {
-    super({ nod3, collections, initConfig, log })
-    this.Blocks = this.collections.Blocks
+  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
+    super({ nod3, initConfig, log })
     this.fetched = false
     this.log = log || console
-    this.hashOrNumber = hashOrNumber
-    this.summary = new BlockSummary(hashOrNumber, { nod3, initConfig, collections, log })
-    this.data = {
-      block: null
-    }
+    this.number = number
+    this.summary = new BlockSummary(number, { nod3, initConfig, log })
+    this.data = { block: null }
+    this.status = status
+    this.isTipBlock = tipBlock
   }
 
   async fetch (forceFetch) {
@@ -31,103 +27,38 @@ export class Block extends BcThing {
       }
       let { summary } = this
       let data = await summary.fetch()
+      if (!data) throw new Error(`Fetch returns empty data for block #${this.number}`)
       this.setData(data)
       this.fetched = true
-      return this.getData()
     } catch (err) {
       this.log.debug('Block fetch error', err)
-      return Promise.reject(err)
     }
   }
 
-  async save (overwrite) {
+  async save () {
+    const { number } = this
+    let data
     try {
-      let { collections, hashOrNumber } = this
-      // Skip saved blocks
-      if (isBlockHash(hashOrNumber) && !overwrite) {
-        const hash = hashOrNumber
-        const exists = await blockRepository.findOne({ hash }, {}, collections.Blocks)
-        if (exists) throw new Error(`Block ${hash} skipped`)
-      } else if (isValidBlockNumber(hashOrNumber)) {
-        const number = hashOrNumber
-        const exists = await blockRepository.findOne({ number }, {}, collections.Blocks)
-        if (exists) throw new Error(`Block ${number} skipped`)
-      }
-      await this.fetch()
-      let data = this.getData(true)
-      if (!data) throw new Error(`Fetch returns empty data for block #${this.hashOrNumber}`)
+      if (number < 0) throw new Error(`Invalid block number: ${number}`)
 
+      const exists = await blockRepository.findOne({ number })
+      if (exists) throw new Error(`Block ${number} already in db. Skipped`)
+
+      data = this.getData(true)
       data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
+      data.status = this.status
 
+      // save block and all related data
       await blockRepository.saveBlockData(data)
 
-      // save stats (requires blocks and addresses inserted)
-      const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
-      await statsRepository.insertOne(blockchainStats)
-
-      return { data }
-    } catch (err) {
-      console.log(err)
-      this.log.trace(`Block save error [${this.hashOrNumber}]`, err)
-      return Promise.reject(err)
-    }
-  }
-
-  async getOldBlockData (block) {
-    try {
-      if (!isBlockObject(block)) throw new Error('Block data is empty')
-      let exists = await this.searchBlock(block)
-      if (exists.length > 1) {
-        throw new Error(`ERROR block ${block.number}-${block.hash} has ${exists.length} duplicates`)
+      // save stats (requires block and addresses inserted). Only for tip blocks
+      if (this.isTipBlock) {
+        const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
+        await statsRepository.insertOne(blockchainStats)
       }
-      if (!exists.length) return
-      let oldBlock = exists[0]
-      if (oldBlock.hash === block.hash) throw new Error(`Skipped ${block.hash} because exists in db`)
-      let oldBlockData = await this.getBlockFromDb(oldBlock.hash, true)
-      if (!oldBlockData) throw new Error(`Missing block data for: ${block}`)
-      return oldBlockData
-    } catch (err) {
-      this.log.debug(err.message)
-      return Promise.reject(err)
-    }
-  }
-
-  async removeOldBlockData (block, txs, oldBlock) {
-    try {
-      if (!isBlockObject(oldBlock)) oldBlock = await this.getOldBlockData(block)
-      if (oldBlock) {
-        let { hash, number } = oldBlock.block
-        await this.deleteBlockDataFromDb(hash, number)
-      }
-      await this.removeBlocksByTxs(txs)
-      return block
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  deleteBlockDataFromDb (blockHash, blockNumber) {
-    return deleteBlockDataFromDb(blockHash, blockNumber, this.collections)
-  }
-
-  async removeBlocksByTxs (txs) {
-    try {
-      await Promise.all([...txs.map(async tx => {
-        try {
-          let oldTx = await this.getTransactionFromDb(tx.hash)
-          if (!oldTx) return
-          let oldBlock = await this.getTransactionFromDb(tx.hash)
-          if (oldBlock) {
-            let { blockHash, blockNumber } = oldBlock
-            await this.deleteBlockDataFromDb(blockHash, blockNumber)
-          }
-          return
-        } catch (err) {
-          return Promise.reject(err)
-        }
-      })])
-    } catch (err) {
-      return Promise.reject(err)
+    } catch (error) {
+      this.log.error(`Error saving block ${number} data`)
+      throw error
     }
   }
 
@@ -135,9 +66,9 @@ export class Block extends BcThing {
     return blockRepository.find({ $or: [{ hash }, { number }] })
   }
 
-  async getBlockFromDb (hashOrNumber, allData) {
+  async getBlockFromDb (number, allData) {
     try {
-      let block = await getBlockFromDb(hashOrNumber, this.collections.Blocks)
+      let block = await getBlockFromDb(number)
       if (block && allData) block = await this.getBlockDataFromDb(block)
       return block
     } catch (err) {
@@ -161,15 +92,15 @@ export class Block extends BcThing {
   }
 
   getBlockEventsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event)
+    return eventRepository.find({ blockHash }, {})
   }
 
   getBlockTransactionsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {}, this.collections.event)
+    return eventRepository.find({ blockHash }, {})
   }
 
   getTransactionFromDb (hash) {
-    return txRepository.findOne({ hash }, {}, this.collections.Txs)
+    return txRepository.findOne({ hash }, {})
   }
 
   // adds contract data to addresses
@@ -196,48 +127,10 @@ export class Block extends BcThing {
   }
 }
 
-export const getBlockFromDb = async (blockHashOrNumber, collection) => {
-  let query = blockQuery(blockHashOrNumber)
-  if (query) return blockRepository.findOne(query, {}, collection)
-  return Promise.reject(new Error(`"${blockHashOrNumber}": is not block hash or number`))
-}
-
-export const deleteBlockDataFromDb = async (blockHash, blockNumber, collections) => {
-  try {
-    blockNumber = parseInt(blockNumber)
-    if (blockNumber < 1) throw new Error(`The blockNumber: ${blockNumber} is wrong`)
-    if (!isBlockHash(blockHash)) throw new Error(`Empty block hash: ${blockHash}`)
-    let hash = blockHash
-    let result = {}
-    const query = { $or: [{ blockHash }, { blockNumber }] }
-
-    result.block = await blockRepository.deleteMany({ $or: [{ hash }, { number: blockNumber }] }, collections.Blocks)
-
-    let txs = await txRepository.find(query, {}, collections.Txs) || []
-    let txsHashes = txs.map(tx => tx.hash)
-
-    // remove txs
-    result.txs = await txRepository.deleteMany({ hash: { $in: txsHashes } }, collections.Txs)
-
-    // remove internal txs
-    result.itxs = await internalTxRepository.deleteMany({ transactionHash: { $in: txsHashes } }, collections.InternalTransactions)
-
-    // remove events by block
-    result.events = await eventRepository.deleteMany(query, collections.Events)
-
-    // remove events by txs
-    result.eventsByTxs = await eventRepository.deleteMany({ transactionHash: { $in: txsHashes } }, collections.Events)
-
-    // remove contracts by blockHash
-    result.addresses = await addressRepository.deleteMany({ 'createdByTx.blockHash': blockHash }, collections.Addrs)
-
-    // remove balances
-    result.balances = await balancesRepository.deleteMany(query, collections.Balances)
-
-    return result
-  } catch (err) {
-    return Promise.reject(err)
-  }
+export const getBlockFromDb = async (number) => {
+  let query = blockQuery(number)
+  if (query) return blockRepository.findOne(query, {})
+  return Promise.reject(new Error(`"${number}": is not block hash or number`))
 }
 
 export default Block

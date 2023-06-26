@@ -1,7 +1,6 @@
 import { DataCollector } from './lib/DataCollector'
 import { getEnabledApiModules } from './modules'
 import { txTypes } from '../lib/types'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
 import NativeContracts from '../lib/NativeContracts'
@@ -9,11 +8,8 @@ import NativeContracts from '../lib/NativeContracts'
 import getCirculatingSupply from './lib/getCirculatingSupply'
 
 class Api extends DataCollector {
-  constructor ({ db, initConfig }, { modules, collectionsNames, lastBlocks } = {}) {
-    const collectionName = collectionsNames.Blocks
-    super(db, { collectionName })
-    this.collectionsNames = collectionsNames
-    this.collections = getDbBlocksCollections(db)
+  constructor ({ initConfig }, { modules, lastBlocks } = {}) {
+    super()
     this.lastLimit = lastBlocks || 100
     this.latest = undefined
     this.lastBlocks = { data: [] }
@@ -36,7 +32,7 @@ class Api extends DataCollector {
     Object.keys(modules).forEach(name => {
       const constructor = modules[name]
       if (typeof constructor === 'function') {
-        const module = new constructor(this.collections, name)
+        const module = new constructor(name)
         this.log.info(`Loading module ${name}`)
         this.addModule(module, name)
       }
@@ -166,9 +162,8 @@ class Api extends DataCollector {
   }
   async getCirculatingSupplyFromDb () {
     try {
-      const collection = this.collections.Addrs
       const { nativeContracts } = this.initConfig
-      let circulating = await getCirculatingSupply(collection, nativeContracts)
+      let circulating = await getCirculatingSupply(nativeContracts)
       return circulating
     } catch (err) {
       this.log.debug(err)
