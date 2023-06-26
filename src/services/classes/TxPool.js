@@ -32,7 +32,7 @@ export class TxPool extends BlocksBase {
     const status = Object.assign({}, this.status)
     let changed = Object.keys(newStatus).find(k => newStatus[k] !== status[k])
     if (changed) {
-      this.log.debug(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
+      this.log.info(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
       this.status = Object.assign({}, newStatus)
       this.updatePool()
     }
@@ -113,7 +113,7 @@ export class TxPool extends BlocksBase {
 
   async savePoolToDb (pool) {
     try {
-      this.log.debug(`Saving txPool to db`)
+      this.log.info(`Saving txPool to db`)
       const txpool = await txPoolRepository.insertOne(pool)
       await this.savePendingTxs(pool.txs, txpool.id)
     } catch (err) {

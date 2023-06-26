@@ -1,10 +1,8 @@
-import Logger from '../lib/Logger'
 import { dataSource } from '../lib/dataSource'
 import { liveSyncer } from './liveSyncer'
 import { staticSyncer } from './staticSyncer'
 import { txPool } from './txPool'
 
-const log = Logger('explorer-services')
 const DELAY = 10000
 
 async function main () {
@@ -15,13 +13,13 @@ async function main () {
     lastReceived: -1
   }
 
-  staticSyncer(syncStatus, { initConfig, log })
+  staticSyncer(syncStatus, { initConfig })
 
   setTimeout(() => {
     // allow static syncer to save latest first
-    liveSyncer(syncStatus, { initConfig, log })
+    liveSyncer(syncStatus, { initConfig })
   }, DELAY)
-  txPool({ initConfig, log })
+  txPool({ initConfig })
 }
 
 main()

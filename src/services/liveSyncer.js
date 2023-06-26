@@ -1,10 +1,12 @@
 import { insertBlock, getDbBlock, sameHash, reorganizeBlocks } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
+import Logger from '../lib/Logger'
 
 const TIP_BLOCK_FETCH_INTERVAL = 3000
 const CONFIRMATIONS_THERESHOLD = 120
+const log = Logger('[live-syncer]')
 
-export async function liveSyncer (syncStatus, { initConfig, log }) {
+export async function liveSyncer (syncStatus, { initConfig }) {
   setInterval(() => newBlocksHandler(syncStatus, { initConfig, log }), TIP_BLOCK_FETCH_INTERVAL)
   log.info('Listening to new blocks...')
 }

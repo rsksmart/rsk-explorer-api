@@ -1,6 +1,9 @@
+import Logger from '../lib/Logger'
 import { TxPool } from './classes/TxPool'
 
-export async function txPool ({ initConfig, log }) {
+const log = Logger('[tx-pool]')
+
+export async function txPool ({ initConfig }) {
   try {
     const txPool = new TxPool({ initConfig, log })
     txPool.start()

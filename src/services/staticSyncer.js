@@ -2,8 +2,12 @@ import { getMissingSegments } from '../lib/getMissingSegments.js'
 import { delay, insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
+import Logger from '../lib/Logger.js'
 
-export async function staticSyncer (syncStatus, { initConfig, log }) {
+const log = Logger('[static-syncer]')
+const awaitReorgsDelay = 5000
+
+export async function staticSyncer (syncStatus, { initConfig }) {
   const blocksInDb = await blockRepository.find({}, { number: true }, { number: 'desc' })
   const blocksNumbers = blocksInDb.map(b => b.number)
   const { number: latestBlock } = await nod3.eth.getBlock('latest')
@@ -25,8 +29,8 @@ async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks
 
   while (number >= lastNumber) {
     if (syncStatus.checkingDB) {
-      await delay(6000)
-      console.log('Static sync stopped for 6 secs due to reorg')
+      await delay(awaitReorgsDelay)
+      log.info(`Static sync stopped for ${awaitReorgsDelay / 1000} secs due to reorg`)
       continue
     }
     try {
