@@ -62,13 +62,6 @@ async function updateDbTipBlock (number, syncStatus, { initConfig, log }) {
 
 async function reorganize (toBlock, { initConfig, log }) {
   log.info('Checking blocks congruence...')
-  log.info({
-    toBlock: {
-      number: toBlock.number,
-      hash: toBlock.hash,
-      parentHash: toBlock.parentHash
-    }
-  })
 
   let chainsParentBlockFound = false
   const missingBlocks = [toBlock.number] // include latest by default
