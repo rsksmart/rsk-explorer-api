@@ -5,6 +5,7 @@ import { staticSyncer } from './staticSyncer'
 import { txPool } from './txPool'
 
 const log = Logger('explorer-services')
+const DELAY = 10000
 
 async function main () {
   const { initConfig } = await dataSource()
@@ -14,8 +15,12 @@ async function main () {
     lastReceived: -1
   }
 
-  liveSyncer(syncStatus, { initConfig, log })
   staticSyncer(syncStatus, { initConfig, log })
+
+  setTimeout(() => {
+    // allow static syncer to save latest first
+    liveSyncer(syncStatus, { initConfig, log })
+  }, DELAY)
   txPool({ initConfig, log })
 }
 
