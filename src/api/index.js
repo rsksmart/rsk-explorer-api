@@ -24,17 +24,17 @@ dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   status.start()
   txPool.start()
 
-  let userEvents
+  let userEventsApi
 
   const delayedResult = (res, payload, socket) => {
     const { params, result, delayed } = res
-    if (delayed && userEvents) {
+    if (delayed && userEventsApi) {
       const registry = delayed.registry || (!result.data && delayed.runIfEmpty)
       if (payload.getDelayed) {
         const lastBlock = api.getLastBlock()
         const block = (lastBlock) ? lastBlock.number : null
 
-        userEvents.send({
+        userEventsApi.send({
           action: delayed.action,
           module: delayed.module,
           params,
@@ -60,7 +60,7 @@ dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   const io = new IO(httpServer)
 
   // start userEvents api
-  userEvents = UserEventsApi(io, api, { log })
+  userEventsApi = UserEventsApi(io, api, { log })
 
   io.httpServer.on('listening', () => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
