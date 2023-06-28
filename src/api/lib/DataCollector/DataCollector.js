@@ -2,8 +2,7 @@ import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
 import { serialize } from '../../../lib/utils'
 import { filterParams } from '../apiTools'
-import log from '../log'
-
+import { log } from '../../index'
 class Emitter extends EventEmitter { }
 const emitter = new Emitter()
 

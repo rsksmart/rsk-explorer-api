@@ -3,16 +3,17 @@ import { dataSource } from '../lib/dataSource'
 import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
-import log from './lib/log'
-import UserEventsApi from './UserEventsApi'
 import config from '../lib/config'
+import UserEventsApi from './UserEventsApi'
 import { HttpServer } from './HttpServer'
 import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
+import Logger from '../lib/Logger'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
+export const log = Logger('[explorer-api]', config.api.log)
 
 dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   // data collectors
