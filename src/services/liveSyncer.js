@@ -4,7 +4,7 @@ import Logger from '../lib/Logger'
 
 const TIP_BLOCK_FETCH_INTERVAL = 3000
 const CONFIRMATIONS_THERESHOLD = 120
-const log = Logger('[live-syncer]')
+const log = Logger('[live-syncer-service]')
 
 export async function liveSyncer (syncStatus, { initConfig }) {
   setInterval(() => newBlocksHandler(syncStatus, { initConfig, log }), TIP_BLOCK_FETCH_INTERVAL)
