@@ -7,7 +7,7 @@ import AddressModule from './AddressModule' */
 import ContractVerifierModule from './ContractVerifierModule'
 import { errors } from '../../lib/types'
 
-const log = Logger('UserRequests', config.blocks.log)
+const log = Logger('[user-events-service]', config.blocks.log)
 const verifierConfig = config.api.contractVerifier
 
 dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
@@ -55,3 +55,5 @@ dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
 const sendMessage = (msg) => {
   process.send(serialize(msg))
 }
+
+log.info('Online')
