@@ -1,5 +1,5 @@
 import IO from 'socket.io'
-import { setup } from '../lib/dataSource'
+import { dataSource } from '../lib/dataSource'
 import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
@@ -14,7 +14,7 @@ import { evaluateError } from './lib/evaluateError'
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
-setup({ log, skipCheck: true }).then(({ initConfig }) => {
+dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   // data collectors
   const api = new Api({ initConfig }, config.api)
   const status = new Status()

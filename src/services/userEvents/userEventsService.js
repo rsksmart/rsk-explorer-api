@@ -1,4 +1,4 @@
-import dataSource from '../../lib/dataSource.js'
+import { dataSource } from '../../lib/dataSource'
 import config from '../../lib/config'
 import Logger from '../../lib/Logger'
 import { serialize } from '../../lib/utils'
