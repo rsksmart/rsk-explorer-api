@@ -4,8 +4,6 @@ import { StoredConfig } from './StoredConfig'
 import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
 import { hash } from './utils'
-import { PrismaClient } from '@prisma/client'
-import prismaDefaultConfig from './defaultConfig'
 
 export const INIT_ID = '_explorerInitialConfiguration'
 export const CONFIG_ID = '_explorerConfig'
@@ -27,34 +25,10 @@ export async function getNetInfo (nod3) {
 
 const defaultInstances = { nod3: nod3Default, config: defaultConfig }
 
-export let prismaClient = null
+export let prismaClient
 
-async function loadPrismaClient (config) {
-  const url = generatePrismaURL(config)
-
-  prismaClient = new PrismaClient({
-    datasources: {
-      db: {
-        url: url
-      }
-    }
-  })
-}
-
-function generatePrismaURL (config) {
-  const { db: { prismaEngine, prismaUser, prismaPassword, server, prismaPort, prismaDbName } } = config
-
-  const engine = prismaEngine
-  const credentials = `${prismaUser}:${prismaPassword}`
-  const database = `${server}:${prismaPort}/${prismaDbName}`
-
-  let url = `${engine}://${credentials}@${database}`
-  return url
-}
-
-export async function Setup ({ log } = {}, { nod3, config } = defaultInstances) {
-  const database = new Db(config.db)
-  log = database.log
+export async function Setup ({ log }, { nod3, config } = defaultInstances) {
+  const database = new Db({ log, ...config.db })
   const storedConfig = StoredConfig(readOnlyDocsIds)
 
   const createHash = thing => hash(thing, 'sha1', 'hex')
@@ -131,7 +105,7 @@ export async function Setup ({ log } = {}, { nod3, config } = defaultInstances) 
     }
   }
 
-  await loadPrismaClient(prismaDefaultConfig)
+  prismaClient = database.prismaClient
 
   return Object.freeze({ start, createHash })
 }

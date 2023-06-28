@@ -45,14 +45,10 @@ export default {
   db: {
     protocol: 'postgres://',
     databaseName: 'explorer_db',
-    server: 'localhost',
-    port: 27017,
-    database: 'explorer_db',
-    prismaEngine: 'postgres',
-    prismaPort: 5432,
-    prismaDbName: 'explorer_db',
-    prismaUser: 'postgres',
-    prismaPassword: 12345678
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 12345678
   },
   api: {
     address: 'localhost',

@@ -15,8 +15,6 @@ const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
 setup({ log, skipCheck: true }).then(({ initConfig }) => {
-  log.info('Database connected')
-
   // data collectors
   const api = new Api({ initConfig }, config.api)
   const status = new Status()

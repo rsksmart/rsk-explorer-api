@@ -1,7 +1,9 @@
 
+import Logger from './Logger'
 import Setup from './Setup'
-export const setup = async ({ log, skipCheck } = {}) => {
+export const setup = async ({ skipCheck } = {}) => {
   try {
+    const log = Logger('[Setup]')
     const setup = await Setup({ log })
     return setup.start(skipCheck)
   } catch (err) {
