@@ -1,5 +1,5 @@
 import { config as defaultConfig } from './config'
-import DB from './Db.js'
+import { Db } from './Db'
 import { StoredConfig } from './StoredConfig'
 import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
@@ -53,9 +53,8 @@ function generatePrismaURL (config) {
 }
 
 export async function Setup ({ log } = {}, { nod3, config } = defaultInstances) {
-  const database = new DB(config.db)
-  if (undefined !== log) database.setLogger(log)
-  log = database.getLogger()
+  const database = new Db(config.db)
+  log = database.log
   const storedConfig = StoredConfig(readOnlyDocsIds)
 
   const createHash = thing => hash(thing, 'sha1', 'hex')

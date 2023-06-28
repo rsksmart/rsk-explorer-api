@@ -43,6 +43,8 @@ export default {
     logToFiles: false
   },
   db: {
+    protocol: 'postgres://',
+    databaseName: 'explorer_db',
     server: 'localhost',
     port: 27017,
     database: 'explorer_db',
