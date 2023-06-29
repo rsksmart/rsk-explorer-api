@@ -1,6 +1,7 @@
-import { removeNullFields } from '../repositories/utils'
+// import { removeNullFields } from '../repositories/utils'
 
 function rawActionToEntity ({
+  internalTxId,
   callType,
   creationMethod,
   from,
@@ -13,6 +14,7 @@ function rawActionToEntity ({
   balance
 }) {
   return {
+    internalTxId,
     callType,
     creationMethod,
     from,
@@ -73,13 +75,16 @@ function internalTxEntityToRaw ({
   internal_transaction_result: result,
   action
 }) {
-  return removeNullFields({
+  delete action.internalTxId
+  delete result.internalTxId
+
+  return {
     timestamp,
-    traceAddress,
+    traceAddress: traceAddress.map(t => t.trace),
     _index: index,
     result,
     action
-  })
+  }
 }
 
 export {
