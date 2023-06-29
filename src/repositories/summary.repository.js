@@ -1,6 +1,6 @@
 import { getSummaryId } from '../lib/ids'
 import { prismaClient } from '../lib/Setup'
-import { mongoQueryToPrisma, generateFindQuery } from './utils'
+import { generateFindQuery } from './utils'
 import { rawBlockSummaryToEntity, summaryEntityToRaw } from '../converters/summary.converters'
 import { summaryRelatedTables } from './includeRelatedTables'
 
@@ -16,7 +16,7 @@ export const summaryRepository = {
     return Object.keys(project).length ? summaries : summaries.map(summaryEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.block_summary.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.block_summary.count({where: query})
 
     return count
   },

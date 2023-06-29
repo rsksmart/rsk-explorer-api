@@ -1,6 +1,6 @@
 import { prismaClient } from '../lib/Setup'
 import { rawBalanceToEntity, entityToRawBalance } from '../converters/balance.converters'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 
 export const balancesRepository = {
   async findOne (query = {}, project = {}) {
@@ -14,12 +14,12 @@ export const balancesRepository = {
     return balances.map(entityToRawBalance)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.balance.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.balance.count({where: query})
 
     return count
   },
   async deleteMany (filter) {
-    const deleted = await prismaClient.balance.deleteMany({where: mongoQueryToPrisma(filter)})
+    const deleted = await prismaClient.balance.deleteMany({where: filter})
 
     return deleted
   },

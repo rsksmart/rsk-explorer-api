@@ -1,5 +1,5 @@
 import { prismaClient } from '../lib/Setup'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 import saveAbiAndGetId from './tx.repository'
 import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters'
 import { eventRelatedTables } from './includeRelatedTables'
@@ -16,7 +16,7 @@ export const eventRepository = {
     return events.map(eventEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.event.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.event.count({where: query})
     return count
   },
   insertOne (data) {
@@ -45,7 +45,7 @@ export const eventRepository = {
     return transactionQueries
   },
   async deleteMany (filter) {
-    const deleted = await prismaClient.event.deleteMany({where: mongoQueryToPrisma(filter)})
+    const deleted = await prismaClient.event.deleteMany({where: filter})
 
     return deleted
   }

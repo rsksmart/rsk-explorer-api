@@ -1,6 +1,6 @@
 import { prismaClient } from '../lib/Setup'
 import { rawBlockToEntity, blockEntityToRaw } from '../converters/block.converters'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
 import { txRepository } from './tx.repository'
 import { internalTxRepository } from './internalTx.repository'
@@ -27,7 +27,7 @@ export const blockRepository = {
     return Object.keys(project).length ? blocks : blocks.map(blockEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.block.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.block.count({where: query})
 
     return count
   },
