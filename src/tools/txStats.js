@@ -25,10 +25,10 @@ async function getData (fromBlock, toBlock) {
     await dataSource()
     // TODO: change query for prisma query when txRepository.find() is ready
     let query = {
-      $and: [
-        { blockNumber: { $gte: fromBlock } },
-        { blockNumber: { $lte: toBlock } },
-        { txType: { $ne: 'remasc' } }]
+      AND: [
+        { blockNumber: { gte: fromBlock } },
+        { blockNumber: { lte: toBlock } },
+        { txType: { ne: 'remasc' } }]
     }
     let cursor = txRepository.find(query, {}, {}, 0, false)
 
