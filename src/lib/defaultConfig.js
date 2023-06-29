@@ -58,7 +58,7 @@ export default {
     LIMIT: 50,
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
-    allowUserEvents: true,
+    allowUserEvents: false,
     exposeDoc: false,
     // All modules are enabled as default
     modules: setAllModules(true),
