@@ -2,7 +2,7 @@ import { addressEntityToRaw } from '../converters/address.converters'
 import { rawTokenToEntity, tokenEntityToRaw } from '../converters/token.converters'
 import { prismaClient } from '../lib/Setup'
 import { addressRelatedTables } from './includeRelatedTables'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 
 export const tokenRepository = {
   async findOne (query = {}, project = {}) {
@@ -16,14 +16,14 @@ export const tokenRepository = {
     return tokens.map(tokenEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.token_address.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.token_address.count({where: query})
 
     return count
   },
-  async aggregate ([_, address]) {
+  async aggregate (query) {
     const tokensByAddress = []
     await prismaClient.$transaction(async prisma => {
-      const tokens = await prisma.token_address.findMany({where: address})
+      const tokens = await prisma.token_address.findMany({where: query})
 
       for (const token of tokens) {
         const contract = await prisma.address.findFirst({where: {address: token.contract}, include: addressRelatedTables})
