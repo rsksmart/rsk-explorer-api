@@ -1,5 +1,4 @@
-import { find, findPages, aggregatePages } from './pagination'
-import { generateTextQuery } from './textSearch'
+import { find, findPages } from './pagination'
 import { REPOSITORIES } from '../../../repositories/repositories'
 
 export class DataCollectorItem {
@@ -97,12 +96,8 @@ export class DataCollectorItem {
     return this.cursorData
   }
 
-  getPageData (query, params) {
-    return this.getPages({ query, params })
-  }
-
-  getAggPageData (aggregate, params) {
-    return this.getPages({ aggregate, params })
+  getPageData (query, params, isAggregate = false) {
+    return this.getPages({ query, params, isAggregate })
   }
 
   async getPrevNext (query, project, data) {
@@ -114,8 +109,8 @@ export class DataCollectorItem {
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
-      let prev = (await find({ [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project, this.repository))[0]
-      let next = (await find({ [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project, this.repository))[0]
+      let prev = (await find({ [cursorField]: { lt: value } }, { [cursorField]: -1 }, 1, project, this.repository))[0]
+      let next = (await find({ [cursorField]: { gt: value } }, { [cursorField]: 1 }, 1, project, this.repository))[0]
       return { prev, data, next }
     } catch (err) {
       return Promise.reject(err)
@@ -138,24 +133,14 @@ export class DataCollectorItem {
     }
   }
 
-  async getPages ({ aggregate, query, params }) {
+  async getPages ({ isAggregate, query, params }) {
     try {
       let pages = this.responseParams(params)
       let cursorData = await this.getCursorData()
-      query = aggregate || query
-      let args = [cursorData, query, pages, this.repository]
-      let result = (aggregate) ? await aggregatePages(...args) : await findPages(...args)
-      return formatResponse(result, pages)
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
 
-  async textSearch (value, params) {
-    try {
-      if (typeof value !== 'string') throw new Error('The text search requires an string value')
-      let query = generateTextQuery(value, params)
-      return this.find(query)
+      let args = [cursorData, query, pages, this.repository, isAggregate]
+      let result = await findPages(...args)
+      return formatResponse(result, pages)
     } catch (err) {
       return Promise.reject(err)
     }
@@ -202,6 +187,7 @@ export function fieldFilterParse (field, value, query) {
   let fieldQuery
   let inArr = []
   let ninArr = []
+
   if (typeof value === 'string') {
     fieldQuery = value
   } else if (Array.isArray(value)) {
@@ -212,10 +198,19 @@ export function fieldFilterParse (field, value, query) {
       else ninArr.push(p)
     }
   }
+
   if (inArr.length || ninArr.length) fieldQuery = {}
-  if (inArr.length) fieldQuery['$in'] = inArr
-  if (ninArr.length) fieldQuery['$nin'] = ninArr
+
+  if (inArr.length) fieldQuery['in'] = inArr
+
+  if (ninArr.length) {
+    fieldQuery['not'] = {
+      in: fieldQuery
+    }
+  }
+
   if (fieldQuery) query[field] = fieldQuery
+
   return query
 }
 

@@ -125,7 +125,7 @@ export class TxPool extends BlocksBase {
   async savePendingTxs (txs, poolId) {
     try {
       txs = txs || []
-      const savedTxs = await Promise.all(txs.map(tx => txPendingRepository.updateOne({ hash: tx.hash }, { $set: tx, poolId }, { upsert: true })))
+      const savedTxs = await Promise.all(txs.map(tx => txPendingRepository.upsertOne({ hash: tx.hash }, { tx, poolId })))
       return savedTxs
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`)

@@ -42,13 +42,12 @@ export function StoredConfig (readOnlyDocsIds = []) {
       if (isReadOnly(_id)) throw new Error(readOnlyError(_id))
       const newDoc = Object.assign({}, doc)
 
-      const options = {}
       if (create) {
         let old = await get(_id)
         if (!old) return save(_id, newDoc)
       }
       newDoc._updated = Date.now()
-      let res = await configRepository.updateOne({ _id }, { $set: newDoc }, options)
+      let res = await configRepository.updateOne({ _id }, newDoc)
       return res
     } catch (err) {
       return Promise.reject(err)

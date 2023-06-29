@@ -63,7 +63,7 @@ export class Block extends BcThing {
   }
 
   searchBlock ({ hash, number }) {
-    return blockRepository.find({ $or: [{ hash }, { number }] })
+    return blockRepository.find({ OR: [{ hash }, { number }] })
   }
 
   async getBlockFromDb (number, allData) {

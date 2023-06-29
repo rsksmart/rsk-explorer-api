@@ -99,7 +99,7 @@ export class Event extends DataCollectorItem {
             // skip remasc & bridge events
             const isNative = this.parent.isNativeContract(address)
             if (isNative !== 'bridge' || isNative !== 'remasc') {
-              query.signature = { $in: signatures }
+              query.signature = { in: signatures }
             }
           }
 
@@ -111,7 +111,7 @@ export class Event extends DataCollectorItem {
             addresses = [...addresses.values()]
             let AddressModule = this.parent.getModule('Address')
             if (AddressModule) {
-              let addrData = await AddressModule.find({ address: { $in: addresses } })
+              let addrData = await AddressModule.find({ address: { in: addresses } })
               let { data } = addrData
               if (data) {
                 res.data = res.data.map(d => {
@@ -155,7 +155,7 @@ export class Event extends DataCollectorItem {
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {
-          return this.getPageData({ $or: [{ address }, { address_in_event: {some: {address}} }] }, params)
+          return this.getPageData({ OR: [{ address }, { address_in_event: {some: {address}} }] }, params)
         }
       }
     }

@@ -1,6 +1,6 @@
 import { rawStatsToEntity, statsEntityToRaw } from '../converters/stats.converters'
 import {prismaClient} from '../lib/Setup'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 
 export const statsRepository = {
   async findOne (query = {}, project = {}) {
@@ -15,7 +15,7 @@ export const statsRepository = {
   },
   async countDocuments (query = {}) {
     const count = await prismaClient.stats.count({
-      where: mongoQueryToPrisma(query)
+      where: query
     })
 
     return count

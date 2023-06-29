@@ -13,8 +13,7 @@ import {
   rawAbiInputToEntity
 } from '../converters/abi.converters'
 import {
-  generateFindQuery,
-  mongoQueryToPrisma
+  generateFindQuery
 } from './utils'
 import { txRelatedTables } from './includeRelatedTables'
 
@@ -46,12 +45,12 @@ export const txRepository = {
     return txs.map(transactionEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.transaction.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.transaction.count({where: query})
 
     return count
   },
   async deleteMany (filter) {
-    const deleted = await prismaClient.transaction.deleteMany({where: mongoQueryToPrisma(filter)})
+    const deleted = await prismaClient.transaction.deleteMany({where: filter})
 
     return deleted
   },

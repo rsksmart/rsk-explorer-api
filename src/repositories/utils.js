@@ -37,51 +37,6 @@ function createPrismaSelect (project) {
   return newSelect
 }
 
-// TODO: finish the mapping of the remaining mongo operators
-function mongoQueryToPrisma (query) {
-  const mongoOperatorToPrisma = {
-    $or: 'OR',
-    $and: 'AND',
-    $lt: 'lt',
-    $gt: 'gt',
-    $eq: 'equals',
-    $in: 'in',
-    $ne: 'not',
-    $lte: 'lte',
-    $gte: 'gte'
-  }
-
-  for (const key in query) {
-    const value = query[key]
-
-    if (Array.isArray(value)) {
-      return {[mongoOperatorToPrisma[key] || key]: value.map(elem => ['Array', 'Object'].includes(elem.constructor.name) ? mongoQueryToPrisma(elem) : elem)}
-    } else if (value && !(typeof value === 'string') && Object.keys(value).length > 0) {
-      return {[mongoOperatorToPrisma[key] || key]: mongoQueryToPrisma(value)}
-    } else {
-      if (key === '$exists') {
-        return value ? {not: null} : {equals: null}
-      } else if (key.includes('.')) {
-        return formatRelationQuery({[key]: value})
-      } else {
-        return {[mongoOperatorToPrisma[key] || key]: value}
-      }
-    }
-  }
-
-  return {}
-}
-
-function formatRelationQuery (query) {
-  const [relation, attribute] = Object.keys(query)[0].split('.')
-
-  return {
-    [relation]: {
-      [attribute]: query[`${relation}.${attribute}`]
-    }
-  }
-}
-
 function removeNullFields (obj, nullableFields = []) {
   if (typeof obj === 'string') {
     return obj
@@ -107,12 +62,11 @@ function removeNullFields (obj, nullableFields = []) {
 }
 
 function generateFindQuery (query, select, include, orderBy = {}, take) {
-  query = mongoQueryToPrisma(query)
   select = createPrismaSelect(select)
   orderBy = createPrismaOrderBy(orderBy)
 
   const options = {
-    where: mongoQueryToPrisma(query)
+    where: query
   }
 
   if (Object.keys(select).length) {
@@ -132,4 +86,4 @@ function generateFindQuery (query, select, include, orderBy = {}, take) {
   return options
 }
 
-export { removeNullFields, mongoQueryToPrisma, generateFindQuery }
+export { removeNullFields, generateFindQuery }

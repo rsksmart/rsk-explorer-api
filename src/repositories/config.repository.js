@@ -56,7 +56,7 @@ export const configRepository = {
     return newConfig
   },
   async updateOne (filter, newData) {
-    const newConfig = rawConfigUpdateToEntity(newData.$set)
+    const newConfig = rawConfigUpdateToEntity(newData)
     const docId = filter._id
 
     await prismaClient.explorer_config.update({

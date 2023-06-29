@@ -141,7 +141,7 @@ export class ExtendedStats extends DataCollectorItem {
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
       const start = end - timeLimit
-      const query = { timestamp: { $gte: start, $lte: end } }
+      const query = { timestamp: { gte: start, lte: end } }
       const project = { _id: 0, miner: 1, timestamp: 1, difficulty: 1 }
       const blocks = await this.repository.find(query, project)
 
@@ -161,7 +161,7 @@ export class ExtendedStats extends DataCollectorItem {
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
-      const query = { timestamp: { $gte: blockDate - timeLimit, $lte: blockDate } }
+      const query = { timestamp: { gte: blockDate - timeLimit, lte: blockDate } }
       const project = { _id: 0, miner: 1, difficulty: 1 }
       const blocks = await this.repository.find(query, project)
 
@@ -181,7 +181,7 @@ export class ExtendedStats extends DataCollectorItem {
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
       const start = end - timeLimit
-      const query = { timestamp: { $gte: start, $lte: end } }
+      const query = { timestamp: { gte: start, lte: end } }
       const project = { _id: 0, timestamp: 1, difficulty: 1 }
       const blocks = await this.repository.find(query, project)
 

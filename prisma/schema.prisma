@@ -28,8 +28,7 @@ model abi_input {
 }
 
 model action {
-  id                   Int                  @id @default(autoincrement())
-  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  internalTxId         String               @id @map("internal_tx_id") @db.VarChar
   callType             String?              @map("call_type") @db.VarChar
   creationMethod       String?              @map("creation_method") @db.VarChar
   from                 String?              @db.VarChar(42)
@@ -312,20 +311,19 @@ model internal_transaction {
   index                                          Int
   timestamp                                      String                            @db.VarChar
   error                                          String?                           @db.VarChar
-  action                                         action[]
+  action                                         action?
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                             @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
   transaction                                    transaction                       @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
   internal_transaction_in_summary                internal_transaction_in_summary[]
-  internal_transaction_result                    internal_transaction_result[]
+  internal_transaction_result                    internal_transaction_result?
   suicide_in_summary                             suicide_in_summary[]
   trace_address                                  trace_address[]
 }
 
 model internal_transaction_result {
-  id                   Int                  @id @default(autoincrement())
-  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  internalTxId         String               @id @map("internal_tx_id") @db.VarChar
   gasUsed              String?              @map("gas_used") @db.VarChar
   output               String?              @db.VarChar
   address              String?              @db.VarChar

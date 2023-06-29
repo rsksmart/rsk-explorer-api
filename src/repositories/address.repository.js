@@ -4,7 +4,7 @@ import {
   rawContractToEntity,
   addressEntityToRaw
 } from '../converters/address.converters'
-import { generateFindQuery, mongoQueryToPrisma } from './utils'
+import { generateFindQuery } from './utils'
 import { addressRelatedTables } from './includeRelatedTables'
 
 export const addressRepository = {
@@ -19,7 +19,7 @@ export const addressRepository = {
     return addresses.map(addressEntityToRaw)
   },
   async countDocuments (query = {}) {
-    const count = await prismaClient.address.count({where: mongoQueryToPrisma(query)})
+    const count = await prismaClient.address.count({where: query})
 
     return count
   },
