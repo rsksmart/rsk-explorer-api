@@ -113,10 +113,10 @@ export class Address extends DataCollectorItem {
         let query = {}
         const lbMined = fields.LAST_BLOCK_MINED
         let { fromBlock } = params
-        query[lbMined] = { $exists: true, $ne: null, cursorField: 'id' }
+        query[lbMined] = { $exists: true, not: null, cursorField: 'id' }
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
-          query[`${lbMined}.number`] = { $gt: fromBlock }
+          query[`${lbMined}.number`] = { gt: fromBlock }
         }
         return this.getPageData(query, params)
       },
@@ -150,7 +150,7 @@ export class Address extends DataCollectorItem {
       getTokens: params => {
         return this.getPageData({
           type: addrTypes.CONTRACT,
-          contractInterfaces: { $in: tokensInterfaces }
+          contractInterfaces: { in: tokensInterfaces }
         }, params)
       },
       /**
@@ -255,10 +255,15 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       findAddresses: async params => {
-        let { name } = params
+        const query = {
+          name: {
+            search: params.name
+          }
+        }
         params.field = 'name'
         params.sort = { id: 1 }
-        return this.textSearch(name, params)
+
+        return this.getPageData(query, params)
       }
     }
   }

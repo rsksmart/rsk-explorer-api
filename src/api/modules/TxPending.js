@@ -14,7 +14,7 @@ export class TxPending extends DataCollectorItem {
         let address = params.address
         return this.getPageData(
           {
-            $or: [{ from: address }, { to: address }]
+            OR: [{ from: address }, { to: address }]
           },
           params
         )
