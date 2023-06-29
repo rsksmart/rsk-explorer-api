@@ -60,7 +60,9 @@ dataSource({ log, skipCheck: true }).then(({ initConfig }) => {
   const io = new IO(httpServer)
 
   // start userEvents api
-  userEventsApi = UserEventsApi(io, api, { log })
+  if (config.api.allowUserEvents) {
+    userEventsApi = UserEventsApi(io, api, { initConfig })
+  }
 
   io.httpServer.on('listening', () => {
     log.info(`Server listening on: ${address || '0.0.0.0'}:${port}`)
