@@ -4,7 +4,7 @@ import nod3 from '../lib/nod3Connect.js'
 import { blockRepository } from '../repositories/block.repository.js'
 import Logger from '../lib/Logger.js'
 
-const log = Logger('[static-syncer]')
+const log = Logger('[static-syncer-service]')
 const awaitReorgsDelay = 5000
 
 export async function staticSyncer (syncStatus, { initConfig }) {

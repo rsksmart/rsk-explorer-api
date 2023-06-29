@@ -43,14 +43,12 @@ export default {
     logToFiles: false
   },
   db: {
-    server: 'localhost',
-    port: 27017,
-    database: 'explorer_db',
-    prismaEngine: 'postgres',
-    prismaPort: 5432,
-    prismaDbName: 'explorer_db',
-    prismaUser: 'postgres',
-    prismaPassword: 12345678
+    protocol: 'postgres://',
+    databaseName: 'explorer_db',
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 12345678
   },
   api: {
     address: 'localhost',
@@ -60,7 +58,7 @@ export default {
     LIMIT: 50,
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
-    allowUserEvents: true,
+    allowUserEvents: false,
     exposeDoc: false,
     // All modules are enabled as default
     modules: setAllModules(true),

@@ -1,6 +1,6 @@
 
 import Setup from './Setup'
-export const setup = async ({ log, skipCheck } = {}) => {
+export const dataSource = async ({ log, skipCheck } = {}) => {
   try {
     const setup = await Setup({ log })
     return setup.start(skipCheck)
@@ -8,5 +8,3 @@ export const setup = async ({ log, skipCheck } = {}) => {
     return Promise.reject(err)
   }
 }
-export const dataSource = setup
-export default setup
