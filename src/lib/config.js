@@ -10,13 +10,13 @@ export function createConfig (file) {
 }
 
 export function makeConfig (config = {}) {
-  const defaultLogs = (key) => {
-    const dir = config.log.dir
-    if (!dir) return
-    config[key].log = config[key].log || {}
-    config[key].log.file = config[key].log.file || `${dir}/${key}.json`
-    config[key].log.level = config[key].log.level || config.log.level || 'info'
-  }
+  // const defaultLogs = (key) => {
+  //   const dir = config.log.dir
+  //   if (!dir) return
+  //   config[key].log = config[key].log || {}
+  //   config[key].log.file = config[key].log.file || `${dir}/${key}.json`
+  //   config[key].log.level = config[key].log.level || config.log.level || 'info'
+  // }
 
   const keys = Object.keys(defaultConf)
 
@@ -43,10 +43,10 @@ export function makeConfig (config = {}) {
   config.blocks.source = config.source
 
   // defaults log files
-  if (config.log.logToFiles === true) {
-    defaultLogs('api')
-    defaultLogs('blocks')
-  }
+  // if (config.log.logToFiles === true) {
+  //   defaultLogs('api')
+  //   defaultLogs('blocks')
+  // }
 
   return config
 }
