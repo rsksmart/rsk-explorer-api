@@ -38,11 +38,12 @@ export class Address extends DataCollectorItem {
         const aData = await this.getOne({ address }, { id: 0 })
         if (aData && aData.data) {
           let { data } = aData
-          if (data.type === addrTypes.CONTRACT) {
-            const verified = await this.parent.getModule('ContractVerification')
-              .run('isVerified', { address, match: true })
-            if (verified) data.verification = verified.data
-          }
+          // TODO: Uncomment when contract verifications repositories are implemented
+          // if (data.type === addrTypes.CONTRACT) {
+          //   const verified = await this.parent.getModule('ContractVerification')
+          //     .run('isVerified', { address, match: true })
+          //   if (verified) data.verification = verified.data
+          // }
           aData.data = data
         }
         return aData
