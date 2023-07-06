@@ -267,13 +267,15 @@ export class Address extends DataCollectorItem {
        */
       findAddresses: async params => {
         const query = {
-          name: {
-            search: params.name
+          contract_contract_addressToaddress: {
+            name: {
+              contains: params.name
+            }
           }
         }
         params.field = 'name'
         params.sort = { id: 1 }
-
+        delete params.fields.name
         return this.getPageData(query, params)
       }
     }
