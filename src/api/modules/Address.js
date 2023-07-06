@@ -148,10 +148,20 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getTokens: params => {
-        return this.getPageData({
+        const query = {
           type: addrTypes.CONTRACT,
-          contractInterfaces: { in: tokensInterfaces }
-        }, params)
+          contract_contract_addressToaddress: {
+            contract_interface: {
+              some: {
+                interface: {
+                  in: tokensInterfaces
+                }
+              }
+            }
+          }
+        }
+
+        return this.getPageData(query, params)
       },
       /**
        * @swagger
