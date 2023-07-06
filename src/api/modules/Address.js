@@ -38,11 +38,12 @@ export class Address extends DataCollectorItem {
         const aData = await this.getOne({ address }, { id: 0 })
         if (aData && aData.data) {
           let { data } = aData
-          if (data.type === addrTypes.CONTRACT) {
-            const verified = await this.parent.getModule('ContractVerification')
-              .run('isVerified', { address, match: true })
-            if (verified) data.verification = verified.data
-          }
+          // TODO: Uncomment when contract verifications repositories are implemented
+          // if (data.type === addrTypes.CONTRACT) {
+          //   const verified = await this.parent.getModule('ContractVerification')
+          //     .run('isVerified', { address, match: true })
+          //   if (verified) data.verification = verified.data
+          // }
           aData.data = data
         }
         return aData
@@ -148,10 +149,20 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getTokens: params => {
-        return this.getPageData({
+        const query = {
           type: addrTypes.CONTRACT,
-          contractInterfaces: { in: tokensInterfaces }
-        }, params)
+          contract_contract_addressToaddress: {
+            contract_interface: {
+              some: {
+                interface: {
+                  in: tokensInterfaces
+                }
+              }
+            }
+          }
+        }
+
+        return this.getPageData(query, params)
       },
       /**
        * @swagger
@@ -256,13 +267,15 @@ export class Address extends DataCollectorItem {
        */
       findAddresses: async params => {
         const query = {
-          name: {
-            search: params.name
+          contract_contract_addressToaddress: {
+            name: {
+              contains: params.name
+            }
           }
         }
         params.field = 'name'
         params.sort = { id: 1 }
-
+        delete params.fields.name
         return this.getPageData(query, params)
       }
     }

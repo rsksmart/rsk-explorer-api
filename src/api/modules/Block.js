@@ -90,7 +90,7 @@ export class Block extends DataCollectorItem {
 
       getBlocks: async params => {
         let { miner, addMetadata } = params
-        const query = miner ? { miner } : {}
+        const query = miner ? { miner: { address: miner } } : {}
         let result = await this.getPageData(query, params)
         // add blocks metadata
         if (result.data && addMetadata) {
