@@ -1,4 +1,4 @@
-import dataSource from '../lib/dataSource.js'
+import { dataSource } from '../lib/dataSource.js'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import { log } from '@rsksmart/rsk-js-cli'
