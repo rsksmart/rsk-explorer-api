@@ -1,6 +1,6 @@
 
 import Setup from './Setup'
-export const dataSource = async ({ log, skipCheck } = {}) => {
+export const dataSource = async ({ log = console, skipCheck } = {}) => {
   try {
     const setup = await Setup({ log })
     return setup.start(skipCheck)
