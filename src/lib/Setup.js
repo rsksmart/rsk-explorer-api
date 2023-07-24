@@ -27,7 +27,7 @@ const defaultInstances = { nod3: nod3Default, config: defaultConfig }
 
 export let prismaClient
 
-export async function Setup ({ log }, { nod3, config } = defaultInstances) {
+export async function Setup ({ log = console }, { nod3, config } = defaultInstances) {
   const database = new Db({ log, ...config.db })
   const storedConfig = StoredConfig(readOnlyDocsIds)
 
