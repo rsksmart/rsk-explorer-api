@@ -28,7 +28,7 @@ export class Db {
         // log: ['query', 'info', 'warn', 'error'],
         errorFormat: 'pretty'
       })
-      this.log.info(`New DB instance created by ${this.log.fields.name}`)
+      this.log.info(`New DB instance created${this.log.fields && this.log.fields.name ? ' by ' + this.log.fields.name : ''}.`)
     } catch (error) {
       this.log.error('Error connecting to database')
       this.log.error(error)

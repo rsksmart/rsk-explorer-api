@@ -9,29 +9,10 @@ import {
   transactionEntityToRaw
 } from '../converters/tx.converters'
 import {
-  rawAbiToEntity,
-  rawAbiInputToEntity
-} from '../converters/abi.converters'
-import {
   generateFindQuery
 } from './utils'
 import { txRelatedTables } from './includeRelatedTables'
-
-function saveAbiAndGetId (abi) {
-  const {inputs} = abi
-  const abiToSave = rawAbiToEntity(abi)
-  const transactionQueries = [prismaClient.abi.createMany({data: [abiToSave], skipDuplicates: true})]
-
-  if (inputs) {
-    const inputsToSave = inputs.map(input => {
-      input.abiId = abiToSave.id
-      return rawAbiInputToEntity(input)
-    })
-    transactionQueries.push(prismaClient.abi_input.createMany({data: inputsToSave, skipDuplicates: true}))
-  }
-
-  return {transactionQueries, abiId: abiToSave.id}
-}
+import { saveAbiAndGetId } from './saveAbiAndGetId'
 
 export const txRepository = {
   async findOne (query = {}, project = {}) {
@@ -87,5 +68,3 @@ export const txRepository = {
     return transactionQueries
   }
 }
-
-export default saveAbiAndGetId

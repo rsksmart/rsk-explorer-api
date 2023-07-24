@@ -1,8 +1,8 @@
 import { prismaClient } from '../lib/Setup'
 import { generateFindQuery } from './utils'
-import saveAbiAndGetId from './tx.repository'
 import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters'
 import { eventRelatedTables } from './includeRelatedTables'
+import { saveAbiAndGetId } from './saveAbiAndGetId'
 
 export const eventRepository = {
   async findOne (query = {}, project = {}) {
