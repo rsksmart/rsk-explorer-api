@@ -123,7 +123,7 @@ function rawLogArgToEntity ({
   return {
     logIndex,
     transactionHash,
-    arg
+    arg: JSON.stringify(arg)
   }
 }
 
@@ -176,7 +176,7 @@ function logEntityToRaw ({
   }
 
   if (args.length > 0) {
-    logToReturn.args = args.map(({arg}) => arg)
+    logToReturn.args = args.map(({arg}) => JSON.parse(arg))
   }
 
   return removeNullFields(logToReturn, ['event'])

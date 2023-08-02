@@ -70,7 +70,7 @@ function eventEntityToRaw ({
   }
 
   if (args.length) {
-    eventToReturn.args = args.map(({arg}) => arg)
+    eventToReturn.args = args.map(({arg}) => JSON.parse(arg))
   }
 
   return removeNullFields(eventToReturn, ['event'])
