@@ -49,9 +49,9 @@ export async function Setup ({ log = console }, { nod3, config } = defaultInstan
   const checkStoredHash = async (id, value) => {
     if (!id || !value) throw new Error(`Invalid id or value id:${id} value:${value}`)
     const currentHash = createHash(value)
-    const storedHash = await storedConfig.get(id)
-    if (!storedHash) return false
-    return currentHash === storedHash.hash
+    const storedDoc = await storedConfig.get(id)
+    if (!storedDoc) return false
+    return currentHash === storedDoc.hash
   }
 
   const checkConfig = async () => {
