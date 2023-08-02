@@ -73,7 +73,8 @@ function internalTxEntityToRaw ({
   trace_address: traceAddress,
   index,
   internal_transaction_result: result,
-  action
+  action,
+  type
 }) {
   delete action.internalTxId
   delete result.internalTxId
@@ -83,7 +84,8 @@ function internalTxEntityToRaw ({
     traceAddress: traceAddress.map(t => t.trace),
     _index: index,
     result,
-    action
+    action,
+    type
   }
 }
 
