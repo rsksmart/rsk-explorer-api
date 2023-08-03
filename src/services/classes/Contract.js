@@ -29,7 +29,7 @@ class Contract extends BcThing {
     try {
       let { deployedCode, fetched } = this
       if (fetched) return this.getData()
-      let contract = await this.setContract()
+      let contract = await this.setContract(this.block.number)
       if (!this.isNative) {
         // new contracts
         if (!this.data.contractInterfaces) {
@@ -58,12 +58,12 @@ class Contract extends BcThing {
     }
   }
 
-  async getParser () {
+  async getParser (txBlockNumber) {
     try {
       let { nod3, initConfig, log } = this
       if (!this.parser) {
         let abi = await this.getAbi()
-        this.parser = new ContractParser({ abi, nod3, initConfig, log })
+        this.parser = new ContractParser({ abi, nod3, initConfig, log, txBlockNumber })
       }
       return this.parser
     } catch (err) {
@@ -71,13 +71,13 @@ class Contract extends BcThing {
     }
   }
 
-  async setContract () {
+  async setContract (txBlockNumber) {
     try {
       let { address, contract } = this
       if (contract) return contract
       // get abi
       let abi = await this.getAbi()
-      let parser = await this.getParser()
+      let parser = await this.getParser(txBlockNumber)
       this.contract = parser.makeContract(address, abi)
       return this.contract
     } catch (err) {
