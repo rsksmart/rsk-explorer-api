@@ -38,27 +38,13 @@ function createPrismaSelect (project) {
 }
 
 function removeNullFields (obj, nullableFields = []) {
-  if (typeof obj === 'string') {
-    return obj
-  } else {
-    return Object.entries(obj).reduce((filtered, [key, value]) => {
-      if (value !== undefined) {
-        if (value !== null) {
-          if (value.constructor.name === 'Array') {
-            filtered[key] = value.map(v => removeNullFields(v))
-          } else if (value.constructor.name === 'Object') {
-            filtered[key] = removeNullFields(value)
-          } else {
-            filtered[key] = value
-          }
-        } else if (nullableFields.includes(key)) {
-          filtered[key] = null
-        }
-      }
-
-      return filtered
-    }, {})
+  for (const field in obj) {
+    if ([undefined, null].includes(obj[field]) && !nullableFields.includes(field)) {
+      delete obj[field]
+    }
   }
+
+  return obj
 }
 
 function generateFindQuery (query, select, include, orderBy = {}, take) {

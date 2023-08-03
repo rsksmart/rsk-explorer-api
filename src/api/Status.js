@@ -54,11 +54,11 @@ export class Status extends DataCollector {
           this.getTotalBlocks()
         ])
       const status = Object.assign(blocksStatus || {}, {
-        dbLastBlockReceived: last.number,
-        dbLastBlockReceivedTime: last._received,
-        dbHighBlock: high.number,
-        dbBlocks,
-        dbMissingBlocks: high.number + 1 - dbBlocks,
+        dbLastBlockReceived: last ? last.number : '',
+        dbLastBlockReceivedTime: last ? last._received : '',
+        dbHighBlock: high ? high.number : '',
+        dbBlocks: dbBlocks >= 0 ? dbBlocks : '',
+        dbMissingBlocks: high ? high.number + 1 - dbBlocks : '',
         dbTime: Date.now()
       })
       return status

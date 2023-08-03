@@ -38,7 +38,7 @@ export const eventRepository = {
     transactionQueries.push(prismaClient.event_topic.createMany({data: topicsToSave, skipDuplicates: true}))
 
     if (args) {
-      const argsToSave = args.map(arg => ({arg, eventId}))
+      const argsToSave = args.map(arg => ({arg: JSON.stringify(arg), eventId}))
       transactionQueries.push(prismaClient.event_arg.createMany({data: argsToSave, skipDuplicates: true}))
     }
 
