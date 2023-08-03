@@ -17,8 +17,8 @@
     "stop-api": "pm2 stop dist/api/api.pm2.config.js",
     "api-logs": "pm2 logs explorer-api --raw | npx bunyan -o short",
     "clear-api-logs": "pm2 flush explorer-api",
-    "start-blocks": "mkdir -p logs/blocks && pm2 start dist/services/services.pm2.config.js",
-    "stop-blocks": "pm2 stop dist/services/services.pm2.config.js",
+    "start-blocks": "mkdir -p logs/blocks && pm2 start dist/services/blocks.pm2.config.js",
+    "stop-blocks": "pm2 stop dist/services/blocks.pm2.config.js",
     "blocks-logs": "pm2 logs blocks --raw | npx bunyan -o short",
     "clear-blocks-logs": "pm2 flush blocks",
     "stop-all": "npm run stop-api && npm run stop-blocks"
