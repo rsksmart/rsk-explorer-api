@@ -6,9 +6,8 @@ import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
 import { EVMversions } from '../../lib/types'
 
 export class ContractVerification extends DataCollectorItem {
-  constructor (collections, name) {
-    const { ContractVerification } = collections
-    super(ContractVerification, name)
+  constructor (name) {
+    super(name)
     this.publicActions = {
       /**
      * @swagger
