@@ -219,22 +219,25 @@ export class Address extends DataCollectorItem {
       getCode: async params => {
         try {
           const { address } = params
-          const fields = { id: 0, address: 1, code: 1, createdByTx: 1, contractInterfaces: 1, name: 1 }
-          const result = await this.getOne({ address }, fields)
+          const result = await this.getOne({ address })
           let { data } = result
           if (!data) throw new Error('Unknown address')
-          const { createdByTx, code } = data
+          const {
+            // createdByTx
+            code
+          } = data
           if (!code) throw new Error('The address does not have code')
-          if (createdByTx) {
-            // is a transaction
-            if (createdByTx.hasOwnProperty('receipt')) {
-              data.creationCode = createdByTx.input
-            } else { // is an internal transactions
-              data.creationCode = createdByTx.action.init
-            }
-            data.created = createdByTx.timestamp
-            delete data.createdByTx
-          }
+          // API endpoints fix 2: createdByTx should be a tx/itx
+          // if (createdByTx) {
+          //   // is a transaction
+          //   if (createdByTx.hasOwnProperty('receipt')) {
+          //     data.creationCode = createdByTx.input
+          //   } else { // is an internal transactions
+          //     data.creationCode = createdByTx.action.init
+          //   }
+          //   data.created = createdByTx.timestamp
+          //   delete data.createdByTx
+          // }
           return result
         } catch (err) {
           return Promise.reject(err)
