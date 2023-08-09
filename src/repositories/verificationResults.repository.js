@@ -1,29 +1,42 @@
+import { prismaClient } from '../lib/Setup'
+
 export const verificationResultsRepository = {
-  findOne (query = {}, project = {}) {
-    // Not implemented
-    return {}
-  },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
+  async findOne (query) {
+    const res = await prismaClient.verification_result.findFirst({ where: query })
+    const verificationResult = {
+      _id: res._id,
+      address: res.address,
+      match: res.match,
+      request: JSON.parse(res.request),
+      result: JSON.parse(res.result),
+      abi: JSON.parse(res.abi),
+      sources: JSON.parse(res.sources),
+      timestamp: res.timestamp
     }
+
+    return verificationResult
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
+  async insertOne ({
+    _id,
+    address,
+    match,
+    request,
+    result,
+    abi,
+    sources,
+    timestamp
+  }) {
+    const verificationResultToInsert = {
+      _id,
+      address,
+      match,
+      request: JSON.stringify(request),
+      result: JSON.stringify(result),
+      abi: JSON.stringify(abi),
+      sources: JSON.stringify(sources),
+      timestamp
+    }
+
+    return prismaClient.verification_result.create({ data: verificationResultToInsert })
   }
 }

@@ -1,31 +1,25 @@
+import { prismaClient } from '../lib/Setup'
+
 export const contractVerificationRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
-  },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
+  async insertOne ({ _id, request, timestamp }) {
+    const verificationToInsert = {
+      _id,
+      timestamp,
+      request: request ? JSON.stringify(request) : ''
     }
+
+    const verification = await prismaClient.contract_verification.create({ data: verificationToInsert })
+
+    return verification
   },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
-  },
-  updateOne (filter, update, options = {}, collection) {
-    return collection.updateOne(filter, update, options)
+  async updateOne ({ _id }, { error, result, match }) {
+    const verificationToUpdate = {
+      error: error ? JSON.stringify(error) : '',
+      result: result ? JSON.stringify(result) : '',
+      match: match ? JSON.stringify(match) : ''
+    }
+
+    const updatedVerification = await prismaClient.contract_verification.update({ where: _id, data: verificationToUpdate })
+    return updatedVerification
   }
 }
