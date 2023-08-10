@@ -5,7 +5,7 @@ export const verificationResultsRepository = {
   async findOne (query) {
     const verificationResult = await prismaClient.verification_result.findFirst({ where: query })
 
-    return verificationResult || verificationResultsEntityToRaw(verificationResult)
+    return verificationResult ? verificationResultsEntityToRaw(verificationResult) : verificationResult
   },
   insertOne (data) {
     return prismaClient.verification_result.create({ data: rawVerificationResultsToEntity(data) })
