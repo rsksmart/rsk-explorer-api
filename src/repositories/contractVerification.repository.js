@@ -1,25 +1,19 @@
 import { prismaClient } from '../lib/Setup'
+import { rawContractVerificationToEntity } from '../converters/contractVerification.converters'
 
 export const contractVerificationRepository = {
-  async insertOne ({ _id, request, timestamp }) {
-    const verificationToInsert = {
-      _id,
-      timestamp,
-      request: request ? JSON.stringify(request) : ''
-    }
-
-    const verification = await prismaClient.contract_verification.create({ data: verificationToInsert })
+  insertOne (data) {
+    const verification = prismaClient.contract_verification.create({
+      data: rawContractVerificationToEntity(data, false)
+    })
 
     return verification
   },
-  async updateOne ({ _id }, { error, result, match }) {
-    const verificationToUpdate = {
-      error: error ? JSON.stringify(error) : '',
-      result: result ? JSON.stringify(result) : '',
-      match: match ? JSON.stringify(match) : ''
-    }
-
-    const updatedVerification = await prismaClient.contract_verification.update({ where: _id, data: verificationToUpdate })
+  updateOne ({ _id }, data) {
+    const updatedVerification = prismaClient.contract_verification.update({
+      where: _id,
+      data: rawContractVerificationToEntity(data, true)
+    })
     return updatedVerification
   }
 }
