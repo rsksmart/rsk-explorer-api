@@ -98,9 +98,15 @@ export class BlockSummary extends BcThing {
     }
   }
 
-  fetchItems (items) {
-    return Promise.all(Object.values(items).map(i => i.fetch()))
+  async fetchItems (items) {
+    const fetched = []
+    for (const item of items) {
+      fetched.push(await item.fetch())
+    }
+
+    return fetched
   }
+
   async getAddresses () {
     try {
       let { Addresses, nod3, initConfig } = this
