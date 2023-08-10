@@ -1,7 +1,7 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID, getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
-// import { ObjectID } from 'mongodb'
 import { EVMversions } from '../../lib/types'
 import { configRepository } from '../../repositories/config.repository'
 
