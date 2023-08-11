@@ -1,31 +1,19 @@
+import { prismaClient } from '../lib/Setup'
+import { rawContractVerificationToEntity } from '../converters/contractVerification.converters'
+
 export const contractVerificationRepository = {
-  findOne (query = {}, project = {}, collection) {
-    return collection.findOne(query, project)
+  insertOne (data) {
+    const verification = prismaClient.contract_verification.create({
+      data: rawContractVerificationToEntity(data, false)
+    })
+
+    return verification
   },
-  find (query = {}, project = {}, collection, sort = {}, limit = 0, isArray = true) {
-    if (isArray) {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-        .toArray()
-    } else {
-      return collection
-        .find(query, project)
-        .sort(sort)
-        .limit(limit)
-    }
-  },
-  countDocuments (query = {}, collection) {
-    return collection.countDocuments(query)
-  },
-  aggregate (aggregate, collection) {
-    return collection.aggregate(aggregate).toArray()
-  },
-  insertOne (data, collection) {
-    return collection.insertOne(data)
-  },
-  updateOne (filter, update, options = {}, collection) {
-    return collection.updateOne(filter, update, options)
+  updateOne ({ _id }, data) {
+    const updatedVerification = prismaClient.contract_verification.update({
+      where: _id,
+      data: rawContractVerificationToEntity(data, true)
+    })
+    return updatedVerification
   }
 }

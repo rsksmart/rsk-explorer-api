@@ -100,7 +100,7 @@ class Contract extends BcThing {
   async getAbiFromVerification () {
     try {
       let { address } = this
-      const data = verificationResultsRepository.findOne({ address, match: true }, {})
+      const data = await verificationResultsRepository.findOne({ address, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)

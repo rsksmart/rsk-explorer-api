@@ -1,9 +1,8 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 
 export class VerificationResults extends DataCollectorItem {
-  constructor (collections, name) {
-    const { VerificationsResults } = collections
-    super(VerificationsResults, name)
+  constructor (name) {
+    super(name)
     this.publicActions = {
       /**
      * @swagger

@@ -10,6 +10,8 @@ import { statusRepository } from './status.repository'
 import { tokenRepository } from './token.repository'
 import { txRepository } from './tx.repository'
 import { txPoolRepository } from './txPool.repository'
+import { verificationResultsRepository } from './verificationResults.repository'
+import { contractVerificationRepository } from './contractVerification.repository'
 
 export const REPOSITORIES = {
   Address: addressRepository,
@@ -23,5 +25,7 @@ export const REPOSITORIES = {
   Summary: summaryRepository,
   Token: tokenRepository,
   Tx: txRepository,
-  TxPool: txPoolRepository
+  TxPool: txPoolRepository,
+  VerificationResults: verificationResultsRepository,
+  ContractVerification: contractVerificationRepository
 }
