@@ -57,7 +57,6 @@ model address {
   miner_miner_addressToaddress                           miner[]              @relation("miner_addressToaddress")
   receipt_receipt_fromToaddress                          receipt[]            @relation("receipt_fromToaddress")
   receipt_receipt_toToaddress                            receipt[]            @relation("receipt_toToaddress")
-  request_request_addressToaddress                       request[]            @relation("request_addressToaddress")
   token_address_token_address_addressToaddress           token_address[]      @relation("token_address_addressToaddress")
   transaction_transaction_fromToaddress                  transaction[]        @relation("transaction_fromToaddress")
   transaction_transaction_toToaddress                    transaction[]        @relation("transaction_toToaddress")
@@ -137,32 +136,22 @@ model block {
   uncle                                                         uncle[]
 }
 
-model compiler {
-  id            Int             @id(map: "pk_compiler") @default(autoincrement())
-  key           String?         @db.VarChar
-  value         String?         @db.VarChar
-  used_settings used_settings[]
-
-  @@unique([key, value], map: "unique_compiler")
-}
-
 model contract {
-  address                                        String                @id @db.VarChar(42)
-  name                                           String?               @db.VarChar
-  createdByTx                                    String?               @map("created_by_tx") @db.VarChar(66)
-  createdByInternalTx                            String?               @map("created_by_internal_tx") @db.VarChar(66)
-  code                                           String?               @db.VarChar
-  codeStoredAtBlock                              Int?                  @map("code_stored_at_block")
-  deployedCode                                   String?               @map("deployed_code") @db.VarChar
-  symbol                                         String?               @db.VarChar
-  decimals                                       Int?                  @db.SmallInt
-  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
-  block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
+  address                                        String               @id @db.VarChar(42)
+  name                                           String?              @db.VarChar
+  createdByTx                                    String?              @map("created_by_tx") @db.VarChar(66)
+  createdByInternalTx                            String?              @map("created_by_internal_tx") @db.VarChar(66)
+  code                                           String?              @db.VarChar
+  codeStoredAtBlock                              Int?                 @map("code_stored_at_block")
+  deployedCode                                   String?              @map("deployed_code") @db.VarChar
+  symbol                                         String?              @db.VarChar
+  decimals                                       Int?                 @db.SmallInt
+  address_contract_addressToaddress              address              @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
+  block                                          block?               @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
-  token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
+  token_address_token_address_contractTocontract token_address[]      @relation("token_address_contractTocontract")
   total_supply                                   total_supply[]
-  verification_result                            verification_result[]
 }
 
 model contract_interface {
@@ -182,71 +171,13 @@ model contract_method {
 }
 
 model contract_verification {
-  id                           Int                          @id(map: "pk_contract_verification") @default(autoincrement())
-  address                      String?                      @db.VarChar(42)
-  match                        Boolean
-  requestId                    Int                          @map("request_id")
-  resultId                     Int                          @map("result_id")
-  abi                          Int
-  contract_verification_abi    contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi")
-  request                      request                      @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_request_id")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_result_id")
-  source                       source[]
-}
-
-model contract_verification_abi {
-  abiId                            Int                                @id @default(autoincrement()) @map("abi_id")
-  constant                         Boolean?
-  name                             String?                            @db.VarChar
-  payable                          Boolean?
-  stateMutability                  String?                            @map("state_mutability") @db.VarChar
-  type                             String?                            @db.VarChar
-  contract_verification            contract_verification[]
-  contract_verification_abi_input  contract_verification_abi_input[]
-  contract_verification_abi_output contract_verification_abi_output[]
-  contract_verification_result     contract_verification_result[]
-}
-
-model contract_verification_abi_input {
-  abiId                     Int                       @map("abi_id")
-  name                      String                    @db.VarChar
-  type                      String                    @db.VarChar
-  stateMutability           String?                   @map("state_mutability") @db.VarChar
-  internalType              String?                   @map("internal_type") @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_input")
-
-  @@id([abiId, name, type], map: "pk_contract_verification_abi_input")
-}
-
-model contract_verification_result {
-  id                          Int                          @id @default(autoincrement())
-  name                        String                       @db.VarChar
-  usedSettingsId              Int                          @map("used_settings_id")
-  bytecode                    String                       @db.VarChar
-  resultBytecode              String                       @map("result_bytecode") @db.VarChar
-  bytecodehash                String                       @db.VarChar
-  resultBytecodeHash          String                       @map("result_bytecode_hash") @db.VarChar
-  abi                         Int
-  opcodes                     String?                      @db.VarChar
-  encodedConstructorArguments String                       @map("encoded_constructor_arguments") @db.VarChar
-  contract_verification       contract_verification[]
-  contract_verification_abi   contract_verification_abi    @relation(fields: [abi], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_abi")
-  used_settings               used_settings                @relation(fields: [usedSettingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_contr_vctverificat_ronresult_used_settings_id")
-  decoded_metadata            decoded_metadata[]
-  method_identifier           method_identifier[]
-  result_constructor_argument result_constructor_argument?
-  result_used_library         result_used_library[]
-  result_warning              result_warning[]
-  used_source                 used_source[]
-}
-
-model decoded_metadata {
-  resultId                     Int                          @map("result_id")
-  key                          String                       @db.VarChar
-  value                        String                       @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_decoded_metadata_result_id")
-
-  @@id([resultId, key, value], map: "pk_decoded_metadata")
+  id        String  @id @map("_id") @db.VarChar
+  address   String  @db.VarChar
+  error     String? @db.VarChar
+  match     Boolean
+  request   String  @db.VarChar
+  result    String? @db.VarChar
+  timestamp BigInt
 }
 
 model event {
@@ -289,17 +220,6 @@ model event_topic {
   @@id([eventId, topic], map: "pk_event_topic")
 }
 
-model import_ {
-  requestId Int     @map("request_id")
-  name      String  @db.VarChar
-  contents  String  @db.VarChar
-  file      String  @db.VarChar
-  request   request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_import_request_id")
-
-  @@id([requestId, name], map: "pk_import")
-  @@map("import")
-}
-
 model internal_transaction {
   internalTxId                                   String                            @id @map("internal_tx_id") @db.VarChar
   transactionHash                                String                            @map("transaction_hash") @db.VarChar(66)
@@ -329,14 +249,6 @@ model internal_transaction_result {
   address              String?              @db.VarChar
   code                 String?              @db.VarChar
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_action_internal_tx_id")
-}
-
-model library {
-  address               String                  @id @db.VarChar(42)
-  name                  String?                 @db.VarChar
-  request_library       request_library[]
-  result_used_library   result_used_library[]
-  used_settings_library used_settings_library[]
 }
 
 model log {
@@ -395,30 +307,6 @@ model logged_address {
   @@id([logIndex, address, transactionHash], map: "pk_logged_address")
 }
 
-model method_identifier {
-  resultId                     Int                          @map("result_id")
-  identifier                   String                       @db.VarChar
-  method                       String?                      @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_method_identifier_result_id")
-
-  @@id([resultId, identifier], map: "pk_method_identifier")
-}
-
-model net {
-  id              String          @id @db.VarChar
-  configId        String          @map("config_id") @db.VarChar
-  name            String          @db.VarChar
-  explorer_config explorer_config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_net_explorer_config_id")
-}
-
-model optimizer {
-  id            Int             @id @default(autoincrement())
-  enabled       Boolean
-  runs          Int
-  settings      settings[]
-  used_settings used_settings[]
-}
-
 model receipt {
   transactionHash                   String      @id @map("transaction_hash") @db.VarChar(66)
   transactionIndex                  Int         @map("transaction_index")
@@ -437,94 +325,6 @@ model receipt {
   address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_from")
   address_receipt_toToaddress       address?    @relation("receipt_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_to")
   transaction                       transaction @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_transaction_hash")
-}
-
-model remapping {
-  usedSettingsId Int     @id @map("used_settings_id")
-  old            String? @db.VarChar(42)
-  new            String? @db.VarChar(42)
-}
-
-model request {
-  id                               Int                           @id @default(autoincrement())
-  address                          String?                       @db.VarChar(42)
-  settingsId                       Int                           @map("settings_id")
-  version                          String                        @db.VarChar
-  name                             String                        @db.VarChar
-  source                           String                        @db.VarChar
-  bytecode                         String                        @db.VarChar
-  contract_verification            contract_verification[]
-  import_                          import_[]
-  address_request_addressToaddress address?                      @relation("request_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_address")
-  settings                         settings                      @relation(fields: [settingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_settings_id")
-  request_constructor_argument     request_constructor_argument?
-  request_library                  request_library[]
-}
-
-model request_constructor_argument {
-  requestId Int     @id @map("request_id")
-  position  Int     @db.SmallInt
-  value     String  @db.VarChar
-  request   request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_constructor_argument_request_id")
-}
-
-model request_library {
-  requestId      Int     @map("request_id")
-  libraryAddress String  @map("library_address") @db.VarChar(42)
-  library        library @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_library_library_address")
-  request        request @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_request_library_request_id")
-
-  @@id([requestId, libraryAddress], map: "pk_request_library")
-}
-
-model result_constructor_argument {
-  resultId                     Int                          @id @map("result_id")
-  position                     Int?                         @db.SmallInt
-  value                        String?                      @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_constructor_argument_result_id")
-}
-
-model result_used_library {
-  resultId                     Int                          @map("result_id")
-  libraryAddress               String                       @map("library_address") @db.VarChar(42)
-  library                      library                      @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_used_library_library_address")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_used_library_result_id")
-
-  @@id([resultId, libraryAddress], map: "pk_result_used_library")
-}
-
-model result_warning {
-  resultId                     Int                          @map("result_id")
-  warningId                    Int                          @map("warning_id")
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_warning_result_id")
-  warning                      warning                      @relation(fields: [warningId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_result_warning_warning_id")
-
-  @@id([resultId, warningId], map: "pk_result_warning")
-}
-
-model settings {
-  id          Int       @id @default(autoincrement())
-  evmVersion  String    @map("evm_version") @db.VarChar
-  optimizerId Int       @map("optimizer_id")
-  request     request[]
-  optimizer   optimizer @relation(fields: [optimizerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_settings_optimizer_id")
-}
-
-model source {
-  verificationId        Int                   @map("verification_id")
-  name                  String                @db.VarChar
-  contents              String                @db.VarChar
-  contract_verification contract_verification @relation(fields: [verificationId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_source_verification_id")
-
-  @@id([verificationId, name, contents], map: "pk_source")
-}
-
-model source_location {
-  id                                               Int       @id @default(autoincrement())
-  end                                              Int
-  file                                             String    @db.VarChar
-  start                                            Int
-  warning_warning_source_locationTosource_location warning[] @relation("warning_source_locationTosource_location")
 }
 
 model status {
@@ -636,69 +436,15 @@ model uncle {
   block       block  @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_uncle_block_number")
 }
 
-model used_settings {
-  id                           Int                            @id @default(autoincrement())
-  compilerId                   Int?                           @map("compiler_id")
-  language                     String?                        @db.VarChar
-  evmVersion                   String?                        @map("evm_version") @db.VarChar
-  optimizerId                  Int?                           @map("optimizer_id")
-  contract_verification_result contract_verification_result[]
-  compiler                     compiler?                      @relation(fields: [compilerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_compiler_id")
-  optimizer                    optimizer?                     @relation(fields: [optimizerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_optimizer_id")
-  used_settings_library        used_settings_library[]
-}
-
-model used_settings_library {
-  usedSettingsId Int           @map("used_settings_id")
-  libraryAddress String        @map("library_address") @db.VarChar(42)
-  library        library       @relation(fields: [libraryAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_library_library_address")
-  used_settings  used_settings @relation(fields: [usedSettingsId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_settings_library_used_settings_id")
-
-  @@id([usedSettingsId, libraryAddress], map: "pk_used_settings_library")
-}
-
-model used_source {
-  resultId                     Int                          @map("result_id")
-  name                         String                       @db.VarChar
-  contents                     String                       @db.VarChar
-  file                         String                       @db.VarChar
-  contract_verification_result contract_verification_result @relation(fields: [resultId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_used_source_result_id")
-
-  @@id([resultId, name], map: "pk_used_source")
-}
-
 model verification_result {
-  id       String    @id @db.VarChar
-  address  String?   @db.VarChar(42)
-  contract contract? @relation(fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_verification_result_address")
-}
-
-model warning {
-  id                                                       Int              @id @default(autoincrement())
-  component                                                String?          @db.VarChar
-  formattedMessage                                         String?          @map("formatted_message") @db.VarChar
-  message                                                  String?          @db.VarChar
-  severity                                                 String?          @db.VarChar
-  type                                                     String?          @db.VarChar
-  sourceLocation                                           Int?             @map("source_location")
-  result_warning                                           result_warning[]
-  source_location_warning_source_locationTosource_location source_location? @relation("warning_source_locationTosource_location", fields: [sourceLocation], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_warning_source_location")
-}
-
-model native_contract {
-  address  String          @id @db.VarChar
-  configId String          @map("config_id") @db.VarChar
-  name     String          @db.VarChar
-  config   explorer_config @relation(fields: [configId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_native_contract_config_id")
-}
-
-model explorer_config {
-  id              String            @id @db.VarChar
-  hash            String?           @db.VarChar
-  created         BigInt?
-  updated         BigInt?
-  native_contract native_contract[]
-  net             net[]
+  id        String  @id @map("_id") @db.VarChar
+  abi       String  @db.VarChar
+  address   String  @db.VarChar
+  match     Boolean
+  request   String  @db.VarChar
+  result    String  @db.VarChar
+  sources   String  @db.VarChar
+  timestamp BigInt
 }
 
 model stats {
@@ -713,16 +459,6 @@ model stats {
   timestamp                       String  @db.VarChar
   block_stats_block_hashToblock   block   @relation("stats_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, map: "fk_stats_block_hash")
   block_stats_block_numberToblock block   @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, map: "fk_stats_block_number")
-}
-
-model contract_verification_abi_output {
-  abiId                     Int                       @map("abi_id")
-  name                      String                    @db.VarChar
-  type                      String                    @db.VarChar
-  internal_type             String?                   @db.VarChar
-  contract_verification_abi contract_verification_abi @relation(fields: [abiId], references: [abiId], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_verification_abi_output")
-
-  @@id([abiId, name, type], map: "pk_contract_verification_abi_ouput")
 }
 
 model block_trace {
@@ -822,4 +558,22 @@ model total_supply {
   block           block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_total_supply_number")
 
   @@id([contractAddress, blockNumber], map: "pk_total_supply")
+}
+
+model contract_verifier_solc_versions {
+  id            String @id @db.VarChar
+  builds        String @db.VarChar
+  latestRelease String @map("latest_release") @db.VarChar
+  releases      String @db.VarChar
+}
+
+model explorer_initial_config {
+  id              String  @id @db.VarChar
+  nativeContracts String? @map("native_contracts") @db.VarChar
+  net             String? @db.VarChar
+}
+
+model explorer_settings {
+  id   String @id @db.VarChar
+  hash String @db.VarChar
 }

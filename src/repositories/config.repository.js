@@ -1,69 +1,67 @@
-import { rawConfigToEntity, rawConfigUpdateToEntity, rawNativeContractToEntity, rawNetToEntity } from '../converters/config.converters'
 import { prismaClient } from '../lib/Setup'
-
-const isReadOnly = id => id === '_explorerInitialConfiguration'
+import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID, EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from '../lib/defaultConfig'
 
 export const configRepository = {
-  async findOne (query = {}) {
-    const docId = query._id
+  [EXPLORER_SETTINGS_ID]: {
+    get () {
+      return prismaClient.explorer_settings.findFirst({ where: { id: EXPLORER_SETTINGS_ID } })
+    },
+    upsert ({ hash }) {
+      return prismaClient.explorer_settings.upsert({
+        where: { id: EXPLORER_SETTINGS_ID },
+        create: { id: EXPLORER_SETTINGS_ID, hash },
+        update: { hash }
+      })
+    }
+  },
+  [EXPLORER_INITIAL_CONFIG_ID]: {
+    async get () {
+      let initConfig = await prismaClient.explorer_initial_config.findFirst({ where: { id: EXPLORER_INITIAL_CONFIG_ID } })
 
-    let existingConfig = await prismaClient.explorer_config.findFirst({
-      where: { id: docId },
-      select: { hash: true }
-    })
+      if (initConfig) {
+        initConfig.nativeContracts = JSON.parse(initConfig.nativeContracts)
+        initConfig.net = JSON.parse(initConfig.net)
+      }
 
-    if (!existingConfig) return null
-
-    if (isReadOnly(docId)) {
-      existingConfig = await prismaClient.explorer_config.findFirst({
-        where: { id: docId },
-        select: {
-          native_contract: { select: { name: true, address: true } },
-          net: { select: { id: true, name: true } }
+      return initConfig
+    },
+    save (initConfig) {
+      return prismaClient.explorer_initial_config.create({
+        data: {
+          id: EXPLORER_INITIAL_CONFIG_ID,
+          nativeContracts: JSON.stringify(initConfig.nativeContracts),
+          net: JSON.stringify(initConfig.net)
         }
       })
+    }
+  },
+  [CONTRACT_VERIFIER_SOLC_VERSIONS_ID]: {
+    async get () {
+      const res = await prismaClient.contract_verifier_versions.findFirst({ where: { id: CONTRACT_VERIFIER_SOLC_VERSIONS_ID } })
 
-      existingConfig.net = existingConfig.net.pop()
+      const versions = {
+        builds: JSON.parse(res.builds),
+        latestRelease: res.latestRelease,
+        releases: JSON.parse(res.releases)
+      }
 
-      const nativeContracts = {}
-
-      Object.values(existingConfig.native_contract).forEach(contract => {
-        nativeContracts[contract.name] = contract.address
+      return versions
+    },
+    async upsert (versions) {
+      return prismaClient.contract_verifier_solc_versions.upsert({
+        where: { id: CONTRACT_VERIFIER_SOLC_VERSIONS_ID },
+        create: {
+          id: CONTRACT_VERIFIER_SOLC_VERSIONS_ID,
+          builds: JSON.stringify(versions.builds),
+          latestRelease: versions.latestRelease,
+          releases: JSON.stringify(versions.releases)
+        },
+        update: {
+          builds: JSON.stringify(versions.builds),
+          latestRelease: versions.latestRelease,
+          releases: JSON.stringify(versions.releases)
+        }
       })
-
-      existingConfig.nativeContracts = nativeContracts
-      delete existingConfig.native_contract
     }
-
-    return existingConfig
-  },
-  async insertOne (data) {
-    const newConfig = rawConfigToEntity(data)
-    const docId = newConfig.id
-    const transactionQueries = [prismaClient.explorer_config.createMany({ data: [newConfig], skipDuplicates: true })]
-
-    if (isReadOnly(docId)) {
-      const newNet = rawNetToEntity({ ...data.net, configId: docId })
-      const rawNativeContracts = Object.entries(data.nativeContracts)
-      const nativeContractsToSave = rawNativeContracts.map(([name, address]) => rawNativeContractToEntity({ name, address, configId: docId }))
-
-      transactionQueries.push(prismaClient.net.createMany({ data: [newNet], skipDuplicates: true }))
-      transactionQueries.push(prismaClient.native_contract.createMany({ data: nativeContractsToSave, skipDuplicates: true }))
-    }
-
-    await prismaClient.$transaction(transactionQueries)
-
-    return newConfig
-  },
-  async updateOne (filter, newData) {
-    const newConfig = rawConfigUpdateToEntity(newData)
-    const docId = filter._id
-
-    await prismaClient.explorer_config.update({
-      where: { id: docId },
-      data: newConfig
-    })
-
-    return newConfig
   }
 }

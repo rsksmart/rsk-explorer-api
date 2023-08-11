@@ -1,14 +1,13 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { StoredConfig } from '../../lib/StoredConfig'
-import { versionsId, getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
-// import { ObjectID } from 'mongodb'
 import { EVMversions } from '../../lib/types'
+import { configRepository } from '../../repositories/config.repository'
 
 export class ContractVerification extends DataCollectorItem {
-  constructor (collections, name) {
-    const { ContractVerification } = collections
-    super(ContractVerification, name)
+  constructor (name) {
+    super(name)
     this.publicActions = {
       /**
      * @swagger
@@ -87,7 +86,7 @@ export class ContractVerification extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getSolcVersions: async () => {
-        const data = await StoredConfig(this.parent.db).get(versionsId)
+        const data = await configRepository[CONTRACT_VERIFIER_SOLC_VERSIONS_ID].get()
         return { data }
       },
       /**
