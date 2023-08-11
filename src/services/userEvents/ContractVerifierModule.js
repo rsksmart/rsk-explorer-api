@@ -42,6 +42,7 @@ export function ContractVerifierModule ({ url } = {}, { log } = {}) {
           const match = checkResult(result || {})
           log.debug(`Updating verification ${_id}`)
           const res = await contractVerificationRepository.updateOne({ _id }, { error, result, match })
+
           if (!res.result.ok) throw new Error(`Error updating verification ${_id}`)
 
           // store verification positive results

@@ -1,14 +1,10 @@
 import { config as defaultConfig } from './config'
 import { Db } from './Db'
-import { StoredConfig } from './StoredConfig'
 import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
 import { hash } from './utils'
-
-export const INIT_ID = '_explorerInitialConfiguration'
-export const CONFIG_ID = '_explorerConfig'
-
-const readOnlyDocsIds = [INIT_ID]
+import { configRepository } from '../repositories/config.repository'
+import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
 
 export function networkError (storedInitConfig, initConfig) {
   return `Network stored id (${storedInitConfig.net.id}) is not equal to node network id (${initConfig.net.id})`
@@ -29,7 +25,6 @@ export let prismaClient
 
 export async function Setup ({ log = console }, { nod3, config } = defaultInstances) {
   const database = new Db({ log, ...config.db })
-  const storedConfig = StoredConfig(readOnlyDocsIds)
 
   const createHash = thing => hash(thing, 'sha1', 'hex')
 
@@ -46,43 +41,33 @@ export async function Setup ({ log = console }, { nod3, config } = defaultInstan
     }
   }
 
-  const checkStoredHash = async (id, value) => {
-    if (!id || !value) throw new Error(`Invalid id or value id:${id} value:${value}`)
-    const currentHash = createHash(value)
-    const storedDoc = await storedConfig.get(id)
-    if (!storedDoc) return false
-    return currentHash === storedDoc.hash
-  }
-
-  const checkConfig = async () => {
-    const testConfig = await checkStoredHash(CONFIG_ID, config)
-    return !!(testConfig)
-  }
-
-  const saveConfig = async () => {
-    try {
-      await storedConfig.update(CONFIG_ID, { hash: createHash(config) }, { create: true })
-    } catch (err) {
-      return Promise.reject(err)
-    }
+  const checkStoredSettingsHash = async (settings) => {
+    if (!settings) throw new Error(`Invalid settings: ${settings}`)
+    const currentSettingsHash = createHash(settings)
+    const storedSettings = await configRepository[EXPLORER_SETTINGS_ID].get()
+    if (!storedSettings) return false
+    return currentSettingsHash === storedSettings.hash
   }
 
   const checkSetup = async () => {
     try {
       const initConfig = await getInitConfig()
-      const storedInitConfig = await storedConfig.get(INIT_ID)
-      const configMatches = await checkConfig()
-      if (!storedInitConfig || !configMatches) {
-        await saveConfig()
-        if (!storedInitConfig) {
-          log.info(`Saving initial configuration to db`)
-          await storedConfig.save(INIT_ID, initConfig)
-          return checkSetup()
-        }
+      console.dir({ configRepository }, { depth: null })
+      const storedInitConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
+      const settingsMatches = await checkStoredSettingsHash(config)
+
+      if (!storedInitConfig) {
+        log.info(`Saving initial explorer configuration`)
+        await configRepository[EXPLORER_INITIAL_CONFIG_ID].save(initConfig)
+        return checkSetup()
       }
-      if (storedInitConfig.net.id !== initConfig.net.id) {
-        throw new Error(networkError(storedInitConfig, initConfig))
+
+      if (!settingsMatches) {
+        log.info(`Updating settings`)
+        await configRepository[EXPLORER_SETTINGS_ID].upsert({ hash: createHash(config) })
       }
+
+      if (storedInitConfig.net.id !== initConfig.net.id) throw new Error(networkError(storedInitConfig, initConfig))
       return storedInitConfig
     } catch (err) {
       return Promise.reject(err)
@@ -93,7 +78,7 @@ export async function Setup ({ log = console }, { nod3, config } = defaultInstan
     try {
       let initConfig
       if (skipCheck) {
-        initConfig = await storedConfig.get(INIT_ID)
+        initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
       } else {
         initConfig = await checkSetup()
       }

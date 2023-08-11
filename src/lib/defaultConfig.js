@@ -5,6 +5,10 @@
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
+export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
+export const EXPLORER_SETTINGS_ID = 'explorerSettings'
+export const CONTRACT_VERIFIER_SOLC_VERSIONS_ID = 'contractVerifierSolcVersions'
+
 export const enabledServices = {
   LIVE_SYNCER: 'liveSyncer',
   STATIC_SYNCER: 'staticSyncer',
