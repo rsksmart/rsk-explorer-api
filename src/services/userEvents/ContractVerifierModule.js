@@ -1,16 +1,12 @@
 import io from 'socket.io-client'
-import { StoredConfig } from '../../lib/StoredConfig'
 import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
 import { contractVerificationRepository } from '../../repositories/contractVerification.repository'
 import { verificationResultsRepository } from '../../repositories/verificationResults.repository'
-import { dataSource } from '../../lib/dataSource'
-// id to store solc versions list on Config collection
-export const versionsId = '_contractVerifierVersions'
+import { configRepository } from '../../repositories/config.repository'
+import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 
-export async function ContractVerifierModule ({ url } = {}, { log } = {}) {
-  await dataSource({ log, skipCheck: true })
+export function ContractVerifierModule ({ url } = {}, { log } = {}) {
   log = log || console
-  const storedConfig = StoredConfig()
   const socket = io.connect(url, { reconnect: true })
   let versions
 
@@ -32,11 +28,8 @@ export async function ContractVerifierModule ({ url } = {}, { log } = {}) {
         case 'versions':
           log.debug(`Updating solc versions list`)
           versions = Object.assign({}, data)
-          // temporal solution to '.' in field names
-          await storedConfig.update(versionsId, {}, { create: true })
-          storedConfig.update(versionsId, versions).catch(err => {
-            log.warn(err)
-          })
+          await configRepository[CONTRACT_VERIFIER_SOLC_VERSIONS_ID].upsert(versions)
+          log.debug('Solc versions updated successfully')
           break
         // verification result
         case 'verify':
