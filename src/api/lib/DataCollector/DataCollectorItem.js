@@ -1,5 +1,5 @@
 import { find, findPages } from './pagination'
-import { REPOSITORIES } from '../../../repositories/repositories'
+import { REPOSITORIES } from '../../../repositories'
 
 export class DataCollectorItem {
   constructor (name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {

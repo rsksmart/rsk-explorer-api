@@ -5,7 +5,9 @@ import { nod3Log } from '.././lib/nod3Connect'
 import { Nod3, Nod3Router } from '@rsksmart/nod3'
 import BlockTrace from '../services/classes/BlockTrace'
 import { Logger } from '../lib/Logger'
-import { blockTraceRepository } from '../repositories/blockTrace.repository'
+import { REPOSITORIES } from '../repositories'
+
+const { BlockTrace: blockTraceRepository } = REPOSITORIES
 
 const { HttpProvider } = Nod3.providers
 const log = Logger('cacheTraces', { level: 'trace' })

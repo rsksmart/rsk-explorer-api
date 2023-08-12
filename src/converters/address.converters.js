@@ -1,5 +1,5 @@
 import { removeNullFields } from '../repositories/utils'
-import { blockEntityToRaw } from './block.converters'
+import { blockEntityToRaw } from './blocks.converters'
 
 function rawAddressToEntity ({
   address,

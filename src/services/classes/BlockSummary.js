@@ -4,11 +4,10 @@ import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
 import { isBlockHash } from '../../lib/utils'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { summaryRepository } from '../../repositories/summary.repository'
 
 export class BlockSummary extends BcThing {
   constructor (hashOrNumber, { nod3, log, initConfig }) {
-    super({ nod3, initConfig, log })
+    super({ nod3, initConfig, log, name: 'Summary' })
     this.hashOrNumber = hashOrNumber
     this.Addresses = undefined
     this.data = {
@@ -29,7 +28,7 @@ export class BlockSummary extends BcThing {
       let blockData = await this.getBlockData()
       const { hash } = blockData
       if (!skipDb) {
-        let dbData = await getBlockSummaryFromDb(hash)
+        let dbData = await this.getBlockSummaryFromDb(hash)
         if (dbData && dbData.data) {
           this.setData(dbData.data)
           this.fetched = true
@@ -131,9 +130,30 @@ export class BlockSummary extends BcThing {
   async getSummariesAddresses () {
     try {
       const { number } = await this.getBlockData()
-      const summaries = await getBlockSummariesByNumber(number)
+      const summaries = await this.getBlockSummariesByNumber(number)
       const addresses = [...new Set([].concat(...summaries.map(({ addresses }) => addresses)))]
       return addresses
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getBlockSummaryFromDb (hash) {
+    try {
+      if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
+      let data = await this.repository.findOne({ hash }, {})
+      return data
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async getBlockSummariesByNumber (blockNumber) {
+    try {
+      const number = parseInt(blockNumber)
+      if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
+      let res = await this.repository.find({ number }, {})
+      return res
     } catch (err) {
       return Promise.reject(err)
     }
@@ -150,31 +170,10 @@ export async function getBlock (hashOrNumber, txArr = false, nod3) {
   }
 }
 
-export async function getBlockSummaryFromDb (hash) {
-  try {
-    if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let data = await summaryRepository.findOne({ hash }, {})
-    return data
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}
-
 export async function deleteBlockSummaryFromDb (hash) {
   try {
     if (!isBlockHash(hash)) throw new Error(`Invalid blockHash ${hash}`)
-    let res = summaryRepository.deleteOne({ hash })
-    return res
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}
-
-export async function getBlockSummariesByNumber (blockNumber) {
-  try {
-    const number = parseInt(blockNumber)
-    if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
-    let res = await summaryRepository.find({ number }, {})
+    let res = this.repository.deleteOne({ hash })
     return res
   } catch (err) {
     return Promise.reject(err)

@@ -1,11 +1,12 @@
 
 import { setup } from '../lib/dataSource.js'
 import { Logger } from '../lib/Logger'
-import { blockTraceRepository } from '../repositories/blockTrace.repository.js'
+import { REPOSITORIES } from '../repositories/index.js'
+
 const log = Logger('showTraces', { level: 'trace' })
 const every = process.argv[2] || 10000
 
-main()
+const { BlockTrace: blockTraceRepository } = REPOSITORIES
 
 async function main () {
   try {
@@ -18,3 +19,5 @@ async function main () {
     process.exit(9)
   }
 }
+
+main()

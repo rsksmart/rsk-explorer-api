@@ -1,7 +1,11 @@
 import dataSource from '../lib/dataSource.js'
 import { newBigNumber } from '../lib/utils'
-import { txRepository } from '../repositories/tx.repository'
-import { blockRepository } from '../repositories/block.repository'
+import { REPOSITORIES } from '../repositories/index.js'
+
+const {
+  Tx: txRepository,
+  Blocks: blocksRepository
+} = REPOSITORIES
 
 const fromBlock = parseInt(process.argv[2])
 const toBlock = parseInt(process.argv[3])
@@ -63,7 +67,7 @@ async function getData (fromBlock, toBlock) {
 async function getBlock ({ Blocks }, number) {
   try {
     let query = { number }
-    let data = await blockRepository.findOne(query, {}, Blocks)
+    let data = await blocksRepository.findOne(query, {}, Blocks)
     return data
   } catch (err) {
     return Promise.reject(err)

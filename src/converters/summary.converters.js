@@ -1,5 +1,5 @@
 import { addressEntityToRaw } from './address.converters'
-import { blockEntityToRaw } from './block.converters'
+import { blockEntityToRaw } from './blocks.converters'
 import { eventEntityToRaw } from './event.converters'
 import { internalTxEntityToRaw } from './internalTx.converters'
 import { tokenEntityToRaw } from './token.converters'

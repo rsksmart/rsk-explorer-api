@@ -2,15 +2,12 @@ import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
 import { blockQuery } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
-import { blockRepository } from '../../repositories/block.repository'
-import { txRepository } from '../../repositories/tx.repository'
-import { eventRepository } from '../../repositories/event.repository'
-import { statsRepository } from '../../repositories/stats.repository'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
+import { REPOSITORIES } from '../../repositories'
 
 export class Block extends BcThing {
   constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
-    super({ nod3, initConfig, log })
+    super({ nod3, initConfig, log, name: 'Blocks' })
     this.fetched = false
     this.log = log || console
     this.number = number
@@ -18,6 +15,9 @@ export class Block extends BcThing {
     this.data = { block: null }
     this.status = status
     this.isTipBlock = tipBlock
+    this.txRepository = REPOSITORIES.Tx
+    this.eventRepository = REPOSITORIES.Event
+    this.statsRepository = REPOSITORIES.Stats
   }
 
   async fetch (forceFetch) {
@@ -41,7 +41,7 @@ export class Block extends BcThing {
     try {
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
 
-      const exists = await blockRepository.findOne({ number })
+      const exists = await this.repository.findOne({ number })
       if (exists) throw new Error(`Block ${number} already in db. Skipped`)
 
       data = this.getData(true)
@@ -49,12 +49,12 @@ export class Block extends BcThing {
       data.status = this.status
 
       // save block and all related data
-      await blockRepository.saveBlockData(data)
+      await this.repository.saveBlockData(data)
 
       // save stats (requires block and addresses inserted). Only for tip blocks
       if (this.isTipBlock) {
         const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
-        await statsRepository.insertOne(blockchainStats)
+        await this.statsRepository.insertOne(blockchainStats)
       }
     } catch (error) {
       this.log.error(`Error saving block ${number} data`)
@@ -63,7 +63,7 @@ export class Block extends BcThing {
   }
 
   searchBlock ({ hash, number }) {
-    return blockRepository.find({ OR: [{ hash }, { number }] })
+    return this.repository.find({ OR: [{ hash }, { number }] })
   }
 
   async getBlockFromDb (number, allData) {
@@ -92,15 +92,15 @@ export class Block extends BcThing {
   }
 
   getBlockEventsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {})
+    return this.eventRepository.find({ blockHash }, {})
   }
 
   getBlockTransactionsFromDb (blockHash) {
-    return eventRepository.find({ blockHash }, {})
+    return this.eventRepository.find({ blockHash }, {})
   }
 
   getTransactionFromDb (hash) {
-    return txRepository.findOne({ hash }, {})
+    return this.txRepository.findOne({ hash }, {})
   }
 
   // adds contract data to addresses
@@ -129,7 +129,7 @@ export class Block extends BcThing {
 
 export const getBlockFromDb = async (number) => {
   let query = blockQuery(number)
-  if (query) return blockRepository.findOne(query, {})
+  if (query) return this.repository.findOne(query, {})
   return Promise.reject(new Error(`"${number}": is not block hash or number`))
 }
 

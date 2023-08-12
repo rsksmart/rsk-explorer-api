@@ -61,7 +61,7 @@ export const actions = {
 }
 
 export const MODULES = {
-  blocks: 'Block',
+  blocks: 'Blocks',
   transactions: 'Tx',
   addresses: 'Address',
   events: 'Event',
