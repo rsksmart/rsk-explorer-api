@@ -124,7 +124,12 @@ export class Tx extends DataCollectorItem {
           let logs = (tx.receipt) ? tx.receipt.logs : []
           let addresses = new Set(logs.map(log => log.address))
           addresses.add(tx.from)
-          addresses.add(tx.to)
+
+          if (tx.to) {
+            // 'to' will be null if the tx is a contract deploy
+            addresses.add(tx.to)
+          }
+
           let Address = this.parent.getModule('Address')
           let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })))
           if (res) {

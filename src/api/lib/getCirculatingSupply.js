@@ -1,9 +1,9 @@
 import { TOTAL_SUPPLY } from '../../lib/types'
 import { bigNumberDifference, applyDecimals } from '../../lib/utils'
-import { addressRepository } from '../../repositories/address.repository'
+import { REPOSITORIES } from '../../repositories'
 
 export default async function ({ bridge }) {
-  const bridgeAddress = await addressRepository.findOne({ address: bridge })
+  const bridgeAddress = await REPOSITORIES.Address.findOne({ address: bridge })
 
   if (!bridgeAddress) {
     return {

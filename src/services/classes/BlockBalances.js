@@ -1,6 +1,6 @@
 export async function fetchAddressesBalancesFromNode (addresses, block, nod3) {
   const balances = []
-  if (addresses.length && block && nod3) {
+  if (addresses && addresses.length && block && nod3) {
     const { hash: blockHash, number: blockNumber, timestamp } = block
 
     for (const {address} of new Set(addresses)) {

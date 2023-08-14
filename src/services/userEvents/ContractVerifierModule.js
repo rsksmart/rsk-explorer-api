@@ -1,9 +1,13 @@
 import io from 'socket.io-client'
 import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
-import { contractVerificationRepository } from '../../repositories/contractVerification.repository'
-import { verificationResultsRepository } from '../../repositories/verificationResults.repository'
-import { configRepository } from '../../repositories/config.repository'
+import { REPOSITORIES } from '../../repositories'
 import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
+
+const {
+  Config: configRepository,
+  ContractVerification: contractVerificationRepository,
+  VerificationResults: verificationResultsRepository
+} = REPOSITORIES
 
 export function ContractVerifierModule ({ url } = {}, { log } = {}) {
   log = log || console

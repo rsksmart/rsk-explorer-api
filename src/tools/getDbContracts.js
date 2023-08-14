@@ -1,5 +1,7 @@
 import dataSource from '../lib/dataSource.js'
-import { addressRepository } from '../repositories/address.repository'
+import { REPOSITORIES } from '../repositories/index.js'
+
+const { Address: addressRepository } = REPOSITORIES
 
 dataSource({ skipCheck: true }).then(() => {
   const query = { type: 'contract' }

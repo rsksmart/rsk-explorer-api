@@ -70,7 +70,7 @@ class Api extends DataCollector {
 
   async setLastBlocks () {
     try {
-      const Block = this.getModule('Block')
+      const Block = this.getModule('Blocks')
       const Tx = this.getModule('Tx')
       let limit = this.lastLimit
       let blocks = await Block.run('getBlocks', { limit, addMetadata: true })

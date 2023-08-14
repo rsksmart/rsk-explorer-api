@@ -3,7 +3,7 @@ import ContractParser from '@rsksmart/rsk-contract-parser'
 import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
-import { verificationResultsRepository } from '../../repositories/verificationResults.repository'
+import { REPOSITORIES } from '../../repositories'
 
 class Contract extends BcThing {
   constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block }) {
@@ -22,6 +22,7 @@ class Contract extends BcThing {
     this.isToken = false
     this.isNative = !!this.nativeContracts.getNativeContractName(address)
     this.block = block
+    this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
   }
 
@@ -100,7 +101,7 @@ class Contract extends BcThing {
   async getAbiFromVerification () {
     try {
       let { address } = this
-      const data = await verificationResultsRepository.findOne({ address, match: true })
+      const data = await this.verificationResultsRepository.findOne({ address, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)

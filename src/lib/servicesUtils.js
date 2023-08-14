@@ -1,6 +1,8 @@
 import BlocksBase from './BlocksBase.js'
 import Block from '../services/classes/Block.js'
-import { blockRepository } from '../repositories/block.repository.js'
+import { REPOSITORIES } from '../repositories/index.js'
+
+const { Blocks: blocksRepository } = REPOSITORIES
 
 export async function insertBlock (number, { initConfig, log, tipBlock = false }, status = undefined) {
   try {
@@ -20,12 +22,12 @@ export async function insertBlock (number, { initConfig, log, tipBlock = false }
   }
 }
 
-export const getDbBlock = (number) => blockRepository.findOne({ number })
+export const getDbBlock = (number) => blocksRepository.findOne({ number })
 
 export const sameHash = (h1, h2) => h1 === h2
 
 function deleteBlocks (blocks = []) {
-  return blockRepository.deleteBlocksByNumbers(blocks)
+  return blocksRepository.deleteBlocksByNumbers(blocks)
 }
 
 async function insertBlocks (blocks = [], { initConfig, log }) {

@@ -1,5 +1,4 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
-import { blockRepository } from '../repositories/block.repository'
 
 export class Status extends DataCollector {
   constructor () {
@@ -68,13 +67,13 @@ export class Status extends DataCollector {
   }
 
   getHighestBlock () {
-    return blockRepository.findOne({}, { sort: { number: -1 } })
+    return this.getModule('Blocks').repository.findOne({}, { sort: { number: -1 } })
   }
   getLastblockReceived () {
-    return blockRepository.findOne({}, { sort: { _received: -1 } })
+    return this.getModule('Blocks').repository.findOne({}, { sort: { _received: -1 } })
   }
   getTotalBlocks () {
-    return blockRepository.countDocuments({})
+    return this.getModule('Blocks').repository.countDocuments({})
   }
 }
 

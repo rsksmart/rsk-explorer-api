@@ -1,12 +1,13 @@
 import { BlocksBase } from '../../lib/BlocksBase'
 import { isHexString, base64toHex } from '../../lib/utils'
-import { txPoolRepository } from '../../repositories/txPool.repository'
-import { txPendingRepository } from '../../repositories/txPending.repository'
+import { REPOSITORIES } from '../../repositories'
 export class TxPool extends BlocksBase {
   constructor (options) {
     super(options)
     this.status = {}
     this.pool = {}
+    this.repository = REPOSITORIES.TxPool
+    this.txPendingRepository = REPOSITORIES.TxPending
   }
 
   async start () {
@@ -114,7 +115,7 @@ export class TxPool extends BlocksBase {
   async savePoolToDb (pool) {
     try {
       this.log.info(`Saving txPool to db`)
-      const txpool = await txPoolRepository.insertOne(pool)
+      const txpool = await this.repository.insertOne(pool)
       await this.savePendingTxs(pool.txs, txpool.id)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
@@ -125,7 +126,7 @@ export class TxPool extends BlocksBase {
   async savePendingTxs (txs, poolId) {
     try {
       txs = txs || []
-      const savedTxs = await Promise.all(txs.map(tx => txPendingRepository.upsertOne({ hash: tx.hash }, { tx, poolId })))
+      const savedTxs = await Promise.all(txs.map(tx => this.txPendingRepository.upsertOne({ hash: tx.hash }, { tx, poolId })))
       return savedTxs
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`)

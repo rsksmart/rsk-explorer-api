@@ -3,11 +3,12 @@ import { getVerificationId } from '../../services/userEvents/ContractVerifierMod
 import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
 import { EVMversions } from '../../lib/types'
-import { configRepository } from '../../repositories/config.repository'
+import { REPOSITORIES } from '../../repositories'
 
 export class ContractVerification extends DataCollectorItem {
   constructor (name) {
     super(name)
+    this.configRepository = REPOSITORIES.Config
     this.publicActions = {
       /**
      * @swagger
@@ -86,7 +87,7 @@ export class ContractVerification extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getSolcVersions: async () => {
-        const data = await configRepository[CONTRACT_VERIFIER_SOLC_VERSIONS_ID].get()
+        const data = await this.configRepository[CONTRACT_VERIFIER_SOLC_VERSIONS_ID].get()
         return { data }
       },
       /**

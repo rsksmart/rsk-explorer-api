@@ -6,11 +6,10 @@ import { BcSearch } from '@rsksmart/rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx, checkInternalTransactionData } from './InternalTx'
 import { isZeroAddress } from '@rsksmart/rsk-utils'
-import { addressRepository } from '../../repositories/address.repository'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, tx, block, log } = {}) {
-    super({ nod3, initConfig, log })
+    super({ nod3, initConfig, log, name: 'Address' })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
     this.bcSearch = BcSearch(nod3)
@@ -166,7 +165,7 @@ export class Address extends BcThing {
     try {
       let { dbData, address } = this
       if (dbData) return dbData
-      dbData = await addressRepository.findOne({ address }, {})
+      dbData = await this.repository.findOne({ address }, {})
       this.dbData = dbData
       return dbData
     } catch (err) {
@@ -294,7 +293,7 @@ export async function saveAddressToDb (data) {
   try {
     let { address } = data
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
-    let result = await Promise.all(addressRepository.insertOne(data))
+    let result = await Promise.all(this.repository.insertOne(data))
     return result
   } catch (err) {
     return Promise.reject(err)

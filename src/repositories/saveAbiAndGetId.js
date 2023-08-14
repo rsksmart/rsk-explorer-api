@@ -1,10 +1,9 @@
-import { prismaClient } from '../lib/Setup'
 import {
   rawAbiToEntity,
   rawAbiInputToEntity
 } from '../converters/abi.converters'
 
-export function saveAbiAndGetId (abi) {
+export function saveAbiAndGetId (abi, prismaClient) {
   const {inputs} = abi
   const abiToSave = rawAbiToEntity(abi)
   const transactionQueries = [prismaClient.abi.createMany({data: [abiToSave], skipDuplicates: true})]

@@ -1,9 +1,8 @@
 import { config as defaultConfig } from './config'
-import { Db } from './Db'
 import { nod3 as nod3Default } from './nod3Connect'
 import initConfig from './initialConfiguration'
 import { hash } from './utils'
-import { configRepository } from '../repositories/config.repository'
+import { REPOSITORIES } from '../repositories'
 import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
 
 export function networkError (storedInitConfig, initConfig) {
@@ -21,12 +20,9 @@ export async function getNetInfo (nod3) {
 
 const defaultInstances = { nod3: nod3Default, config: defaultConfig }
 
-export let prismaClient
-
 export async function Setup ({ log = console }, { nod3, config } = defaultInstances) {
-  const database = new Db({ log, ...config.db })
-
   const createHash = thing => hash(thing, 'sha1', 'hex')
+  const { Config: configRepository } = REPOSITORIES
 
   const getInitConfig = async () => {
     try {
@@ -52,7 +48,6 @@ export async function Setup ({ log = console }, { nod3, config } = defaultInstan
   const checkSetup = async () => {
     try {
       const initConfig = await getInitConfig()
-      console.dir({ configRepository }, { depth: null })
       const storedInitConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
       const settingsMatches = await checkStoredSettingsHash(config)
 
@@ -89,8 +84,6 @@ export async function Setup ({ log = console }, { nod3, config } = defaultInstan
       return Promise.reject(err)
     }
   }
-
-  prismaClient = database.prismaClient
 
   return Object.freeze({ start, createHash })
 }

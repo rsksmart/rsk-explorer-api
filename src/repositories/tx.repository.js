@@ -1,4 +1,3 @@
-import {prismaClient} from '../lib/Setup'
 import {
   rawTxToEntity,
   rawReceiptToEntity,
@@ -14,57 +13,59 @@ import {
 import { txRelatedTables } from './includeRelatedTables'
 import { saveAbiAndGetId } from './saveAbiAndGetId'
 
-export const txRepository = {
-  async findOne (query = {}, project = {}) {
-    const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
+export function getTxRepository (prismaClient) {
+  return {
+    async findOne (query = {}, project = {}) {
+      const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
 
-    return txToReturn ? transactionEntityToRaw(txToReturn) : null
-  },
-  async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-    const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
+      return txToReturn ? transactionEntityToRaw(txToReturn) : null
+    },
+    async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
+      const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
 
-    return txs.map(transactionEntityToRaw)
-  },
-  async countDocuments (query = {}) {
-    const count = await prismaClient.transaction.count({where: query})
+      return txs.map(transactionEntityToRaw)
+    },
+    async countDocuments (query = {}) {
+      const count = await prismaClient.transaction.count({where: query})
 
-    return count
-  },
-  async deleteMany (filter) {
-    const deleted = await prismaClient.transaction.deleteMany({where: filter})
+      return count
+    },
+    async deleteMany (filter) {
+      const deleted = await prismaClient.transaction.deleteMany({where: filter})
 
-    return deleted
-  },
-  insertOne (data) {
-    const {logs} = data.receipt
-    const transactionQueries = [
-      prismaClient.transaction.create({data: rawTxToEntity(data)}),
-      prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
-    ]
+      return deleted
+    },
+    insertOne (data) {
+      const {logs} = data.receipt
+      const transactionQueries = [
+        prismaClient.transaction.create({data: rawTxToEntity(data)}),
+        prismaClient.receipt.create({data: rawReceiptToEntity(data.receipt)})
+      ]
 
-    for (const log of logs) {
-      const {abi, topics, args, transactionHash, logIndex, _addresses} = log
+      for (const log of logs) {
+        const {abi, topics, args, transactionHash, logIndex, _addresses} = log
 
-      if (abi) {
-        const {transactionQueries: abiQueries, abiId} = saveAbiAndGetId(abi)
-        log.abiId = abiId
-        transactionQueries.push(...abiQueries)
+        if (abi) {
+          const {transactionQueries: abiQueries, abiId} = saveAbiAndGetId(abi, prismaClient)
+          log.abiId = abiId
+          transactionQueries.push(...abiQueries)
+        }
+
+        transactionQueries.push(prismaClient.log.createMany({data: [rawLogToEntity(log)], skipDuplicates: true}))
+
+        const topicsToSave = topics.map((topic, topicIndex) => rawLogTopicToEntity({ topicIndex, topic, transactionHash, logIndex }))
+        transactionQueries.push(prismaClient.log_topic.createMany({data: topicsToSave, skipDuplicates: true}))
+
+        if (args) {
+          const argsToSave = args.map(arg => (rawLogArgToEntity({arg, transactionHash, logIndex})))
+          transactionQueries.push(prismaClient.log_arg.createMany({data: argsToSave, skipDuplicates: true}))
+        }
+
+        const loggedAddressesToSave = _addresses.map(address => rawLoggedAddressToEntity({address, transactionHash, logIndex}))
+        transactionQueries.push(prismaClient.logged_address.createMany({data: loggedAddressesToSave, skipDuplicates: true}))
       }
 
-      transactionQueries.push(prismaClient.log.createMany({data: [rawLogToEntity(log)], skipDuplicates: true}))
-
-      const topicsToSave = topics.map((topic, topicIndex) => rawLogTopicToEntity({ topicIndex, topic, transactionHash, logIndex }))
-      transactionQueries.push(prismaClient.log_topic.createMany({data: topicsToSave, skipDuplicates: true}))
-
-      if (args) {
-        const argsToSave = args.map(arg => (rawLogArgToEntity({arg, transactionHash, logIndex})))
-        transactionQueries.push(prismaClient.log_arg.createMany({data: argsToSave, skipDuplicates: true}))
-      }
-
-      const loggedAddressesToSave = _addresses.map(address => rawLoggedAddressToEntity({address, transactionHash, logIndex}))
-      transactionQueries.push(prismaClient.logged_address.createMany({data: loggedAddressesToSave, skipDuplicates: true}))
+      return transactionQueries
     }
-
-    return transactionQueries
   }
 }
