@@ -1,5 +1,5 @@
 function rawVerificationResultsToEntity ({
-  _id,
+  id,
   address,
   match,
   request,
@@ -9,19 +9,19 @@ function rawVerificationResultsToEntity ({
   timestamp
 }) {
   return {
-    _id,
+    id,
     address,
     match,
     request: JSON.stringify(request),
     result: JSON.stringify(result),
     abi: JSON.stringify(abi),
     sources: JSON.stringify(sources),
-    timestamp
+    timestamp: String(timestamp)
   }
 }
 
 function verificationResultsEntityToRaw ({
-  _id,
+  id,
   address,
   match,
   request,
@@ -31,14 +31,14 @@ function verificationResultsEntityToRaw ({
   timestamp
 }) {
   return {
-    _id,
+    _id: id,
     address,
     match,
     request: JSON.parse(request),
     result: JSON.parse(result),
     abi: JSON.parse(abi),
     sources: JSON.parse(sources),
-    timestamp
+    timestamp: Number(timestamp)
   }
 }
 
