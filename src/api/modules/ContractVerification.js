@@ -132,7 +132,7 @@ export class ContractVerification extends DataCollectorItem {
         try {
           let { id } = params
           if (!id) throw new Error('Invalid id')
-          const verification = await this.getOne({ _id: id })
+          const verification = await this.getOne({ id })
           if (verification && verification.data) {
             const { result, match } = verification.data
             return { data: { result, match } }

@@ -38,12 +38,11 @@ export class Address extends DataCollectorItem {
         const aData = await this.getOne({ address }, { id: 0 })
         if (aData && aData.data) {
           let { data } = aData
-          // TODO: Uncomment when contract verifications repositories are implemented
-          // if (data.type === addrTypes.CONTRACT) {
-          //   const verified = await this.parent.getModule('ContractVerification')
-          //     .run('isVerified', { address, match: true })
-          //   if (verified) data.verification = verified.data
-          // }
+          if (data.type === addrTypes.CONTRACT) {
+            const verified = await this.parent.getModule('ContractVerification')
+              .run('isVerified', { address, match: true })
+            if (verified) data.verification = verified.data
+          }
           aData.data = data
         }
         return aData
@@ -222,22 +221,24 @@ export class Address extends DataCollectorItem {
           const result = await this.getOne({ address })
           let { data } = result
           if (!data) throw new Error('Unknown address')
+
           const {
-            // createdByTx
+            createdByTx,
             code
           } = data
+
           if (!code) throw new Error('The address does not have code')
-          // API endpoints fix 2: createdByTx should be a tx/itx
-          // if (createdByTx) {
-          //   // is a transaction
-          //   if (createdByTx.hasOwnProperty('receipt')) {
-          //     data.creationCode = createdByTx.input
-          //   } else { // is an internal transactions
-          //     data.creationCode = createdByTx.action.init
-          //   }
-          //   data.created = createdByTx.timestamp
-          //   delete data.createdByTx
-          // }
+
+          if (createdByTx) {
+            // it's an internal transaction
+            if (createdByTx.internalTxId) {
+              data.creationCode = createdByTx.action.init
+            } else { // it's a regular transaction
+              data.creationCode = createdByTx.input
+            }
+            data.created = createdByTx.timestamp
+            delete data.createdByTx
+          }
           return result
         } catch (err) {
           return Promise.reject(err)
