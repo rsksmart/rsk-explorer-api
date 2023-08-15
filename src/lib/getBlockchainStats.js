@@ -16,7 +16,7 @@ async function bridgeCall (method, params = []) {
 export async function getBlockchainStats ({ blockHash, blockNumber }) {
   if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
 
-  const circulating = await getCirculatingSupply({}, initConfig.nativeContracts)
+  const circulating = await getCirculatingSupply(initConfig.nativeContracts)
   const activeAccounts = await getActiveAccounts()
   const hashrate = await nod3.eth.netHashrate()
   const bridge = serialize({ lockingCap: await bridgeCall('getLockingCap') })
