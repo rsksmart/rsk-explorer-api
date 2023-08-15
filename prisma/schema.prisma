@@ -171,13 +171,13 @@ model contract_method {
 }
 
 model contract_verification {
-  id        String  @id @map("_id") @db.VarChar
-  address   String  @db.VarChar
-  error     String? @db.VarChar
-  match     Boolean
-  request   String  @db.VarChar
-  result    String? @db.VarChar
-  timestamp BigInt
+  id        String   @id @map("_id") @db.VarChar
+  address   String?  @db.VarChar
+  error     String?  @db.VarChar
+  match     Boolean?
+  request   String?  @db.VarChar
+  result    String?  @db.VarChar
+  timestamp String?  @db.VarChar
 }
 
 model event {
@@ -437,14 +437,14 @@ model uncle {
 }
 
 model verification_result {
-  id        String  @id @map("_id") @db.VarChar
-  abi       String  @db.VarChar
-  address   String  @db.VarChar
-  match     Boolean
-  request   String  @db.VarChar
-  result    String  @db.VarChar
-  sources   String  @db.VarChar
-  timestamp BigInt
+  id        String   @id @map("_id") @db.VarChar
+  abi       String?  @db.VarChar
+  address   String?  @db.VarChar
+  match     Boolean?
+  request   String?  @db.VarChar
+  result    String?  @db.VarChar
+  sources   String?  @db.VarChar
+  timestamp String?  @db.VarChar
 }
 
 model stats {
@@ -561,10 +561,10 @@ model total_supply {
 }
 
 model contract_verifier_solc_versions {
-  id            String @id @db.VarChar
-  builds        String @db.VarChar
-  latestRelease String @map("latest_release") @db.VarChar
-  releases      String @db.VarChar
+  id            String  @id @db.VarChar
+  builds        String? @db.VarChar
+  latestRelease String? @map("latest_release") @db.VarChar
+  releases      String? @db.VarChar
 }
 
 model explorer_initial_config {

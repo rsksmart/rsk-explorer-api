@@ -15,7 +15,7 @@ export const log = Logger('[explorer-api]', config.api.log) // also used for Dat
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 
-dataSource({ log, skipCheck: true })
+dataSource({ log })
   .then(({ initConfig }) => {
     // data collectors
     const api = new Api({ initConfig }, config.api)

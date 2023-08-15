@@ -1,27 +1,51 @@
 function rawContractVerificationToEntity ({
   // handles both insertion and update, depending on the boolean as the second param
-  _id,
+  id,
   timestamp,
   request,
   error,
   result,
   match
-}, updating) {
+}, { updating } = {}) {
   if (updating) {
     return {
-      error: JSON.stringify(error),
+      error,
       result: JSON.stringify(result),
-      match: JSON.stringify(match)
+      match
     }
   } else {
     return {
-      _id,
-      timestamp,
+      id,
+      timestamp: String(timestamp),
       request: JSON.stringify(request)
     }
   }
 }
 
+function contractVerificationEntityToRaw ({
+  id,
+  address,
+  error,
+  match,
+  request,
+  result,
+  timestamp
+}) {
+  const verificationToReturn = {
+    id,
+    request: JSON.parse(request),
+    timestamp: Number(timestamp)
+  }
+
+  if (address) verificationToReturn.address = address
+  if (error) verificationToReturn.error = error
+  if (match) verificationToReturn.match = match
+  if (result) verificationToReturn.result = JSON.parse(result)
+
+  return verificationToReturn
+}
+
 export {
-  rawContractVerificationToEntity
+  rawContractVerificationToEntity,
+  contractVerificationEntityToRaw
 }
