@@ -39,7 +39,7 @@ export function ContractVerifierModule ({ url } = {}, { log } = {}) {
         case 'verify':
           const result = (data) ? data.result : null
           let { _id: id, address } = request
-          if (!id) throw new Error(`Missing _id {$request}`)
+          if (!id) throw new Error(`Missing id: ${request}`)
           // _id = ObjectID(_id)
           log.debug(`New verification received ${address}`)
           // Update verification
