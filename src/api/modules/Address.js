@@ -230,10 +230,11 @@ export class Address extends DataCollectorItem {
           if (!code) throw new Error('The address does not have code')
 
           if (createdByTx) {
-            // it's an internal transaction
             if (createdByTx.internalTxId) {
+              // it's an internal transaction
               data.creationCode = createdByTx.action.init
-            } else { // it's a regular transaction
+            } else {
+              // it's a regular transaction
               data.creationCode = createdByTx.input
             }
             data.created = createdByTx.timestamp
