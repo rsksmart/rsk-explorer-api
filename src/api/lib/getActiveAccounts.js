@@ -1,4 +1,4 @@
-import { prismaClient } from '../../lib/Db'
+import { prismaClient } from '../../lib/prismaClient'
 
 export default async function getActiveAccounts () {
   const query = {
