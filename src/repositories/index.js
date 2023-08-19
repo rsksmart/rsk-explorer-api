@@ -1,4 +1,4 @@
-import { prismaClient } from '../lib/Db'
+import { prismaClient } from '../lib/prismaClient'
 import { getAddressRepository } from './address.repository'
 import { getBalancesRepository } from './balances.repository'
 import { getBlocksRepository } from './blocks.repository'
