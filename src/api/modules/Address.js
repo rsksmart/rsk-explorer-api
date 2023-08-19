@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { tokensInterfaces, addrTypes, fields } from '../../lib/types'
+import { tokensInterfaces, addrTypes } from '../../lib/types'
 
 export class Address extends DataCollectorItem {
   constructor (name) {
@@ -111,13 +111,13 @@ export class Address extends DataCollectorItem {
        */
       getMiners: params => {
         let query = {}
-        const lbMined = fields.LAST_BLOCK_MINED
         let { fromBlock } = params
-        query[lbMined] = { $exists: true, not: null, cursorField: 'id' }
+
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
-          query[`${lbMined}.number`] = { gt: fromBlock }
+          query.miner_miner_addressToaddress = { some: { blockNumber: { gt: fromBlock } } }
         }
+
         return this.getPageData(query, params)
       },
       /**
@@ -280,7 +280,7 @@ export class Address extends DataCollectorItem {
         }
         params.field = 'name'
         params.sort = { id: 1 }
-        delete params.fields.name
+        delete params.field.name
         return this.getPageData(query, params)
       }
     }
