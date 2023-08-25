@@ -172,7 +172,11 @@ export function paginationResponse (params, data, total) {
     }
   }
 
-  const pagination = { limit, total, next, prev, page, pages, nextPage, prevPage }
+  const pagination = { limit, total, next, prev, page, pages }
+
+  if (prevPage) pagination.prevPage = prevPage
+  if (nextPage) pagination.nextPage = nextPage
+
   return { pagination, data }
 }
 
