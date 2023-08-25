@@ -103,8 +103,10 @@ export class Token extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getContractAccount: params => {
-        const { address, contract } = params
-        return this.getOne({ address, contract })
+        return this.getOne({
+          address: params.address || '',
+          contract: params.contract
+        })
       },
       /**
        * @swagger
@@ -134,7 +136,11 @@ export class Token extends DataCollectorItem {
        */
       getTokenAccount: async params => {
         const { address, contract } = params
-        const account = await this.getOne({ address, contract })
+        const account = await this.getOne({
+          address: address || '',
+          contract: contract || ''
+        })
+
         return this.parent.addAddressData(contract, account, '_contractData')
       },
       /**
