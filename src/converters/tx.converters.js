@@ -5,6 +5,7 @@ function rawTxToEntity ({
   hash,
   txId,
   txType,
+  type,
   from,
   to,
   blockNumber,
@@ -37,6 +38,7 @@ function rawTxToEntity ({
     v,
     r,
     s,
+    type,
     timestamp: String(timestamp)
   }
 }
@@ -52,7 +54,8 @@ function rawReceiptToEntity ({
   gasUsed,
   contractAddress,
   status,
-  logsBloom
+  logsBloom,
+  type
 }) {
   return {
     transactionHash,
@@ -65,7 +68,8 @@ function rawReceiptToEntity ({
     gasUsed,
     contractAddress,
     status,
-    logsBloom
+    logsBloom,
+    type
   }
 }
 
@@ -194,6 +198,7 @@ function receiptEntityToRaw ({
   contractAddress,
   status,
   logsBloom,
+  type,
   log
 }) {
   const receiptToReturn = {
@@ -208,7 +213,8 @@ function receiptEntityToRaw ({
     gasUsed,
     contractAddress,
     status,
-    logsBloom
+    logsBloom,
+    type
   }
 
   return removeNullFields(receiptToReturn, ['contractAddress', 'to'])
@@ -229,6 +235,7 @@ function transactionEntityToRaw ({
   v,
   r,
   s,
+  type,
   timestamp,
   receipt,
   txType,
@@ -249,6 +256,7 @@ function transactionEntityToRaw ({
     v,
     r,
     s,
+    type,
     timestamp: Number(timestamp),
     txType,
     txId
