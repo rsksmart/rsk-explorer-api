@@ -80,7 +80,7 @@ function internalTxEntityToRaw ({
   delete result.internalTxId
 
   return {
-    timestamp,
+    timestamp: Number(timestamp),
     traceAddress: traceAddress.map(t => t.trace),
     _index: index,
     result,
