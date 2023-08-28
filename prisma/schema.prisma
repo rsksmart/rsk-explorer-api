@@ -314,6 +314,7 @@ model receipt {
   blockNumber                       Int         @map("block_number")
   from                              String      @db.VarChar(42)
   to                                String?     @db.VarChar(42)
+  type                              String?     @db.VarChar
   cumulativeGasUsed                 Int         @map("cumulative_gas_used")
   gasUsed                           Int         @map("gas_used")
   contractAddress                   String?     @map("contract_address") @db.VarChar(42)
@@ -362,6 +363,7 @@ model trace_address {
 model transaction {
   hash                                  String                   @id @db.VarChar(66)
   txId                                  String                   @map("tx_id") @db.VarChar
+  type                                  String?                  @db.VarChar
   txType                                String                   @map("tx_type") @db.VarChar
   from                                  String                   @db.VarChar(42)
   to                                    String?                  @db.VarChar(42)
