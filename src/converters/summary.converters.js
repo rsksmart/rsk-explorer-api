@@ -36,7 +36,7 @@ function summaryEntityToRaw ({
     id,
     hash,
     number,
-    timestamp,
+    timestamp: Number(timestamp),
     data: {
       addresses: addresses.map(address => addressEntityToRaw(address.address_address_in_summary_addressToaddress)),
       block: blockEntityToRaw(block),

@@ -168,7 +168,7 @@ function logEntityToRaw ({
     data,
     signature,
     event,
-    timestamp,
+    timestamp: Number(timestamp),
     txStatus,
     eventId,
     _addresses: _addresses.map(({address}) => address),
@@ -249,7 +249,7 @@ function transactionEntityToRaw ({
     v,
     r,
     s,
-    timestamp,
+    timestamp: Number(timestamp),
     txType,
     txId
   }
