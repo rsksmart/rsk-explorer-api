@@ -103,11 +103,11 @@ function contractEntityToRaw ({
     decimals
   }
 
-  if (methods) {
+  if (methods && methods.length) {
     contractToReturn.contractMethods = methods.map(method => method.method)
   }
 
-  if (interfaces) {
+  if (interfaces && interfaces.length) {
     contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
   }
 

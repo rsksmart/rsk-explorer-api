@@ -281,7 +281,8 @@ export class Address extends DataCollectorItem {
         params.field = 'name'
         params.sort = { id: 1 }
         delete params.field.name
-        return this.getPageData(query, params)
+
+        return this.find(query, params)
       }
     }
   }
