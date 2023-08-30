@@ -1,4 +1,4 @@
-// import { removeNullFields } from '../repositories/utils'
+import { removeNullFields } from '../repositories/utils'
 
 function rawActionToEntity ({
   internalTxId,
@@ -70,22 +70,34 @@ function rawTraceAddressToEntity (trace, index) {
 
 function internalTxEntityToRaw ({
   timestamp,
+  blockHash,
+  blockNumber,
+  transactionHash,
+  transactionPosition,
+  subtraces,
   trace_address: traceAddress,
   index,
   internal_transaction_result: result,
   action,
-  type
+  type,
+  internalTxId
 }) {
   delete action.internalTxId
   delete result.internalTxId
 
   return {
-    timestamp: Number(timestamp),
+    action: removeNullFields(action),
+    blockHash,
+    blockNumber,
+    transactionHash,
+    transactionPosition,
+    type,
+    subtraces,
     traceAddress: traceAddress.map(t => t.trace),
+    result: removeNullFields(result),
     _index: index,
-    result,
-    action,
-    type
+    timestamp: Number(timestamp),
+    internalTxId
   }
 }
 
