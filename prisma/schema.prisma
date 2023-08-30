@@ -580,8 +580,8 @@ model explorer_settings {
 }
 
 model contract_creation_tx {
-  contractAddress String   @map("contract_address") @id @db.VarChar
-  timestamp        String?  @db.VarChar
-  tx               String?  @db.VarChar
-  contract         contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
+  contractAddress String   @id @map("contract_address") @db.VarChar
+  timestamp       String?  @db.VarChar
+  tx              String?  @db.VarChar
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
 }
