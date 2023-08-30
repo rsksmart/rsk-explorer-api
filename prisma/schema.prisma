@@ -137,20 +137,19 @@ model block {
 }
 
 model contract {
-  address                                        String               @id @db.VarChar(42)
-  name                                           String?              @db.VarChar
-  createdByTx                                    String?              @map("created_by_tx") @db.VarChar(66)
-  createdByInternalTx                            String?              @map("created_by_internal_tx") @db.VarChar(66)
-  code                                           String?              @db.VarChar
-  codeStoredAtBlock                              Int?                 @map("code_stored_at_block")
-  deployedCode                                   String?              @map("deployed_code") @db.VarChar
-  symbol                                         String?              @db.VarChar
-  decimals                                       Int?                 @db.SmallInt
-  address_contract_addressToaddress              address              @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
-  block                                          block?               @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
+  address                                        String                @id @db.VarChar(42)
+  name                                           String?               @db.VarChar
+  code                                           String?               @db.VarChar
+  codeStoredAtBlock                              Int?                  @map("code_stored_at_block")
+  deployedCode                                   String?               @map("deployed_code") @db.VarChar
+  symbol                                         String?               @db.VarChar
+  decimals                                       Int?                  @db.SmallInt
+  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
+  block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
+  contract_creation_tx                           contract_creation_tx?
   contract_interface                             contract_interface[]
   contract_method                                contract_method[]
-  token_address_token_address_contractTocontract token_address[]      @relation("token_address_contractTocontract")
+  token_address_token_address_contractTocontract token_address[]       @relation("token_address_contractTocontract")
   total_supply                                   total_supply[]
 }
 
@@ -578,4 +577,11 @@ model explorer_initial_config {
 model explorer_settings {
   id   String @id @db.VarChar
   hash String @db.VarChar
+}
+
+model contract_creation_tx {
+  contractAddress String   @map("contract_address") @id @db.VarChar
+  timestamp        String?  @db.VarChar
+  tx               String?  @db.VarChar
+  contract         contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
 }

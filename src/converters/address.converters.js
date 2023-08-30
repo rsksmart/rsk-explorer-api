@@ -16,8 +16,6 @@ function rawAddressToEntity ({
 function rawContractToEntity ({
   address,
   name,
-  createdByTx,
-  createdByInternalTx,
   code,
   codeStoredAtBlock,
   deployedCode,
@@ -32,16 +30,6 @@ function rawContractToEntity ({
     deployedCode,
     symbol,
     decimals
-  }
-
-  if (createdByTx) {
-    if (createdByTx.transactionHash) {
-      contractToReturn.createdByInternalTx = createdByTx.transactionHash
-    } else if (createdByTx.hash) {
-      contractToReturn.createdByTx = createdByTx.hash
-    }
-  } else if (createdByInternalTx) {
-    contractToReturn.createdByInternalTx = createdByInternalTx
   }
 
   return contractToReturn
@@ -78,10 +66,8 @@ function addressEntityToRaw ({
 
 function contractEntityToRaw ({
   address,
-  balance_balance_addressToaddress: balance,
   name,
-  createdByTx,
-  createdByInternalTx,
+  contract_creation_tx: createdByTx,
   // code,
   codeStoredAtBlock,
   deployedCode,
@@ -94,13 +80,16 @@ function contractEntityToRaw ({
   const contractToReturn = {
     address,
     name,
-    createdByTx,
-    createdByInternalTx,
     // code,
     codeStoredAtBlock,
     deployedCode,
     symbol,
     decimals
+  }
+
+  if (createdByTx) {
+    contractToReturn.createdByTx = JSON.parse(createdByTx.tx)
+    delete contractToReturn.createdByTx.input
   }
 
   if (methods && methods.length) {
@@ -117,4 +106,9 @@ function contractEntityToRaw ({
 
   return removeNullFields(contractToReturn, ['name', 'code'])
 }
-export {rawAddressToEntity, rawContractToEntity, addressEntityToRaw, contractEntityToRaw}
+export {
+  rawAddressToEntity,
+  rawContractToEntity,
+  addressEntityToRaw,
+  contractEntityToRaw
+}
