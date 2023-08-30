@@ -61,6 +61,10 @@ function addressEntityToRaw ({
     Object.assign(addressToReturn, contractEntityToRaw(contract))
   }
 
+  if (addressToReturn.name === undefined) {
+    addressToReturn.name = null
+  }
+
   return removeNullFields(addressToReturn, ['name'])
 }
 
