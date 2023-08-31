@@ -3,8 +3,9 @@ import { tokensInterfaces, addrTypes } from '../../lib/types'
 
 export class Address extends DataCollectorItem {
   constructor (name) {
-    let sortable = { 'createdByTx.timestamp': -1 }
-    super(name, { sortDir: 1, sortable })
+    let sortable = { 'address': -1 }
+    const cursorField = 'address'
+    super(name, { cursorField, sortDir: -1, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }
     this.publicActions = {
       /**
