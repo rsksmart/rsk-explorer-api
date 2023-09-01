@@ -9,6 +9,7 @@ const addressRelatedTables = {
   balance_balance_addressToaddress: {select: {balance: true, blockNumber: true}, orderBy: {blockNumber: 'desc'}, take: 1},
   contract_contract_addressToaddress: {
     include: {
+      contract_creation_tx: { select: {tx: true} },
       total_supply: {select: {totalSupply: true}, orderBy: {blockNumber: 'desc'}, take: 1},
       contract_method: {select: {method: true}},
       contract_interface: {select: {interface: true}}

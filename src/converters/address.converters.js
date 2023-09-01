@@ -16,8 +16,6 @@ function rawAddressToEntity ({
 function rawContractToEntity ({
   address,
   name,
-  createdByTx,
-  createdByInternalTx,
   code,
   codeStoredAtBlock,
   deployedCode,
@@ -32,16 +30,6 @@ function rawContractToEntity ({
     deployedCode,
     symbol,
     decimals
-  }
-
-  if (createdByTx) {
-    if (createdByTx.transactionHash) {
-      contractToReturn.createdByInternalTx = createdByTx.transactionHash
-    } else if (createdByTx.hash) {
-      contractToReturn.createdByTx = createdByTx.hash
-    }
-  } else if (createdByInternalTx) {
-    contractToReturn.createdByInternalTx = createdByInternalTx
   }
 
   return contractToReturn
@@ -73,15 +61,17 @@ function addressEntityToRaw ({
     Object.assign(addressToReturn, contractEntityToRaw(contract))
   }
 
+  if (addressToReturn.name === undefined) {
+    addressToReturn.name = null
+  }
+
   return removeNullFields(addressToReturn, ['name'])
 }
 
 function contractEntityToRaw ({
   address,
-  balance_balance_addressToaddress: balance,
   name,
-  createdByTx,
-  createdByInternalTx,
+  contract_creation_tx: createdByTx,
   code,
   codeStoredAtBlock,
   deployedCode,
@@ -90,24 +80,33 @@ function contractEntityToRaw ({
   decimals,
   contract_method: methods,
   contract_interface: interfaces
-}) {
+}, {
+  isForGetTokens
+} = {}) {
   const contractToReturn = {
     address,
     name,
-    createdByTx,
-    createdByInternalTx,
-    code,
     codeStoredAtBlock,
+    code,
     deployedCode,
     symbol,
     decimals
   }
 
-  if (methods) {
+  if (isForGetTokens) {
+    delete contractToReturn.code
+  }
+
+  if (createdByTx) {
+    contractToReturn.createdByTx = JSON.parse(createdByTx.tx)
+    delete contractToReturn.createdByTx.input
+  }
+
+  if (methods && methods.length) {
     contractToReturn.contractMethods = methods.map(method => method.method)
   }
 
-  if (interfaces) {
+  if (interfaces && interfaces.length) {
     contractToReturn.contractInterfaces = interfaces.map(interface_ => interface_.interface)
   }
 
@@ -117,4 +116,9 @@ function contractEntityToRaw ({
 
   return removeNullFields(contractToReturn, ['name', 'code'])
 }
-export {rawAddressToEntity, rawContractToEntity, addressEntityToRaw, contractEntityToRaw}
+export {
+  rawAddressToEntity,
+  rawContractToEntity,
+  addressEntityToRaw,
+  contractEntityToRaw
+}

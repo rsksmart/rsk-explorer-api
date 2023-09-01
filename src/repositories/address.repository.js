@@ -5,43 +5,18 @@ import {
 } from '../converters/address.converters'
 import { generateFindQuery } from './utils'
 import { addressRelatedTables } from './includeRelatedTables'
-import { txRepository, internalTxRepository } from '.'
-
-async function addCreatedByTxToContractAndConvertToRaw (address) {
-  if (address.type === 'contract') {
-    const { createdByTx: hash, createdByInternalTx: internalTxId } = address.contract_contract_addressToaddress
-
-    if (hash) {
-      const tx = await txRepository.findOne({ hash })
-      address.contract_contract_addressToaddress.createdByTx = tx || {}
-    } else if (internalTxId) {
-      const itx = await internalTxRepository.findOne({ internalTxId })
-      address.contract_contract_addressToaddress.createdByTx = itx || {}
-    }
-  }
-
-  return addressEntityToRaw(address)
-}
 
 export function getAddressRepository (prismaClient) {
   return {
     async findOne (query = {}, project = {}) {
       let address = await prismaClient.address.findFirst(generateFindQuery(query, project, addressRelatedTables, project))
-      if (address) {
-        address = await addCreatedByTxToContractAndConvertToRaw(address)
-      }
 
-      return address
+      return address ? addressEntityToRaw(address) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0) {
       const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables, sort, limit))
-      const addressesToReturn = []
 
-      for (const address of addresses) {
-        addressesToReturn.push(await addCreatedByTxToContractAndConvertToRaw(address))
-      }
-
-      return addressesToReturn
+      return addresses.map(addressEntityToRaw)
     },
     async countDocuments (query = {}) {
       const count = await prismaClient.address.count({where: query})
@@ -52,13 +27,23 @@ export function getAddressRepository (prismaClient) {
       const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
 
       if (data.type === 'contract') {
-        const {contractMethods, contractInterfaces, totalSupply} = data
+        const {contractMethods, contractInterfaces, totalSupply, createdByTx} = data
 
         const contractToSave = rawContractToEntity(data)
 
         transactionQueries.push(prismaClient.contract.createMany({data: contractToSave, skipDuplicates: true}))
 
         const {address: contractAddress} = contractToSave
+
+        if (createdByTx) {
+          const createdByTxToSave = {
+            contractAddress,
+            timestamp: String(createdByTx.timestamp),
+            tx: JSON.stringify(createdByTx)
+          }
+
+          transactionQueries.push(prismaClient.contract_creation_tx.createMany({ data: createdByTxToSave, skipDuplicates: true }))
+        }
 
         if (contractMethods) {
           const methodsToSave = contractMethods.map(method => ({ method, contractAddress }))

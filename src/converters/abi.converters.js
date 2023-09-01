@@ -36,8 +36,11 @@ function abiEntityToRaw ({
   const abiToReturn = {
     anonymous,
     name,
-    type,
-    inputs
+    type
+  }
+
+  if (inputs.length) {
+    abiToReturn.inputs = inputs
   }
 
   return removeNullFields(abiToReturn)
