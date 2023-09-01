@@ -22,7 +22,6 @@ function rawBalanceToEntity ({
 }
 
 function entityToRawBalance ({
-  id: _id,
   address,
   balance,
   blockHash,
@@ -31,7 +30,6 @@ function entityToRawBalance ({
   created: _created
 }) {
   const balanceToReturn = {
-    _id,
     address,
     balance,
     blockHash,
