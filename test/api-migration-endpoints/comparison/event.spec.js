@@ -22,7 +22,7 @@ describe('Event module', () => {
     for (const eventId of eventIdsForGetEventEndpoint) {
       const endpoint = getEvent({ eventId })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -31,7 +31,7 @@ describe('Event module', () => {
     for (const address of addressesForGetEventsByAddressEndpoint) {
       const endpoint = getEventsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -40,7 +40,7 @@ describe('Event module', () => {
     for (const address of addressesForGetAllEventsByAddressEndpoint) {
       const endpoint = getAllEventsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })

@@ -22,7 +22,7 @@ describe('Block module', () => {
     for (const hash of blockHashesforGetBlockEndpoint) {
       const endpoint = getBlock({ [availableParams[Math.floor(Math.random() * 2)]]: hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
 
@@ -30,7 +30,7 @@ describe('Block module', () => {
     for (const number of blockNumbersForGetBlockEndpoint) {
       const endpoint = getBlock({ [availableParams[Math.floor(Math.random() * 2)]]: number })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -43,7 +43,7 @@ describe('Block module', () => {
     for (const miner of minersForGetBlocksEndpoint) {
       const endpoint = getBlocks({ miner })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
 

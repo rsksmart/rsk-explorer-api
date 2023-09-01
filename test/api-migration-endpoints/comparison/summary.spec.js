@@ -19,7 +19,7 @@ describe('Summary module', () => {
     for (const hash of blockHashesForGetSummaryEndpoint) {
       const endpoint = getSummary({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -27,7 +27,7 @@ describe('Summary module', () => {
   describe('GET getSummaries endpoint', () => {
     const endpoint = getSummaries()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 })

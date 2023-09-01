@@ -26,14 +26,14 @@ describe('InternalTx module', () => {
     for (const internalTxId of internalTxIdsForGetInternalTransactionEndpoint) {
       const endpoint = getInternalTransaction({ internalTxId })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
 
     describe('GET getInternalTransactions endpoint', () => {
       const endpoint = getInternalTransactions()
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     })
 
@@ -41,7 +41,7 @@ describe('InternalTx module', () => {
       for (const address of addressesForGetInternalTransactionsByAddressEndpoint) {
         const endpoint = getInternalTransactionsByAddress({ address })
         it(sameDataMsg(endpoint), async () => {
-          await compareDataFromBothEnvs(endpoint)
+          await compareDataFromBothEnvs({ endpoint })
         })
       }
     })
@@ -51,7 +51,7 @@ describe('InternalTx module', () => {
       for (const hash of blockHashesForGetInternalTransactionsByBlockEndpoint) {
         const endpoint = getInternalTransactionsByBlock({ [availableParams[Math.floor(Math.random * 2)]]: hash })
         it(sameDataMsg(endpoint), async () => {
-          await compareDataFromBothEnvs(endpoint)
+          await compareDataFromBothEnvs({ endpoint })
         })
       }
     })
@@ -61,7 +61,7 @@ describe('InternalTx module', () => {
       for (const number of blockNumbersForGetInternalTransactionsByBlockEndpoint) {
         const endpoint = getInternalTransactionsByBlock({ [availableParams[Math.floor(Math.random() * 2)]]: number })
         it(sameDataMsg(endpoint), async () => {
-          await compareDataFromBothEnvs(endpoint)
+          await compareDataFromBothEnvs({ endpoint })
         })
       }
     })
@@ -71,7 +71,7 @@ describe('InternalTx module', () => {
       for (const hash of txHashesForGetInternalTransactionsByTxHashEndpoint) {
         const endpoint = getInternalTransactionsByTxHash({ [availableParams[Math.floor(Math.random() * 2)]]: hash })
         it(sameDataMsg(endpoint), async () => {
-          await compareDataFromBothEnvs(endpoint)
+          await compareDataFromBothEnvs({ endpoint })
         })
       }
     })

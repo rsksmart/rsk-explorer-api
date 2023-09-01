@@ -27,7 +27,7 @@ describe('Tx module', () => {
     for (const query of queriesForGetTransactionsEndpoint) {
       const endpoint = getTransactions({ query })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
 
@@ -40,7 +40,7 @@ describe('Tx module', () => {
     for (const hash of transactionHashesForGetTransactionEndpoint) {
       const endpoint = getTransaction({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -49,7 +49,7 @@ describe('Tx module', () => {
     for (const hash of transactionHashesForGetTransactionWithAddressDataEndpoint) {
       const endpoint = getTransactionWithAddressData({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -59,14 +59,14 @@ describe('Tx module', () => {
     for (const number of blockNumbersForGetTransactionsByBlockEndpoint) {
       const endpoint = getTransactionsByBlock({ [availableParams[Math.floor(Math.random() * 2)]]: number })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
 
     for (const hash of blockHashesForGetTransactionsByBlockEndpoint) {
       const endpoint = getTransactionsByBlock({ hashOrNumber: hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -75,7 +75,7 @@ describe('Tx module', () => {
     for (const address of addressesForGetTransactionsByAddressEndpoint) {
       const endpoint = getTransactionsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })

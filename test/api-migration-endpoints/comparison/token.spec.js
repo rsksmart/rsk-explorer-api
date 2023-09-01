@@ -27,7 +27,7 @@ describe('Token module', () => {
     for (const address of contractAddressesForGetTokenAccountsEndpoint) {
       const endpoint = getTokenAccounts({ [availableParams[Math.floor(Math.random() * 2)]]: address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -36,7 +36,7 @@ describe('Token module', () => {
     for (const address of addressesForGetTokensByAddressEndpoint) {
       const endpoint = getTokensByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -45,7 +45,7 @@ describe('Token module', () => {
     for (const { address, contract } of contractsAndAddressesForGetContractAccountEndpoint) {
       const endpoint = getContractAccount({ address, contract })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -54,7 +54,7 @@ describe('Token module', () => {
     for (const { address, contract } of contractsAndAddressesForGetTokenAccountEndpoint) {
       const endpoint = getTokenAccount({ address, contract })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -63,7 +63,7 @@ describe('Token module', () => {
     for (const contract of contractAddressesForGetTokenBalanceEndpoint) {
       const endpoint = getTokenBalance({ contract })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })

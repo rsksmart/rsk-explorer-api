@@ -21,7 +21,7 @@ describe('Balance module', () => {
     for (const { address, block } of blockNumbersAndAddressesForGetBalanceEndpoint) {
       const endpoint = getBalance({ address, block })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -30,7 +30,7 @@ describe('Balance module', () => {
     for (const address of addressesForGetBalancesEndpoint) {
       const endpoint = getBalances({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -38,7 +38,7 @@ describe('Balance module', () => {
   describe.only('GET getStatus endpoint', () => {
     const endpoint = getStatus()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 })
