@@ -72,7 +72,7 @@ function contractEntityToRaw ({
   address,
   name,
   contract_creation_tx: createdByTx,
-  // code,
+  code,
   codeStoredAtBlock,
   deployedCode,
   symbol,
@@ -80,15 +80,21 @@ function contractEntityToRaw ({
   decimals,
   contract_method: methods,
   contract_interface: interfaces
-}) {
+}, {
+  isForGetTokens
+} = {}) {
   const contractToReturn = {
     address,
     name,
-    // code,
     codeStoredAtBlock,
+    code,
     deployedCode,
     symbol,
     decimals
+  }
+
+  if (isForGetTokens) {
+    delete contractToReturn.code
   }
 
   if (createdByTx) {
