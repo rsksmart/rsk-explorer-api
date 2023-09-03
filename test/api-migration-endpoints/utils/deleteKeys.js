@@ -1,4 +1,4 @@
-export function deleteKeys (obj1, obj2, keysToDelete) {
+export default function deleteKeys (obj1, obj2, keysToDelete) {
   if (Array.isArray(obj1) && Array.isArray(obj2)) {
     for (const obj of obj1) {
       for (const key of keysToDelete) {

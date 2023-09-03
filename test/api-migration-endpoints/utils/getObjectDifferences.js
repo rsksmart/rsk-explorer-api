@@ -3,6 +3,14 @@ import { isEqual } from 'lodash'
 export default function getObjectDifferences ({ postgresObject, mongoObject }) {
   const differences = {}
 
+  if (postgresObject === null && mongoObject === null) {
+    return {}
+  } else if (postgresObject === null) {
+    return { postgres: null, mongo: mongoObject }
+  } else if (mongoObject === null) {
+    return { postgres: postgresObject, mongo: null }
+  }
+
   for (const key in postgresObject) {
     if (postgresObject.hasOwnProperty(key)) {
       if (Array.isArray(postgresObject[key]) && Array.isArray(mongoObject[key])) {
