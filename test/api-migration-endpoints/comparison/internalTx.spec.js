@@ -41,7 +41,7 @@ describe('InternalTx module', () => {
       const endpoint = getInternalTransactions()
       it(sameDataMsg(endpoint), async () => {
         await compareDataFromBothEnvs({
-          endpoint,
+          endpoint: endpoint + '&limit=200',
           keysToSkip: keysToSkipForInternalTx
         })
       })
