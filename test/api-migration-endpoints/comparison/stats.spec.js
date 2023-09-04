@@ -11,14 +11,14 @@ describe.only('Stats module', () => {
   describe('GET getStats endpoint', () => {
     const endpoint = getStats()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 
   describe.only('GET getLatest endpoint', () => {
     const endpoint = getLatest()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 })

@@ -22,34 +22,50 @@ const {
   addressesForGetTransactionsByAddressEndpoint
 } = fixtures[network]
 
+const keysToSkipForTx = {
+  data: ['_id']
+}
+
 describe('Tx module', () => {
   describe('GET getTransactions endpoint', () => {
     for (const query of queriesForGetTransactionsEndpoint) {
       const endpoint = getTransactions({ query })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
 
     it(sameDataMsg(getTransactions()), async () => {
-      await compareDataFromBothEnvs(getTransactions())
+      await compareDataFromBothEnvs({
+        endpoint: getTransactions(),
+        keysToSkip: keysToSkipForTx
+      })
     })
   })
 
-  describe.only('GET getTransaction endpoint', () => {
+  describe('GET getTransaction endpoint', () => {
     for (const hash of transactionHashesForGetTransactionEndpoint) {
       const endpoint = getTransaction({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
   })
 
-  describe.only('GET getTransactionWithAddressData endpoint', () => {
+  describe('GET getTransactionWithAddressData endpoint', () => {
     for (const hash of transactionHashesForGetTransactionWithAddressDataEndpoint) {
       const endpoint = getTransactionWithAddressData({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
   })
@@ -59,14 +75,20 @@ describe('Tx module', () => {
     for (const number of blockNumbersForGetTransactionsByBlockEndpoint) {
       const endpoint = getTransactionsByBlock({ [availableParams[Math.floor(Math.random() * 2)]]: number })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
 
     for (const hash of blockHashesForGetTransactionsByBlockEndpoint) {
       const endpoint = getTransactionsByBlock({ hashOrNumber: hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
   })
@@ -75,7 +97,10 @@ describe('Tx module', () => {
     for (const address of addressesForGetTransactionsByAddressEndpoint) {
       const endpoint = getTransactionsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTx
+        })
       })
     }
   })

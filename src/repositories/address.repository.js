@@ -8,10 +8,10 @@ import { addressRelatedTables } from './includeRelatedTables'
 
 export function getAddressRepository (prismaClient) {
   return {
-    async findOne (query = {}, project = {}) {
+    async findOne (query = {}, project = {}, endpointOptions) {
       let address = await prismaClient.address.findFirst(generateFindQuery(query, project, addressRelatedTables, project))
 
-      return address ? addressEntityToRaw(address) : null
+      return address ? addressEntityToRaw(address, endpointOptions) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0) {
       const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables, sort, limit))

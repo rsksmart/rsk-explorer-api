@@ -27,7 +27,7 @@ describe('Address module', () => {
     for (const address of addressesForGetAddressEndpoint) {
       const endpoint = getAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -35,27 +35,27 @@ describe('Address module', () => {
   describe('GET getAddresses endpoint', () => {
     const endpoint = getAddresses()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 
   describe('GET getMiners endpoint', () => {
     const endpoint = getMiners()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 
   describe('GET getTokens endpoint', () => {
     const endpoint = getTokens()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
 
     for (const fromBlock of blockNumbersForGetMinersEndpoint) {
       const endpoint = getMiners({ fromBlock })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -63,7 +63,7 @@ describe('Address module', () => {
   describe.only('GET getCirculatingSupply endpoint', () => {
     const endpoint = getCirculatingSupply()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs(endpoint)
+      await compareDataFromBothEnvs({ endpoint })
     })
   })
 
@@ -71,7 +71,7 @@ describe('Address module', () => {
     for (const address of addressesForGetCodeEndpoint) {
       const endpoint = getCode({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })
@@ -80,7 +80,7 @@ describe('Address module', () => {
     for (const name of namesForFindAddressesEndpoint) {
       const endpoint = findAddresses({ name })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs(endpoint)
+        await compareDataFromBothEnvs({ endpoint })
       })
     }
   })

@@ -29,14 +29,16 @@ function rawActionToEntity ({
 }
 
 function rawInternalTransactionResultToEntity ({
-  address,
   gasUsed,
-  output
+  output,
+  address,
+  code
 }) {
   return {
-    address,
     gasUsed,
-    output
+    output,
+    address,
+    code
   }
 }
 
@@ -49,7 +51,8 @@ function rawInternalTransactionToEntity ({
   subtraces,
   _index,
   timestamp,
-  type
+  type,
+  error
 }) {
   return {
     internalTxId,
@@ -60,7 +63,8 @@ function rawInternalTransactionToEntity ({
     subtraces,
     index: _index,
     timestamp: String(timestamp),
-    type
+    type,
+    error
   }
 }
 
@@ -80,12 +84,13 @@ function internalTxEntityToRaw ({
   internal_transaction_result: result,
   action,
   type,
-  internalTxId
+  internalTxId,
+  error
 }) {
   delete action.internalTxId
   delete result.internalTxId
 
-  return {
+  const itxToReturn = {
     action: removeNullFields(action),
     blockHash,
     blockNumber,
@@ -99,6 +104,16 @@ function internalTxEntityToRaw ({
     timestamp: Number(timestamp),
     internalTxId
   }
+
+  if (error) {
+    itxToReturn.error = error
+  }
+
+  if (!Object.keys(result).length) {
+    itxToReturn.result = null
+  }
+
+  return itxToReturn
 }
 
 export {

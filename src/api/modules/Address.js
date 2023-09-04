@@ -219,7 +219,7 @@ export class Address extends DataCollectorItem {
       getCode: async params => {
         try {
           const { address } = params
-          const result = await this.getOne({ address })
+          const result = await this.getOne({ address }, {}, {}, { isForGetCode: true })
           let { data } = result
           if (!data) throw new Error('Unknown address')
 
