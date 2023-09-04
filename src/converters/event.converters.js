@@ -1,10 +1,10 @@
 import { removeNullFields } from '../repositories/utils'
-import { abiEntityToRaw } from './abi.converters'
 
 function rawEventToEntity ({
   eventId,
-  abiId,
+  abi,
   address,
+  args,
   blockHash,
   blockNumber,
   data,
@@ -18,8 +18,9 @@ function rawEventToEntity ({
 }) {
   return {
     eventId,
-    abiId,
+    abi: JSON.stringify(abi),
     address,
+    args: JSON.stringify(args),
     blockHash,
     blockNumber,
     data,
@@ -35,7 +36,9 @@ function rawEventToEntity ({
 
 function eventEntityToRaw ({
   eventId,
+  abi,
   address,
+  args,
   blockHash,
   blockNumber,
   data,
@@ -46,14 +49,14 @@ function eventEntityToRaw ({
   transactionHash,
   transactionIndex,
   txStatus,
-  event_arg: args,
   event_topic: topics,
-  address_in_event: _addresses,
-  abi
+  address_in_event: _addresses
 }) {
   const eventToReturn = {
     eventId,
+    abi: JSON.parse(abi),
     address,
+    args: JSON.parse(args),
     blockHash,
     blockNumber,
     data,
@@ -64,13 +67,8 @@ function eventEntityToRaw ({
     transactionHash,
     transactionIndex,
     txStatus,
-    topics: topics.map(({topic}) => topic),
-    _addresses: _addresses.map(({address}) => address),
-    abi: abiEntityToRaw(abi)
-  }
-
-  if (args.length) {
-    eventToReturn.args = args.map(({arg}) => JSON.parse(arg))
+    topics: topics.map(({ topic }) => topic),
+    _addresses: _addresses.map(({ address }) => address)
   }
 
   return removeNullFields(eventToReturn, ['event'])

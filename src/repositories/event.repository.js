@@ -1,7 +1,6 @@
 import { generateFindQuery } from './utils'
 import {rawEventToEntity, eventEntityToRaw} from '../converters/event.converters'
 import { eventRelatedTables } from './includeRelatedTables'
-import { saveAbiAndGetId } from './saveAbiAndGetId'
 
 export function getEventRepository (prismaClient) {
   return {
@@ -20,29 +19,27 @@ export function getEventRepository (prismaClient) {
       return count
     },
     insertOne (data) {
-      const {_addresses, abi, args, topics, eventId} = data
-      const transactionQueries = []
+      const { _addresses, topics } = data
 
-      if (abi) {
-        const {transactionQueries: abiQueries, abiId} = saveAbiAndGetId(abi, prismaClient)
-        data.abiId = abiId
-        transactionQueries.push(...abiQueries)
-      }
+      const query = prismaClient.event.create({
+        data: {
+          ...rawEventToEntity(data),
+          address_in_event: {
+            createMany: {
+              data: _addresses.map(address => ({ address })),
+              skipDuplicates: true
+            }
+          },
+          event_topic: {
+            createMany: {
+              data: topics.map(topic => ({ topic })),
+              skipDuplicates: true
+            }
+          }
+        }
+      })
 
-      transactionQueries.push(prismaClient.event.createMany({data: [rawEventToEntity(data)], skipDuplicates: true}))
-
-      const addressesToSave = _addresses.map(address => ({address, eventId}))
-      transactionQueries.push(prismaClient.address_in_event.createMany({data: addressesToSave, skipDuplicates: true}))
-
-      const topicsToSave = topics.map(topic => ({topic, eventId}))
-      transactionQueries.push(prismaClient.event_topic.createMany({data: topicsToSave, skipDuplicates: true}))
-
-      if (args) {
-        const argsToSave = args.map(arg => ({arg: JSON.stringify(arg), eventId}))
-        transactionQueries.push(prismaClient.event_arg.createMany({data: argsToSave, skipDuplicates: true}))
-      }
-
-      return transactionQueries
+      return [query]
     },
     async deleteMany (filter) {
       const deleted = await prismaClient.event.deleteMany({where: filter})
