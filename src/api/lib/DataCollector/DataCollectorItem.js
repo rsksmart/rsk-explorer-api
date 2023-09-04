@@ -45,10 +45,10 @@ export class DataCollectorItem {
     return { data }
   }
 
-  async getOne (query, projection, sort) {
+  async getOne (query, projection, sort, endpointOptions) {
     projection = projection || this.getDefaultsFields()
     sort = sort || this.sort
-    const data = await this.repository.findOne(query, { projection, sort })
+    const data = await this.repository.findOne(query, { projection, sort }, endpointOptions)
     return { data }
   }
 

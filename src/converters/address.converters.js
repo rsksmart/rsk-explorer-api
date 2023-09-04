@@ -41,28 +41,31 @@ function addressEntityToRaw ({
   isNative,
   miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
-  name,
   type
-}) {
-  const addressToReturn = {
-    address,
-    balance: balance[0] ? balance[0].balance : null,
-    blockNumber: balance[0] ? balance[0].blockNumber : null,
-    isNative,
-    name,
-    type
-  }
+}, {
+  isForGetCode
+} = {}) {
+  let addressToReturn
 
-  if (lastBlockMined[0]) {
-    addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
-  }
+  if (isForGetCode) {
+    const { address, code, createdByTx, contractInterfaces, name } = contractEntityToRaw(contract)
+    addressToReturn = { address, code, createdByTx, contractInterfaces, name }
+  } else {
+    addressToReturn = {
+      address,
+      balance: balance[0] ? balance[0].balance : null,
+      blockNumber: balance[0] ? balance[0].blockNumber : null,
+      isNative,
+      type
+    }
 
-  if (contract) {
-    Object.assign(addressToReturn, contractEntityToRaw(contract))
-  }
+    if (lastBlockMined[0]) {
+      addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
+    }
 
-  if (addressToReturn.name === undefined) {
-    addressToReturn.name = null
+    if (contract) {
+      Object.assign(addressToReturn, contractEntityToRaw(contract))
+    }
   }
 
   return removeNullFields(addressToReturn, ['name'])
@@ -99,10 +102,9 @@ function contractEntityToRaw ({
 
   if (createdByTx) {
     contractToReturn.createdByTx = JSON.parse(createdByTx.tx)
-    delete contractToReturn.createdByTx.input
   }
 
-  if (methods && methods.length) {
+  if (methods) {
     contractToReturn.contractMethods = methods.map(method => method.method)
   }
 
