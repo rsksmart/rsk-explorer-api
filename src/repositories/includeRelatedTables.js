@@ -18,10 +18,8 @@ const addressRelatedTables = {
 }
 
 const eventRelatedTables = {
-  event_arg: {select: {arg: true}},
-  event_topic: {select: {topic: true}},
-  address_in_event: {select: {address: true}},
-  abi: {include: {abi_input: {select: {name: true, type: true, indexed: true}}}}
+  event_topic: { select: { topic: true } },
+  address_in_event: { select: { address: true } }
 }
 
 const internalTxRelatedTables = {
@@ -38,18 +36,7 @@ const internalTxRelatedTables = {
 }
 
 const txRelatedTables = {
-  receipt: {
-    include: {
-      log: {
-        include: {
-          abi_log_abiToabi: {include: {abi_input: {select: {name: true, type: true, indexed: true}}}},
-          log_topic: {select: {topic: true}, orderBy: { topicIndex: 'asc' }},
-          log_arg: {select: {arg: true}},
-          logged_address: {select: {address: true}}
-        }
-      }
-    }
-  }
+  receipt: true
 }
 
 const summaryRelatedTables = {
