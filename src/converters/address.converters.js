@@ -53,7 +53,7 @@ function addressEntityToRaw ({
   } else {
     addressToReturn = {
       address,
-      balance: balance[0] ? balance[0].balance : null,
+      balance: balance[0] ? (balance[0].balance === '0' ? '0x0' : balance[0].balance) : null,
       blockNumber: balance[0] ? balance[0].blockNumber : null,
       isNative,
       type

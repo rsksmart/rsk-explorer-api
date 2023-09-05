@@ -31,7 +31,7 @@ function entityToRawBalance ({
 }) {
   const balanceToReturn = {
     address,
-    balance,
+    balance: balance === '0' ? 0 : balance,
     blockHash,
     blockNumber,
     timestamp: Number(timestamp),
