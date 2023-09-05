@@ -7,26 +7,6 @@ datasource db {
   url      = ""
 }
 
-model abi {
-  id               String      @id @db.VarChar
-  anonymous        Boolean?
-  name             String?     @db.VarChar
-  type             String?     @db.VarChar
-  abi_input        abi_input[]
-  event            event[]
-  log_log_abiToabi log[]       @relation("log_abiToabi")
-}
-
-model abi_input {
-  abiId   String   @map("abi_id") @db.VarChar
-  name    String   @db.VarChar
-  type    String?  @db.VarChar
-  indexed Boolean?
-  abi     abi      @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_abi_input_abi_id")
-
-  @@id([abiId, name], map: "pk_abi_input")
-}
-
 model action {
   internalTxId         String               @id @map("internal_tx_id") @db.VarChar
   callType             String?              @map("call_type") @db.VarChar
@@ -52,8 +32,6 @@ model address {
   balance_balance_addressToaddress                       balance[]            @relation("balance_addressToaddress")
   contract_contract_addressToaddress                     contract?            @relation("contract_addressToaddress")
   event_event_addressToaddress                           event[]              @relation("event_addressToaddress")
-  log_log_addressToaddress                               log[]                @relation("log_addressToaddress")
-  logged_address_logged_address_addressToaddress         logged_address[]     @relation("logged_address_addressToaddress")
   miner_miner_addressToaddress                           miner[]              @relation("miner_addressToaddress")
   receipt_receipt_fromToaddress                          receipt[]            @relation("receipt_fromToaddress")
   receipt_receipt_toToaddress                            receipt[]            @relation("receipt_toToaddress")
@@ -62,15 +40,6 @@ model address {
   transaction_transaction_toToaddress                    transaction[]        @relation("transaction_toToaddress")
 
   @@index([id], map: "index_address_id")
-}
-
-model address_in_event {
-  eventId                                   String  @map("event_id") @db.VarChar
-  address                                   String  @db.VarChar(42)
-  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_address")
-  event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_event_id")
-
-  @@id([eventId, address], map: "pk_address_in_event")
 }
 
 model balance {
@@ -121,8 +90,6 @@ model block {
   event_event_block_numberToblock                               event[]                @relation("event_block_numberToblock")
   internal_transaction_internal_transaction_block_hashToblock   internal_transaction[] @relation("internal_transaction_block_hashToblock")
   internal_transaction_internal_transaction_block_numberToblock internal_transaction[] @relation("internal_transaction_block_numberToblock")
-  log_log_block_hashToblock                                     log[]                  @relation("log_block_hashToblock")
-  log_log_block_numberToblock                                   log[]                  @relation("log_block_numberToblock")
   miner                                                         miner?
   receipt_receipt_block_hashToblock                             receipt[]              @relation("receipt_block_hashToblock")
   receipt_receipt_block_numberToblock                           receipt[]              @relation("receipt_block_numberToblock")
@@ -181,9 +148,9 @@ model contract_verification {
 
 model event {
   eventId                         String             @id @map("event_id") @db.VarChar
-  abiId                           String             @map("abi_id") @db.VarChar
-  transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
+  abi                             String             @db.VarChar
   address                         String             @db.VarChar(42)
+  args                            String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)
   blockNumber                     Int                @map("block_number")
   data                            String             @db.VarChar
@@ -191,24 +158,16 @@ model event {
   logIndex                        Int                @map("log_index")
   signature                       String?            @db.VarChar
   timestamp                       String             @db.VarChar
+  transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
   transactionIndex                Int                @map("transaction_index")
   txStatus                        String             @map("tx_status") @db.VarChar
   address_in_event                address_in_event[]
-  abi                             abi                @relation(fields: [abiId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_abi_id")
   address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_address")
   block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_hash")
   block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
   transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
-  event_arg                       event_arg[]
   event_in_summary                event_in_summary[]
   event_topic                     event_topic[]
-}
-
-model event_arg {
-  id      Int     @id @default(autoincrement())
-  eventId String? @map("event_id") @db.VarChar
-  arg     String? @db.VarChar
-  event   event?  @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_arg_id")
 }
 
 model event_topic {
@@ -250,62 +209,6 @@ model internal_transaction_result {
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_action_internal_tx_id")
 }
 
-model log {
-  logIndex                      Int              @map("log_index")
-  transactionHash               String           @map("transaction_hash") @db.VarChar(66)
-  transactionIndex              Int              @map("transaction_index")
-  blockNumber                   Int              @map("block_number")
-  blockHash                     String           @map("block_hash") @db.VarChar(66)
-  address                       String           @db.VarChar(42)
-  abi                           String?          @db.VarChar
-  data                          String?          @db.VarChar
-  signature                     String?          @db.VarChar
-  event                         String?          @db.VarChar
-  timestamp                     String?          @db.VarChar
-  txStatus                      String?          @map("tx_status") @db.VarChar
-  eventId                       String?          @map("event_id") @db.VarChar
-  abi_log_abiToabi              abi?             @relation("log_abiToabi", fields: [abi], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_abi")
-  address_log_addressToaddress  address          @relation("log_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_address")
-  block_log_block_hashToblock   block            @relation("log_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_block_hash")
-  block_log_block_numberToblock block            @relation("log_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_block_number")
-  transaction                   receipt          @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_transaction_hash")
-  log_arg                       log_arg[]
-  log_topic                     log_topic[]
-  logged_address                logged_address[]
-
-  @@id([logIndex, transactionHash], map: "pk_log")
-}
-
-model log_arg {
-  id              Int     @default(autoincrement())
-  logIndex        Int     @map("log_index")
-  arg             String? @db.VarChar
-  transactionHash String  @map("transaction_hash") @db.VarChar
-  log             log     @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_arg_log_index_transaction_hash")
-
-  @@id([id, logIndex, transactionHash], map: "pk_log_arg")
-}
-
-model log_topic {
-  logIndex        Int    @map("log_index")
-  topicIndex      Int    @map("topic_index")
-  topic           String @db.VarChar
-  transactionHash String @map("transaction_hash") @db.VarChar
-  log             log    @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_log_topic_log_index_transaction_hash")
-
-  @@id([logIndex, topicIndex, topic, transactionHash], map: "pk_log_topic")
-}
-
-model logged_address {
-  logIndex                                Int     @map("log_index")
-  address                                 String  @db.VarChar(42)
-  transactionHash                         String  @map("transaction_hash") @db.VarChar
-  address_logged_address_addressToaddress address @relation("logged_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_logged_address_address")
-  log                                     log     @relation(fields: [logIndex, transactionHash], references: [logIndex, transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_logged_address_log_index_transaction_hash")
-
-  @@id([logIndex, address, transactionHash], map: "pk_logged_address")
-}
-
 model receipt {
   transactionHash                   String      @id @map("transaction_hash") @db.VarChar(66)
   transactionIndex                  Int         @map("transaction_index")
@@ -317,9 +220,9 @@ model receipt {
   cumulativeGasUsed                 Int         @map("cumulative_gas_used")
   gasUsed                           Int         @map("gas_used")
   contractAddress                   String?     @map("contract_address") @db.VarChar(42)
+  logs                              String      @db.VarChar
   status                            String      @db.VarChar
   logsBloom                         String      @map("logs_bloom") @db.VarChar
-  log                               log[]
   block_receipt_block_hashToblock   block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_hash")
   block_receipt_block_numberToblock block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_number")
   address_receipt_fromToaddress     address     @relation("receipt_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_from")
@@ -584,4 +487,13 @@ model contract_creation_tx {
   timestamp       String?  @db.VarChar
   tx              String?  @db.VarChar
   contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
+}
+
+model address_in_event {
+  event_id                                  String  @db.VarChar
+  address                                   String  @db.VarChar(42)
+  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+  event                                     event   @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([event_id, address])
 }
