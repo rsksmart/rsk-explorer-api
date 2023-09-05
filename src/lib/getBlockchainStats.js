@@ -5,21 +5,21 @@ import { serialize } from './utils'
 import initConfig from './initialConfiguration'
 import nod3 from './nod3Connect'
 
-async function bridgeCall (method, params = []) {
+async function bridgeCall (bitcoinNetwork, method, params = []) {
   const address = initConfig.nativeContracts.bridge
-  const abi = ABI.bridge
+  const abi = ABI.bridge({ bitcoinNetwork })
   const contract = Contract(abi, { address, nod3 })
   const res = await contract.call(method, params)
   return res
 }
 
-export async function getBlockchainStats ({ blockHash, blockNumber }) {
+export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumber }) {
   if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
 
   const circulating = await getCirculatingSupply(initConfig.nativeContracts)
   const activeAccounts = await getActiveAccounts()
   const hashrate = await nod3.eth.netHashrate()
-  const bridge = serialize({ lockingCap: await bridgeCall('getLockingCap') })
+  const bridge = serialize({ lockingCap: await bridgeCall(bitcoinNetwork, 'getLockingCap') })
   const timestamp = Date.now()
 
   return {
