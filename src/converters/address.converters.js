@@ -1,5 +1,9 @@
 import { removeNullFields } from '../repositories/utils'
 import { blockEntityToRaw } from './blocks.converters'
+import config from '../lib/initialConfiguration'
+import NativeContracts from '../lib/NativeContracts'
+
+const { isNativeContract } = NativeContracts({ nativeContracts: config.nativeContracts })
 
 function rawAddressToEntity ({
   address,
@@ -104,7 +108,7 @@ function contractEntityToRaw ({
     contractToReturn.createdByTx = JSON.parse(createdByTx.tx)
   }
 
-  if (methods) {
+  if (!isNativeContract(address)) {
     contractToReturn.contractMethods = methods.map(method => method.method)
   }
 
