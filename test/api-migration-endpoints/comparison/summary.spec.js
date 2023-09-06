@@ -15,7 +15,7 @@ const {
 } = fixtures[network]
 
 describe('Summary module', () => {
-  describe.only('GET getSummary endpoint', () => {
+  describe('GET getSummary endpoint', () => {
     for (const hash of blockHashesForGetSummaryEndpoint) {
       const endpoint = getSummary({ hash })
       it(sameDataMsg(endpoint), async () => {

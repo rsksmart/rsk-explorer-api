@@ -1,7 +1,7 @@
 const endpoints = {
   getTransactions: ({ query } = {}) => `/api?module=transactions&action=getTransactions${query ? `&${query}` : ''}`,
   getTransaction: ({ hash }) => `/api?module=transactions&action=getTransaction&hash=${hash}`,
-  getTransactionWithAddressData: ({ hash }) => `api?module=transactions&action=getTransactionWithAddressData&hash=${hash}`,
+  getTransactionWithAddressData: ({ hash }) => `/api?module=transactions&action=getTransactionWithAddressData&hash=${hash}`,
   getTransactionsByBlock: ({ hashOrNumber, number }) => {
     return `/api?module=transactions&action=getTransactionsByBlock${hashOrNumber ? `&hashOrNumber=${hashOrNumber}` : `&number=${number}`}`
   },

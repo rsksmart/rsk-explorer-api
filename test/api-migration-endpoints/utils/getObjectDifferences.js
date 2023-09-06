@@ -11,52 +11,71 @@ export default function getObjectDifferences ({ postgresObject, mongoObject }) {
     return { postgres: postgresObject, mongo: null }
   }
 
-  for (const key in postgresObject) {
-    if (postgresObject.hasOwnProperty(key)) {
-      if (Array.isArray(postgresObject[key]) && Array.isArray(mongoObject[key])) {
-        // const sortedPostgres = [...postgresObject[key]].sort()
-        // const sortedMongo = [...mongoObject[key]].sort()
-        // if (!sortedPostgres.every((val, index) => val === sortedMongo[index])) {
-        //   differences[key] = {
-        //     postgres: postgresObject[key],
-        //     mongo: mongoObject[key]
-        //   }
-        // }
-        for (const pObject of postgresObject[key]) {
-          if (!mongoObject[key].some(mObject => isEqual(pObject, mObject))) {
-            differences.push({
-              postgres: 'missing',
-              mongo: mongoObject[key]
-            })
-          }
-        }
-      } else if (typeof postgresObject[key] === 'object' && typeof mongoObject[key] === 'object') {
-        const nestedDiff = getObjectDifferences({
-          postgresObject: postgresObject[key],
-          mongoObject: mongoObject[key]
-        })
-        if (Object.keys(nestedDiff).length > 0) {
-          differences[key] = nestedDiff
-        }
-      } else if (!mongoObject.hasOwnProperty(key)) {
-        differences[key] = {
-          postgres: postgresObject[key],
-          mongo: 'missing'
-        }
-      } else if (postgresObject[key] !== mongoObject[key]) {
-        differences[key] = {
-          postgres: postgresObject[key],
-          mongo: mongoObject[key]
-        }
+  const areArrays = Array.isArray(postgresObject) && Array.isArray(mongoObject)
+  const areObjects = !areArrays && typeof postgresObject === 'object' && typeof mongoObject === 'object'
+  const areLeaves = !areArrays && !areObjects
+  const isPrimitive = (type) => ['string', 'boolean', 'number'].includes(type)
+
+  if (areLeaves) {
+    if (postgresObject !== mongoObject) {
+      return { postgres: postgresObject, mongo: mongoObject }
+    } else {
+      return {}
+    }
+  } else if (areObjects) {
+    for (const key in postgresObject) {
+      const nestedDiff = getObjectDifferences({
+        postgresObject: postgresObject[key],
+        mongoObject: mongoObject.hasOwnProperty(key) ? mongoObject[key] : 'Missing'
+      })
+      if (Object.keys(nestedDiff).length > 0) {
+        differences[key] = nestedDiff
       }
     }
-  }
 
-  for (const key in mongoObject) {
-    if (!postgresObject.hasOwnProperty(key)) {
-      differences[key] = {
-        postgres: 'missing',
-        mongo: mongoObject[key]
+    for (const key in mongoObject) {
+      const nestedDiff = getObjectDifferences({
+        mongoObject: mongoObject[key],
+        postgresObject: postgresObject.hasOwnProperty(key) ? postgresObject[key] : 'Missing'
+      })
+      if (Object.keys(nestedDiff).length > 0) {
+        differences[key] = nestedDiff
+      }
+    }
+  } else if (areArrays) {
+    if (isPrimitive(postgresObject[0]) || !postgresObject.length || !mongoObject.length) {
+      if (!isEqual(postgresObject, mongoObject)) {
+        return {
+          postgres: postgresObject,
+          mongo: mongoObject
+        }
+      } else {
+        return {}
+      }
+    } else {
+      postgresObject.sort()
+      mongoObject.sort()
+
+      for (const index in postgresObject) {
+        const nestedDiff = getObjectDifferences({
+          postgresObject: postgresObject[index],
+          mongoObject: mongoObject[index] ? mongoObject[index] : 'Missing'
+        })
+
+        if (Object.keys(nestedDiff).length) {
+          differences[index] = nestedDiff
+        }
+      }
+
+      for (const index in mongoObject) {
+        const nestedDiff = getObjectDifferences({
+          mongoObject: mongoObject[index],
+          postgresObject: postgresObject[index] ? postgresObject[index] : 'Missing'
+        })
+
+        if (Object.keys(nestedDiff).length) {
+          differences[index] = nestedDiff
+        }
       }
     }
   }

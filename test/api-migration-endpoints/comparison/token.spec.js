@@ -51,7 +51,7 @@ describe('Token module', () => {
     }
   })
 
-  describe.only('GET getContractAccount endpoint', () => {
+  describe('GET getContractAccount endpoint', () => {
     for (const { address, contract } of contractsAndAddressesForGetContractAccountEndpoint) {
       const endpoint = getContractAccount({ address, contract })
       it(sameDataMsg(endpoint), async () => {
@@ -63,7 +63,7 @@ describe('Token module', () => {
     }
   })
 
-  describe.only('GET getTokenAccount endpoint', () => {
+  describe('GET getTokenAccount endpoint', () => {
     for (const { address, contract } of contractsAndAddressesForGetTokenAccountEndpoint) {
       const endpoint = getTokenAccount({ address, contract })
       it(sameDataMsg(endpoint), async () => {
@@ -75,7 +75,7 @@ describe('Token module', () => {
     }
   })
 
-  describe.only('GET getTokenBalance endpoint', () => {
+  describe('GET getTokenBalance endpoint', () => {
     for (const contract of contractAddressesForGetTokenBalanceEndpoint) {
       const endpoint = getTokenBalance({ contract })
       it(sameDataMsg(endpoint), async () => {

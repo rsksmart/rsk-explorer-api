@@ -17,12 +17,19 @@ const {
   addressesForGetAllEventsByAddressEndpoint
 } = fixtures[network]
 
+const keysToSkipForEvent = {
+  data: ['_id']
+}
+
 describe('Event module', () => {
-  describe.only('GET getEvent endpoint', () => {
+  describe('GET getEvent endpoint', () => {
     for (const eventId of eventIdsForGetEventEndpoint) {
       const endpoint = getEvent({ eventId })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForEvent
+        })
       })
     }
   })
@@ -31,7 +38,10 @@ describe('Event module', () => {
     for (const address of addressesForGetEventsByAddressEndpoint) {
       const endpoint = getEventsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForEvent
+        })
       })
     }
   })
@@ -40,7 +50,10 @@ describe('Event module', () => {
     for (const address of addressesForGetAllEventsByAddressEndpoint) {
       const endpoint = getAllEventsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForEvent
+        })
       })
     }
   })

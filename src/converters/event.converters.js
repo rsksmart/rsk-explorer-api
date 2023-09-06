@@ -54,7 +54,6 @@ function eventEntityToRaw ({
 }) {
   const eventToReturn = {
     eventId,
-    abi: JSON.parse(abi),
     address,
     args: JSON.parse(args),
     blockHash,
@@ -69,6 +68,10 @@ function eventEntityToRaw ({
     txStatus,
     topics: topics.map(({ topic }) => topic),
     _addresses: _addresses.map(({ address }) => address)
+  }
+
+  if (abi) {
+    eventToReturn.abi = JSON.parse(abi)
   }
 
   return removeNullFields(eventToReturn, ['event'])
