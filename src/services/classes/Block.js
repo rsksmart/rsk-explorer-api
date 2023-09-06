@@ -4,6 +4,7 @@ import { blockQuery } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 import { REPOSITORIES } from '../../repositories'
+import { bitcoinRskNetWorks } from '../../lib/types'
 
 export class Block extends BcThing {
   constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
@@ -53,7 +54,7 @@ export class Block extends BcThing {
 
       // save stats (requires block and addresses inserted). Only for tip blocks
       if (this.isTipBlock) {
-        const blockchainStats = await getBlockchainStats({ blockHash: data.block.hash, blockNumber: data.block.number })
+        const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
         await this.statsRepository.insertOne(blockchainStats)
       }
     } catch (error) {
