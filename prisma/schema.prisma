@@ -23,21 +23,22 @@ model action {
 }
 
 model address {
-  id                                                     Int                  @default(autoincrement())
-  address                                                String               @id @db.VarChar(42)
-  isNative                                               Boolean              @map("is_native")
-  type                                                   String               @db.VarChar
-  address_in_event_address_in_event_addressToaddress     address_in_event[]   @relation("address_in_event_addressToaddress")
-  address_in_summary_address_in_summary_addressToaddress address_in_summary[] @relation("address_in_summary_addressToaddress")
-  balance_balance_addressToaddress                       balance[]            @relation("balance_addressToaddress")
-  contract_contract_addressToaddress                     contract?            @relation("contract_addressToaddress")
-  event_event_addressToaddress                           event[]              @relation("event_addressToaddress")
-  miner_miner_addressToaddress                           miner[]              @relation("miner_addressToaddress")
-  receipt_receipt_fromToaddress                          receipt[]            @relation("receipt_fromToaddress")
-  receipt_receipt_toToaddress                            receipt[]            @relation("receipt_toToaddress")
-  token_address_token_address_addressToaddress           token_address[]      @relation("token_address_addressToaddress")
-  transaction_transaction_fromToaddress                  transaction[]        @relation("transaction_fromToaddress")
-  transaction_transaction_toToaddress                    transaction[]        @relation("transaction_toToaddress")
+  id                                                             Int                     @default(autoincrement())
+  address                                                        String                  @id @db.VarChar(42)
+  isNative                                                       Boolean                 @map("is_native")
+  type                                                           String                  @db.VarChar
+  address_in_event_address_in_event_addressToaddress             address_in_event[]      @relation("address_in_event_addressToaddress")
+  address_in_summary_address_in_summary_addressToaddress         address_in_summary[]    @relation("address_in_summary_addressToaddress")
+  address_latest_balance_address_latest_balance_addressToaddress address_latest_balance? @relation("address_latest_balance_addressToaddress")
+  balance_balance_addressToaddress                               balance[]               @relation("balance_addressToaddress")
+  contract_contract_addressToaddress                             contract?               @relation("contract_addressToaddress")
+  event_event_addressToaddress                                   event[]                 @relation("event_addressToaddress")
+  miner_miner_addressToaddress                                   miner[]                 @relation("miner_addressToaddress")
+  receipt_receipt_fromToaddress                                  receipt[]               @relation("receipt_fromToaddress")
+  receipt_receipt_toToaddress                                    receipt[]               @relation("receipt_toToaddress")
+  token_address_token_address_addressToaddress                   token_address[]         @relation("token_address_addressToaddress")
+  transaction_transaction_fromToaddress                          transaction[]           @relation("transaction_fromToaddress")
+  transaction_transaction_toToaddress                            transaction[]           @relation("transaction_toToaddress")
 
   @@index([id], map: "index_address_id")
 }
@@ -56,50 +57,51 @@ model balance {
 }
 
 model block {
-  id                                                            String?                @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
-  number                                                        Int                    @id
-  hash                                                          String?                @unique @db.VarChar(66)
-  parentHash                                                    String                 @map("parent_hash") @db.VarChar(66)
-  sha3Uncles                                                    String                 @map("sha3_uncles") @db.VarChar(66)
-  logsBloom                                                     String                 @map("logs_bloom") @db.VarChar
-  transactionsRoot                                              String                 @map("transactions_root") @db.VarChar(66)
-  stateRoot                                                     String                 @map("state_root") @db.VarChar(66)
-  receiptsRoot                                                  String                 @map("receipts_root") @db.VarChar(66)
-  difficulty                                                    String                 @db.VarChar
-  totalDifficulty                                               String                 @map("total_difficulty") @db.VarChar
-  extraData                                                     String                 @map("extra_data") @db.VarChar
+  id                                                            String?                  @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
+  number                                                        Int                      @id
+  hash                                                          String?                  @unique @db.VarChar(66)
+  parentHash                                                    String                   @map("parent_hash") @db.VarChar(66)
+  sha3Uncles                                                    String                   @map("sha3_uncles") @db.VarChar(66)
+  logsBloom                                                     String                   @map("logs_bloom") @db.VarChar
+  transactionsRoot                                              String                   @map("transactions_root") @db.VarChar(66)
+  stateRoot                                                     String                   @map("state_root") @db.VarChar(66)
+  receiptsRoot                                                  String                   @map("receipts_root") @db.VarChar(66)
+  difficulty                                                    String                   @db.VarChar
+  totalDifficulty                                               String                   @map("total_difficulty") @db.VarChar
+  extraData                                                     String                   @map("extra_data") @db.VarChar
   size                                                          Int
-  gasLimit                                                      Int                    @map("gas_limit")
-  gasUsed                                                       Int                    @map("gas_used")
-  timestamp                                                     String                 @db.VarChar
-  minimumGasPrice                                               String                 @map("minimum_gas_price") @db.VarChar
-  bitcoinMergedMiningHeader                                     String                 @map("bitcoin_merged_mining_header") @db.VarChar
-  bitcoinMergedMiningCoinbaseTransaction                        String                 @map("bitcoin_merged_mining_coinbase_transaction") @db.VarChar
-  bitcoinMergedMiningMerkleProof                                String                 @map("bitcoin_merged_mining_merkle_proof") @db.VarChar
-  hashForMergedMining                                           String                 @map("hash_for_merged_mining") @db.VarChar(66)
-  paidFees                                                      String                 @map("paid_fees") @db.VarChar
-  cumulativeDifficulty                                          String                 @map("cumulative_difficulty") @db.VarChar
-  received                                                      String                 @db.VarChar
-  balance_balance_block_hashToblock                             balance[]              @relation("balance_block_hashToblock")
-  balance_balance_block_numberToblock                           balance[]              @relation("balance_block_numberToblock")
-  block_summary_block_summary_hashToblock                       block_summary?         @relation("block_summary_hashToblock")
-  block_summary_block_summary_numberToblock                     block_summary[]        @relation("block_summary_numberToblock")
+  gasLimit                                                      Int                      @map("gas_limit")
+  gasUsed                                                       Int                      @map("gas_used")
+  timestamp                                                     String                   @db.VarChar
+  minimumGasPrice                                               String                   @map("minimum_gas_price") @db.VarChar
+  bitcoinMergedMiningHeader                                     String                   @map("bitcoin_merged_mining_header") @db.VarChar
+  bitcoinMergedMiningCoinbaseTransaction                        String                   @map("bitcoin_merged_mining_coinbase_transaction") @db.VarChar
+  bitcoinMergedMiningMerkleProof                                String                   @map("bitcoin_merged_mining_merkle_proof") @db.VarChar
+  hashForMergedMining                                           String                   @map("hash_for_merged_mining") @db.VarChar(66)
+  paidFees                                                      String                   @map("paid_fees") @db.VarChar
+  cumulativeDifficulty                                          String                   @map("cumulative_difficulty") @db.VarChar
+  received                                                      String                   @db.VarChar
+  address_latest_balance                                        address_latest_balance[]
+  balance_balance_block_hashToblock                             balance[]                @relation("balance_block_hashToblock")
+  balance_balance_block_numberToblock                           balance[]                @relation("balance_block_numberToblock")
+  block_summary_block_summary_hashToblock                       block_summary?           @relation("block_summary_hashToblock")
+  block_summary_block_summary_numberToblock                     block_summary[]          @relation("block_summary_numberToblock")
   block_trace                                                   block_trace[]
   contract                                                      contract[]
-  event_event_block_hashToblock                                 event[]                @relation("event_block_hashToblock")
-  event_event_block_numberToblock                               event[]                @relation("event_block_numberToblock")
-  internal_transaction_internal_transaction_block_hashToblock   internal_transaction[] @relation("internal_transaction_block_hashToblock")
-  internal_transaction_internal_transaction_block_numberToblock internal_transaction[] @relation("internal_transaction_block_numberToblock")
+  event_event_block_hashToblock                                 event[]                  @relation("event_block_hashToblock")
+  event_event_block_numberToblock                               event[]                  @relation("event_block_numberToblock")
+  internal_transaction_internal_transaction_block_hashToblock   internal_transaction[]   @relation("internal_transaction_block_hashToblock")
+  internal_transaction_internal_transaction_block_numberToblock internal_transaction[]   @relation("internal_transaction_block_numberToblock")
   miner                                                         miner?
-  receipt_receipt_block_hashToblock                             receipt[]              @relation("receipt_block_hashToblock")
-  receipt_receipt_block_numberToblock                           receipt[]              @relation("receipt_block_numberToblock")
-  stats_stats_block_hashToblock                                 stats[]                @relation("stats_block_hashToblock")
-  stats_stats_block_numberToblock                               stats?                 @relation("stats_block_numberToblock")
-  token_address_token_address_block_hashToblock                 token_address[]        @relation("token_address_block_hashToblock")
+  receipt_receipt_block_hashToblock                             receipt[]                @relation("receipt_block_hashToblock")
+  receipt_receipt_block_numberToblock                           receipt[]                @relation("receipt_block_numberToblock")
+  stats_stats_block_hashToblock                                 stats[]                  @relation("stats_block_hashToblock")
+  stats_stats_block_numberToblock                               stats?                   @relation("stats_block_numberToblock")
+  token_address_token_address_block_hashToblock                 token_address[]          @relation("token_address_block_hashToblock")
   token_address                                                 token_address[]
   total_supply                                                  total_supply[]
-  transaction_transaction_block_hashToblock                     transaction[]          @relation("transaction_block_hashToblock")
-  transaction_transaction_block_numberToblock                   transaction[]          @relation("transaction_block_numberToblock")
+  transaction_transaction_block_hashToblock                     transaction[]            @relation("transaction_block_hashToblock")
+  transaction_transaction_block_numberToblock                   transaction[]            @relation("transaction_block_numberToblock")
   uncle                                                         uncle[]
 }
 
@@ -496,4 +498,12 @@ model address_in_event {
   event                                     event   @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([event_id, address])
+}
+
+model address_latest_balance {
+  address                                         String  @id @db.VarChar(42)
+  balance                                         String  @db.VarChar
+  blockNumber                                     Int     @map("block_number")
+  address_address_latest_balance_addressToaddress address @relation("address_latest_balance_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_address")
+  block                                           block   @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
 }
