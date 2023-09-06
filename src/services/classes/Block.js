@@ -54,11 +54,7 @@ export class Block extends BcThing {
 
       // save stats (requires block and addresses inserted). Only for tip blocks
       if (this.isTipBlock) {
-        const blockchainStats = await getBlockchainStats({
-          bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id],
-          blockHash: data.block.hash,
-          blockNumber: data.block.number
-        })
+        const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
         await this.statsRepository.insertOne(blockchainStats)
       }
     } catch (error) {

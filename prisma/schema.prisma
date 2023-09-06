@@ -148,7 +148,7 @@ model contract_verification {
 
 model event {
   eventId                         String             @id @map("event_id") @db.VarChar
-  abi                             String             @db.VarChar
+  abi                             String?            @db.VarChar
   address                         String             @db.VarChar(42)
   args                            String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)

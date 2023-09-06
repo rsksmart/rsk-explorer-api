@@ -19,7 +19,7 @@
     "clear-api-logs": "pm2 flush explorer-api",
     "start-blocks": "mkdir -p logs/blocks && pm2 start dist/services/blocks.pm2.config.js",
     "stop-blocks": "pm2 stop dist/services/blocks.pm2.config.js",
-    "blocks-logs": "pm2 logs blocks --raw | npx bunyan -o short",
+    "blocks-logs": "tail -F logs/blocks/*-out.log | npx bunyan -o short",
     "clear-blocks-logs": "pm2 flush blocks",
     "stop-all": "npm run stop-api && npm run stop-blocks"
   },
@@ -37,7 +37,7 @@
   "dependencies": {
     "@prisma/client": "^4.11.0",
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "git+https://git@github.com/rsksmart/rsk-contract-parser.git",
+    "@rsksmart/rsk-contract-parser": "git+https://git@github.com/rsksmart/rsk-contract-parser.git#fix/rsk-contract-parser-index-file-exports",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
