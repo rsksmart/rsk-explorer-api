@@ -7,7 +7,7 @@ const {
   getLatest
 } = endpoints
 
-describe.only('Stats module', () => {
+describe('Stats module', () => {
   describe('GET getStats endpoint', () => {
     const endpoint = getStats()
     it(sameDataMsg(endpoint), async () => {
@@ -15,7 +15,7 @@ describe.only('Stats module', () => {
     })
   })
 
-  describe.only('GET getLatest endpoint', () => {
+  describe('GET getLatest endpoint', () => {
     const endpoint = getLatest()
     it(sameDataMsg(endpoint), async () => {
       await compareDataFromBothEnvs({ endpoint })

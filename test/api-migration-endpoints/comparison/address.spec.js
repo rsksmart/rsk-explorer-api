@@ -23,7 +23,7 @@ const {
 } = fixtures[network]
 
 describe('Address module', () => {
-  describe.only('GET getAddress endpoint', () => {
+  describe('GET getAddress endpoint', () => {
     for (const address of addressesForGetAddressEndpoint) {
       const endpoint = getAddress({ address })
       it(sameDataMsg(endpoint), async () => {
@@ -60,14 +60,14 @@ describe('Address module', () => {
     }
   })
 
-  describe.only('GET getCirculatingSupply endpoint', () => {
+  describe('GET getCirculatingSupply endpoint', () => {
     const endpoint = getCirculatingSupply()
     it(sameDataMsg(endpoint), async () => {
       await compareDataFromBothEnvs({ endpoint })
     })
   })
 
-  describe.only('GET getCode endpoint', () => {
+  describe('GET getCode endpoint', () => {
     for (const address of addressesForGetCodeEndpoint) {
       const endpoint = getCode({ address })
       it(sameDataMsg(endpoint), async () => {

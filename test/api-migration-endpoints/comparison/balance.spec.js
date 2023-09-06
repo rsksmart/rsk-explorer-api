@@ -17,7 +17,7 @@ const {
 } = fixtures[network]
 
 describe('Balance module', () => {
-  describe.only('GET getBalance endpoint', () => {
+  describe('GET getBalance endpoint', () => {
     for (const { address, block } of blockNumbersAndAddressesForGetBalanceEndpoint) {
       const endpoint = getBalance({ address, block })
       it(sameDataMsg(endpoint), async () => {
@@ -35,7 +35,7 @@ describe('Balance module', () => {
     }
   })
 
-  describe.only('GET getStatus endpoint', () => {
+  describe('GET getStatus endpoint', () => {
     const endpoint = getStatus()
     it(sameDataMsg(endpoint), async () => {
       await compareDataFromBothEnvs({ endpoint })
