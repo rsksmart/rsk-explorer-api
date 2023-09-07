@@ -1,20 +1,30 @@
+function deleteKey (obj, key) {
+  if (Array.isArray(key)) {
+    if (obj[key[0]]) {
+      delete obj[key[0]][key[1]]
+    }
+  } else {
+    delete obj[key]
+  }
+}
+
 export default function deleteKeys (obj1, obj2, keysToDelete) {
   if (Array.isArray(obj1) && Array.isArray(obj2)) {
     for (const obj of obj1) {
       for (const key of keysToDelete) {
-        delete obj[key]
+        deleteKey(obj, key)
       }
     }
 
     for (const obj of obj2) {
       for (const key of keysToDelete) {
-        delete obj[key]
+        deleteKey(obj, key)
       }
     }
   } else {
     for (const key of keysToDelete) {
-      delete obj1[key]
-      delete obj2[key]
+      deleteKey(obj1, key)
+      deleteKey(obj2, key)
     }
   }
 }
