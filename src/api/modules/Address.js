@@ -111,12 +111,14 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getMiners: params => {
-        let query = {}
+        let query = { }
         let { fromBlock } = params
 
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
           query.miner_miner_addressToaddress = { some: { blockNumber: { gt: fromBlock } } }
+        } else {
+          query.miner_miner_addressToaddress = { some: { } }
         }
 
         return this.getPageData(query, params)
