@@ -41,7 +41,7 @@ function rawContractToEntity ({
 
 function addressEntityToRaw ({
   address,
-  balance_balance_addressToaddress: balance,
+  address_latest_balance_address_latest_balance_addressToaddress: latestBalance,
   isNative,
   miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
@@ -57,8 +57,8 @@ function addressEntityToRaw ({
   } else {
     addressToReturn = {
       address,
-      balance: balance[0] ? (balance[0].balance === '0' ? '0x0' : balance[0].balance) : null,
-      blockNumber: balance[0] ? balance[0].blockNumber : null,
+      balance: latestBalance.balance,
+      blockNumber: latestBalance.blockNumber,
       isNative,
       type
     }
