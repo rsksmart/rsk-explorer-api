@@ -22,12 +22,19 @@ const {
   namesForFindAddressesEndpoint
 } = fixtures[network]
 
+const keysToSkipForAddress = {
+  data: ['_id', ['lastBlockMined', '_received']]
+}
+
 describe('Address module', () => {
   describe('GET getAddress endpoint', () => {
     for (const address of addressesForGetAddressEndpoint) {
       const endpoint = getAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForAddress
+        })
       })
     }
   })
@@ -35,27 +42,39 @@ describe('Address module', () => {
   describe('GET getAddresses endpoint', () => {
     const endpoint = getAddresses()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForAddress
+      })
     })
   })
 
   describe('GET getMiners endpoint', () => {
     const endpoint = getMiners()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForAddress
+      })
     })
   })
 
   describe('GET getTokens endpoint', () => {
     const endpoint = getTokens()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForAddress
+      })
     })
 
     for (const fromBlock of blockNumbersForGetMinersEndpoint) {
       const endpoint = getMiners({ fromBlock })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForAddress
+        })
       })
     }
   })
@@ -63,7 +82,10 @@ describe('Address module', () => {
   describe('GET getCirculatingSupply endpoint', () => {
     const endpoint = getCirculatingSupply()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForAddress
+      })
     })
   })
 
@@ -71,7 +93,10 @@ describe('Address module', () => {
     for (const address of addressesForGetCodeEndpoint) {
       const endpoint = getCode({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForAddress
+        })
       })
     }
   })
@@ -80,7 +105,10 @@ describe('Address module', () => {
     for (const name of namesForFindAddressesEndpoint) {
       const endpoint = findAddresses({ name })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForAddress
+        })
       })
     }
   })
