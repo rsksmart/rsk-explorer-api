@@ -59,8 +59,8 @@ function addressEntityToRaw ({
   } else {
     addressToReturn = {
       address,
-      balance: latestBalance.balance === '0' ? '0x0' : latestBalance.balance,
-      blockNumber: latestBalance.blockNumber,
+      balance: !latestBalance || latestBalance.balance === '0' ? '0x0' : latestBalance.balance,
+      blockNumber: latestBalance ? latestBalance.blockNumber : 0,
       isNative,
       type,
       name
