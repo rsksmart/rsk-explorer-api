@@ -28,9 +28,14 @@ export function getBalancesRepository (prismaClient) {
       const transactionQueries = [prismaClient.balance.createMany({data: balancesToSave, skipDuplicates: true})]
 
       if (latestBalances) {
-        const addresses = latestBalances.map(b => b.address)
-        transactionQueries.push(prismaClient.address_latest_balance.deleteMany({ where: { address: { in: addresses } } }))
-        transactionQueries.push(prismaClient.address_latest_balance.createMany({ data: latestBalances, skipDuplicates: true }))
+        const addresses = latestBalances.balances.map(b => b.address)
+        transactionQueries.push(prismaClient.address_latest_balance.deleteMany({
+          where: {
+            address: { in: addresses },
+            blockNumber: { lt: latestBalances.blockNumber }
+          }}
+        ))
+        transactionQueries.push(prismaClient.address_latest_balance.createMany({ data: latestBalances.balances, skipDuplicates: true }))
       }
 
       return transactionQueries
