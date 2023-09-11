@@ -1,4 +1,9 @@
-import { isEqual } from 'lodash'
+function isEqual (list1, list2) {
+  list1 = JSON.stringify(list1)
+  list2 = JSON.stringify(list2)
+
+  return list1 === list2
+}
 
 export default function getObjectDifferences ({ postgresObject, mongoObject }) {
   const differences = {}
@@ -38,12 +43,16 @@ export default function getObjectDifferences ({ postgresObject, mongoObject }) {
         mongoObject: mongoObject[key],
         postgresObject: postgresObject.hasOwnProperty(key) ? postgresObject[key] : 'Missing'
       })
+
       if (Object.keys(nestedDiff).length > 0) {
         differences[key] = nestedDiff
       }
     }
   } else if (areArrays) {
-    if (isPrimitive(postgresObject[0]) || !postgresObject.length || !mongoObject.length) {
+    postgresObject.sort()
+    mongoObject.sort()
+
+    if (isPrimitive(typeof postgresObject[0]) || !postgresObject.length || !mongoObject.length) {
       if (!isEqual(postgresObject, mongoObject)) {
         return {
           postgres: postgresObject,
@@ -53,9 +62,6 @@ export default function getObjectDifferences ({ postgresObject, mongoObject }) {
         return {}
       }
     } else {
-      postgresObject.sort()
-      mongoObject.sort()
-
       for (const index in postgresObject) {
         const nestedDiff = getObjectDifferences({
           postgresObject: postgresObject[index],
