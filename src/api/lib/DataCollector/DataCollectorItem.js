@@ -39,9 +39,9 @@ export class DataCollectorItem {
     return { data }
   }
 
-  async find (query, sort, limit, project) {
+  async find (query, sort, limit, project, endpointOptions = {}) {
     project = project || this.getDefaultsFields()
-    let data = await find(query, sort, limit, project, this.repository)
+    let data = await find(query, sort, limit, project, this.repository, endpointOptions)
     return { data }
   }
 
@@ -96,8 +96,8 @@ export class DataCollectorItem {
     return this.cursorData
   }
 
-  getPageData (query, params, isAggregate = false) {
-    return this.getPages({ query, params, isAggregate })
+  getPageData (query, params, endpointOptions = {}) {
+    return this.getPages({ query, params, endpointOptions })
   }
 
   async getPrevNext (query, project, data) {
@@ -133,12 +133,12 @@ export class DataCollectorItem {
     }
   }
 
-  async getPages ({ isAggregate, query, params }) {
+  async getPages ({ query, params, endpointOptions }) {
     try {
       let pages = this.responseParams(params)
       let cursorData = await this.getCursorData()
 
-      let args = [cursorData, query, pages, this.repository, isAggregate]
+      let args = [cursorData, query, pages, this.repository, endpointOptions]
       let result = await findPages(...args)
       return formatResponse(result, pages)
     } catch (err) {

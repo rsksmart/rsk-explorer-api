@@ -8,18 +8,19 @@ const { isNativeContract } = NativeContracts({ nativeContracts: config.nativeCon
 function rawAddressToEntity ({
   address,
   isNative,
-  type
+  type,
+  name
 }) {
   return {
     address,
     isNative,
-    type
+    type,
+    name
   }
 }
 
 function rawContractToEntity ({
   address,
-  name,
   code,
   codeStoredAtBlock,
   deployedCode,
@@ -28,7 +29,6 @@ function rawContractToEntity ({
 }) {
   const contractToReturn = {
     address,
-    name,
     code,
     codeStoredAtBlock,
     deployedCode,
@@ -45,22 +45,25 @@ function addressEntityToRaw ({
   isNative,
   miner_miner_addressToaddress: lastBlockMined,
   contract_contract_addressToaddress: contract,
-  type
+  type,
+  name
 }, {
-  isForGetCode
+  isForGetCode,
+  deleteCodeAndInput
 } = {}) {
   let addressToReturn
 
   if (isForGetCode) {
-    const { address, code, createdByTx, contractInterfaces, name } = contractEntityToRaw(contract)
+    const { address, code, createdByTx, contractInterfaces } = contractEntityToRaw(contract)
     addressToReturn = { address, code, createdByTx, contractInterfaces, name }
   } else {
     addressToReturn = {
       address,
-      balance: latestBalance.balance,
+      balance: latestBalance.balance === '0' ? '0x0' : latestBalance.balance,
       blockNumber: latestBalance.blockNumber,
       isNative,
-      type
+      type,
+      name
     }
 
     if (lastBlockMined[0]) {
@@ -71,13 +74,16 @@ function addressEntityToRaw ({
       Object.assign(addressToReturn, contractEntityToRaw(contract))
     }
   }
+  if (deleteCodeAndInput) {
+    delete addressToReturn.code
+    if (addressToReturn.createdByTx) delete addressToReturn.createdByTx.input
+  }
 
   return removeNullFields(addressToReturn, ['name'])
 }
 
 function contractEntityToRaw ({
   address,
-  name,
   contract_creation_tx: createdByTx,
   code,
   codeStoredAtBlock,
@@ -92,7 +98,6 @@ function contractEntityToRaw ({
 } = {}) {
   const contractToReturn = {
     address,
-    name,
     codeStoredAtBlock,
     code,
     deployedCode,
@@ -120,7 +125,7 @@ function contractEntityToRaw ({
     contractToReturn.totalSupply = totalSupply[0].totalSupply
   }
 
-  return removeNullFields(contractToReturn, ['name', 'code'])
+  return removeNullFields(contractToReturn, ['code'])
 }
 export {
   rawAddressToEntity,

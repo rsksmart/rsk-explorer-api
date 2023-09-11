@@ -78,7 +78,7 @@ export class Address extends DataCollectorItem {
       getAddresses: params => {
         let type = (params.query) ? params.query.type : null
         let query = (type) ? { type } : {}
-        return this.getPageData(query, params)
+        return this.getPageData(query, params, { deleteCodeAndInput: true })
       },
       /**
        * @swagger
@@ -164,7 +164,7 @@ export class Address extends DataCollectorItem {
           }
         }
 
-        return this.getPageData(query, params)
+        return this.getPageData(query, params, { deleteCodeAndInput: true })
       },
       /**
        * @swagger
@@ -275,17 +275,15 @@ export class Address extends DataCollectorItem {
        */
       findAddresses: async params => {
         const query = {
-          contract_contract_addressToaddress: {
-            name: {
-              contains: params.name
-            }
+          name: {
+            contains: params.name
           }
         }
         params.field = 'name'
         params.sort = { id: 1 }
         delete params.field.name
 
-        return this.find(query, params)
+        return this.find(query, params, 0, {}, { deleteCodeAndInput: true })
       }
     }
   }
