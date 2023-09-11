@@ -28,7 +28,7 @@ export function getTokenRepository (prismaClient) {
         for (const token of tokens) {
           const contract = await prisma.address.findFirst({where: {address: token.contract}, include: addressRelatedTables})
           delete contract.address
-          tokensByAddress.push({...addressEntityToRaw(contract), ...token})
+          tokensByAddress.push({...addressEntityToRaw(contract), ...tokenEntityToRaw(token)})
         }
       })
 
