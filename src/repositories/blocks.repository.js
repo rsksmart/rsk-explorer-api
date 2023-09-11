@@ -44,7 +44,7 @@ export function getBlocksRepository (prismaClient) {
       return transactionQueries
     },
     async saveBlockData (data) {
-      const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, status } = data
+      const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
       const transactionQueries = []
 
       // insert block
@@ -66,7 +66,7 @@ export function getBlocksRepository (prismaClient) {
       }
 
       // insert balances
-      transactionQueries.push(...balancesRepository.insertMany(balances))
+      transactionQueries.push(...balancesRepository.insertMany(balances, latestBalances))
 
       // insert txs and delete pendings
       if (!transactions.length && block.number > 0) {

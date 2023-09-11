@@ -6,7 +6,7 @@ const blockRelatedTables = {
 
 const addressRelatedTables = {
   miner_miner_addressToaddress: {select: {block: {include: blockRelatedTables}}, orderBy: {blockNumber: 'desc'}, take: 1},
-  balance_balance_addressToaddress: {select: {balance: true, blockNumber: true}, orderBy: {blockNumber: 'desc'}, take: 1},
+  address_latest_balance_address_latest_balance_addressToaddress: {select: {balance: true, blockNumber: true}},
   contract_contract_addressToaddress: {
     include: {
       contract_creation_tx: { select: {tx: true} },

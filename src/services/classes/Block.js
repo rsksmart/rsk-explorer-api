@@ -46,7 +46,9 @@ export class Block extends BcThing {
       if (exists) throw new Error(`Block ${number} already in db. Skipped`)
 
       data = this.getData(true)
-      data.balances = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
+      const { balances, latestBalances } = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
+      data.balances = balances
+      data.latestBalances = latestBalances
       data.status = this.status
 
       // save block and all related data

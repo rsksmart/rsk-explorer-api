@@ -25,7 +25,7 @@ function tokenEntityToRaw ({
   const tokenToReturn = {
     address,
     contract,
-    block: {number: blockNumber, hash: blockHash},
+    block: { number: blockNumber, hash: blockHash },
     balance
   }
 

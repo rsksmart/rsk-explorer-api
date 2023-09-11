@@ -113,13 +113,13 @@ export function parseParams (cursorData, params) {
   return params
 }
 
-export async function findPages (cursorData, query, params, repository, isAggregate) {
+export async function findPages (cursorData, query, params, repository, endpointOptions = {}) {
   try {
     params = parseParams(cursorData, params)
     const { fields, count, countOnly, queryLimit } = params
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
-    let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository, isAggregate) : null
+    let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository, endpointOptions) : null
     let total = (count) ? (await countDocuments(query, repository)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
@@ -180,17 +180,17 @@ export function paginationResponse (params, data, total) {
   return { pagination, data }
 }
 
-export async function find (query, sort, limit, project, repository, isAggregate) {
+export async function find (query, sort, limit, project, repository, endpointOptions = {}) {
   sort = sort || {}
   project = project || {}
   limit = limit || 0
   let data
 
-  if (isAggregate) {
+  if (endpointOptions.isAggregate) {
     data = await repository.aggregate(query)
   } else {
     data = await repository
-      .find(query, project, sort, limit)
+      .find(query, project, sort, limit, endpointOptions)
       .catch((err) => {
         return Promise.reject(err)
       })

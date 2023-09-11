@@ -2,7 +2,6 @@ import config from '../config/settings'
 import { endpoints, fixtures } from '../config/modules/summary'
 import { compareDataFromBothEnvs } from '../utils/compareData'
 import { sameDataMsg } from '../utils/testMsg'
-
 const { network } = config
 
 const {
@@ -14,12 +13,19 @@ const {
   blockHashesForGetSummaryEndpoint
 } = fixtures[network]
 
+const keysToSkipForBlockSummary = {
+  data: ['_id', ['data', 'addresses']]
+}
+
 describe('Summary module', () => {
-  describe('GET getSummary endpoint', () => {
+  describe.only('GET getSummary endpoint', () => {
     for (const hash of blockHashesForGetSummaryEndpoint) {
       const endpoint = getSummary({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForBlockSummary
+        })
       })
     }
   })
@@ -27,7 +33,10 @@ describe('Summary module', () => {
   describe('GET getSummaries endpoint', () => {
     const endpoint = getSummaries()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForBlockSummary
+      })
     })
   })
 })

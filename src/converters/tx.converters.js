@@ -144,11 +144,13 @@ function transactionEntityToRaw ({
     s,
     type,
     timestamp: Number(timestamp),
-    receipt: receiptEntityToRaw(receipt),
     txType,
     txId
   }
 
+  if (receipt) {
+    txToReturn.receipt = receiptEntityToRaw(receipt)
+  }
   return txToReturn
 }
 

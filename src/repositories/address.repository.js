@@ -13,10 +13,10 @@ export function getAddressRepository (prismaClient) {
 
       return address ? addressEntityToRaw(address, endpointOptions) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0) {
+    async find (query = {}, project = {}, sort = {}, limit = 0, endpointOptions) {
       const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables, sort, limit))
 
-      return addresses.map(addressEntityToRaw)
+      return addresses.map(address => addressEntityToRaw(address, endpointOptions))
     },
     async countDocuments (query = {}) {
       const count = await prismaClient.address.count({where: query})

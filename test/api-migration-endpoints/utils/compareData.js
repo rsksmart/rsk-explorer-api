@@ -10,27 +10,37 @@ const { postgresUrl, mongoUrl } = config
 chai.use(deepEqualInAnyOrder)
 const { expect } = chai
 
-export async function compareDataFromBothEnvs ({ endpoint, keysToSkip = {} }) {
+export async function compareDataFromBothEnvs ({ endpoint, keysToSkip = {}, processData }) {
   const postgresRes = (await axios.get(postgresUrl + endpoint)).data
   const mongoRes = (await axios.get(mongoUrl + endpoint)).data
 
-  const { data: postgresData, pages: postgresPages } = postgresRes
-  const { data: mongoData, pages: mongoPages } = mongoRes
+  if (processData) {
+    const { processedPostgres, processedMongo } = processData(postgresRes.data, mongoRes.data)
+    postgresRes.data = processedPostgres
+    mongoRes.data = processedMongo
+  }
 
   try {
     if (keysToSkip.data && keysToSkip.data.length) {
-      deleteKeys(postgresData, mongoData, keysToSkip.data)
+      deleteKeys(postgresRes.data, mongoRes.data, keysToSkip.data)
     }
 
     if (keysToSkip.pages && keysToSkip.pages.length) {
-      deleteKeys(postgresPages, mongoPages, keysToSkip.pages)
+      deleteKeys(postgresRes.pages, mongoRes.pages, keysToSkip.pages)
     }
+
+    expect(postgresRes.data).to.not.equal(null, 'Postgres data is null')
+    expect(mongoRes.data).to.not.equal(null, 'Mongo data is null')
 
     expect(postgresRes).to.be.deep.equalInAnyOrder(mongoRes)
   } catch (e) {
-    const dataDifferences = getObjectDifferences({ postgresObject: postgresData, mongoObject: mongoData })
-    const pagesDifferences = getObjectDifferences({ postgresObject: postgresPages, mongoObject: mongoPages })
-    console.dir({ dataDifferences, pagesDifferences }, { depth: null })
-    throw new Error(`Results are not equal when testing endpoint ${endpoint}, see differences logged above`)
+    if (e.message.includes('Postgres data is null') || e.message.includes('Mongo data is null')) {
+      throw new Error(e)
+    } else {
+      const dataDifferences = getObjectDifferences({ postgresObject: postgresRes.data, mongoObject: mongoRes.data })
+      const pagesDifferences = getObjectDifferences({ postgresObject: postgresRes.pages, mongoObject: mongoRes.pages })
+      console.dir({ dataDifferences, pagesDifferences }, { depth: null })
+      throw new Error(`Results are not equal when testing endpoint ${endpoint}, see differences logged above`)
+    }
   }
 }
