@@ -25,6 +25,17 @@ const keysToSkipForToken = {
   data: ['_id']
 }
 
+function removePostgresTokenBalancesNotSavedInMongo (postgresList, mongoList) {
+  return {
+    mongoList,
+    postgresList: postgresList.filter(({ address: pAddress, contract: pContract, block: { number: pNumber } }) => {
+      return mongoList.some(({ address: mAddress, contract: mContract, block: { number: mNumber } }) => {
+        return pAddress === mAddress && pContract === mContract && pNumber === mNumber
+      })
+    })
+  }
+}
+
 describe('Token module', () => {
   describe('GET getTokenAccounts endpoint', () => {
     const availableParams = ['contract', 'address']
@@ -33,7 +44,8 @@ describe('Token module', () => {
       it(sameDataMsg(endpoint), async () => {
         await compareDataFromBothEnvs({
           endpoint,
-          keysToSkip: keysToSkipForToken
+          keysToSkip: keysToSkipForToken,
+          processData: removePostgresTokenBalancesNotSavedInMongo
         })
       })
     }
@@ -45,7 +57,8 @@ describe('Token module', () => {
       it(sameDataMsg(endpoint), async () => {
         await compareDataFromBothEnvs({
           endpoint,
-          keysToSkip: keysToSkipForToken
+          keysToSkip: keysToSkipForToken,
+          processData: removePostgresTokenBalancesNotSavedInMongo
         })
       })
     }
