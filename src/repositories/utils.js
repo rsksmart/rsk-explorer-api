@@ -30,7 +30,7 @@ function createPrismaSelect (project) {
   const newSelect = {}
 
   for (const key of Object.keys(select)) {
-    if (key !== 'sort' && select[key]) {
+    if (!['sort', 'undefined'].includes(key) && select[key]) {
       newSelect[key] = true
     }
   }
