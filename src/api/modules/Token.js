@@ -3,8 +3,8 @@ import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
 export class Token extends DataCollectorItem {
   constructor (key) {
-    const cursorField = 'blockNumber'
-    const sortable = { blockNumber: -1 }
+    const cursorField = 'address'
+    const sortable = { address: -1 }
     super(key, { cursorField, sortable })
     this.publicActions = {
       /**
