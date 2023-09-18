@@ -1,5 +1,3 @@
-import { removeNullFields } from '../repositories/utils'
-
 function rawTokenToEntity ({
   address,
   contract,
@@ -22,13 +20,11 @@ function tokenEntityToRaw ({
   blockNumber,
   blockHash
 }) {
-  const tokenToReturn = {
+  return {
     address,
     contract,
     block: { number: blockNumber, hash: blockHash },
     balance
   }
-
-  return removeNullFields(tokenToReturn)
 }
 export {rawTokenToEntity, tokenEntityToRaw}
