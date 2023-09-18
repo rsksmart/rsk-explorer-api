@@ -70,9 +70,7 @@ export class Token extends DataCollectorItem {
       getTokensByAddress: async params => {
         const address = params.address
         if (address) {
-          const isAggregate = true
-
-          const data = await this.getPageData({ address }, params, isAggregate)
+          const data = await this.getPageData({ address }, params, { isAggregate: true })
           return data
         }
       },
