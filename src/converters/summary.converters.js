@@ -38,7 +38,14 @@ function summaryEntityToRaw ({
     number,
     timestamp: Number(timestamp),
     data: {
-      addresses: addresses.map(address => addressEntityToRaw(address.address_address_in_summary_addressToaddress)),
+      addresses: addresses.map(address => {
+        // overwrites these 3 attributes saved in address_in_summary table on the address retrieved from the address table through the relation
+        address.address_address_in_summary_addressToaddress.balance = address.balance
+        address.address_address_in_summary_addressToaddress.blockNumber = address.blockNumber
+        address.address_address_in_summary_addressToaddress.block = address.block
+
+        return addressEntityToRaw(address.address_address_in_summary_addressToaddress, { isForSummary: true })
+      }),
       block: blockEntityToRaw(block),
       events: events.map(event => eventEntityToRaw(event.event)),
       internalTransactions: internalTransactions.map(itx => internalTxEntityToRaw(itx.internal_transaction)),

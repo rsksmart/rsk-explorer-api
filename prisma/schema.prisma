@@ -82,6 +82,7 @@ model block {
   paidFees                                                      String                   @map("paid_fees") @db.VarChar
   cumulativeDifficulty                                          String                   @map("cumulative_difficulty") @db.VarChar
   received                                                      String                   @db.VarChar
+  address_in_summary                                            address_in_summary[]
   address_latest_balance                                        address_latest_balance[]
   balance_balance_block_hashToblock                             balance[]                @relation("balance_block_hashToblock")
   balance_balance_block_numberToblock                           balance[]                @relation("balance_block_numberToblock")
@@ -153,6 +154,7 @@ model event {
   abi                             String?            @db.VarChar
   address                         String             @db.VarChar(42)
   args                            String?            @db.VarChar
+  topics                          String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)
   blockNumber                     Int                @map("block_number")
   data                            String             @db.VarChar
@@ -169,15 +171,6 @@ model event {
   block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
   transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
   event_in_summary                event_in_summary[]
-  event_topic                     event_topic[]
-}
-
-model event_topic {
-  eventId String @map("event_id") @db.VarChar
-  topic   String @db.VarChar
-  event   event  @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_topic_id")
-
-  @@id([eventId, topic], map: "pk_event_topic")
 }
 
 model internal_transaction {
@@ -378,8 +371,12 @@ model block_trace {
 
 model address_in_summary {
   address                                     String        @db.VarChar(42)
+  balance                                     String?       @db.VarChar
+  blockNumber                                 Int?          @map("block_number")
+  lastBlockMined                              Int?          @map("last_block_mined")
   summaryId                                   String        @map("summary_id") @db.VarChar
   address_address_in_summary_addressToaddress address       @relation("address_in_summary_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_address")
+  block                                       block?        @relation(fields: [lastBlockMined], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_last_block_mined")
   block_summary                               block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_summary_id")
 
   @@id([address, summaryId], map: "pk_address_in_summary")

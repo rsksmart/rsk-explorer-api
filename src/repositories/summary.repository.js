@@ -22,6 +22,7 @@ export function getSummaryRepository (prismaClient) {
     },
     insertOne (data) {
       const {transactions, internalTransactions, addresses, tokenAddresses, events, suicides} = data
+
       const blockData = {
         hash: data.block.hash,
         number: data.block.number,
@@ -39,7 +40,14 @@ export function getSummaryRepository (prismaClient) {
       const itxsToSave = internalTransactions.map(itx => ({internalTxId: itx.internalTxId, summaryId}))
       transactionQueries.push(prismaClient.internal_transaction_in_summary.createMany({data: itxsToSave, skipDuplicates: true}))
 
-      const addressesToSave = addresses.map(address => ({address: address.address, summaryId}))
+      const addressesToSave = addresses.map(({ address, blockNumber, balance, lastBlockMined }) => {
+        const addressToSave = { address, blockNumber, balance, summaryId }
+        if (lastBlockMined) {
+          addressToSave.lastBlockMined = lastBlockMined.number
+        }
+
+        return addressToSave
+      })
       transactionQueries.push(prismaClient.address_in_summary.createMany({data: addressesToSave, skipDuplicates: true}))
 
       const tokenAddressesToSave = tokenAddresses.map(token => {

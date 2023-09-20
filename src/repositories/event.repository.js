@@ -19,7 +19,7 @@ export function getEventRepository (prismaClient) {
       return count
     },
     insertOne (data) {
-      const { _addresses, topics } = data
+      const { _addresses } = data
 
       const query = prismaClient.event.create({
         data: {
@@ -27,12 +27,6 @@ export function getEventRepository (prismaClient) {
           address_in_event: {
             createMany: {
               data: _addresses.map(address => ({ address })),
-              skipDuplicates: true
-            }
-          },
-          event_topic: {
-            createMany: {
-              data: topics.map(topic => ({ topic })),
               skipDuplicates: true
             }
           }

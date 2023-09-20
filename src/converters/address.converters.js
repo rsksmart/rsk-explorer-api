@@ -44,10 +44,14 @@ function addressEntityToRaw ({
   address_latest_balance_address_latest_balance_addressToaddress: latestBalance,
   isNative,
   miner_miner_addressToaddress: lastBlockMined,
+  block, // for summary
+  balance, // for summary
+  blockNumber, // for summary
   contract_contract_addressToaddress: contract,
   type,
   name
 }, {
+  isForSummary,
   isForGetCode,
   deleteCodeAndInput
 } = {}) {
@@ -59,15 +63,21 @@ function addressEntityToRaw ({
   } else {
     addressToReturn = {
       address,
-      balance: !latestBalance || latestBalance.balance === '0' ? '0x0' : latestBalance.balance,
-      blockNumber: latestBalance ? latestBalance.blockNumber : 0,
+      balance: isForSummary ? balance : (!latestBalance || latestBalance.balance === '0' ? '0x0' : latestBalance.balance),
+      blockNumber: isForSummary ? blockNumber : (latestBalance ? latestBalance.blockNumber : 0),
       isNative,
       type,
       name
     }
 
-    if (lastBlockMined[0]) {
-      addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
+    if (isForSummary) {
+      if (block) {
+        addressToReturn.lastBlockMined = blockEntityToRaw(block)
+      }
+    } else {
+      if (lastBlockMined[0]) {
+        addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
+      }
     }
 
     if (contract) {

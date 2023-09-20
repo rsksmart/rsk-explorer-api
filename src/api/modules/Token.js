@@ -100,11 +100,14 @@ export class Token extends DataCollectorItem {
        *        404:
        *          $ref: '#/responses/NotFound'
        */
-      getContractAccount: params => {
-        return this.getOne({
+      getContractAccount: async params => {
+        const query = {
           address: params.address || '',
           contract: params.contract
-        })
+        }
+        let { data } = await this.find(query, { blockNumber: -1 }, 1)
+
+        return { data: (data[0] || null) }
       },
       /**
        * @swagger
@@ -134,12 +137,11 @@ export class Token extends DataCollectorItem {
        */
       getTokenAccount: async params => {
         const { address, contract } = params
-        const account = await this.getOne({
-          address: address || '',
-          contract: contract || ''
-        })
+        const { data: [account] } = await this.find({ address: address || '', contract: contract || '' }, { blockNumber: -1 }, 1)
 
-        return this.parent.addAddressData(contract, account, '_contractData')
+        const tokenAccount = await this.parent.addAddressData(contract, { data: account }, '_contractData')
+
+        return tokenAccount
       },
       /**
        * @swagger
@@ -188,11 +190,26 @@ export class Token extends DataCollectorItem {
         if (!totalSupply) return
 
         query.contract = contract
-        let accounts = await this.find(query, null, null, { id: 0, address: 1, balance: 1 })
-        if (accounts) accounts = accounts.data
-        if (!accounts) return
+        let accounts = await this.find(query)
+        let accountsBalance = '0x0'
 
-        let accountsBalance = bigNumberSum(accounts.map(account => account.balance))
+        if (accounts) {
+          // selects only the latest token balance for each account
+          accounts = accounts.data.reduce((filteredAccounts, { address, balance, block: { number } }) => {
+            if (filteredAccounts[address]) {
+              if (number > filteredAccounts[address].number) {
+                filteredAccounts[address].balance = balance
+              }
+            } else {
+              filteredAccounts[address] = { address, balance, number }
+            }
+
+            return filteredAccounts
+          }, {})
+
+          accountsBalance = bigNumberSum(Object.keys(accounts).map(key => accounts[key].balance))
+        }
+
         totalSupply = new BigNumber(totalSupply)
         let balance = (accountsBalance) ? totalSupply.minus(accountsBalance) : totalSupply
         let data = { balance, accountsBalance, totalSupply, decimals }
