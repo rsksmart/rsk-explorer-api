@@ -1,6 +1,8 @@
 function deleteKey (obj, key) {
   if (Array.isArray(key)) {
-    if (obj[key[0]]) {
+    if (key[2] && obj[key[0]] && obj[key[0]][key[1]]) {
+      delete obj[key[0]][key[1]][key[2]]
+    } else if (key[1] && obj[key[0]]) {
       delete obj[key[0]][key[1]]
     }
   } else {

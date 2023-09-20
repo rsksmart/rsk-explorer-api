@@ -27,8 +27,8 @@ const keysToSkipForToken = {
 
 function removePostgresTokenBalancesNotSavedInMongo (postgresList, mongoList) {
   return {
-    mongoList,
-    postgresList: postgresList.filter(({ address: pAddress, contract: pContract, block: { number: pNumber } }) => {
+    processedMongo: mongoList,
+    processedPostgres: postgresList.filter(({ address: pAddress, contract: pContract, block: { number: pNumber } }) => {
       return mongoList.some(({ address: mAddress, contract: mContract, block: { number: mNumber } }) => {
         return pAddress === mAddress && pContract === mContract && pNumber === mNumber
       })
