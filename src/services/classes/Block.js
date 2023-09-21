@@ -19,7 +19,7 @@ export class Block extends BcThing {
     this.txRepository = REPOSITORIES.Tx
     this.eventRepository = REPOSITORIES.Event
     this.statsRepository = REPOSITORIES.Stats
-    this.testing = defaultConfig.testing
+    this.forceSaveBcStats = defaultConfig.forceSaveBcStats
   }
 
   async fetch (forceFetch) {
@@ -38,7 +38,7 @@ export class Block extends BcThing {
   }
 
   async save () {
-    const { number, testing } = this
+    const { number, forceSaveBcStats } = this
     let data
     try {
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
@@ -56,7 +56,7 @@ export class Block extends BcThing {
       await this.repository.saveBlockData(data)
 
       // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
-      if (this.isTipBlock || testing) {
+      if (this.isTipBlock || forceSaveBcStats) {
         const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
         await this.statsRepository.insertOne(blockchainStats)
       }

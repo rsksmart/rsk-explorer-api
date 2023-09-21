@@ -70,5 +70,5 @@ export default {
     address: '127.0.0.1',
     services
   },
-  testing: false // Use case: store blockchain stats on all blocks
+  forceSaveBcStats: false
 }
