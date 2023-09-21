@@ -2,6 +2,7 @@ import config from '../config/settings'
 import { endpoints, fixtures } from '../config/modules/summary'
 import { compareDataFromBothEnvs } from '../utils/compareData'
 import { sameDataMsg } from '../utils/testMsg'
+
 const { network } = config
 
 const {

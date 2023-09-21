@@ -5,7 +5,10 @@ const endpoints = {
 
 const fixtures = {
   // the db still needs to be populated with txPending data
-  testnet: {},
+  testnet: {
+    txHashesForGetPendingTransactionEndpoint: [],
+    addressesForGetPendingTransactionsByAddress: []
+  },
   mainnet: {}
 }
 

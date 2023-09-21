@@ -4,14 +4,21 @@ const endpoints = {
   getSolcVersions: () => '/api?module=contractVerifier&action=getSolcVersions',
   getEvmVersions: () => '/api?module=contractVerifier&action=getEvmVersions',
   getVerificationResult: ({ id }) => `/api?module=contractVerifier&action=getVerificationResult&id=${id}`,
-  getVerification: ({ address, fields }) => {
+  isVerified: ({ address, fields }) => {
     return `/api?module=contractVerifier&action=isVerified&address=${address}${fields ? `&fields=${fields}` : ''}`
   }
 }
 
 const fixtures = {
   // the db still needs to be populated with contractVerification data
-  testnet: {},
+  testnet: {
+    idsForGetVerificationResultEndpoint: [
+
+    ],
+    addressesForGetIsVerifiedEndpoint: [
+
+    ]
+  },
   mainnet: {}
 }
 
