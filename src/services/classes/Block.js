@@ -5,7 +5,7 @@ import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
 import { REPOSITORIES } from '../../repositories'
 import { bitcoinRskNetWorks } from '../../lib/types'
-
+import defaultConfig from '../../lib/defaultConfig'
 export class Block extends BcThing {
   constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
     super({ nod3, initConfig, log, name: 'Blocks' })
@@ -19,6 +19,7 @@ export class Block extends BcThing {
     this.txRepository = REPOSITORIES.Tx
     this.eventRepository = REPOSITORIES.Event
     this.statsRepository = REPOSITORIES.Stats
+    this.testing = defaultConfig.testing
   }
 
   async fetch (forceFetch) {
@@ -37,7 +38,7 @@ export class Block extends BcThing {
   }
 
   async save () {
-    const { number } = this
+    const { number, testing } = this
     let data
     try {
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
@@ -54,8 +55,8 @@ export class Block extends BcThing {
       // save block and all related data
       await this.repository.saveBlockData(data)
 
-      // save stats (requires block and addresses inserted). Only for tip blocks
-      if (this.isTipBlock) {
+      // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
+      if (this.isTipBlock || testing) {
         const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
         await this.statsRepository.insertOne(blockchainStats)
       }
