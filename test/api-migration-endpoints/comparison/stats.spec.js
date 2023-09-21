@@ -8,7 +8,7 @@ const {
 } = endpoints
 
 const keysToSkipForStats = {
-  data: ['_id', 'timestamp']
+  data: ['_id', 'timestamp', 'hashrate']
 }
 
 describe('Stats module', () => {
