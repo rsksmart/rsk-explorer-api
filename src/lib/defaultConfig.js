@@ -69,5 +69,6 @@ export default {
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
     services
-  }
+  },
+  forceSaveBcStats: false
 }
