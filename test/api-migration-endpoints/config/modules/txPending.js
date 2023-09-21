@@ -7,7 +7,7 @@ const fixtures = {
   // the db still needs to be populated with txPending data
   testnet: {
     txHashesForGetPendingTransactionEndpoint: [],
-    addressesForGetPendingTransactionsByAddress: []
+    addressesForGetPendingTransactionsByAddressEndpoint: []
   },
   mainnet: {}
 }
