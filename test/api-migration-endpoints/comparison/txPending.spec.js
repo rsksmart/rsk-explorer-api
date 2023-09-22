@@ -12,7 +12,7 @@ const {
 
 const {
   txHashesForGetPendingTransactionEndpoint,
-  addressesForGetPendingTransactionsByAddress
+  addressesForGetPendingTransactionsByAddressEndpoint
 } = fixtures[network]
 
 describe('TxPending module', () => {
@@ -26,7 +26,7 @@ describe('TxPending module', () => {
   })
 
   describe('GET getPendingTransactionsByAddress endpoint', () => {
-    for (const address of addressesForGetPendingTransactionsByAddress) {
+    for (const address of addressesForGetPendingTransactionsByAddressEndpoint) {
       const endpoint = getPendingTransactionsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
         await compareDataFromBothEnvs({ endpoint })
