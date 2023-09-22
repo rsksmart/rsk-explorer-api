@@ -1,6 +1,8 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 import { addMetadataToBlocks } from '../lib/blocksMetadata'
+import { getBlock } from '../../tools/getBlockEndpointCall'
+
 export class Block extends DataCollectorItem {
   constructor (key) {
     let cursorField = 'number'
@@ -113,6 +115,27 @@ export class Block extends DataCollectorItem {
           }
         }
         return result
+      },
+      saveBlock: async params => {
+        const number = Number(params.number)
+        if (isNaN(number)) throw new Error('Wrong number provided')
+        let message
+
+        try {
+          const { data } = await this.publicActions.getBlock({ number })
+          const exists = data && data.number === number
+          if (exists) {
+            message = `Block ${number} already in db. Skipped`
+          } else {
+            await getBlock(number, { initConfig: this.parent.initConfig })
+            message = `Block ${number} saved succesfully.`
+          }
+        } catch (e) {
+          console.log(e)
+          message = 'errored'
+        }
+
+        return { message }
       }
     }
   }
