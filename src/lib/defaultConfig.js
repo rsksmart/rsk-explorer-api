@@ -70,5 +70,6 @@ export default {
     address: '127.0.0.1',
     services
   },
-  forceSaveBcStats: false
+  forceSaveBcStats: true,
+  enableTxPoolFromApi: true
 }

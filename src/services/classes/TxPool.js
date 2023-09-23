@@ -8,6 +8,8 @@ export class TxPool extends BlocksBase {
     this.pool = {}
     this.repository = REPOSITORIES.TxPool
     this.txPendingRepository = REPOSITORIES.TxPending
+    this.started = false
+    this.stopped = true
   }
 
   async start () {
@@ -17,16 +19,29 @@ export class TxPool extends BlocksBase {
         this.log.debug('nod3 is not connected')
         return this.start()
       }
+
+      if (this.started) return
+
+      this.started = true
+      this.stopped = false
+
       // status filter
       let status = await this.nod3.subscribe.method('txpool.status')
       status.watch(status => {
-        this.updateStatus(status)
+        if (!this.stopped) {
+          this.updateStatus(status)
+        }
       }, err => {
         this.log.debug(`Pool filter error: ${err}`)
       })
     } catch (err) {
       this.log.debug(`TxPool error: ${err}`)
     }
+  }
+
+  stop () {
+    this.stopped = true
+    this.started = false
   }
 
   updateStatus (newStatus) {

@@ -15,12 +15,19 @@ const {
   addressesForGetPendingTransactionsByAddressEndpoint
 } = fixtures[network]
 
+const keysToSkipForTxPending = {
+  data: ['_id']
+}
+
 describe('TxPending module', () => {
   describe('GET getPendingTransaction endpoint', () => {
     for (const hash of txHashesForGetPendingTransactionEndpoint) {
       const endpoint = getPendingTransaction({ hash })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTxPending
+        })
       })
     }
   })
@@ -29,7 +36,10 @@ describe('TxPending module', () => {
     for (const address of addressesForGetPendingTransactionsByAddressEndpoint) {
       const endpoint = getPendingTransactionsByAddress({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForTxPending
+        })
       })
     }
   })
