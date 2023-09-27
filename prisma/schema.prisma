@@ -16,6 +16,7 @@ model action {
   gas                  String?              @db.VarChar
   input                String?              @db.VarChar
   value                String?              @db.VarChar
+  init                 String?              @db.VarChar
   address              String?              @db.VarChar(42)
   refundAddress        String?              @map("refund_address") @db.VarChar(42)
   balance              String?              @db.VarChar

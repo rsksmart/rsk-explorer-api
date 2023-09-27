@@ -9,6 +9,7 @@ function rawActionToEntity ({
   gas,
   input,
   value,
+  init,
   address,
   refundAddress,
   balance
@@ -22,6 +23,7 @@ function rawActionToEntity ({
     gas,
     input,
     value,
+    init,
     address,
     refundAddress,
     balance
