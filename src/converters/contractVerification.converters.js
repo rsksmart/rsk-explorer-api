@@ -34,12 +34,12 @@ function contractVerificationEntityToRaw ({
   const verificationToReturn = {
     id,
     request: JSON.parse(request),
-    timestamp: Number(timestamp)
+    timestamp: Number(timestamp),
+    address
   }
 
-  if (address) verificationToReturn.address = address
+  if (match !== null) verificationToReturn.match = match
   if (error) verificationToReturn.error = error
-  if (match) verificationToReturn.match = match
   if (result) verificationToReturn.result = JSON.parse(result)
 
   return verificationToReturn
