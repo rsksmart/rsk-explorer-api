@@ -5,6 +5,7 @@ import {
 } from '../converters/address.converters'
 import { generateFindQuery } from './utils'
 import { addressRelatedTables } from './includeRelatedTables'
+import { addrTypes } from '../lib/types'
 
 export function getAddressRepository (prismaClient) {
   return {
@@ -24,42 +25,9 @@ export function getAddressRepository (prismaClient) {
       return count
     },
     insertOne (data, { isMiner, number }) {
+      if (data.address === '0xd45b351a3929782747154edb160f8e14769c153b') console.dir({ pepe: data }, { depth: null })
       const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
-
-      if (data.type === 'contract') {
-        const {contractMethods, contractInterfaces, totalSupply, createdByTx} = data
-
-        const contractToSave = rawContractToEntity(data)
-
-        transactionQueries.push(prismaClient.contract.createMany({data: contractToSave, skipDuplicates: true}))
-
-        const {address: contractAddress} = contractToSave
-
-        if (createdByTx) {
-          const createdByTxToSave = {
-            contractAddress,
-            timestamp: String(createdByTx.timestamp),
-            tx: JSON.stringify(createdByTx)
-          }
-
-          transactionQueries.push(prismaClient.contract_creation_tx.createMany({ data: createdByTxToSave, skipDuplicates: true }))
-        }
-
-        if (contractMethods) {
-          const methodsToSave = contractMethods.map(method => ({ method, contractAddress }))
-          transactionQueries.push(prismaClient.contract_method.createMany({ data: methodsToSave, skipDuplicates: true }))
-        }
-
-        if (contractInterfaces) {
-          const interfacesToSave = contractInterfaces.map(inter => ({ interface: inter, contractAddress }))
-          transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
-        }
-
-        if (totalSupply) {
-          const { blockNumber, totalSupply } = data
-          transactionQueries.push(prismaClient.total_supply.createMany({data: {contractAddress, blockNumber, totalSupply}, skipDuplicates: true}))
-        }
-      }
+      const { destroyedByTx, address } = data
 
       if (isMiner) {
         transactionQueries.push(prismaClient.miner.createMany({data: {
@@ -67,6 +35,27 @@ export function getAddressRepository (prismaClient) {
           blockNumber: number
         },
         skipDuplicates: true}))
+      }
+
+      if (destroyedByTx) {
+        transactionQueries.push(prismaClient.address.upsert({
+          where: { address },
+          create: rawAddressToEntity(data),
+          update: { type: addrTypes.ADDRESS }
+        }))
+
+        const destroyedByTxToSave = {
+          contractAddress: address,
+          timestamp: String(destroyedByTx.timestamp),
+          tx: JSON.stringify(destroyedByTx)
+        }
+
+        transactionQueries.push(prismaClient.contract_destruction_tx.createMany({ data: destroyedByTxToSave, skipDuplicates: true }))
+        transactionQueries.push(...generateSaveContractQueries(data, prismaClient, true))
+      }
+
+      if (data.type === addrTypes.CONTRACT) {
+        transactionQueries.push(...generateSaveContractQueries(data, prismaClient))
       }
 
       return transactionQueries
@@ -79,4 +68,49 @@ export function getAddressRepository (prismaClient) {
       })]
     }
   }
+}
+
+function generateSaveContractQueries (data, prismaClient, upserting) {
+  const transactionQueries = []
+  const contractToSave = rawContractToEntity(data)
+  const { contractMethods, contractInterfaces, totalSupply, createdByTx } = data
+
+  if (upserting) {
+    transactionQueries.push(prismaClient.contract.upsert({
+      where: { address: contractToSave.address },
+      create: contractToSave,
+      update: contractToSave
+    }))
+  } else {
+    transactionQueries.push(prismaClient.contract.createMany({ data: contractToSave, skipDuplicates: true }))
+  }
+
+  const {address: contractAddress} = contractToSave
+
+  if (createdByTx) {
+    const createdByTxToSave = {
+      contractAddress,
+      timestamp: String(createdByTx.timestamp),
+      tx: JSON.stringify(createdByTx)
+    }
+
+    transactionQueries.push(prismaClient.contract_creation_tx.createMany({ data: createdByTxToSave, skipDuplicates: true }))
+  }
+
+  if (contractMethods) {
+    const methodsToSave = contractMethods.map(method => ({ method, contractAddress }))
+    transactionQueries.push(prismaClient.contract_method.createMany({ data: methodsToSave, skipDuplicates: true }))
+  }
+
+  if (contractInterfaces) {
+    const interfacesToSave = contractInterfaces.map(inter => ({ interface: inter, contractAddress }))
+    transactionQueries.push(prismaClient.contract_interface.createMany({ data: interfacesToSave, skipDuplicates: true }))
+  }
+
+  if (totalSupply) {
+    const { blockNumber, totalSupply } = data
+    transactionQueries.push(prismaClient.total_supply.createMany({data: {contractAddress, blockNumber, totalSupply}, skipDuplicates: true}))
+  }
+
+  return transactionQueries
 }

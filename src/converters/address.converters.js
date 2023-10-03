@@ -48,6 +48,7 @@ function addressEntityToRaw ({
   balance, // for summary
   blockNumber, // for summary
   contract_contract_addressToaddress: contract,
+  contract_destruction_tx: destroyedByTx,
   type,
   name
 }, {
@@ -84,6 +85,11 @@ function addressEntityToRaw ({
       Object.assign(addressToReturn, contractEntityToRaw(contract))
     }
   }
+
+  if (destroyedByTx) {
+    addressToReturn.destroyedByTx = JSON.parse(destroyedByTx.tx)
+  }
+
   if (deleteCodeAndInput) {
     delete addressToReturn.code
     if (addressToReturn.createdByTx) delete addressToReturn.createdByTx.input

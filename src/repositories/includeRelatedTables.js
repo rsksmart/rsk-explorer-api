@@ -6,6 +6,7 @@ const blockRelatedTables = {
 
 const addressRelatedTables = ({ forSummary } = {}) => {
   const relations = {
+    contract_destruction_tx: { select: { tx: true } },
     contract_contract_addressToaddress: {
       include: {
         contract_creation_tx: { select: {tx: true} },
