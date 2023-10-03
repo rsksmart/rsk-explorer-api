@@ -1,4 +1,4 @@
-import dataSource from '../lib/dataSource.js'
+import { dataSource } from '../lib/dataSource.js'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import nod3 from '../lib/nod3Connect.js'
