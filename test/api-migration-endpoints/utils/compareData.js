@@ -21,7 +21,6 @@ export async function compareDataFromBothEnvs ({ endpoint, keysToSkip = {}, proc
   }
 
   try {
-
     expect(postgresRes.data).to.not.equal(null, 'Postgres data is null')
     expect(mongoRes.data).to.not.equal(null, 'Mongo data is null')
 
@@ -36,7 +35,6 @@ export async function compareDataFromBothEnvs ({ endpoint, keysToSkip = {}, proc
     if (keysToSkip.atRoot && keysToSkip.atRoot.length) {
       deleteKeys(postgresRes, mongoRes, keysToSkip.atRoot)
     }
-
 
     expect(postgresRes).to.be.deep.equalInAnyOrder(mongoRes)
   } catch (e) {
