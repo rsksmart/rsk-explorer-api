@@ -96,7 +96,8 @@ export const EVMversions = [
   'byzantium',
   'constantinople',
   'petersburg',
-  'istanbul'
+  'istanbul',
+  'london'
 ]
 
 export const bitcoinNetworks = {
