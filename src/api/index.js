@@ -10,6 +10,7 @@ import { HttpServer } from './HttpServer'
 import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
+import { BalancePool } from './BalancePool'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
@@ -21,9 +22,11 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
   const api = new Api({ db, initConfig }, config.api)
   const status = new Status(db)
   const txPool = new TxPool(db)
+  const balancePool = new BalancePool(db)
   api.start()
   status.start()
   txPool.start()
+  balancePool.start()
 
   let userEvents
 
@@ -113,6 +116,11 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
     txPoolChannel.emit('txPool', result)
   })
 
+  balancePool.events.on('balanceUpdate', result => {
+    console.log(result)
+    balancesChannel.emit('balanceUpdate', result)
+  })
+
   // send txPool chart to channel
   txPool.events.on('poolChart', result => {
     txPoolChannel.emit('txPoolChart', result)
@@ -139,7 +147,13 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
     // subscribe to room
     socket.on('subscribe', (payload) => {
       try {
-        channels.subscribe(socket, payload)
+        console.log(payload)
+        if (payload.address) {
+          balancePool.addresses.push(payload.address)
+          channels.subscribe(socket, payload)
+        } else {
+          channels.subscribe(socket, payload)
+        }
       } catch (err) {
         const error = errors.INVALID_REQUEST
         error.error = err.message
@@ -150,7 +164,11 @@ setup({ log, skipCheck: true }).then(({ db, initConfig }) => {
 
     // unsuscribe
     socket.on('unsubscribe', (payload) => {
-      channels.unsubscribe(socket, payload)
+      if (payload.address) {
+        balancePool.addresses = balancePool.addresses.filter(address => address !== payload.address)
+      } else {
+        channels.unsubscribe(socket, payload)
+      }
     })
 
     // data handler
