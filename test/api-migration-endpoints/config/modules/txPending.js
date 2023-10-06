@@ -3,20 +3,20 @@ const endpoints = {
   getPendingTransactionsByAddress: ({ address }) => `/api?module=txPending&action=getPendingTransactionsByAddress&address=${address}`
 }
 
+// Replace with current pending transactions stored in database
 const pendingTx1 = {
-  hash: '0x3d99fc07dabb8d3b9915ab927d011e5059c3376bf741ed1a3800b78757d7f23e',
+  hash: '0xc09f07204a7cf802905b06d0655d9a05cd65f4691272e9dcc8629987fbbf2ddd',
   from: '0xc67d9ee30d2119a384e02de568be80fe785074ba',
-  to: '0x462d7082f3671a3be160638be3f8c23ca354f48a'
+  to: '0x7e2f245f7dc8e78576ecb13aefc0a101e9be1ad3'
 }
 
 const pendingTx2 = {
-  hash: '0x517814fda7c2432beca1e530fa50213c362b0af1d90418e46a5fa129b19229f4',
-  from: '0x7c1dc6845f1f5bbe8aeee35e10af48abe47cccc7',
-  to: '0x953cd84bb669b42fbec83ad3227907023b5fc4ff'
+  hash: '0xb481c5eff1755ea2db7bd0fccc5db5ffd7e95f713f8a5a7ad64ea2bdf97b2740',
+  from: '0xf813c5dfe9602fb4b76ad71305788e9ca1649f31',
+  to: '0x39192498fcf1dbe11653040bb49308e09a1056ac'
 }
 
 const fixtures = {
-  // the db still needs to be populated with txPending data
   testnet: {
     txHashesForGetPendingTransactionEndpoint: [
       pendingTx1.hash,
