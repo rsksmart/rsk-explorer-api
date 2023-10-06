@@ -47,7 +47,7 @@ function removeNullFields (obj, nullableFields = []) {
   return obj
 }
 
-function generateFindQuery (query, select, include, orderBy = {}, take) {
+function generateFindQuery (query, select, include = {}, orderBy = {}, take) {
   select = createPrismaSelect(select)
   orderBy = createPrismaOrderBy(orderBy)
 

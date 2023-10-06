@@ -11,22 +11,32 @@ const {
 } = endpoints
 
 const {
-  addressesForGetIsVerifiedEndpoint
+  addressesForGetVerificationEndpoint
 } = fixtures[network]
+
+const keysToSkipForVerificationResults = {
+  data: ['_id', 'timestamp', ['request', '_id']]
+}
 
 describe('VerificationResults module', () => {
   describe('GET getResults endpoint', () => {
     const endpoint = getResults()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        keysToSkip: keysToSkipForVerificationResults
+      })
     })
   })
 
   describe('GET getVerification endpoint', () => {
-    for (const address of addressesForGetIsVerifiedEndpoint) {
+    for (const address of addressesForGetVerificationEndpoint) {
       const endpoint = getVerification({ address })
       it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({ endpoint })
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForVerificationResults
+        })
       })
     }
   })

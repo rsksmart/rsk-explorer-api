@@ -1,3 +1,5 @@
+import { removeNullFields } from '../repositories/utils'
+
 function rawVerificationResultsToEntity ({
   id,
   address,
@@ -30,16 +32,26 @@ function verificationResultsEntityToRaw ({
   sources,
   timestamp
 }) {
-  return {
+  const contractVerification = {
     _id: id,
     address,
     match,
-    request: JSON.parse(request),
-    result: JSON.parse(result),
-    abi: JSON.parse(abi),
-    sources: JSON.parse(sources),
-    timestamp: Number(timestamp)
+    request,
+    result,
+    abi,
+    sources,
+    timestamp: timestamp ? Number(timestamp) : undefined
   }
+
+  if (contractVerification.result) contractVerification.result = JSON.parse(result)
+  if (contractVerification.abi) contractVerification.abi = JSON.parse(abi)
+  if (contractVerification.sources) contractVerification.sources = JSON.parse(sources)
+  if (contractVerification.request) {
+    contractVerification.request = JSON.parse(request)
+    delete contractVerification.request.id // extra id
+  }
+
+  return removeNullFields(contractVerification)
 }
 
 export {

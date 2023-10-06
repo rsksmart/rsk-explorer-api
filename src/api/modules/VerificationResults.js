@@ -2,7 +2,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 
 export class VerificationResults extends DataCollectorItem {
   constructor (name) {
-    super(name)
+    let sortable = { 'address': -1 }
+    const cursorField = 'address'
+    super(name, { cursorField, sortDir: -1, sortable })
     this.publicActions = {
       /**
      * @swagger
