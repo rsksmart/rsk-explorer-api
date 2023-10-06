@@ -50,13 +50,15 @@ describe('Address module', () => {
   })
 
   describe('GET getMiners endpoint', () => {
-    const endpoint = getMiners()
-    it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({
-        endpoint,
-        keysToSkip: keysToSkipForAddress
+    for (const fromBlock of blockNumbersForGetMinersEndpoint) {
+      const endpoint = getMiners({ fromBlock })
+      it(sameDataMsg(endpoint), async () => {
+        await compareDataFromBothEnvs({
+          endpoint,
+          keysToSkip: keysToSkipForAddress
+        })
       })
-    })
+    }
   })
 
   describe('GET getTokens endpoint', () => {
@@ -67,16 +69,6 @@ describe('Address module', () => {
         keysToSkip: keysToSkipForAddress
       })
     })
-
-    for (const fromBlock of blockNumbersForGetMinersEndpoint) {
-      const endpoint = getMiners({ fromBlock })
-      it(sameDataMsg(endpoint), async () => {
-        await compareDataFromBothEnvs({
-          endpoint,
-          keysToSkip: keysToSkipForAddress
-        })
-      })
-    }
   })
 
   describe('GET getCirculatingSupply endpoint', () => {
