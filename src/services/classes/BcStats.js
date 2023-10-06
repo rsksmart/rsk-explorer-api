@@ -26,7 +26,8 @@ export class BcStats extends BlocksBase {
     try {
       const { nod3, initConfig } = this
       const address = initConfig.nativeContracts.bridge
-      const abi = ABI.bridge
+      const bitcoinNetwork = this.net.id
+      const abi = ABI.bridge({ bitcoinNetwork })
       const contract = Contract(abi, { address, nod3 })
       const res = await contract.call(method, params)
       return res

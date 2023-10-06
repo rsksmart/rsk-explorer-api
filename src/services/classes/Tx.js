@@ -193,7 +193,7 @@ export class Tx extends BcThing {
           events[index] = formatEvent(log, tx)
         } else {
           contracts[address] = contract
-          let parser = await contract.getParser()
+          let parser = await contract.getParser(tx.blockNumber)
           let [event] = parser.parseTxLogs([log])
           events[index] = formatEvent(event, tx)
           const { _addresses } = event
