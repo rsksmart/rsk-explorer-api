@@ -26,7 +26,8 @@ class BcStats extends _BlocksBase.BlocksBase {
     try {
       const { nod3, initConfig } = this;
       const address = initConfig.nativeContracts.bridge;
-      const abi = _rskContractParser.abi.bridge;
+      const bitcoinNetwork = this.net.id;
+      const abi = _rskContractParser.abi.bridge({ bitcoinNetwork });
       const contract = (0, _rskContractParser.Contract)(abi, { address, nod3 });
       const res = await contract.call(method, params);
       return res;

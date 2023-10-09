@@ -193,7 +193,7 @@ class Tx extends _BcThing.BcThing {
           events[index] = (0, _Event.formatEvent)(log, tx);
         } else {
           contracts[address] = contract;
-          let parser = await contract.getParser();
+          let parser = await contract.getParser(tx.blockNumber);
           let [event] = parser.parseTxLogs([log]);
           events[index] = (0, _Event.formatEvent)(event, tx);
           const { _addresses } = event;
