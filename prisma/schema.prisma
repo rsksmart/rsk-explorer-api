@@ -7,25 +7,6 @@ datasource db {
   url      = ""
 }
 
-model action {
-  internalTxId         String               @id @map("internal_tx_id") @db.VarChar
-  callType             String?              @map("call_type") @db.VarChar
-  creationMethod       String?              @map("creation_method") @db.VarChar
-  from                 String?              @db.VarChar(42)
-  to                   String?              @db.VarChar(42)
-  gas                  String?              @db.VarChar
-  input                String?              @db.VarChar
-  value                String?              @db.VarChar
-  init                 String?              @db.VarChar
-  address              String?              @db.VarChar(42)
-  refundAddress        String?              @map("refund_address") @db.VarChar(42)
-  balance              String?              @db.VarChar
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_action_internal_tx_id")
-
-  @@index([from], map: "index_action_from")
-  @@index([to], map: "index_action_to")
-}
-
 model address {
   id                                                             Int                      @default(autoincrement())
   address                                                        String                   @id @db.VarChar(42)
@@ -186,27 +167,20 @@ model internal_transaction {
   transactionPosition                            Int                               @map("transaction_position")
   type                                           String                            @db.VarChar
   subtraces                                      Int
+  traceAddress                                   String?                           @map("trace_address") @db.VarChar
+  result                                         String?                           @db.VarChar
   index                                          Int
   timestamp                                      String                            @db.VarChar
   error                                          String?                           @db.VarChar
-  action                                         action?
+  action                                         String?                           @db.VarChar
+  actionFrom                                     String?                           @map("action_from") @db.VarChar
+  actionTo                                       String?                           @map("action_to") @db.VarChar
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                             @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
   transaction                                    transaction                       @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
   internal_transaction_in_summary                internal_transaction_in_summary[]
-  internal_transaction_result                    internal_transaction_result?
   suicide_in_summary                             suicide_in_summary[]
-  trace_address                                  trace_address[]
-}
-
-model internal_transaction_result {
-  internalTxId         String               @id @map("internal_tx_id") @db.VarChar
-  gasUsed              String?              @map("gas_used") @db.VarChar
-  output               String?              @db.VarChar
-  address              String?              @db.VarChar
-  code                 String?              @db.VarChar
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_action_internal_tx_id")
 }
 
 model receipt {
@@ -251,15 +225,6 @@ model token_address {
   token_address_in_summary                  token_address_in_summary[]
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
-}
-
-model trace_address {
-  internalTxId         String               @map("internal_tx_id") @db.VarChar
-  index                Int
-  trace                Int
-  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_trace_address_internal_tx_id")
-
-  @@id([internalTxId, index], map: "pk_trace_address")
 }
 
 model transaction {

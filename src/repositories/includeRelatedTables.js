@@ -30,19 +30,6 @@ const eventRelatedTables = {
   address_in_event: { select: { address: true } }
 }
 
-const internalTxRelatedTables = {
-  action: true,
-  internal_transaction_result: true,
-  trace_address: {
-    select: {
-      trace: true
-    },
-    orderBy: {
-      index: 'asc'
-    }
-  }
-}
-
 const txRelatedTables = {
   receipt: true
 }
@@ -51,8 +38,8 @@ const summaryRelatedTables = {
   address_in_summary: {include: {block: {include: blockRelatedTables}, address_address_in_summary_addressToaddress: {include: addressRelatedTables({ forSummary: true })}}},
   block_block_summary_hashToblock: {include: blockRelatedTables},
   event_in_summary: {include: {event: {include: eventRelatedTables}}},
-  internal_transaction_in_summary: {include: {internal_transaction: {include: internalTxRelatedTables}}},
-  suicide_in_summary: {include: {internal_transaction: {include: internalTxRelatedTables}}},
+  internal_transaction_in_summary: {include: {internal_transaction: true}},
+  suicide_in_summary: {include: {internal_transaction: true}},
   token_address_in_summary: {include: {token_address: true}},
   transaction_in_summary: {include: {transaction: {include: txRelatedTables}}}
 }
@@ -61,7 +48,6 @@ export {
   addressRelatedTables,
   blockRelatedTables,
   eventRelatedTables,
-  internalTxRelatedTables,
   summaryRelatedTables,
   txRelatedTables
 }

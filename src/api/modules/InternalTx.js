@@ -112,10 +112,9 @@ export class InternalTx extends DataCollectorItem {
         const { address } = params
         return this.getPageData(
           {
-            // OR: [{ 'action.from': address }, { 'action.to': address }]
             OR: [
-              { action: { from: address } },
-              { action: { to: address } }
+              { actionFrom: address },
+              { actionTo: address }
             ]
           },
           params

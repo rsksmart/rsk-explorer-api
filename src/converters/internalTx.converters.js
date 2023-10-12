@@ -1,49 +1,5 @@
 import { removeNullFields } from '../repositories/utils'
 
-function rawActionToEntity ({
-  internalTxId,
-  callType,
-  creationMethod,
-  from,
-  to,
-  gas,
-  input,
-  value,
-  init,
-  address,
-  refundAddress,
-  balance
-}) {
-  return {
-    internalTxId,
-    callType,
-    creationMethod,
-    from,
-    to,
-    gas,
-    input,
-    value,
-    init,
-    address,
-    refundAddress,
-    balance
-  }
-}
-
-function rawInternalTransactionResultToEntity ({
-  gasUsed,
-  output,
-  address,
-  code
-}) {
-  return {
-    gasUsed,
-    output,
-    address,
-    code
-  }
-}
-
 function rawInternalTransactionToEntity ({
   internalTxId,
   transactionHash,
@@ -51,6 +7,9 @@ function rawInternalTransactionToEntity ({
   blockHash,
   transactionPosition,
   subtraces,
+  traceAddress,
+  result,
+  action,
   _index,
   timestamp,
   type,
@@ -63,15 +22,16 @@ function rawInternalTransactionToEntity ({
     blockHash,
     transactionPosition,
     subtraces,
+    traceAddress: JSON.stringify(traceAddress),
+    result: result ? JSON.stringify(result) : null,
+    action: JSON.stringify(action),
+    actionFrom: action.from,
+    actionTo: action.to,
     index: _index,
     timestamp: String(timestamp),
     type,
     error
   }
-}
-
-function rawTraceAddressToEntity (trace, index) {
-  return { trace, index }
 }
 
 function internalTxEntityToRaw ({
@@ -81,47 +41,35 @@ function internalTxEntityToRaw ({
   transactionHash,
   transactionPosition,
   subtraces,
-  trace_address: traceAddress,
-  index,
-  internal_transaction_result: result,
+  traceAddress,
+  result,
   action,
+  index,
   type,
   internalTxId,
   error
 }) {
-  delete action.internalTxId
-  delete result.internalTxId
-
   const itxToReturn = {
-    action: removeNullFields(action),
+    action: removeNullFields(JSON.parse(action)),
     blockHash,
     blockNumber,
     transactionHash,
     transactionPosition,
     type,
     subtraces,
-    traceAddress: traceAddress.map(t => t.trace),
-    result: removeNullFields(result),
+    traceAddress: JSON.parse(traceAddress),
+    result: removeNullFields(JSON.parse(result)),
     _index: index,
     timestamp: Number(timestamp),
     internalTxId
   }
 
-  if (error) {
-    itxToReturn.error = error
-  }
-
-  if (!Object.keys(result).length) {
-    itxToReturn.result = null
-  }
+  if (error) itxToReturn.error = error
 
   return itxToReturn
 }
 
 export {
-  rawActionToEntity,
-  rawInternalTransactionResultToEntity,
   rawInternalTransactionToEntity,
-  internalTxEntityToRaw,
-  rawTraceAddressToEntity
+  internalTxEntityToRaw
 }
