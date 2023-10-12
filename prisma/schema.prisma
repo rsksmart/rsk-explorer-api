@@ -21,6 +21,9 @@ model action {
   refundAddress        String?              @map("refund_address") @db.VarChar(42)
   balance              String?              @db.VarChar
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_action_internal_tx_id")
+
+  @@index([from], map: "index_action_from")
+  @@index([to], map: "index_action_to")
 }
 
 model address {
