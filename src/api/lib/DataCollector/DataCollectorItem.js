@@ -203,11 +203,7 @@ export function fieldFilterParse (field, value, query) {
 
   if (inArr.length) fieldQuery['in'] = inArr
 
-  if (ninArr.length) {
-    fieldQuery['not'] = {
-      in: fieldQuery
-    }
-  }
+  if (ninArr.length) fieldQuery.notIn = ninArr
 
   if (fieldQuery) query[field] = fieldQuery
 
