@@ -1,3 +1,5 @@
+-- RSK Explorer Database Schema V1.0.1 (optimized block queries)
+
 CREATE TABLE block (
 _id UUID DEFAULT gen_random_uuid(),
 number INT4 PRIMARY KEY,
