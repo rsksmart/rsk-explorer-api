@@ -1,9 +1,3 @@
-const blockRelatedTables = {
-  uncle: {select: {hash: true}},
-  transaction_transaction_block_numberToblock: {select: {hash: true}},
-  miner: {select: {address: true}}
-}
-
 const addressRelatedTables = ({ forSummary } = {}) => {
   const relations = {
     contract_destruction_tx: { select: { tx: true } },
@@ -20,7 +14,7 @@ const addressRelatedTables = ({ forSummary } = {}) => {
   if (!forSummary) {
     relations.address_latest_balance_address_latest_balance_addressToaddress = {select: {balance: true, blockNumber: true}}
     relations.address_latest_balance_address_latest_balance_addressToaddress = {select: {balance: true, blockNumber: true}}
-    relations.miner_miner_addressToaddress = {select: {block: {include: blockRelatedTables}}, orderBy: {blockNumber: 'desc'}, take: 1}
+    relations.miner_miner_addressToaddress = {select: {block: true}, orderBy: {blockNumber: 'desc'}, take: 1}
   }
 
   return relations
@@ -35,8 +29,8 @@ const txRelatedTables = {
 }
 
 const summaryRelatedTables = {
-  address_in_summary: {include: {block: {include: blockRelatedTables}, address_address_in_summary_addressToaddress: {include: addressRelatedTables({ forSummary: true })}}},
-  block_block_summary_hashToblock: {include: blockRelatedTables},
+  address_in_summary: {include: {block: true, address_address_in_summary_addressToaddress: {include: addressRelatedTables({ forSummary: true })}}},
+  block_block_summary_hashToblock: true,
   event_in_summary: {include: {event: {include: eventRelatedTables}}},
   internal_transaction_in_summary: {include: {internal_transaction: true}},
   suicide_in_summary: {include: {internal_transaction: true}},
@@ -46,7 +40,6 @@ const summaryRelatedTables = {
 
 export {
   addressRelatedTables,
-  blockRelatedTables,
   eventRelatedTables,
   summaryRelatedTables,
   txRelatedTables

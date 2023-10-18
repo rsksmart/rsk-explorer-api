@@ -19,8 +19,7 @@ import {
 export function getBlocksRepository (prismaClient) {
   return {
     async findOne (query = {}, project = {}) {
-      query = generateFindQuery(query, project, blockRelatedTables, project)
-      const block = await prismaClient.block.findFirst(query)
+      const block = await prismaClient.block.findFirst(generateFindQuery(query, project, {}, project))
 
       return block ? blockEntityToRaw(block) : null
     },
@@ -35,13 +34,7 @@ export function getBlocksRepository (prismaClient) {
       return count
     },
     insertOne (data) {
-      const { uncles, number: blockNumber } = data
-      const transactionQueries = [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
-
-      const unclesToSave = uncles.map(hash => ({hash, blockNumber}))
-      transactionQueries.push(prismaClient.uncle.createMany({data: unclesToSave, skipDuplicates: true}))
-
-      return transactionQueries
+      return [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
     },
     async saveBlockData (data) {
       const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
