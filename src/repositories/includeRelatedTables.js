@@ -24,10 +24,6 @@ const eventRelatedTables = {
   address_in_event: { select: { address: true } }
 }
 
-const txRelatedTables = {
-  receipt: true
-}
-
 const summaryRelatedTables = {
   address_in_summary: {include: {block: true, address_address_in_summary_addressToaddress: {include: addressRelatedTables({ forSummary: true })}}},
   block_block_summary_hashToblock: true,
@@ -35,12 +31,11 @@ const summaryRelatedTables = {
   internal_transaction_in_summary: {include: {internal_transaction: true}},
   suicide_in_summary: {include: {internal_transaction: true}},
   token_address_in_summary: {include: {token_address: true}},
-  transaction_in_summary: {include: {transaction: {include: txRelatedTables}}}
+  transaction_in_summary: {include: {transaction: true}}
 }
 
 export {
   addressRelatedTables,
   eventRelatedTables,
-  summaryRelatedTables,
-  txRelatedTables
+  summaryRelatedTables
 }

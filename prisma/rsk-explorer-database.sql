@@ -1,4 +1,4 @@
--- RSK Explorer Database Schema V1.0.1 (optimized block queries)
+-- RSK Explorer Database Schema V1.0.2 (optimized transaction queries)
 
 CREATE TABLE block (
 _id UUID DEFAULT gen_random_uuid(),
@@ -142,6 +142,7 @@ v VARCHAR,
 r VARCHAR,
 s VARCHAR,
 timestamp VARCHAR NOT NULL,
+receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
@@ -258,27 +259,6 @@ address VARCHAR(42),
 PRIMARY KEY (event_id, address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
-);
-
-CREATE TABLE receipt (
-transaction_hash VARCHAR(66) PRIMARY KEY,
-transaction_index INT4 NOT NULL,
-block_hash VARCHAR(66) NOT NULL,
-block_number INT4 NOT NULL,
-"from" VARCHAR(42) NOT NULL,
-"to" VARCHAR(42),
-type VARCHAR,
-cumulative_gas_used INT4 NOT NULL,
-gas_used INT4 NOT NULL,
-contract_address VARCHAR(42),
-logs VARCHAR NOT NULL, -- stringified
-status VARCHAR NOT NULL,
-logs_bloom VARCHAR NOT NULL,
-CONSTRAINT fk_receipt_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
-CONSTRAINT fk_receipt_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
-CONSTRAINT fk_receipt_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
-CONSTRAINT fk_receipt_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
-CONSTRAINT fk_receipt_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE
 );
 
 CREATE TABLE block_trace (

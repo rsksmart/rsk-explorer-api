@@ -1,36 +1,26 @@
-import { rawReceiptToEntity, rawTxToEntity, transactionEntityToRaw } from '../converters/tx.converters'
+import { rawTxToEntity, transactionEntityToRaw } from '../converters/tx.converters'
 import { generateFindQuery } from './utils'
-import { txRelatedTables } from './includeRelatedTables'
 
 export function getTxRepository (prismaClient) {
   return {
     async findOne (query = {}, project = {}) {
-      const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, txRelatedTables, project))
+      const txToReturn = await prismaClient.transaction.findFirst(generateFindQuery(query, project, {}, project))
 
       return txToReturn ? transactionEntityToRaw(txToReturn) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-      const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, txRelatedTables, sort, limit))
+      const txs = await prismaClient.transaction.findMany(generateFindQuery(query, project, {}, sort, limit))
 
       return txs.map(transactionEntityToRaw)
     },
     async countDocuments (query = {}) {
-      const count = await prismaClient.transaction.count({where: query})
-
-      return count
+      return prismaClient.transaction.count({where: query})
     },
     async deleteMany (filter) {
-      const deleted = await prismaClient.transaction.deleteMany({where: filter})
-
-      return deleted
+      return prismaClient.transaction.deleteMany({where: filter})
     },
     insertOne (data) {
-      return [prismaClient.transaction.create({
-        data: {
-          ...rawTxToEntity(data),
-          receipt: { create: rawReceiptToEntity(data.receipt) }
-        }
-      })]
+      return [prismaClient.transaction.create({ data: rawTxToEntity(data) })]
     }
   }
 }

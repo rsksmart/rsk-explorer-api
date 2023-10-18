@@ -1,5 +1,3 @@
-import { removeNullFields } from '../repositories/utils'
-
 function rawTxToEntity ({
   hash,
   nonce,
@@ -17,6 +15,7 @@ function rawTxToEntity ({
   s,
   type,
   timestamp,
+  receipt,
   txType,
   txId
 }) {
@@ -37,73 +36,10 @@ function rawTxToEntity ({
     s,
     type,
     timestamp: String(timestamp),
+    receipt: JSON.stringify(receipt),
     txType,
     txId
   }
-}
-
-function rawReceiptToEntity ({
-  transactionIndex,
-  blockHash,
-  blockNumber,
-  logs,
-  from,
-  to,
-  cumulativeGasUsed,
-  gasUsed,
-  contractAddress,
-  status,
-  logsBloom,
-  type
-}) {
-  return {
-    transactionIndex,
-    blockHash,
-    blockNumber,
-    logs: JSON.stringify(logs),
-    from,
-    to: to || undefined,
-    cumulativeGasUsed,
-    gasUsed,
-    contractAddress,
-    status,
-    logsBloom,
-    type
-  }
-}
-
-function receiptEntityToRaw ({
-  transactionHash,
-  transactionIndex,
-  blockHash,
-  blockNumber,
-  from,
-  to,
-  type,
-  cumulativeGasUsed,
-  gasUsed,
-  contractAddress,
-  status,
-  logsBloom,
-  logs
-}) {
-  const receiptToReturn = {
-    transactionHash,
-    transactionIndex,
-    blockHash,
-    blockNumber,
-    cumulativeGasUsed,
-    gasUsed,
-    contractAddress,
-    logs: JSON.parse(logs),
-    from,
-    to,
-    status,
-    logsBloom,
-    type
-  }
-
-  return removeNullFields(receiptToReturn, ['contractAddress', 'to'])
 }
 
 function transactionEntityToRaw ({
@@ -144,18 +80,15 @@ function transactionEntityToRaw ({
     s,
     type,
     timestamp: Number(timestamp),
+    receipt: JSON.parse(receipt),
     txType,
     txId
   }
 
-  if (receipt) {
-    txToReturn.receipt = receiptEntityToRaw(receipt)
-  }
   return txToReturn
 }
 
 export {
   rawTxToEntity,
-  rawReceiptToEntity,
   transactionEntityToRaw
 }
