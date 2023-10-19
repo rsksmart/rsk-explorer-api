@@ -28,7 +28,7 @@ function rawInternalTransactionToEntity ({
     actionFrom: action.from,
     actionTo: action.to,
     index: _index,
-    timestamp: String(timestamp),
+    timestamp,
     type,
     error
   }

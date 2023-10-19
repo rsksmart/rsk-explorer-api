@@ -11,9 +11,9 @@ function rawStatsToEntity ({
     blockNumber,
     blockHash,
     activeAccounts,
-    hashrate: String(hashrate),
+    hashrate,
     lockingCap: bridge.lockingCap,
-    timestamp: String(timestamp)
+    timestamp
   }
 
   if (circulating) {

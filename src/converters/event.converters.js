@@ -29,7 +29,7 @@ function rawEventToEntity ({
     event,
     logIndex,
     signature,
-    timestamp: String(timestamp),
+    timestamp,
     transactionHash,
     transactionIndex,
     txStatus

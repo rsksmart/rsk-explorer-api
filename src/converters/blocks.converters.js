@@ -42,7 +42,7 @@ function rawBlockToEntity ({
     size,
     gasLimit,
     gasUsed,
-    timestamp: String(timestamp),
+    timestamp,
     transactions: JSON.stringify(transactions),
     uncles: JSON.stringify(uncles),
     minimumGasPrice,
@@ -52,7 +52,7 @@ function rawBlockToEntity ({
     hashForMergedMining,
     paidFees,
     cumulativeDifficulty,
-    received: String(_received)
+    received: _received
   }
 }
 

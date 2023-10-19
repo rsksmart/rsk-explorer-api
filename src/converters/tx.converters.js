@@ -35,7 +35,7 @@ function rawTxToEntity ({
     r,
     s,
     type,
-    timestamp: String(timestamp),
+    timestamp,
     receipt: JSON.stringify(receipt),
     txType,
     txId

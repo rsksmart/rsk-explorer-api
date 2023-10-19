@@ -39,13 +39,15 @@ function rawTxPoolToEntity ({
   blockNumber,
   pending,
   queued,
-  timestamp
+  timestamp,
+  txs
 }) {
   return {
     blockNumber,
     pending,
     queued,
-    timestamp: String(timestamp)
+    timestamp,
+    txs: JSON.stringify(txs)
   }
 }
 

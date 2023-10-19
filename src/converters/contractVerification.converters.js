@@ -16,7 +16,7 @@ function rawContractVerificationToEntity ({
   } else {
     return {
       id,
-      timestamp: String(timestamp),
+      timestamp,
       request: JSON.stringify(request)
     }
   }

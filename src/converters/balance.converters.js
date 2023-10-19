@@ -2,7 +2,7 @@ import { removeNullFields } from '../repositories/utils'
 
 function rawBalanceToEntity ({
   address,
-  _created,
+  _created: created,
   timestamp,
   balance,
   blockHash,
@@ -10,8 +10,8 @@ function rawBalanceToEntity ({
 }) {
   return {
     address,
-    created: String(_created),
-    timestamp: String(timestamp),
+    created,
+    timestamp,
     balance,
     blockHash,
     blockNumber

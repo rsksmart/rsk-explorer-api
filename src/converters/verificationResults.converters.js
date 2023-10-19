@@ -18,7 +18,7 @@ function rawVerificationResultsToEntity ({
     result: JSON.stringify(result),
     abi: JSON.stringify(abi),
     sources: JSON.stringify(sources),
-    timestamp: String(timestamp)
+    timestamp
   }
 }
 
@@ -40,7 +40,7 @@ function verificationResultsEntityToRaw ({
     result,
     abi,
     sources,
-    timestamp: timestamp ? Number(timestamp) : undefined
+    timestamp: Number(timestamp)
   }
 
   if (contractVerification.result) contractVerification.result = JSON.parse(result)

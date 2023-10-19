@@ -1,4 +1,12 @@
--- RSK Explorer Database Schema V1.0.2 (optimized transaction queries)
+-- RSK Explorer Database Schema V1.0.3
+
+/*
+V1.0.3 Notes:
+
+- timestamp, created, received and hashrate fields are now stored as INT8.
+- rename table txpool to tx_pool
+- fix txs in tx_pool
+*/
 
 CREATE TABLE block (
 _id UUID DEFAULT gen_random_uuid(),
@@ -17,7 +25,7 @@ extra_data VARCHAR NOT NULL,
 size INT4 NOT NULL,
 gas_limit INT4 NOT NULL,
 gas_used INT4 NOT NULL,
-timestamp VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
 transactions VARCHAR, -- stringified
 uncles VARCHAR, -- stringified
 minimum_gas_price VARCHAR NOT NULL,
@@ -27,29 +35,30 @@ bitcoin_merged_mining_merkle_proof VARCHAR NOT NULL,
 hash_for_merged_mining VARCHAR(66) NOT NULL,
 paid_fees VARCHAR NOT NULL,
 cumulative_difficulty VARCHAR NOT NULL,
-received VARCHAR NOT NULL
+received INT8 NOT NULL
 );
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
 block_hash VARCHAR NOT NULL,
 active_accounts INT4 NOT NULL,
-hashrate VARCHAR NOT NULL,
+hashrate INT8 NOT NULL,
 circulating_supply VARCHAR,
 total_supply INT4,
 bridge_balance VARCHAR,
 locking_cap VARCHAR,
-timestamp VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
 CONSTRAINT fk_stats_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE,
 CONSTRAINT fk_stats_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
-CREATE TABLE txpool (
+CREATE TABLE tx_pool (
 id SERIAL PRIMARY KEY,
 block_number INT4 NOT NULL,
 pending INT4 NOT NULL,
-queued INT4 NOT NULL, 
-timestamp VARCHAR NOT NULL
+queued INT4 NOT NULL,
+txs VARCHAR NOT NULL, -- stringified
+timestamp INT8 NOT NULL
 );
 
 CREATE TABLE transaction_pending (
@@ -108,12 +117,13 @@ address VARCHAR(42) NOT NULL,
 balance VARCHAR NOT NULL, -- string | number but handled AT converter
 block_number INT4 NOT NULL,
 block_hash VARCHAR(66) NOT NULL,
-timestamp VARCHAR NOT NULL,
-created VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
+created INT8 NOT NULL,
 CONSTRAINT fk_balance_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_balance_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
+CREATE INDEX idx_balance_address ON balance(address);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -141,7 +151,7 @@ input VARCHAR,
 v VARCHAR,
 r VARCHAR,
 s VARCHAR,
-timestamp VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
@@ -160,7 +170,7 @@ subtraces INT4 NOT NULL,
 trace_address VARCHAR,
 result VARCHAR,
 index INT4 NOT NULL,
-timestamp VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
 error VARCHAR,
 action VARCHAR, -- stringified
 action_from VARCHAR, -- index
@@ -183,14 +193,14 @@ CONSTRAINT fk_contract_code_stored_at_block FOREIGN KEY (code_stored_at_block) R
 
 CREATE TABLE contract_creation_tx (
 contract_address VARCHAR PRIMARY KEY,
-timestamp VARCHAR,
+timestamp INT8,
 tx VARCHAR,
 CONSTRAINT fk_contract_creation_tx_contract_address FOREIGN KEY (contract_address) REFERENCES contract(address) ON DELETE CASCADE
 );
 
 CREATE TABLE contract_destruction_tx (
 contract_address VARCHAR PRIMARY KEY,
-timestamp VARCHAR,
+timestamp INT8,
 tx VARCHAR,
 CONSTRAINT fk_contract_destruction_tx_contract_address FOREIGN KEY (contract_address) REFERENCES address(address) ON DELETE CASCADE
 );
@@ -243,7 +253,7 @@ data VARCHAR NOT NULL,
 event VARCHAR,
 log_index INT4 NOT NULL,
 signature VARCHAR,
-timestamp VARCHAR NOT NULL,
+timestamp INT8 NOT NULL,
 transaction_hash VARCHAR(66) NOT NULL,
 transaction_index INT4 NOT NULL,
 tx_status VARCHAR NOT NULL,
@@ -281,7 +291,7 @@ CREATE TABLE block_summary (
 id VARCHAR PRIMARY KEY,
 hash VARCHAR NOT NULL UNIQUE,
 number INT NOT NULL,
-timestamp INT NOT NULL,
+timestamp INT8 NOT NULL,
 CONSTRAINT fk_block_summary_hash FOREIGN KEY (hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_block_summary_number FOREIGN KEY (number) REFERENCES block(number) ON DELETE CASCADE
 );
@@ -370,7 +380,7 @@ CREATE TABLE contract_verification (
   match BOOLEAN,
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified
-  timestamp VARCHAR
+  timestamp INT8
 );
 
 CREATE TABLE verification_result (
@@ -381,5 +391,5 @@ CREATE TABLE verification_result (
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
-  timestamp VARCHAR
-)
+  timestamp INT8
+);

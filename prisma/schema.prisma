@@ -34,11 +34,13 @@ model balance {
   balance                           String  @db.VarChar
   blockNumber                       Int     @map("block_number")
   blockHash                         String  @map("block_hash") @db.VarChar(66)
-  timestamp                         String  @db.VarChar
-  created                           String  @db.VarChar
+  timestamp                         BigInt
+  created                           BigInt
   address_balance_addressToaddress  address @relation("balance_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_address")
   block_balance_block_hashToblock   block   @relation("balance_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_hash")
   block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
+
+  @@index([address], map: "idx_balance_address")
 }
 
 model block {
@@ -58,7 +60,7 @@ model block {
   size                                                          Int
   gasLimit                                                      Int                      @map("gas_limit")
   gasUsed                                                       Int                      @map("gas_used")
-  timestamp                                                     String                   @db.VarChar
+  timestamp                                                     BigInt
   transactions                                                  String?                  @db.VarChar
   uncles                                                        String?                  @db.VarChar
   minimumGasPrice                                               String                   @map("minimum_gas_price") @db.VarChar
@@ -68,7 +70,7 @@ model block {
   hashForMergedMining                                           String                   @map("hash_for_merged_mining") @db.VarChar(66)
   paidFees                                                      String                   @map("paid_fees") @db.VarChar
   cumulativeDifficulty                                          String                   @map("cumulative_difficulty") @db.VarChar
-  received                                                      String                   @db.VarChar
+  received                                                      BigInt
   address_in_summary                                            address_in_summary[]
   address_latest_balance                                        address_latest_balance[]
   balance_balance_block_hashToblock                             balance[]                @relation("balance_block_hashToblock")
@@ -130,7 +132,7 @@ model contract_verification {
   match     Boolean?
   request   String?  @db.VarChar
   result    String?  @db.VarChar
-  timestamp String?  @db.VarChar
+  timestamp BigInt?
 }
 
 model event {
@@ -145,7 +147,7 @@ model event {
   event                           String?            @db.VarChar
   logIndex                        Int                @map("log_index")
   signature                       String?            @db.VarChar
-  timestamp                       String             @db.VarChar
+  timestamp                       BigInt
   transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
   transactionIndex                Int                @map("transaction_index")
   txStatus                        String             @map("tx_status") @db.VarChar
@@ -168,7 +170,7 @@ model internal_transaction {
   traceAddress                                   String?                           @map("trace_address") @db.VarChar
   result                                         String?                           @db.VarChar
   index                                          Int
-  timestamp                                      String                            @db.VarChar
+  timestamp                                      BigInt
   error                                          String?                           @db.VarChar
   action                                         String?                           @db.VarChar
   actionFrom                                     String?                           @map("action_from") @db.VarChar
@@ -222,7 +224,7 @@ model transaction {
   v                                     String?                  @db.VarChar
   r                                     String?                  @db.VarChar
   s                                     String?                  @db.VarChar
-  timestamp                             String                   @db.VarChar
+  timestamp                             BigInt
   receipt                               String                   @db.VarChar
   event                                 event[]
   internal_transaction                  internal_transaction[]
@@ -234,20 +236,20 @@ model transaction {
 }
 
 model transaction_in_pool {
-  hash             String @db.VarChar(66)
-  poolId           Int    @map("pool_id")
-  blockHash        String @map("block_hash") @db.VarChar(66)
-  from             String @db.VarChar(42)
-  to               String @db.VarChar(42)
-  blockNumber      Int    @map("block_number")
-  transactionIndex Int    @map("transaction_index")
+  hash             String  @db.VarChar(66)
+  poolId           Int     @map("pool_id")
+  blockHash        String  @map("block_hash") @db.VarChar(66)
+  from             String  @db.VarChar(42)
+  to               String  @db.VarChar(42)
+  blockNumber      Int     @map("block_number")
+  transactionIndex Int     @map("transaction_index")
   nonce            Int
   gas              Int
-  gasPrice         String @map("gas_price") @db.VarChar
-  value            String @db.VarChar
-  input            String @db.VarChar
-  status           String @db.VarChar
-  txpool           txpool @relation(fields: [poolId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+  gasPrice         String  @map("gas_price") @db.VarChar
+  value            String  @db.VarChar
+  input            String  @db.VarChar
+  status           String  @db.VarChar
+  tx_pool          tx_pool @relation(fields: [poolId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
 
   @@id([hash, poolId], map: "pk_transaction_in_pool_hash_poolid")
 }
@@ -267,12 +269,13 @@ model transaction_pending {
   status           String @db.VarChar
 }
 
-model txpool {
+model tx_pool {
   id                  Int                   @id @default(autoincrement())
   blockNumber         Int                   @map("block_number")
   pending             Int
   queued              Int
-  timestamp           String                @db.VarChar
+  txs                 String                @db.VarChar
+  timestamp           BigInt
   transaction_in_pool transaction_in_pool[]
 }
 
@@ -284,19 +287,19 @@ model verification_result {
   request   String?  @db.VarChar
   result    String?  @db.VarChar
   sources   String?  @db.VarChar
-  timestamp String?  @db.VarChar
+  timestamp BigInt?
 }
 
 model stats {
   blockNumber                     Int     @id @map("block_number")
   blockHash                       String  @map("block_hash") @db.VarChar
   activeAccounts                  Int     @map("active_accounts")
-  hashrate                        String  @db.VarChar
+  hashrate                        BigInt
   circulatingSupply               String? @map("circulating_supply") @db.VarChar
   totalSupply                     Int?    @map("total_supply")
   bridgeBalance                   String? @map("bridge_balance") @db.VarChar
   lockingCap                      String? @map("locking_cap") @db.VarChar
-  timestamp                       String  @db.VarChar
+  timestamp                       BigInt
   block_stats_block_hashToblock   block   @relation("stats_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, map: "fk_stats_block_hash")
   block_stats_block_numberToblock block   @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, map: "fk_stats_block_number")
 }
@@ -327,7 +330,7 @@ model block_summary {
   id                                String                            @id @db.VarChar
   hash                              String                            @unique @db.VarChar
   number                            Int
-  timestamp                         Int
+  timestamp                         BigInt
   address_in_summary                address_in_summary[]
   block_block_summary_hashToblock   block                             @relation("block_summary_hashToblock", fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_hash")
   block_block_summary_numberToblock block                             @relation("block_summary_numberToblock", fields: [number], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_number")
@@ -424,18 +427,18 @@ model explorer_settings {
 
 model contract_creation_tx {
   contractAddress String   @id @map("contract_address") @db.VarChar
-  timestamp       String?  @db.VarChar
+  timestamp       BigInt?
   tx              String?  @db.VarChar
   contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
 }
 
 model address_in_event {
-  event_id                                  String  @db.VarChar
+  eventId                                   String  @map("event_id") @db.VarChar
   address                                   String  @db.VarChar(42)
   address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
-  event                                     event   @relation(fields: [event_id], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
+  event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([event_id, address])
+  @@id([eventId, address])
 }
 
 model address_latest_balance {
@@ -448,7 +451,7 @@ model address_latest_balance {
 
 model contract_destruction_tx {
   contractAddress String  @id @map("contract_address") @db.VarChar
-  timestamp       String? @db.VarChar
+  timestamp       BigInt?
   tx              String? @db.VarChar
   address         address @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_destruction_tx_contract_address")
 }
