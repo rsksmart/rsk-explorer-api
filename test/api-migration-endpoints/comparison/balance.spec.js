@@ -32,11 +32,11 @@ function removePostgresBalancesNotSavedInMongo (postgresList, mongoList) {
 function equalBlock0to1InGetStatusEndpoint (postgresStatus, mongoStatus) {
   if ((postgresStatus && postgresStatus.fromBlock.blockNumber === 0) && (mongoStatus && mongoStatus.fromBlock.blockNumber === 1)) {
     delete mongoStatus.fromBlock
+  }
 
-    return {
-      processedPostgres: postgresStatus,
-      processedMongo: { fromBlock: postgresStatus.fromBlock, ...mongoStatus }
-    }
+  return {
+    processedPostgres: postgresStatus,
+    processedMongo: { fromBlock: postgresStatus.fromBlock, ...mongoStatus }
   }
 }
 
