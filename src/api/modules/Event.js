@@ -1,9 +1,9 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
   constructor (key) {
-    const sortable = { eventId: -1 }
-    let cursorField = 'eventId'
-    let sortDir = -1
+    const cursorField = 'eventId'
+    const sortable = { blockNumber: -1 }
+    const sortDir = -1
     super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**

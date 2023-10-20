@@ -148,11 +148,11 @@ export class BlockSummary extends BcThing {
     }
   }
 
-  async getBlockSummariesByNumber (blockNumber) {
+  async getBlockSummariesByNumber (number) {
     try {
-      const number = parseInt(blockNumber)
-      if (isNaN(number)) throw new Error(`Invalid blockNumber ${blockNumber}`)
-      let res = await this.repository.find({ number }, {})
+      const blockNumber = parseInt(number)
+      if (isNaN(blockNumber)) throw new Error(`Invalid blockNumber ${number}`)
+      let res = await this.repository.find({ blockNumber }, {})
       return res
     } catch (err) {
       return Promise.reject(err)

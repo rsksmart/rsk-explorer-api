@@ -5,9 +5,9 @@ import { getBlock } from '../../tools/getBlockEndpointCall'
 
 export class Block extends DataCollectorItem {
   constructor (key) {
-    let cursorField = 'number'
-    let sortDir = -1
-    let sortable = { timestamp: -1 }
+    const cursorField = 'number'
+    const sortable = { [cursorField]: -1 }
+    const sortDir = -1
     super(key, { sortDir, cursorField, sortable })
     this.publicActions = {
       /**

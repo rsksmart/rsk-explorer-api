@@ -1,4 +1,3 @@
-import { getSummaryId } from '../lib/ids'
 import { generateFindQuery } from './utils'
 import { rawBlockSummaryToEntity, summaryEntityToRaw } from '../converters/summary.converters'
 import { summaryRelatedTables } from './includeRelatedTables'
@@ -20,51 +19,27 @@ export function getSummaryRepository (prismaClient) {
 
       return count
     },
-    insertOne (data) {
-      const {transactions, internalTransactions, addresses, tokenAddresses, events, suicides} = data
+    insertOne (summary) {
+      const { transactions, internalTransactions, addresses, tokenAddresses, events, suicides, block } = summary
+      const { number: blockNumber, hash, timestamp } = block
 
-      const blockData = {
-        hash: data.block.hash,
-        number: data.block.number,
-        timestamp: data.block.timestamp
-      }
-      const summaryId = getSummaryId(blockData)
-      blockData.id = summaryId
-      const summaryToSave = rawBlockSummaryToEntity(blockData)
+      const newBlockSummary = rawBlockSummaryToEntity({ blockNumber, hash, timestamp })
+      const newTxs = transactions.map(({ hash }) => ({ blockNumber, hash }))
+      const newItxs = internalTransactions.map(({ internalTxId }) => ({ blockNumber, internalTxId }))
+      const newTokenAddresses = tokenAddresses.map(({ address, contract, block: { number: blockNumber } }) => ({ address, contract, blockNumber }))
+      const newEvents = events.map(({ eventId }) => ({ blockNumber, eventId }))
+      const newContractSuicides = suicides.map(({ internalTxId }) => ({ blockNumber, internalTxId }))
+      const newAddresses = addresses.map(({ address, blockNumber, balance, lastBlockMined }) => ({ address, blockNumber, balance, lastBlockMined: lastBlockMined ? lastBlockMined.number : undefined }))
 
-      const transactionQueries = [prismaClient.block_summary.createMany({data: summaryToSave, skipDuplicates: true})]
-
-      const txsToSave = transactions.map(tx => ({hash: tx.hash, summaryId}))
-      transactionQueries.push(prismaClient.transaction_in_summary.createMany({data: txsToSave, skipDuplicates: true}))
-
-      const itxsToSave = internalTransactions.map(itx => ({internalTxId: itx.internalTxId, summaryId}))
-      transactionQueries.push(prismaClient.internal_transaction_in_summary.createMany({data: itxsToSave, skipDuplicates: true}))
-
-      const addressesToSave = addresses.map(({ address, blockNumber, balance, lastBlockMined }) => {
-        const addressToSave = { address, blockNumber, balance, summaryId }
-        if (lastBlockMined) {
-          addressToSave.lastBlockMined = lastBlockMined.number
-        }
-
-        return addressToSave
-      })
-      transactionQueries.push(prismaClient.address_in_summary.createMany({data: addressesToSave, skipDuplicates: true}))
-
-      const tokenAddressesToSave = tokenAddresses.map(token => {
-        return {
-          address: token.address,
-          contract: token.contract,
-          block: token.block.number,
-          summaryId
-        }
-      })
-      transactionQueries.push(prismaClient.token_address_in_summary.createMany({data: tokenAddressesToSave, skipDuplicates: true}))
-
-      const eventsToSave = events.map(event => ({eventId: event.eventId, summaryId}))
-      transactionQueries.push(prismaClient.event_in_summary.createMany({data: eventsToSave, skipDuplicates: true}))
-
-      const suicidesToSave = suicides.map(suicide => ({internalTxId: suicide.internalTxId, summaryId}))
-      transactionQueries.push(prismaClient.suicide_in_summary.createMany({data: suicidesToSave, skipDuplicates: true}))
+      const transactionQueries = [
+        prismaClient.block_summary.createMany({ data: newBlockSummary, skipDuplicates: true }),
+        prismaClient.transaction_in_summary.createMany({ data: newTxs, skipDuplicates: true }),
+        prismaClient.internal_transaction_in_summary.createMany({ data: newItxs, skipDuplicates: true }),
+        prismaClient.token_address_in_summary.createMany({data: newTokenAddresses, skipDuplicates: true}),
+        prismaClient.event_in_summary.createMany({data: newEvents, skipDuplicates: true}),
+        prismaClient.suicide_in_summary.createMany({data: newContractSuicides, skipDuplicates: true}),
+        prismaClient.address_in_summary.createMany({ data: newAddresses, skipDuplicates: true })
+      ]
 
       return transactionQueries
     },

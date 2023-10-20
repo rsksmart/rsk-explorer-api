@@ -3,8 +3,9 @@ import { DataCollectorItem } from '../lib/DataCollector'
 export class Stats extends DataCollectorItem {
   constructor (key) {
     const cursorField = 'blockNumber'
-    const sortable = { 'blockNumber': -1 }
-    super(key, { cursorField, sortable })
+    const sortable = { [cursorField]: -1 }
+    const sortDir = -1
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger

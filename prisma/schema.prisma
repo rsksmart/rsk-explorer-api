@@ -41,6 +41,7 @@ model balance {
   block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
 
   @@index([address], map: "idx_balance_address")
+  @@index([blockNumber], map: "idx_balance_block_number")
 }
 
 model block {
@@ -75,8 +76,8 @@ model block {
   address_latest_balance                                        address_latest_balance[]
   balance_balance_block_hashToblock                             balance[]                @relation("balance_block_hashToblock")
   balance_balance_block_numberToblock                           balance[]                @relation("balance_block_numberToblock")
-  block_summary_block_summary_hashToblock                       block_summary?           @relation("block_summary_hashToblock")
-  block_summary_block_summary_numberToblock                     block_summary[]          @relation("block_summary_numberToblock")
+  block_summary_block_summary_block_numberToblock               block_summary?           @relation("block_summary_block_numberToblock")
+  block_summary_block_summary_hashToblock                       block_summary[]          @relation("block_summary_hashToblock")
   block_trace                                                   block_trace[]
   contract                                                      contract[]
   event_event_block_hashToblock                                 event[]                  @relation("event_block_hashToblock")
@@ -157,6 +158,8 @@ model event {
   block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
   transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
   event_in_summary                event_in_summary[]
+
+  @@index([blockNumber], map: "idx_event_block_number")
 }
 
 model internal_transaction {
@@ -192,16 +195,16 @@ model status {
 }
 
 model token_address {
-  address                                   String                     @db.VarChar(42)
-  contract                                  String                     @db.VarChar(42)
-  blockNumber                               Int                        @map("block_number")
-  blockHash                                 String                     @map("block_hash") @db.VarChar
-  balance                                   String?                    @db.VarChar
-  address_token_address_addressToaddress    address                    @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
-  block_token_address_block_hashToblock     block                      @relation("token_address_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
-  block                                     block                      @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
-  contract_token_address_contractTocontract contract                   @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
-  token_address_in_summary                  token_address_in_summary[]
+  address                                   String                    @db.VarChar(42)
+  contract                                  String                    @db.VarChar(42)
+  blockNumber                               Int                       @map("block_number")
+  blockHash                                 String                    @map("block_hash") @db.VarChar
+  balance                                   String?                   @db.VarChar
+  address_token_address_addressToaddress    address                   @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
+  block_token_address_block_hashToblock     block                     @relation("token_address_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
+  block                                     block                     @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
+  contract_token_address_contractTocontract contract                  @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
+  token_address_in_summary                  token_address_in_summary?
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
 }
@@ -316,76 +319,73 @@ model block_trace {
 model address_in_summary {
   address                                     String        @db.VarChar(42)
   balance                                     String?       @db.VarChar
-  blockNumber                                 Int?          @map("block_number")
+  blockNumber                                 Int           @map("block_number")
   lastBlockMined                              Int?          @map("last_block_mined")
-  summaryId                                   String        @map("summary_id") @db.VarChar
   address_address_in_summary_addressToaddress address       @relation("address_in_summary_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_address")
+  block_summary                               block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
   block                                       block?        @relation(fields: [lastBlockMined], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_last_block_mined")
-  block_summary                               block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_summary_id")
 
-  @@id([address, summaryId], map: "pk_address_in_summary")
+  @@id([address, blockNumber])
 }
 
 model block_summary {
-  id                                String                            @id @db.VarChar
-  hash                              String                            @unique @db.VarChar
-  number                            Int
-  timestamp                         BigInt
-  address_in_summary                address_in_summary[]
-  block_block_summary_hashToblock   block                             @relation("block_summary_hashToblock", fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_hash")
-  block_block_summary_numberToblock block                             @relation("block_summary_numberToblock", fields: [number], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_number")
-  event_in_summary                  event_in_summary[]
-  internal_transaction_in_summary   internal_transaction_in_summary[]
-  suicide_in_summary                suicide_in_summary[]
-  token_address_in_summary          token_address_in_summary[]
-  transaction_in_summary            transaction_in_summary[]
+  blockNumber                             Int                               @id @map("block_number")
+  hash                                    String                            @db.VarChar
+  timestamp                               BigInt
+  address_in_summary                      address_in_summary[]
+  block_block_summary_block_numberToblock block                             @relation("block_summary_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction)
+  block_block_summary_hashToblock         block                             @relation("block_summary_hashToblock", fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_hash")
+  event_in_summary                        event_in_summary[]
+  internal_transaction_in_summary         internal_transaction_in_summary[]
+  suicide_in_summary                      suicide_in_summary[]
+  token_address_in_summary                token_address_in_summary[]
+  transaction_in_summary                  transaction_in_summary[]
 }
 
 model event_in_summary {
   eventId       String        @map("event_id") @db.VarChar
-  summaryId     String        @map("summary_id") @db.VarChar
+  blockNumber   Int           @map("block_number")
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
   event         event         @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_event_id")
-  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_summary_id")
 
-  @@id([eventId, summaryId], map: "pk_event_in_summary")
+  @@id([eventId, blockNumber])
 }
 
 model internal_transaction_in_summary {
   internalTxId         String               @map("internal_tx_id") @db.VarChar
-  summaryId            String               @map("summary_id") @db.VarChar
+  blockNumber          Int                  @map("block_number")
+  block_summary        block_summary        @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_in_summary_internal_tx_id")
-  block_summary        block_summary        @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_in_summary_summary_id")
 
-  @@id([internalTxId, summaryId], map: "pk_internal_transaction_in_summary")
+  @@id([internalTxId, blockNumber])
 }
 
 model suicide_in_summary {
   internalTxId         String               @map("internal_tx_id") @db.VarChar
-  summaryId            String               @map("summary_id") @db.VarChar
+  blockNumber          Int                  @map("block_number")
+  block_summary        block_summary        @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_suicide_in_summary_internal_tx_id")
-  block_summary        block_summary        @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_suicide_in_summary_summary_id")
 
-  @@id([internalTxId, summaryId], map: "pk_suicide_in_summary")
+  @@id([internalTxId, blockNumber])
 }
 
 model token_address_in_summary {
   address       String        @db.VarChar
   contract      String        @db.VarChar
-  block         Int
-  summaryId     String        @map("summary_id") @db.VarChar
-  token_address token_address @relation(fields: [address, contract, block], references: [address, contract, blockNumber], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_in_memory_address_contract_block")
-  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_in_memory_summary_id")
+  blockNumber   Int           @map("block_number")
+  token_address token_address @relation(fields: [address, contract, blockNumber], references: [address, contract, blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([address, contract, block, summaryId], map: "pk_token_address_in_summary")
+  @@id([address, contract, blockNumber])
 }
 
 model transaction_in_summary {
   hash          String        @db.VarChar
-  summaryId     String        @map("summary_id") @db.VarChar
+  blockNumber   Int           @map("block_number")
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
   transaction   transaction   @relation(fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_summary_hash")
-  block_summary block_summary @relation(fields: [summaryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_summary_summary_id")
 
-  @@id([hash, summaryId], map: "pk_transaction_in_summary")
+  @@id([hash, blockNumber])
 }
 
 model miner {

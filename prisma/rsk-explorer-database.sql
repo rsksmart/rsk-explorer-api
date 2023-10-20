@@ -1,6 +1,12 @@
--- RSK Explorer Database Schema V1.0.3
+-- RSK Explorer Database Schema V1.0.4
 
 /*
+V1.0.4 Notes:
+
+- Added relevant indexes for efficient sorting in some tables
+- Refactored block summary tables
+- small fix in tx pool related tables
+
 V1.0.3 Notes:
 
 - timestamp, created, received and hashrate fields are now stored as INT8.
@@ -91,7 +97,7 @@ value VARCHAR NOT NULL,
 input VARCHAR NOT NULL,
 status VARCHAR NOT NULL,
 CONSTRAINT pk_transaction_in_pool_hash_poolId PRIMARY KEY (hash, pool_id),
-CONSTRAINT fk_transaction_in_pool_poolId FOREIGN KEY (pool_id) REFERENCES txpool(id)
+CONSTRAINT fk_transaction_in_pool_poolId FOREIGN KEY (pool_id) REFERENCES tx_pool(id)
 );
 
 CREATE TABLE address (
@@ -124,6 +130,7 @@ CONSTRAINT fk_balance_block_number FOREIGN KEY (block_number) REFERENCES block(n
 CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX idx_balance_address ON balance(address);
+CREATE INDEX idx_balance_block_number ON balance(block_number);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -262,6 +269,7 @@ CONSTRAINT fk_event_address FOREIGN KEY (address) REFERENCES address(address) ON
 CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
+CREATE INDEX idx_event_block_number ON event(block_number);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
@@ -288,66 +296,63 @@ node_down BOOLEAN NOT NULL
 );
 
 CREATE TABLE block_summary (
-id VARCHAR PRIMARY KEY,
-hash VARCHAR NOT NULL UNIQUE,
-number INT NOT NULL,
+block_number INT4 PRIMARY KEY,
+hash VARCHAR NOT NULL,
 timestamp INT8 NOT NULL,
-CONSTRAINT fk_block_summary_hash FOREIGN KEY (hash) REFERENCES block(hash) ON DELETE CASCADE,
-CONSTRAINT fk_block_summary_number FOREIGN KEY (number) REFERENCES block(number) ON DELETE CASCADE
+FOREIGN KEY (hash) REFERENCES block(hash) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
 
 CREATE TABLE transaction_in_summary (
 hash VARCHAR,
-summary_id VARCHAR,
-CONSTRAINT pk_transaction_in_summary PRIMARY KEY (hash, summary_id),
-CONSTRAINT fk_transaction_in_summary_hash FOREIGN KEY (hash) REFERENCES transaction(hash) ON DELETE CASCADE,
-CONSTRAINT fk_transaction_in_summary_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+PRIMARY KEY (hash, block_number),
+FOREIGN KEY (hash) REFERENCES transaction(hash) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 CREATE TABLE internal_transaction_in_summary (
 internal_tx_id VARCHAR,
-summary_id VARCHAR,
-CONSTRAINT pk_internal_transaction_in_summary PRIMARY KEY (internal_tx_id, summary_id),
-CONSTRAINT fk_internal_transaction_in_summary_internal_tx_id FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
-CONSTRAINT fk_internal_transaction_in_summary_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+PRIMARY KEY (internal_tx_id, block_number),
+FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 CREATE TABLE address_in_summary (
 address VARCHAR(42),
 balance VARCHAR,
-block_number INT,
-last_block_mined INT,
-summary_id VARCHAR,
-CONSTRAINT pk_address_in_summary PRIMARY KEY (address, summary_id),
-CONSTRAINT fk_address_in_summary_last_block_mined FOREIGN KEY (last_block_mined) REFERENCES block(number) ON DELETE CASCADE,
-CONSTRAINT fk_address_in_summary_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
-CONSTRAINT fk_address_in_summary_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+last_block_mined INT4,
+PRIMARY KEY (address, block_number),
+FOREIGN KEY (last_block_mined) REFERENCES block(number) ON DELETE CASCADE,
+FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 CREATE TABLE token_address_in_summary (
 address VARCHAR,
 contract VARCHAR,
-block INT,
-summary_id VARCHAR,
-CONSTRAINT pk_token_address_in_summary PRIMARY KEY (address, contract, block, summary_id),
-CONSTRAINT fk_token_address_in_memory_address_contract_block FOREIGN KEY (address, contract, block) REFERENCES token_address(address, contract, block_number) ON DELETE CASCADE,
-CONSTRAINT fk_token_address_in_memory_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+PRIMARY KEY (address, contract, block_number),
+FOREIGN KEY (address, contract, block_number) REFERENCES token_address(address, contract, block_number) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 CREATE TABLE event_in_summary (
 event_id VARCHAR,
-summary_id VARCHAR,
-CONSTRAINT pk_event_in_summary PRIMARY KEY (event_id, summary_id),
-CONSTRAINT fk_event_in_summary_event_id FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
-CONSTRAINT fk_event_in_summary_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+PRIMARY KEY (event_id, block_number),
+FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 CREATE TABLE suicide_in_summary (
 internal_tx_id VARCHAR,
-summary_id VARCHAR,
-CONSTRAINT pk_suicide_in_summary PRIMARY KEY (internal_tx_id, summary_id),
-CONSTRAINT fk_suicide_in_summary_internal_tx_id FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
-CONSTRAINT fk_suicide_in_summary_summary_id FOREIGN KEY (summary_id) REFERENCES block_summary(id) ON DELETE CASCADE
+block_number INT4,
+PRIMARY KEY (internal_tx_id, block_number),
+FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
+FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
 
 -- explorer initial config

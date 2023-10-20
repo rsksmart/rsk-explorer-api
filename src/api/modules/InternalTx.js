@@ -3,9 +3,9 @@ import { isBlockHash } from '../../lib/utils'
 
 export class InternalTx extends DataCollectorItem {
   constructor (key) {
-    let cursorField = 'internalTxId'
-    let sortDir = -1
-    const sortable = { internalTxId: -1 }
+    const cursorField = 'internalTxId'
+    const sortDir = -1
+    const sortable = { blockNumber: -1 }
     super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**

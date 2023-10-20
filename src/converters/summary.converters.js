@@ -6,23 +6,20 @@ import { tokenEntityToRaw } from './token.converters'
 import { transactionEntityToRaw } from './tx.converters'
 
 function rawBlockSummaryToEntity ({
-  id,
+  blockNumber,
   hash,
-  number,
   timestamp
 }) {
   return {
-    id,
+    blockNumber,
     hash,
-    number,
     timestamp
   }
 }
 
 function summaryEntityToRaw ({
-  id,
+  blockNumber,
   hash,
-  number,
   timestamp,
   address_in_summary: addresses,
   block_block_summary_hashToblock: block,
@@ -33,9 +30,8 @@ function summaryEntityToRaw ({
   transaction_in_summary: transactions
 }) {
   return {
-    _id: id,
+    blockNumber,
     hash,
-    number,
     timestamp: Number(timestamp),
     data: {
       addresses: addresses.map(address => {

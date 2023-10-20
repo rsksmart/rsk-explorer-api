@@ -3,9 +3,10 @@ import { isBlockHash } from '../../lib/utils'
 
 export class Balances extends DataCollectorItem {
   constructor (name) {
-    let sortable = { timestamp: -1, blockNumber: -1 }
-    const cursorField = 'blockNumber'
-    super(name, { cursorField, sortDir: -1, sortable })
+    const cursorField = 'id'
+    const sortable = { blockNumber: -1 }
+    const sortDir = -1
+    super(name, { cursorField, sortDir, sortable })
     this.fields = {}
     this.publicActions = {
       /**
