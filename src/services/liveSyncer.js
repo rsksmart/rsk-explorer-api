@@ -15,16 +15,17 @@ async function newBlocksHandler (syncStatus, { initConfig, log }) {
   // Case 1: already updating tip
   if (syncStatus.updatingTip) return
 
+  syncStatus.updatingTip = true
   let latestBlock
   try {
     latestBlock = await nod3.eth.getBlock('latest')
     const exists = await getDbBlock(latestBlock.number)
 
     // Case 2: latest exists
-    if (exists) return
-
-    // Case 3: latest must be added
-    syncStatus.updatingTip = true
+    if (exists) {
+      syncStatus.updatingTip = false
+      return
+    }
 
     // 3.1: Gap of 2+ blocks from latest
     if (syncStatus.lastReceived >= 0 && latestBlock.number - syncStatus.lastReceived > 1) {
