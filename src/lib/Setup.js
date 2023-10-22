@@ -26,7 +26,10 @@ export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) 
   const start = async ({ skipCheck } = {}) => {
     try {
       const currentInitConfig = await createInitConfig({ log })
-      if (skipCheck) return { initConfig: currentInitConfig }
+      if (skipCheck) {
+        log.warn('Skipped initial configuration check (beware that switching the network will generate inconsistencies)')
+        return { initConfig: currentInitConfig }
+      }
 
       // Check init config existence
       let storedInitConfig = await getInitConfig()
@@ -50,6 +53,7 @@ export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) 
         log.info(`Saved new settings`)
       }
 
+      log.info(`Initial configuration check passed. Current network: ${storedInitConfig.net.name}`)
       return { initConfig: storedInitConfig }
     } catch (err) {
       log.error('Error at setup start')

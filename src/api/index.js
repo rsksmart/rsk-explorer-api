@@ -15,8 +15,8 @@ const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
 const log = Logger('[explorer-api]', config.api.log)
 
-const setup = Setup({ log })
-setup.start()
+Setup({ log })
+  .start()
   .then(({ initConfig }) => {
     // data collectors
     const api = new Api({ initConfig, log }, config.api)
