@@ -6,6 +6,7 @@ import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
 import { isBlockObject } from '../../lib/utils'
 import { getBlock } from './BlockSummary'
+import { getNativeContractName } from '../../lib/NativeContracts'
 
 export class Tx extends BcThing {
   constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, notTrace, receipt, log } = {}) {
@@ -143,8 +144,7 @@ export class Tx extends BcThing {
     const receipt = tx.receipt || {}
     let { toAddress } = this
     if (toAddress && toAddress.isContract()) type = txTypes.call
-    const toIsNative = this.nativeContracts.isNativeContract(tx.to)
-    let nativeType = txTypes[toIsNative]
+    let nativeType = txTypes[getNativeContractName(tx.to)]
     if (nativeType) type = nativeType
     if (this.isAddress(receipt.contractAddress)) type = txTypes.contract
     tx.txType = type

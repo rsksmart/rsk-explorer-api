@@ -1,8 +1,9 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
 
 export class Status extends DataCollector {
-  constructor () {
+  constructor ({ log }) {
     super()
+    this.log = log
     this.tickDelay = 5000
     this.state = {}
     this.addModule(new DataCollectorItem('Status'))

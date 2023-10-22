@@ -2,7 +2,7 @@ import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
 import { serialize } from '../../../lib/utils'
 import { filterParams } from '../apiTools'
-import { log } from '../../index'
+
 class Emitter extends EventEmitter { }
 const emitter = new Emitter()
 
@@ -14,7 +14,7 @@ export class DataCollector {
     this.modules = {}
     this.tickDelay = 1000
     this.serialize = serialize
-    this.log = log
+    this.log = null
   }
   tick () { }
   stop () {

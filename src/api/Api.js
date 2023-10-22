@@ -3,13 +3,13 @@ import { getEnabledApiModules } from './modules'
 import { txTypes } from '../lib/types'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
-import NativeContracts from '../lib/NativeContracts'
 // It is used only in case Stats cannot provide the circulating supply
 import getCirculatingSupply from './lib/getCirculatingSupply'
 
 class Api extends DataCollector {
-  constructor ({ initConfig }, { modules, lastBlocks } = {}) {
+  constructor ({ initConfig, log }, { modules, lastBlocks } = {}) {
     super()
+    this.log = log
     this.lastLimit = lastBlocks || 100
     this.latest = undefined
     this.lastBlocks = { data: [] }
@@ -19,8 +19,6 @@ class Api extends DataCollector {
     this.stats = { timestamp: 0 }
     this.loadModules(getEnabledApiModules(modules))
     this.initConfig = initConfig
-    const { isNativeContract } = NativeContracts(initConfig)
-    this.isNativeContract = isNativeContract
     this.tick()
   }
   tick () {
@@ -161,13 +159,7 @@ class Api extends DataCollector {
     }
   }
   async getCirculatingSupplyFromDb () {
-    try {
-      const { nativeContracts } = this.initConfig
-      let circulating = await getCirculatingSupply(nativeContracts)
-      return circulating
-    } catch (err) {
-      this.log.debug(err)
-    }
+    return getCirculatingSupply(this.initConfig.nativeContracts)
   }
 }
 

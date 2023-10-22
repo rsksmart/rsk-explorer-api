@@ -1,12 +1,11 @@
-import BlocksBase from './BlocksBase.js'
 import Block from '../services/classes/Block.js'
 import { REPOSITORIES } from '../repositories/index.js'
 
 const { Blocks: blocksRepository } = REPOSITORIES
 
-export async function insertBlock (number, { initConfig, log, tipBlock = false }, status = undefined) {
+export async function insertBlock (number, blocksBase, { log, tipBlock = false }, status = undefined) {
   try {
-    const block = new Block(number, new BlocksBase({ initConfig, log }), status, tipBlock)
+    const block = new Block(number, blocksBase, status, tipBlock)
     let fetchingTime = Date.now()
     await block.fetch()
     fetchingTime = Date.now() - fetchingTime
@@ -30,17 +29,17 @@ function deleteBlocks (blocks = []) {
   return blocksRepository.deleteBlocksByNumbers(blocks)
 }
 
-async function insertBlocks (blocks = [], { initConfig, log }) {
+async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {
   for (const number of blocks) {
-    await insertBlock(number, { initConfig, log })
+    await insertBlock(number, blocksBase, { initConfig, log })
   }
 }
-export async function reorganizeBlocks ({ blocksToDelete = [], blocks: missingBlocks = [], initConfig, log }) {
+export async function reorganizeBlocks (blocksBase, { blocksToDelete = [], blocks: missingBlocks = [], initConfig, log }) {
   await deleteBlocks(blocksToDelete)
   log.info(`Deleted ${blocksToDelete.length} blocks: ${JSON.stringify(blocksToDelete)}`)
 
   log.info(`Adding ${missingBlocks.length} new chain blocks: ${JSON.stringify(missingBlocks)}`)
-  await insertBlocks(missingBlocks, { initConfig, log })
+  await insertBlocks(missingBlocks, blocksBase, { initConfig, log })
 }
 
 export async function delay (time) {

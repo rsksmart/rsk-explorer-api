@@ -1,91 +1,61 @@
 import { config as defaultConfig } from './config'
-import { nod3 as nod3Default } from './nod3Connect'
-import initConfig from './initialConfiguration'
-import { hash } from './utils'
-import { REPOSITORIES } from '../repositories'
+import { createHash } from './utils'
+import { configRepository } from '../repositories'
 import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
+import { nod3 } from './nod3Connect'
+import { nativeContracts, validateNativeContracts } from './NativeContracts'
 
-export function networkError (storedInitConfig, initConfig) {
-  return `Network stored id (${storedInitConfig.net.id}) is not equal to node network id (${initConfig.net.id})`
-}
-
-export async function getNetInfo (nod3) {
+export async function createInitConfig ({ log = console } = {}) {
   try {
-    let net = await nod3.net.version()
-    return net
+    validateNativeContracts(nativeContracts)
+    const net = await nod3.net.version()
+
+    return { nativeContracts, net }
   } catch (err) {
+    log.error('Error creating initial configuration')
+    log.error(err)
     return Promise.reject(err)
   }
 }
 
-const defaultInstances = { nod3: nod3Default, config: defaultConfig }
+export const getInitConfig = () => configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
 
-export async function Setup ({ log = console }, { nod3, config } = defaultInstances) {
-  const createHash = thing => hash(thing, 'sha1', 'hex')
-  const { Config: configRepository } = REPOSITORIES
-
-  const getInitConfig = async () => {
+export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) {
+  const sameNetwork = (stored, current) => (stored && stored.net.id === current.net.id)
+  const sameSettingsHash = (stored, current) => stored && stored.hash === current
+  const start = async ({ skipCheck } = {}) => {
     try {
-      await nod3.isConnected().catch(err => {
-        log.debug(err)
-        throw new Error(`Cannot connect to the node`)
-      })
-      const net = await getNetInfo(nod3)
-      return Object.assign(initConfig, { net })
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
+      const currentInitConfig = await createInitConfig({ log })
+      if (skipCheck) return { initConfig: currentInitConfig }
 
-  const checkStoredSettingsHash = async (settings) => {
-    if (!settings) throw new Error(`Invalid settings: ${settings}`)
-    const currentSettingsHash = createHash(settings)
-    const storedSettings = await configRepository[EXPLORER_SETTINGS_ID].get()
-    if (!storedSettings) return false
-    return currentSettingsHash === storedSettings.hash
-  }
-
-  const checkSetup = async () => {
-    try {
-      const initConfig = await getInitConfig()
-      const storedInitConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-      const settingsMatches = await checkStoredSettingsHash(config)
+      // Check init config existence
+      let storedInitConfig = await getInitConfig()
 
       if (!storedInitConfig) {
-        log.info(`Saving initial explorer configuration`)
-        await configRepository[EXPLORER_INITIAL_CONFIG_ID].save(initConfig)
-        return checkSetup()
+        await configRepository[EXPLORER_INITIAL_CONFIG_ID].save(currentInitConfig)
+        log.info(`Saved initial explorer configuration`)
+
+        storedInitConfig = await getInitConfig()
       }
 
-      if (!settingsMatches) {
-        log.info(`Updating settings`)
-        await configRepository[EXPLORER_SETTINGS_ID].upsert({ hash: createHash(config) })
+      // Validate network
+      if (!sameNetwork(storedInitConfig, currentInitConfig)) throw new Error(`Mismatching node network ids (Stored: ${storedInitConfig.net.id}, current: ${currentInitConfig.net.id})`)
+
+      // Validate settings
+      const settingsHash = createHash(config)
+      const storedSettings = await configRepository[EXPLORER_SETTINGS_ID].get()
+
+      if (!sameSettingsHash(storedSettings, settingsHash)) {
+        await configRepository[EXPLORER_SETTINGS_ID].upsert({ hash: settingsHash })
+        log.info(`Saved new settings`)
       }
 
-      if (storedInitConfig.net.id !== initConfig.net.id) throw new Error(networkError(storedInitConfig, initConfig))
-      return storedInitConfig
+      return { initConfig: storedInitConfig }
     } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  const start = async (skipCheck) => {
-    try {
-      let initConfig
-      if (skipCheck) {
-        initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-      } else {
-        initConfig = await checkSetup()
-      }
-      if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
-      return { initConfig }
-    } catch (err) {
+      log.error('Error at setup start')
       log.error(err)
-      return Promise.reject(err)
     }
   }
 
-  return Object.freeze({ start, createHash })
+  return Object.freeze({ start })
 }
-
-export default Setup

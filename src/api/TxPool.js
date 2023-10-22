@@ -2,8 +2,9 @@ import { DataCollector } from './lib/DataCollector'
 import { REPOSITORIES } from '../repositories'
 
 export class TxPool extends DataCollector {
-  constructor () {
+  constructor ({ log }) {
     super()
+    this.log = log
     this.tickDelay = 1000
     this.state = {}
     this.chart = []

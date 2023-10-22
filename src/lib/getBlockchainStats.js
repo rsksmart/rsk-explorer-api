@@ -2,13 +2,14 @@ import getCirculatingSupply from '../api/lib/getCirculatingSupply'
 import getActiveAccounts from '../api/lib/getActiveAccounts'
 import { Contract, abi as ABI } from '@rsksmart/rsk-contract-parser'
 import { serialize } from './utils'
-import initConfig from './initialConfiguration'
+import { nativeContracts } from './NativeContracts'
 import nod3 from './nod3Connect'
 
+const bridge = nativeContracts.bridge
+
 async function bridgeCall (bitcoinNetwork, method, params = []) {
-  const address = initConfig.nativeContracts.bridge
   const abi = ABI.bridge({ bitcoinNetwork })
-  const contract = Contract(abi, { address, nod3 })
+  const contract = Contract(abi, { address: bridge, nod3 })
   const res = await contract.call(method, params)
   return res
 }
@@ -16,10 +17,10 @@ async function bridgeCall (bitcoinNetwork, method, params = []) {
 export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumber }) {
   if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
 
-  const circulating = await getCirculatingSupply(initConfig.nativeContracts)
+  const circulating = await getCirculatingSupply({ bridge })
   const activeAccounts = await getActiveAccounts()
   const hashrate = await nod3.eth.netHashrate()
-  const bridge = serialize({ lockingCap: await bridgeCall(bitcoinNetwork, 'getLockingCap') })
+  const lockingCap = await bridgeCall(bitcoinNetwork, 'getLockingCap')
   const timestamp = Date.now()
 
   return {
@@ -28,7 +29,9 @@ export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumb
     hashrate,
     blockHash,
     blockNumber,
-    bridge,
+    bridge: {
+      lockingCap: serialize(lockingCap)
+    },
     timestamp
   }
 }

@@ -1,5 +1,5 @@
 import IO from 'socket.io'
-import { dataSource } from '../lib/dataSource'
+import { Setup } from '../lib/Setup'
 import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
@@ -11,16 +11,17 @@ import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
 import Logger from '../lib/Logger'
 
-export const log = Logger('[explorer-api]', config.api.log) // also used for DataCollector class
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
+const log = Logger('[explorer-api]', config.api.log)
 
-dataSource({ log })
+const setup = Setup({ log })
+setup.start()
   .then(({ initConfig }) => {
     // data collectors
-    const api = new Api({ initConfig }, config.api)
-    const status = new Status()
-    const txPool = new TxPool()
+    const api = new Api({ initConfig, log }, config.api)
+    const status = new Status({ log })
+    const txPool = new TxPool({ log })
     api.start()
     status.start()
     txPool.start()

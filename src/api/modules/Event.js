@@ -1,3 +1,4 @@
+import { isNativeContract } from '../../lib/NativeContracts'
 import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
   constructor (key) {
@@ -94,14 +95,8 @@ export class Event extends DataCollectorItem {
         if (address) {
           let query = { address_in_event: { some: { address } } }
 
-          // search by events signatures
-          if (Array.isArray(signatures)) {
-            // skip remasc & bridge events
-            const isNative = this.parent.isNativeContract(address)
-            if (isNative !== 'bridge' || isNative !== 'remasc') {
-              query.signature = { in: signatures }
-            }
-          }
+          // search by events signatures, skip remasc & bridge events
+          if (Array.isArray(signatures) && !isNativeContract(address)) query.signature = { in: signatures }
 
           if (contract) query.address = contract
 

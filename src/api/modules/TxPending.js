@@ -1,3 +1,4 @@
+import { getInitConfig } from '../../lib/Setup'
 import defaultConfig from '../../lib/defaultConfig'
 import { TxPool } from '../../services/classes/TxPool'
 import { DataCollectorItem } from '../lib/DataCollector'
@@ -15,7 +16,8 @@ export class TxPending extends DataCollectorItem {
           if (this.txPool && this.txPool.started) {
             message = 'TxPool already running'
           } else {
-            this.txPool = new TxPool({ log: this.parent.log, initConfig: this.parent.initConfig })
+            const initConfig = await getInitConfig()
+            this.txPool = new TxPool({ log: this.parent.log, initConfig })
             await this.txPool.start()
             message = 'TxPool started succesfully'
           }

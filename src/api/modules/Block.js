@@ -2,6 +2,7 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 import { addMetadataToBlocks } from '../lib/blocksMetadata'
 import { getBlock } from '../../tools/getBlockEndpointCall'
+import { getInitConfig } from '../../lib/Setup'
 
 export class Block extends DataCollectorItem {
   constructor (key) {
@@ -127,7 +128,8 @@ export class Block extends DataCollectorItem {
           if (exists) {
             message = `Block ${number} already in db. Skipped`
           } else {
-            await getBlock(number, { initConfig: this.parent.initConfig })
+            const initConfig = await getInitConfig()
+            await getBlock(number, { initConfig })
             message = `Block ${number} saved succesfully.`
           }
         } catch (e) {

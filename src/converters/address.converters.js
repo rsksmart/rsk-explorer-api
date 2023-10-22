@@ -1,9 +1,6 @@
 import { removeNullFields } from '../repositories/utils'
 import { blockEntityToRaw } from './blocks.converters'
-import config from '../lib/initialConfiguration'
-import NativeContracts from '../lib/NativeContracts'
-
-const { isNativeContract } = NativeContracts({ nativeContracts: config.nativeContracts })
+import { isNativeContract } from '../lib/NativeContracts'
 
 function rawAddressToEntity ({
   address,

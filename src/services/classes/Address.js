@@ -6,6 +6,7 @@ import { BcSearch } from '@rsksmart/rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx, checkInternalTransactionData } from './InternalTx'
 import { isZeroAddress } from '@rsksmart/rsk-utils'
+import { getNativeContractName, isNativeContract } from '../../lib/NativeContracts'
 
 export class Address extends BcThing {
   constructor (address, { nod3, initConfig, tx, block, log } = {}) {
@@ -18,10 +19,8 @@ export class Address extends BcThing {
     this.contract = undefined
     this.block = undefined
     this.blockNumber = undefined
-    let { nativeContracts } = this
-    let nName = (nativeContracts) ? nativeContracts.getNativeContractName(address) : undefined
-    this.name = nName
-    this.isNative = !!nName
+    this.name = getNativeContractName(address) // undefined for other contracts
+    this.isNative = isNativeContract(address)
     this.dbData = undefined
     this.blockCode = undefined
     this.tx = tx

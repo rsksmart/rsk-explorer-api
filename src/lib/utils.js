@@ -147,3 +147,5 @@ export const chunkArray = (arr, chunkSize) => {
 export const hash = (thing, alg = 'sha1', out = 'hex') => {
   return crypto.createHash(alg).update(JSON.stringify(thing)).digest(out)
 }
+
+export const createHash = (v) => hash(v, 'sha1', 'hex')

@@ -1,28 +1,24 @@
 import Logger from '../lib/Logger'
-import { dataSource } from '../lib/dataSource'
+import { Setup } from '../lib/Setup'
+
 import { liveSyncer } from './liveSyncer'
 import { staticSyncer } from './staticSyncer'
-import { txPool } from './txPool'
+import { txPoolService } from './txPool'
 
-const DELAY = 10000
-
-const log = Logger('[explorer-services]')
+const delay = 10000
 
 async function main () {
-  const { initConfig } = await dataSource({ log })
+  await (Setup({ log: Logger('[services-setup]') })).start()
+
   const syncStatus = {
     checkingDB: false,
     updatingTip: false,
     lastReceived: -1
   }
 
-  staticSyncer(syncStatus, { initConfig })
-
-  setTimeout(() => {
-    // allow static syncer to save latest first
-    liveSyncer(syncStatus, { initConfig })
-  }, DELAY)
-  txPool({ initConfig })
+  staticSyncer(syncStatus)
+  setTimeout(() => liveSyncer(syncStatus), delay) // allow static syncer to save latest block first
+  txPoolService()
 }
 
 main()

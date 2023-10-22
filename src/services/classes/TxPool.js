@@ -1,4 +1,4 @@
-import { BlocksBase } from '../../lib/BlocksBase'
+import BlocksBase from '../../lib/BlocksBase'
 import { isHexString, base64toHex } from '../../lib/utils'
 import { REPOSITORIES } from '../../repositories'
 export class TxPool extends BlocksBase {

@@ -4,6 +4,7 @@ import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
 import { REPOSITORIES } from '../../repositories'
+import { isNativeContract } from '../../lib/NativeContracts'
 
 class Contract extends BcThing {
   constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block }) {
@@ -20,7 +21,7 @@ class Contract extends BcThing {
     this.abi = abi
     this.parser = undefined
     this.isToken = false
-    this.isNative = !!this.nativeContracts.getNativeContractName(address)
+    this.isNative = isNativeContract(address)
     this.block = block
     this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
