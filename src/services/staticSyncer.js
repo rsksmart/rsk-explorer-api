@@ -32,6 +32,7 @@ export async function staticSyncer (syncStatus) {
 async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks, blocksBase, { initConfig, log }) {
   let number = segment[0]
   const lastNumber = segment[1]
+  const connected = await nod3.isConnected()
 
   while (number >= lastNumber) {
     if (syncStatus.checkingDB) {
@@ -41,7 +42,6 @@ async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks
     }
     try {
       const timestamp = Date.now()
-      const connected = await nod3.isConnected()
       const status = {
         requestingBlocks,
         pendingBlocks,
@@ -50,9 +50,9 @@ async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks
       }
 
       await insertBlock(number, blocksBase, { initConfig, log }, status)
-    } catch (error) {
+    } catch (err) {
       log.info(`There was an error saving block ${number}`)
-      log.error(error)
+      log.error(err)
     }
     pendingBlocks--
     number--
