@@ -1,23 +1,42 @@
 import Block from '../services/classes/Block.js'
-import { REPOSITORIES } from '../repositories/index.js'
-
-const { Blocks: blocksRepository } = REPOSITORIES
+import { blocksRepository } from '../repositories/index.js'
 
 export async function insertBlock (number, blocksBase, { log, tipBlock = false }, status = undefined) {
-  try {
-    const block = new Block(number, blocksBase, status, tipBlock)
-    let fetchingTime = Date.now()
-    await block.fetch()
-    fetchingTime = Date.now() - fetchingTime
+  let retries = 3
 
-    // insert block
-    let savingTime = Date.now()
-    await block.save()
-    savingTime = Date.now() - savingTime
+  while (retries > 0) {
+    try {
+      const block = new Block(number, blocksBase, status, tipBlock)
+      let fetchingTime = Date.now()
+      await block.fetch()
+      fetchingTime = Date.now() - fetchingTime
 
-    log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
-  } catch (error) {
-    throw error
+      // insert block
+      let savingTime = Date.now()
+      await block.save()
+      savingTime = Date.now() - savingTime
+
+      log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
+      break // Success
+    } catch (err) {
+      log.error(`Error saving block ${number}`)
+      log.error(err)
+
+      const storedBlock = await blocksRepository.findOne({ number }, { number: true })
+
+      if (storedBlock && storedBlock.number) {
+        log.error(`Block ${storedBlock.number} was saved but an error occurred during the process. Check the logs`)
+        break
+      } else {
+        log.error(`Block ${number} could not be saved. Retrying... (remaining attempts: ${retries - 1})`)
+      }
+
+      retries--
+    }
+  }
+
+  if (retries === 0) {
+    log.error(`Block ${number} could not be saved after ${retries} retries.`)
   }
 }
 
