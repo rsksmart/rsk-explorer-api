@@ -1,4 +1,4 @@
-import { dataSource } from '../lib/dataSource.js'
+import { Setup } from '../lib/Setup'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import nod3 from '../lib/nod3Connect.js'
@@ -10,7 +10,7 @@ async function main () {
   const toBlock = process.argv[3] ? parseInt(process.argv[3]) : latestBlock.number
 
   console.log(`Getting blocks from ${fromBlock} to ${toBlock} (${toBlock - fromBlock} blocks)`)
-  const { initConfig } = await dataSource()
+  const { initConfig } = await Setup().start()
 
   let blockToSave = fromBlock
   while (blockToSave <= toBlock) {

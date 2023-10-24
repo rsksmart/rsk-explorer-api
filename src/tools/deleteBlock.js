@@ -1,14 +1,12 @@
-import { dataSource } from '../lib/dataSource'
-import { REPOSITORIES } from '../repositories'
-
-const { Blocks: blocksRepository } = REPOSITORIES
+import { Setup } from '../lib/Setup'
+import { blocksRepository } from '../repositories'
 
 async function main () {
   const block = parseInt(process.argv[2])
 
   if (isNaN(block)) throw new Error('A block number must be provided')
 
-  await dataSource()
+  await Setup().start()
 
   console.log(`Deleting block...`)
 

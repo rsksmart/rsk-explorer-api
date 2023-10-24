@@ -1,8 +1,6 @@
 import { getMissingSegments } from '../lib/getMissingSegments.js'
 import nod3 from '../lib/nod3Connect.js'
-import { REPOSITORIES } from '../repositories/index.js'
-
-const { Blocks: blocksRepository } = REPOSITORIES
+import { blocksRepository } from '../repositories/index.js'
 
 async function main () {
   console.log(`Getting missing segments...`)

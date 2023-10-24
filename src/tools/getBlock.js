@@ -1,4 +1,4 @@
-import { dataSource } from '../lib/dataSource.js'
+import { Setup } from '../lib/Setup'
 import Block from '../services/classes/Block'
 import BlocksBase from '../lib/BlocksBase'
 import { log } from '@rsksmart/rsk-js-cli'
@@ -9,7 +9,7 @@ const opt = process.argv[3]
 const save = (opt === '--save')
 const json = (opt === '--json')
 if (isNaN(number)) help()
-dataSource().then(({ initConfig }) => {
+Setup().start().then(({ initConfig }) => {
   if (!json) log.info(`Getting block ${number}`)
   getBlock(number, { initConfig }).then(block => {
     if (json) console.log(JSON.stringify(block))
