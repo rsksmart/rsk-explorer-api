@@ -52,7 +52,7 @@ function eventEntityToRaw ({
   transactionHash,
   transactionIndex,
   txStatus,
-  address_in_event: _addresses
+  address_in_event: involvedAddresses
 }) {
   const eventToReturn = {
     eventId,
@@ -69,7 +69,7 @@ function eventEntityToRaw ({
     transactionIndex,
     txStatus,
     topics: JSON.parse(topics),
-    _addresses: _addresses.map(({ address }) => address)
+    _addresses: involvedAddresses.filter(a => !a.isEventEmitterAddress).map(a => a.address)
   }
 
   if (abi) {

@@ -18,15 +18,16 @@ export function getEventRepository (prismaClient) {
       const count = await prismaClient.event.count({where: query})
       return count
     },
-    insertOne (data) {
-      const { _addresses } = data
+    insertOne (event) {
+      const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false }))
+      involvedAddresses.push({ address: event.address, isEventEmitterAddress: true })
 
       const query = prismaClient.event.create({
         data: {
-          ...rawEventToEntity(data),
+          ...rawEventToEntity(event),
           address_in_event: {
             createMany: {
-              data: _addresses.map(address => ({ address })),
+              data: involvedAddresses,
               skipDuplicates: true
             }
           }

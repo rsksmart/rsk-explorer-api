@@ -21,7 +21,7 @@ const addressRelatedTables = ({ forSummary } = {}) => {
 }
 
 const eventRelatedTables = {
-  address_in_event: { select: { address: true } }
+  address_in_event: { select: { address: true, isEventEmitterAddress: true } }
 }
 
 const summaryRelatedTables = {

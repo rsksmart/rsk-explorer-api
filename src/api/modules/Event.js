@@ -150,10 +150,7 @@ export class Event extends DataCollectorItem {
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {
-          return this.getPageData({ OR: [
-            { address },
-            { address_in_event: { some: { address } } }]
-          }, params)
+          return this.getPageData({ address_in_event: { some: { address } } }, params)
         }
       }
     }

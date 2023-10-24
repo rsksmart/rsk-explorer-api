@@ -1,6 +1,12 @@
--- RSK Explorer Database Schema V1.0.4
+-- RSK Explorer Database Schema V1.0.5
 
 /*
+V1.0.5 Notes:
+
+Optimizations:
+- Added an index for transactions endpoints call
+- Optimized events calls (new events addresses storage format and new indexes added)
+
 V1.0.4 Notes:
 
 - Added relevant indexes for efficient sorting in some tables
@@ -165,6 +171,7 @@ CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON D
 CONSTRAINT fk_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
+CREATE INDEX idx_transaction_tx_id ON transaction(tx_id);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -270,14 +277,18 @@ CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) O
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
 CREATE INDEX idx_event_block_number ON event(block_number);
+CREATE INDEX idx_event_address ON event(address);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
 address VARCHAR(42),
-PRIMARY KEY (event_id, address),
+is_event_emitter_address BOOLEAN,
+PRIMARY KEY (event_id, address, is_event_emitter_address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
+CREATE INDEX idx_address_in_event_address ON address_in_event(address);
+CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
 
 CREATE TABLE block_trace (
 block_hash VARCHAR(66),
