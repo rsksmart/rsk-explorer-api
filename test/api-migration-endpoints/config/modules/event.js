@@ -1,7 +1,7 @@
 const endpoints = {
   getEvent: ({ eventId }) => `/api?module=events&action=getEvent&eventId=${eventId}`,
   getEventsByAddress: ({ address, signatures, contract }) => {
-    return `/api?module=events&action=getEventsByAddress&address=${address}${signatures ? `&signatures=${signatures}` : ''}${contract ? `&contract=${contract}` : ''}}`
+    return `/api?module=events&action=getEventsByAddress&address=${address}${signatures ? `&signatures=${signatures}` : ''}${contract ? `&contract=${contract}` : ''}`
   },
   getAllEventsByAddress: ({ address }) => `/api?module=events&action=getAllEventsByAddress&address=${address}`
 }
