@@ -1,10 +1,12 @@
 import Block from '../services/classes/Block.js'
 import { blocksRepository } from '../repositories/index.js'
 
-export async function insertBlock (number, blocksBase, { log, tipBlock = false }, status = undefined) {
-  let retries = 3
+const RETRIES = 3
 
-  while (retries > 0) {
+export async function insertBlock (number, blocksBase, { log, tipBlock = false }, status = undefined) {
+  let remainingAttempts = RETRIES
+
+  while (remainingAttempts > 0) {
     try {
       const block = new Block(number, blocksBase, status, tipBlock)
       let fetchingTime = Date.now()
@@ -27,17 +29,14 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false }
       if (storedBlock && storedBlock.number) {
         log.error(`Block ${storedBlock.number} was saved but an error occurred during the process. Check the logs`)
         break
-      } else {
-        log.error(`Block ${number} could not be saved. Retrying... (remaining attempts: ${retries - 1})`)
       }
 
-      retries--
+      remainingAttempts--
+      log.error(`Block ${number} could not be saved. Retrying... (remaining attempts: ${remainingAttempts})`)
     }
   }
 
-  if (retries === 0) {
-    log.error(`Block ${number} could not be saved after ${retries} retries.`)
-  }
+  if (!remainingAttempts) log.error(`Block ${number} could not be saved after ${RETRIES} retries.`)
 }
 
 export const getDbBlock = (number) => blocksRepository.findOne({ number })
