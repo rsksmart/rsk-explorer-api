@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = ""
+  url      = "postgres://postgres:12345678@localhost:5432/explorer_db"
 }
 
 model address {
@@ -161,6 +161,7 @@ model event {
 
   @@index([blockNumber], map: "idx_event_block_number")
   @@index([address], map: "idx_event_address")
+  @@index([signature], map: "idx_event_signature")
 }
 
 model internal_transaction {
@@ -185,6 +186,12 @@ model internal_transaction {
   transaction                                    transaction                       @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
   internal_transaction_in_summary                internal_transaction_in_summary[]
   suicide_in_summary                             suicide_in_summary[]
+
+  @@index([actionFrom], map: "idx_internal_transaction_action_from")
+  @@index([actionTo], map: "idx_internal_transaction_action_to")
+  @@index([blockHash], map: "idx_internal_transaction_block_hash")
+  @@index([blockNumber], map: "idx_internal_transaction_block_number")
+  @@index([transactionHash], map: "idx_internal_transaction_transaction_hash")
 }
 
 model status {
@@ -239,6 +246,10 @@ model transaction {
   transaction_in_summary                transaction_in_summary[]
 
   @@index([txId], map: "idx_transaction_tx_id")
+  @@index([blockHash], map: "idx_transaction_block_hash")
+  @@index([blockNumber], map: "idx_transaction_block_number")
+  @@index([from], map: "idx_transaction_from")
+  @@index([to], map: "idx_transaction_to")
 }
 
 model transaction_in_pool {
@@ -288,7 +299,7 @@ model tx_pool {
 model verification_result {
   id        String   @id @map("_id") @db.VarChar
   abi       String?  @db.VarChar
-  address   String?  @db.VarChar
+  address   String?  @unique @db.VarChar
   match     Boolean?
   request   String?  @db.VarChar
   result    String?  @db.VarChar
@@ -343,6 +354,8 @@ model block_summary {
   suicide_in_summary                      suicide_in_summary[]
   token_address_in_summary                token_address_in_summary[]
   transaction_in_summary                  transaction_in_summary[]
+
+  @@index([hash], map: "idx_block_summary_hash")
 }
 
 model event_in_summary {
