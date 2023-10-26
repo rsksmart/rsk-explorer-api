@@ -14,7 +14,7 @@ const addressRelatedTables = ({ forSummary } = {}) => {
   if (!forSummary) {
     relations.address_latest_balance_address_latest_balance_addressToaddress = {select: {balance: true, blockNumber: true}}
     relations.address_latest_balance_address_latest_balance_addressToaddress = {select: {balance: true, blockNumber: true}}
-    relations.miner_miner_addressToaddress = {select: {block: true}, orderBy: {blockNumber: 'desc'}, take: 1}
+    relations.miner_address_miner_address_addressToaddress = {select: {lastBlockMined: true}}
   }
 
   return relations

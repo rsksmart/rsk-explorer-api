@@ -115,12 +115,17 @@ name VARCHAR -- NULL | string
 );
 CREATE INDEX index_address_id ON address(id);
 
-CREATE TABLE miner (
-address VARCHAR,
-block_number INT UNIQUE,
-CONSTRAINT pk_miner PRIMARY KEY (address, block_number),
-CONSTRAINT fk_miner_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
-CONSTRAINT fk_miner_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
+CREATE TABLE miner_address (
+id SERIAL,
+address VARCHAR(42) PRIMARY KEY,
+is_native BOOLEAN NOT NULL,
+type VARCHAR NOT NULL,
+name VARCHAR,
+balance VARCHAR,
+block_number INT,
+last_block_mined VARCHAR,
+last_block_mined_number INT UNIQUE,
+FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
 
 CREATE TABLE balance (

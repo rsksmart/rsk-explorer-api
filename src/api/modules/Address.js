@@ -117,12 +117,10 @@ export class Address extends DataCollectorItem {
 
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
-          query.miner_miner_addressToaddress = { some: { blockNumber: { gt: fromBlock } } }
-        } else {
-          query.miner_miner_addressToaddress = { some: { } }
+          query.lastBlockMinedNumber = { gte: fromBlock }
         }
 
-        return this.getPageData(query, params)
+        return this.getPageData(query, params, { isForGetMiners: true })
       },
       /**
        * @swagger

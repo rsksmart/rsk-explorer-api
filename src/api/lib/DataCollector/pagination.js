@@ -2,10 +2,10 @@ import config from '../../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
 const SEPARATOR = '__'
 
-export async function countDocuments (query, repository) {
+export async function countDocuments (query, repository, endpointOptions) {
   query = query || {}
   try {
-    let result = await repository.countDocuments(query)
+    let result = await repository.countDocuments(query, endpointOptions)
     return result
   } catch (err) {
     return Promise.reject(err)
@@ -120,7 +120,7 @@ export async function findPages (cursorData, query, params, repository, endpoint
     const $query = generateQuery(params, query)
     const $sort = generateSort(params)
     let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository, endpointOptions) : null
-    let total = (count) ? (await countDocuments(query, repository)) : null
+    let total = (count) ? (await countDocuments(query, repository, endpointOptions)) : null
     return paginationResponse(params, data, total)
   } catch (err) {
     return Promise.reject(err)

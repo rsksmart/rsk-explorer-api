@@ -1,7 +1,9 @@
 import {
   rawAddressToEntity,
   rawContractToEntity,
-  addressEntityToRaw
+  addressEntityToRaw,
+  rawMinerAddressToEntity,
+  minerAddressEntityToRaw
 } from '../converters/address.converters'
 import { generateFindQuery } from './utils'
 import { addressRelatedTables } from './includeRelatedTables'
@@ -15,25 +17,34 @@ export function getAddressRepository (prismaClient) {
       return address ? addressEntityToRaw(address, endpointOptions) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0, endpointOptions) {
-      const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables(), sort, limit))
+      if (endpointOptions.isForGetMiners) {
+        const miners = await prismaClient.miner_address.findMany(generateFindQuery(query, project, {}, sort, limit))
 
-      return addresses.map(address => addressEntityToRaw(address, endpointOptions))
+        return miners.map(miner => minerAddressEntityToRaw(miner, endpointOptions))
+      } else {
+        const addresses = await prismaClient.address.findMany(generateFindQuery(query, project, addressRelatedTables(), sort, limit))
+
+        return addresses.map(address => addressEntityToRaw(address, endpointOptions))
+      }
     },
-    async countDocuments (query = {}) {
-      const count = await prismaClient.address.count({where: query})
+    async countDocuments (query = {}, endpointOptions) {
+      let count
+
+      if (endpointOptions.isForGetMiners) {
+        count = await prismaClient.miner_address.count()
+      } else {
+        count = await prismaClient.address.count({where: query})
+      }
 
       return count
     },
-    insertOne (data, { isMiner, number }) {
+    insertOne (data, { isMiner, balance, blockNumber }) {
       const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
       const { destroyedByTx, address } = data
 
       if (isMiner) {
-        transactionQueries.push(prismaClient.miner.createMany({data: {
-          address: data.address,
-          blockNumber: number
-        },
-        skipDuplicates: true}))
+        transactionQueries.push(prismaClient.miner_address.deleteMany({ where: { address: data.address, blockNumber: { lte: blockNumber } } }))
+        transactionQueries.push(prismaClient.miner_address.createMany({ data: rawMinerAddressToEntity({...data, balance, blockNumber}), skipDuplicates: true }))
       }
 
       if (destroyedByTx) {

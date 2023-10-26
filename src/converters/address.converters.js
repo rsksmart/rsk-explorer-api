@@ -16,6 +16,27 @@ function rawAddressToEntity ({
   }
 }
 
+function rawMinerAddressToEntity ({
+  address,
+  isNative,
+  type,
+  name,
+  balance,
+  blockNumber,
+  lastBlockMined
+}) {
+  return {
+    address,
+    isNative,
+    type,
+    name,
+    balance,
+    blockNumber,
+    lastBlockMined: JSON.stringify(lastBlockMined),
+    lastBlockMinedNumber: lastBlockMined.number
+  }
+}
+
 function rawContractToEntity ({
   address,
   code,
@@ -40,7 +61,7 @@ function addressEntityToRaw ({
   address,
   address_latest_balance_address_latest_balance_addressToaddress: latestBalance,
   isNative,
-  miner_miner_addressToaddress: lastBlockMined,
+  miner_address_miner_address_addressToaddress: miner,
   block, // for summary
   balance, // for summary
   blockNumber, // for summary
@@ -73,8 +94,8 @@ function addressEntityToRaw ({
         addressToReturn.lastBlockMined = blockEntityToRaw(block)
       }
     } else {
-      if (lastBlockMined[0]) {
-        addressToReturn.lastBlockMined = blockEntityToRaw(lastBlockMined[0].block)
+      if (miner) {
+        addressToReturn.lastBlockMined = JSON.parse(miner.lastBlockMined)
       }
     }
 
@@ -93,6 +114,26 @@ function addressEntityToRaw ({
   }
 
   return removeNullFields(addressToReturn, ['name'])
+}
+
+function minerAddressEntityToRaw ({
+  address,
+  isNative,
+  type,
+  name,
+  balance,
+  blockNumber,
+  lastBlockMined
+}) {
+  return {
+    address,
+    isNative,
+    type,
+    name,
+    balance,
+    blockNumber,
+    lastBlockMined: JSON.parse(lastBlockMined)
+  }
 }
 
 function contractEntityToRaw ({
@@ -144,5 +185,7 @@ export {
   rawAddressToEntity,
   rawContractToEntity,
   addressEntityToRaw,
-  contractEntityToRaw
+  contractEntityToRaw,
+  rawMinerAddressToEntity,
+  minerAddressEntityToRaw
 }
