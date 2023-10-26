@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgres://postgres:12345678@localhost:5432/explorer_db"
+  url      = "postgres://postgres:12345678@localhost:5432/test2"
 }
 
 model address {
@@ -14,6 +14,7 @@ model address {
   type                                                           String                   @db.VarChar
   name                                                           String?                  @db.VarChar
   address_in_event_address_in_event_addressToaddress             address_in_event[]       @relation("address_in_event_addressToaddress")
+  address_in_itx_address_in_itx_addressToaddress                 address_in_itx[]         @relation("address_in_itx_addressToaddress")
   address_in_summary_address_in_summary_addressToaddress         address_in_summary[]     @relation("address_in_summary_addressToaddress")
   address_latest_balance_address_latest_balance_addressToaddress address_latest_balance?  @relation("address_latest_balance_addressToaddress")
   balance_balance_addressToaddress                               balance[]                @relation("balance_addressToaddress")
@@ -180,6 +181,7 @@ model internal_transaction {
   action                                         String?                           @db.VarChar
   actionFrom                                     String?                           @map("action_from") @db.VarChar
   actionTo                                       String?                           @map("action_to") @db.VarChar
+  address_in_itx                                 address_in_itx[]
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                             @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
@@ -473,4 +475,15 @@ model contract_destruction_tx {
   timestamp       BigInt?
   tx              String? @db.VarChar
   address         address @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_destruction_tx_contract_address")
+}
+
+model address_in_itx {
+  address                                 String               @db.VarChar
+  internalTxId                            String               @map("internal_tx_id") @db.VarChar
+  role                                    String               @db.VarChar
+  address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+  internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([address, internalTxId, role])
+  @@index([address], map: "idx_address_in_itx_address")
 }

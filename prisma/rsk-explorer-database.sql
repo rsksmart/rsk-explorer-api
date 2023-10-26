@@ -1,6 +1,12 @@
--- RSK Explorer Database Schema V1.0.6
+-- RSK Explorer Database Schema V1.0.7
 
 /*
+
+V1.0.7 Notes:
+
+Optimizations for:
+
+- internal transactions: created a new table for involved addresses in an itx
 
 V1.0.6 Notes:
 
@@ -215,6 +221,15 @@ CREATE INDEX idx_internal_transaction_action_to ON internal_transaction(action_t
 CREATE INDEX idx_internal_transaction_block_number ON internal_transaction(block_number);
 CREATE INDEX idx_internal_transaction_block_hash ON internal_transaction(block_hash);
 
+CREATE TABLE address_in_itx (
+address VARCHAR NOT NULL,
+internal_tx_id VARCHAR NOT NULL,
+role VARCHAR NOT NULL,
+PRIMARY KEY (address, internal_tx_id, role),
+FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
+FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
+);
+CREATE INDEX idx_address_in_itx_address ON address_in_itx(address);
 
 CREATE TABLE contract (
 address VARCHAR(42) PRIMARY KEY,
