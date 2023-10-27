@@ -59,7 +59,8 @@ export default {
     exposeDoc: false,
     // All modules are enabled as default
     modules: setAllModules(true),
-    delayedFields
+    delayedFields,
+    enableCountQueries: true
   },
   blocks: {
     blocksQueueSize: 10,
