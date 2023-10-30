@@ -23,8 +23,7 @@ export class VerificationResults extends DataCollectorItem {
      */
       getResults: (params) => {
         params.fields = { address: 1 }
-        let query = { match: true }
-        return this.getPageData(query, params)
+        return this.getPageData({}, params)
       },
       /**
        * @swagger

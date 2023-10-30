@@ -104,7 +104,7 @@ export class DataCollectorItem {
     try {
       let { cursorField } = this
       project = project || this.getDefaultsFields()
-      if (!data) data = (await this.getOne(query))
+      if (!data) data = await this.getOne(query)
       if (data) data = data.data
       if (!data) return
       let value = query[cursorField] || data[cursorField]

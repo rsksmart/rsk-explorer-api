@@ -14,6 +14,7 @@ model address {
   type                                                           String                   @db.VarChar
   name                                                           String?                  @db.VarChar
   address_in_event_address_in_event_addressToaddress             address_in_event[]       @relation("address_in_event_addressToaddress")
+  address_in_itx_address_in_itx_addressToaddress                 address_in_itx[]         @relation("address_in_itx_addressToaddress")
   address_in_summary_address_in_summary_addressToaddress         address_in_summary[]     @relation("address_in_summary_addressToaddress")
   address_latest_balance_address_latest_balance_addressToaddress address_latest_balance?  @relation("address_latest_balance_addressToaddress")
   balance_balance_addressToaddress                               balance[]                @relation("balance_addressToaddress")
@@ -160,6 +161,7 @@ model event {
 
   @@index([blockNumber], map: "idx_event_block_number")
   @@index([address], map: "idx_event_address")
+  @@index([signature], map: "idx_event_signature")
 }
 
 model internal_transaction {
@@ -178,12 +180,19 @@ model internal_transaction {
   action                                         String?                           @db.VarChar
   actionFrom                                     String?                           @map("action_from") @db.VarChar
   actionTo                                       String?                           @map("action_to") @db.VarChar
+  address_in_itx                                 address_in_itx[]
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
   block_internal_transaction_block_numberToblock block                             @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
   transaction                                    transaction                       @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
   internal_transaction_in_summary                internal_transaction_in_summary[]
   suicide_in_summary                             suicide_in_summary[]
+
+  @@index([actionFrom], map: "idx_internal_transaction_action_from")
+  @@index([actionTo], map: "idx_internal_transaction_action_to")
+  @@index([blockHash], map: "idx_internal_transaction_block_hash")
+  @@index([blockNumber], map: "idx_internal_transaction_block_number")
+  @@index([transactionHash], map: "idx_internal_transaction_transaction_hash")
 }
 
 model status {
@@ -238,6 +247,10 @@ model transaction {
   transaction_in_summary                transaction_in_summary[]
 
   @@index([txId], map: "idx_transaction_tx_id")
+  @@index([blockHash], map: "idx_transaction_block_hash")
+  @@index([blockNumber], map: "idx_transaction_block_number")
+  @@index([from], map: "idx_transaction_from")
+  @@index([to], map: "idx_transaction_to")
 }
 
 model transaction_in_pool {
@@ -287,7 +300,7 @@ model tx_pool {
 model verification_result {
   id        String   @id @map("_id") @db.VarChar
   abi       String?  @db.VarChar
-  address   String?  @db.VarChar
+  address   String?  @unique @db.VarChar
   match     Boolean?
   request   String?  @db.VarChar
   result    String?  @db.VarChar
@@ -342,6 +355,8 @@ model block_summary {
   suicide_in_summary                      suicide_in_summary[]
   token_address_in_summary                token_address_in_summary[]
   transaction_in_summary                  transaction_in_summary[]
+
+  @@index([hash], map: "idx_block_summary_hash")
 }
 
 model event_in_summary {
@@ -463,4 +478,14 @@ model miner_address {
   lastBlockMined                         String? @map("last_block_mined") @db.VarChar
   lastBlockMinedNumber                   Int?    @unique @map("last_block_mined_number")
   address_miner_address_addressToaddress address @relation("miner_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+}
+model address_in_itx {
+  address                                 String               @db.VarChar
+  internalTxId                            String               @map("internal_tx_id") @db.VarChar
+  role                                    String               @db.VarChar
+  address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+  internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([address, internalTxId, role])
+  @@index([address], map: "idx_address_in_itx_address")
 }

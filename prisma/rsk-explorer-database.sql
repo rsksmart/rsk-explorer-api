@@ -1,6 +1,23 @@
--- RSK Explorer Database Schema V1.0.5
+-- RSK Explorer Database Schema V1.0.7
 
 /*
+
+V1.0.7 Notes:
+
+Optimizations for:
+
+- internal transactions: created a new table for involved addresses in an itx
+
+V1.0.6 Notes:
+
+Optimizations for:
+
+internal transactions 
+transactions
+event
+summary
+verification results
+
 V1.0.5 Notes:
 
 Optimizations:
@@ -177,6 +194,11 @@ CONSTRAINT fk_transaction_block_number FOREIGN KEY (block_number) REFERENCES blo
 CONSTRAINT fk_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX idx_transaction_tx_id ON transaction(tx_id);
+CREATE INDEX idx_transaction_block_number ON transaction(block_number);
+CREATE INDEX idx_transaction_block_hash ON transaction(block_hash);
+CREATE INDEX idx_transaction_from ON transaction("from");
+CREATE INDEX idx_transaction_to ON transaction("to");
+
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -198,6 +220,21 @@ CONSTRAINT fk_internal_transaction_transaction_hash FOREIGN KEY (transaction_has
 CONSTRAINT fk_internal_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_internal_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
+CREATE INDEX idx_internal_transaction_transaction_hash ON internal_transaction(transaction_hash);
+CREATE INDEX idx_internal_transaction_action_from ON internal_transaction(action_from);
+CREATE INDEX idx_internal_transaction_action_to ON internal_transaction(action_to);
+CREATE INDEX idx_internal_transaction_block_number ON internal_transaction(block_number);
+CREATE INDEX idx_internal_transaction_block_hash ON internal_transaction(block_hash);
+
+CREATE TABLE address_in_itx (
+address VARCHAR NOT NULL,
+internal_tx_id VARCHAR NOT NULL,
+role VARCHAR NOT NULL,
+PRIMARY KEY (address, internal_tx_id, role),
+FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
+FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
+);
+CREATE INDEX idx_address_in_itx_address ON address_in_itx(address);
 
 CREATE TABLE contract (
 address VARCHAR(42) PRIMARY KEY,
@@ -283,6 +320,8 @@ CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(num
 );
 CREATE INDEX idx_event_block_number ON event(block_number);
 CREATE INDEX idx_event_address ON event(address);
+CREATE INDEX idx_event_signature ON event(signature);
+
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
@@ -318,6 +357,7 @@ timestamp INT8 NOT NULL,
 FOREIGN KEY (hash) REFERENCES block(hash) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
+CREATE INDEX idx_block_summary_hash ON block_summary(hash);
 
 CREATE TABLE transaction_in_summary (
 hash VARCHAR,
@@ -407,7 +447,7 @@ CREATE TABLE contract_verification (
 CREATE TABLE verification_result (
   _id VARCHAR PRIMARY KEY,
   abi VARCHAR, --stringified
-  address VARCHAR,
+  address VARCHAR UNIQUE,
   match BOOLEAN,
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified

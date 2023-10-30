@@ -19,8 +19,15 @@ export function getInternalTxRepository (prismaClient) {
     async countDocuments (query = {}) {
       return prismaClient.internal_transaction.count({ where: query })
     },
-    insertOne (data) {
-      return [prismaClient.internal_transaction.create({ data: rawInternalTransactionToEntity(data) })]
+    insertOne (itx) {
+      const transactionQueries = []
+      const { action: { from, to }, internalTxId } = itx
+      transactionQueries.push(prismaClient.internal_transaction.create({ data: rawInternalTransactionToEntity(itx) }))
+
+      if (from) transactionQueries.push(prismaClient.address_in_itx.create({ data: { address: from, role: 'from', internalTxId } }))
+      if (to) transactionQueries.push(prismaClient.address_in_itx.create({ data: { address: to, role: 'to', internalTxId } }))
+
+      return transactionQueries
     }
   }
 }

@@ -22,4 +22,10 @@ const prismaClient = new PrismaClient({
   errorFormat: 'pretty'
 })
 
+// prismaClient.$on('query', (e) => {
+//   console.log('Query: ' + e.query)
+//   console.log('Params: ' + e.params)
+//   console.log('Duration: ' + e.duration + 'ms')
+// })
+
 export { prismaClient }
