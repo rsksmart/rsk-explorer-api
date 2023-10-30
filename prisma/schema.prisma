@@ -479,6 +479,7 @@ model miner_address {
   lastBlockMinedNumber                   Int?    @unique @map("last_block_mined_number")
   address_miner_address_addressToaddress address @relation("miner_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
 }
+
 model address_in_itx {
   address                                 String               @db.VarChar
   internalTxId                            String               @map("internal_tx_id") @db.VarChar
