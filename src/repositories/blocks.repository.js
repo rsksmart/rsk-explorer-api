@@ -48,11 +48,13 @@ export function getBlocksRepository (prismaClient) {
         if (!isAddress(address.address)) {
           throw new Error(`Invalid address ${address.address}`)
         } else {
+          const { balance, blockNumber } = latestBalances.balances.find(b => b.address === address.address)
           transactionQueries.push(...addressRepository.insertOne(
             address,
             {
               isMiner: block.miner === address.address,
-              number: block.number
+              balance,
+              blockNumber
             }
           ))
         }

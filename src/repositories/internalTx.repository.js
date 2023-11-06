@@ -11,10 +11,18 @@ export function getInternalTxRepository (prismaClient) {
 
       return internalTx ? internalTxEntityToRaw(internalTx) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-      const internalTxs = await prismaClient.internal_transaction.findMany(generateFindQuery(query, project, {}, sort, limit))
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetInternalTransactionsByAddress }) {
+      let internalTxs
 
-      return internalTxs.map(itx => internalTxEntityToRaw(itx))
+      if (isForGetInternalTransactionsByAddress) {
+        internalTxs = await prismaClient.address_in_itx.findMany(generateFindQuery(query, project, { internal_transaction: true }, sort, limit))
+
+        return internalTxs.map(itx => internalTxEntityToRaw(itx.internal_transaction))
+      } else {
+        internalTxs = await prismaClient.internal_transaction.findMany(generateFindQuery(query, project, {}, sort, limit))
+
+        return internalTxs.map(itx => internalTxEntityToRaw(itx))
+      }
     },
     async countDocuments (query = {}) {
       return prismaClient.internal_transaction.count({ where: query })

@@ -1,3 +1,5 @@
+import { addressEntityToRaw } from './address.converters'
+
 function rawTokenToEntity ({
   address,
   contract,
@@ -27,4 +29,16 @@ function tokenEntityToRaw ({
     balance
   }
 }
-export {rawTokenToEntity, tokenEntityToRaw}
+
+function tokensByAddressEntityToRaw (tokenEntity, addressEntity) {
+  return {
+    ...addressEntityToRaw(addressEntity),
+    ...tokenEntityToRaw(tokenEntity)
+  }
+}
+
+export {
+  rawTokenToEntity,
+  tokenEntityToRaw,
+  tokensByAddressEntityToRaw
+}

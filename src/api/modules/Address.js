@@ -4,7 +4,7 @@ import { tokensInterfaces, addrTypes } from '../../lib/types'
 export class Address extends DataCollectorItem {
   constructor (name) {
     const cursorField = 'id'
-    const sortable = { [cursorField]: -1 }
+    const sortable = {}
     const sortDir = -1
     super(name, { cursorField, sortDir, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }
@@ -117,12 +117,10 @@ export class Address extends DataCollectorItem {
 
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
-          query.miner_miner_addressToaddress = { some: { blockNumber: { gt: fromBlock } } }
-        } else {
-          query.miner_miner_addressToaddress = { some: { } }
+          query.lastBlockMinedNumber = { gte: fromBlock }
         }
 
-        return this.getPageData(query, params)
+        return this.getPageData(query, params, { isForGetMiners: true })
       },
       /**
        * @swagger

@@ -60,7 +60,7 @@ export default {
     // All modules are enabled as default
     modules: setAllModules(true),
     delayedFields,
-    enableCountQueries: true
+    allowCountQueries: true
   },
   blocks: {
     blocksQueueSize: 10,

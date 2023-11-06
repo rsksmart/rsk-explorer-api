@@ -28,7 +28,7 @@ export async function compareDataFromBothEnvs ({ endpoint, keysToSkip = {}, proc
       deleteKeys(postgresRes.data, mongoRes.data, keysToSkip.data)
     }
 
-    if (keysToSkip.pages && keysToSkip.pages.length) {
+    if (postgresRes.pages && mongoRes.pages && keysToSkip.pages && keysToSkip.pages.length) {
       deleteKeys(postgresRes.pages, mongoRes.pages, keysToSkip.pages)
     }
 

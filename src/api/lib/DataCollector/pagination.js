@@ -2,10 +2,10 @@ import config from '../../../lib/config'
 const { MAX_LIMIT, MAX_PAGES } = config.api
 const SEPARATOR = '__'
 
-export async function countDocuments (query, repository) {
+export async function countDocuments (query, repository, endpointOptions) {
   query = query || {}
   try {
-    let result = await repository.countDocuments(query)
+    let result = await repository.countDocuments(query, endpointOptions)
     return result
   } catch (err) {
     return Promise.reject(err)
@@ -122,7 +122,7 @@ export async function findPages (cursorData, query, params, repository, endpoint
     let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository, endpointOptions) : null
     let total = null
 
-    if (config.api.enableCountQueries && count) total = await countDocuments(query, repository)
+    if (config.api.allowCountQueries && count) total = await countDocuments(query, repository)
 
     return paginationResponse(params, data, total)
   } catch (err) {
@@ -187,18 +187,8 @@ export async function find (query, sort, limit, project, repository, endpointOpt
   sort = sort || {}
   project = project || {}
   limit = limit || 0
-  let data
 
-  if (endpointOptions.isAggregate) {
-    data = await repository.aggregate(query)
-  } else {
-    data = await repository
-      .find(query, project, sort, limit, endpointOptions)
-      .catch((err) => {
-        return Promise.reject(err)
-      })
-  }
-  return data
+  return repository.find(query, project, sort, limit, endpointOptions)
 }
 
 export function encodeValue (value) {
