@@ -4,7 +4,7 @@ import { tokensInterfaces, addrTypes } from '../../lib/types'
 export class Address extends DataCollectorItem {
   constructor (name) {
     const cursorField = 'id'
-    const sortable = { [cursorField]: -1 }
+    const sortable = {}
     const sortDir = -1
     super(name, { cursorField, sortDir, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }

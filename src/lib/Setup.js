@@ -8,13 +8,12 @@ import { nativeContracts, validateNativeContracts } from './NativeContracts'
 export async function createInitConfig ({ log = console } = {}) {
   try {
     validateNativeContracts(nativeContracts)
-    const net = await nod3.net.version()
+    const net = await nod3.net.version() // Note: Throws an unhandled error if no node is found
 
     return { nativeContracts, net }
   } catch (err) {
     log.error('Error creating initial configuration')
     log.error(err)
-    return Promise.reject(err)
   }
 }
 

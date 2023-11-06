@@ -110,7 +110,7 @@ export class InternalTx extends DataCollectorItem {
     */
       getInternalTransactionsByAddress: params => {
         const { address } = params
-        return this.getPageData({ address_in_itx: { some: { address } } }, params)
+        return this.getPageData({ address }, params, { isForGetInternalTransactionsByAddress: true })
       },
       /**
       * @swagger

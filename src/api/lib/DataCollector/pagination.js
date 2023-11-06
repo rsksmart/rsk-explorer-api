@@ -187,18 +187,8 @@ export async function find (query, sort, limit, project, repository, endpointOpt
   sort = sort || {}
   project = project || {}
   limit = limit || 0
-  let data
 
-  if (endpointOptions.isAggregate) {
-    data = await repository.aggregate(query)
-  } else {
-    data = await repository
-      .find(query, project, sort, limit, endpointOptions)
-      .catch((err) => {
-        return Promise.reject(err)
-      })
-  }
-  return data
+  return repository.find(query, project, sort, limit, endpointOptions)
 }
 
 export function encodeValue (value) {

@@ -1,5 +1,4 @@
-import { addressEntityToRaw } from '../converters/address.converters'
-import { rawTokenToEntity, tokenEntityToRaw } from '../converters/token.converters'
+import { rawTokenToEntity, tokenEntityToRaw, tokensByAddressEntityToRaw } from '../converters/token.converters'
 import { addressRelatedTables } from './includeRelatedTables'
 import { generateFindQuery } from './utils'
 
@@ -10,29 +9,22 @@ export function getTokenRepository (prismaClient) {
 
       return token ? tokenEntityToRaw(token) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-      const tokens = await prismaClient.token_address.findMany(generateFindQuery(query, project, {}, sort, limit))
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress }) {
+      if (isForGetTokensByAddress) {
+        const include = { contract_token_address_contractTocontract: { include: addressRelatedTables() } }
+        const tokensByAddress = await prismaClient.token_address.findMany(generateFindQuery(query, {}, include, sort, limit))
 
-      return tokens.map(tokenEntityToRaw)
+        return tokensByAddress.map(token => tokensByAddressEntityToRaw(token, token.contract_token_address_contractTocontract))
+      } else {
+        const tokens = await prismaClient.token_address.findMany(generateFindQuery(query, project, {}, sort, limit))
+
+        return tokens.map(tokenEntityToRaw)
+      }
     },
     async countDocuments (query = {}) {
       const count = await prismaClient.token_address.count({where: query})
 
       return count
-    },
-    async aggregate (query) {
-      const tokensByAddress = []
-      await prismaClient.$transaction(async prisma => {
-        const tokens = await prisma.token_address.findMany({where: query})
-
-        for (const token of tokens) {
-          const contract = await prisma.address.findFirst({where: {address: token.contract}, include: addressRelatedTables()})
-          delete contract.address
-          tokensByAddress.push({...addressEntityToRaw(contract), ...tokenEntityToRaw(token)})
-        }
-      })
-
-      return tokensByAddress
     },
     insertOne (data) {
       return [prismaClient.token_address.createMany({data: rawTokenToEntity(data), skipDuplicates: true})]
