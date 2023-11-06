@@ -180,8 +180,6 @@ model internal_transaction {
   timestamp                                      BigInt
   error                                          String?                           @db.VarChar
   action                                         String?                           @db.VarChar
-  actionFrom                                     String?                           @map("action_from") @db.VarChar
-  actionTo                                       String?                           @map("action_to") @db.VarChar
   address_in_itx                                 address_in_itx[]
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
