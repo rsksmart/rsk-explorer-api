@@ -25,8 +25,6 @@ function rawInternalTransactionToEntity ({
     traceAddress: JSON.stringify(traceAddress),
     result: result ? JSON.stringify(result) : null,
     action: JSON.stringify(action),
-    actionFrom: action.from,
-    actionTo: action.to,
     index: _index,
     timestamp,
     type,

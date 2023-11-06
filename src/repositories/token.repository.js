@@ -9,7 +9,7 @@ export function getTokenRepository (prismaClient) {
 
       return token ? tokenEntityToRaw(token) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress }) {
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress } = {}) {
       if (isForGetTokensByAddress) {
         const include = { contract_token_address_contractTocontract: { include: addressRelatedTables() } }
         const tokensByAddress = await prismaClient.token_address.findMany(generateFindQuery(query, {}, include, sort, limit))

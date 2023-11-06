@@ -1,6 +1,15 @@
--- RSK Explorer Database Schema V1.0.7
+-- RSK Explorer Database Schema V1.0.8
 
 /*
+
+V1.0.8 Notes:
+
+Optimizations for:
+
+- blocks
+- transactions
+- internal transactions
+- tokens
 
 V1.0.7 Notes:
 
@@ -66,6 +75,7 @@ paid_fees VARCHAR NOT NULL,
 cumulative_difficulty VARCHAR NOT NULL,
 received INT8 NOT NULL
 );
+CREATE INDEX ON block(miner);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
@@ -198,7 +208,7 @@ CREATE INDEX idx_transaction_block_number ON transaction(block_number);
 CREATE INDEX idx_transaction_block_hash ON transaction(block_hash);
 CREATE INDEX idx_transaction_from ON transaction("from");
 CREATE INDEX idx_transaction_to ON transaction("to");
-
+CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -214,15 +224,11 @@ index INT4 NOT NULL,
 timestamp INT8 NOT NULL,
 error VARCHAR,
 action VARCHAR, -- stringified
-action_from VARCHAR, -- index
-action_to VARCHAR, -- index
 CONSTRAINT fk_internal_transaction_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
 CONSTRAINT fk_internal_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_internal_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX idx_internal_transaction_transaction_hash ON internal_transaction(transaction_hash);
-CREATE INDEX idx_internal_transaction_action_from ON internal_transaction(action_from);
-CREATE INDEX idx_internal_transaction_action_to ON internal_transaction(action_to);
 CREATE INDEX idx_internal_transaction_block_number ON internal_transaction(block_number);
 CREATE INDEX idx_internal_transaction_block_hash ON internal_transaction(block_hash);
 
@@ -234,7 +240,6 @@ PRIMARY KEY (address, internal_tx_id, role),
 FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
-CREATE INDEX idx_address_in_itx_address ON address_in_itx(address);
 
 CREATE TABLE contract (
 address VARCHAR(42) PRIMARY KEY,
@@ -278,10 +283,11 @@ block_hash VARCHAR NOT NULL,
 balance VARCHAR,
 CONSTRAINT pk_token_address PRIMARY KEY (address, contract, block_number),
 CONSTRAINT fk_token_address_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
-CONSTRAINT fk_token_address_contract FOREIGN KEY (contract) REFERENCES contract(address) ON DELETE CASCADE,
+CONSTRAINT fk_token_address_contract FOREIGN KEY (contract) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
+CREATE INDEX ON token_address(address);
 
 CREATE TABLE contract_method (
 method VARCHAR,
