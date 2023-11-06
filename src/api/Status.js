@@ -4,7 +4,6 @@ export class Status extends DataCollector {
   constructor ({ log }) {
     super()
     this.log = log
-    this.tickDelay = 5000
     this.state = {}
     this.addModule(new DataCollectorItem('Status'))
     this.addModule(new DataCollectorItem('Blocks'))

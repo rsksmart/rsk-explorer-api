@@ -12,7 +12,7 @@ export class DataCollector {
     this.events = emitter
     this._interval = null
     this.modules = {}
-    this.tickDelay = 1000
+    this.tickDelay = 15000
     this.serialize = serialize
     this.log = null
   }
