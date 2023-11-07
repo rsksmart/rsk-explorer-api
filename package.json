@@ -27,7 +27,7 @@
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "^0.0.12",
+    "@rsksmart/rsk-contract-parser": "^1.0.0",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
