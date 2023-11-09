@@ -140,7 +140,7 @@ export function paginationResponse (params, data, total) {
   let nextPage = null
   let prevPage = null
 
-  if (data) {
+  if (data && data.length) {
     const hasMore = data.length > queryLimit
     const hasPrevious = !!params.next || !!(params.prev && hasMore)
 
