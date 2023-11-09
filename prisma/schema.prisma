@@ -444,12 +444,14 @@ model address_in_event {
   eventId                                   String  @map("event_id") @db.VarChar
   address                                   String  @db.VarChar(42)
   isEventEmitterAddress                     Boolean @map("is_event_emitter_address")
+  eventSignature                            String? @map("event_signature") @db.VarChar
   address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
   event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([eventId, address, isEventEmitterAddress])
   @@index([address], map: "idx_address_in_event_address")
   @@index([eventId], map: "idx_address_in_event_event_id")
+  @@index([eventSignature])
 }
 
 model address_latest_balance {

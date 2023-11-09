@@ -93,14 +93,12 @@ export class Event extends DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params
         if (address) {
-          let query = { address_in_event: { some: { address } } }
-
+          const query = {}
           // search by events signatures, skip remasc & bridge events
-          if (Array.isArray(signatures) && !isNativeContract(address)) query.signature = { in: signatures }
+          if (Array.isArray(signatures) && !isNativeContract(address)) query.eventSignature = { in: signatures }
 
           if (contract) query.address = contract
-
-          let res = await this.getPageData(query, params)
+          let res = await this.getPageData(query, params, { isForGetEventsByAddress: true })
           if (res.data) {
             let addresses = new Set(res.data.map(d => d.address))
             addresses = [...addresses.values()]

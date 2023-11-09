@@ -68,8 +68,11 @@ function eventEntityToRaw ({
     transactionHash,
     transactionIndex,
     txStatus,
-    topics: JSON.parse(topics),
-    _addresses: involvedAddresses.filter(a => !a.isEventEmitterAddress).map(a => a.address)
+    topics: JSON.parse(topics)
+  }
+
+  if (involvedAddresses) {
+    eventToReturn._addresses = involvedAddresses.filter(a => !a.isEventEmitterAddress).map(a => a.address)
   }
 
   if (abi) {

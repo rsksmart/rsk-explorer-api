@@ -1,6 +1,10 @@
--- RSK Explorer Database Schema V1.0.9
+-- RSK Explorer Database Schema V1.0.10
 
 /*
+
+V1.0.10 Notes:
+
+- Optimize event queries by signature
 
 V1.0.9 Notes:
 
@@ -336,6 +340,7 @@ CREATE INDEX idx_event_signature ON event(signature);
 CREATE TABLE address_in_event (
 event_id VARCHAR,
 address VARCHAR(42),
+event_signature VARCHAR,
 is_event_emitter_address BOOLEAN,
 PRIMARY KEY (event_id, address, is_event_emitter_address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
@@ -343,6 +348,7 @@ FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
 CREATE INDEX idx_address_in_event_address ON address_in_event(address);
 CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
+CREATE INDEX ON address_in_event(event_signature);
 
 CREATE TABLE block_trace (
 block_hash VARCHAR(66),

@@ -9,18 +9,24 @@ export function getEventRepository (prismaClient) {
 
       return event ? eventEntityToRaw(event) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-      const events = await prismaClient.event.findMany(generateFindQuery(query, project, eventRelatedTables, sort, limit))
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetEventsByAddress }) {
+      if (isForGetEventsByAddress) {
+        const includeRelatedTables = { event: true }
+        const events = await prismaClient.address_in_event.findMany(generateFindQuery(query, {}, includeRelatedTables, {}, limit))
 
-      return events.map(eventEntityToRaw)
+        return events.map(event => eventEntityToRaw(event.event))
+      } else {
+        const events = await prismaClient.event.findMany(generateFindQuery(query, project, eventRelatedTables, sort, limit))
+        return events.map(eventEntityToRaw)
+      }
     },
     async countDocuments (query = {}) {
       const count = await prismaClient.event.count({where: query})
       return count
     },
     insertOne (event) {
-      const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false }))
-      involvedAddresses.push({ address: event.address, isEventEmitterAddress: true })
+      const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false, eventSignature: event.signature }))
+      involvedAddresses.push({ address: event.address, isEventEmitterAddress: true, eventSignature: event.signature })
 
       const query = prismaClient.event.create({
         data: {
