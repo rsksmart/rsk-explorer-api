@@ -31,7 +31,7 @@ model address {
 }
 
 model balance {
-  id                                Int     @id @default(autoincrement())
+  id                                BigInt  @id @default(autoincrement())
   address                           String  @db.VarChar(42)
   balance                           String  @db.VarChar
   blockNumber                       Int     @map("block_number")

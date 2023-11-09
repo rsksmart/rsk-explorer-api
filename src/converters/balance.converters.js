@@ -19,6 +19,7 @@ function rawBalanceToEntity ({
 }
 
 function entityToRawBalance ({
+  id,
   address,
   balance,
   blockHash,
@@ -34,6 +35,8 @@ function entityToRawBalance ({
     timestamp: Number(timestamp),
     _created: Number(_created)
   }
+
+  if (id) balanceToReturn.id = id.toString()
 
   return removeNullFields(balanceToReturn)
 }

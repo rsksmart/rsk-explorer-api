@@ -1,6 +1,10 @@
--- RSK Explorer Database Schema V1.0.8
+-- RSK Explorer Database Schema V1.0.9
 
 /*
+
+V1.0.9 Notes:
+
+- change balances id type to BIGINT
 
 V1.0.8 Notes:
 
@@ -156,7 +160,7 @@ FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
 
 CREATE TABLE balance (
-id SERIAL PRIMARY KEY,
+id BIGSERIAL PRIMARY KEY,
 address VARCHAR(42) NOT NULL,
 balance VARCHAR NOT NULL, -- string | number but handled AT converter
 block_number INT4 NOT NULL,

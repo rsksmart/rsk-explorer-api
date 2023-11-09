@@ -38,9 +38,9 @@ class Api extends DataCollector {
   }
 
   async run (payload) {
+    let { module, action, params } = payload
     try {
       if (Object.keys(payload).length < 1) throw new Error('invalid request')
-      let { module, action, params } = payload
       if (!action) throw new Error('Missing action')
       const moduleName = MODULES[module]
       if (!moduleName) throw new Error('Unknown module')
@@ -54,6 +54,7 @@ class Api extends DataCollector {
       const res = { module, action, params, result, delayed }
       return res
     } catch (err) {
+      this.log.error(`${module}.${action}(${JSON.stringify(params)})`)
       this.log.debug(err)
       return Promise.reject(err)
     }
