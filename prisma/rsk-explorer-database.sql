@@ -340,8 +340,8 @@ CREATE INDEX idx_event_signature ON event(signature);
 CREATE TABLE address_in_event (
 event_id VARCHAR,
 address VARCHAR(42),
-event_signature VARCHAR,
 is_event_emitter_address BOOLEAN,
+event_signature VARCHAR,
 PRIMARY KEY (event_id, address, is_event_emitter_address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
