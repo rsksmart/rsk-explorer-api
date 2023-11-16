@@ -7,7 +7,7 @@ import { REPOSITORIES } from '../../repositories'
 import { isNativeContract } from '../../lib/NativeContracts'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block }) {
+  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block = {} }) {
     super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
