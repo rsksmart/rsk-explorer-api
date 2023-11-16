@@ -20,9 +20,12 @@ export function getEventRepository (prismaClient) {
         return events.map(eventEntityToRaw)
       }
     },
-    async countDocuments (query = {}) {
-      const count = await prismaClient.event.count({where: query})
-      return count
+    async countDocuments (query = {}, { isForGetEventsByAddress } = {}) {
+      if (isForGetEventsByAddress) {
+        return prismaClient.address_in_event.count({ where: query })
+      } else {
+        return prismaClient.event.count({ where: query })
+      }
     },
     insertOne (event) {
       const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false, eventSignature: event.signature }))

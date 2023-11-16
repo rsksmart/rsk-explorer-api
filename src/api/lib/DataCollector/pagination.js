@@ -122,7 +122,7 @@ export async function findPages (cursorData, query, params, repository, endpoint
     let data = (!countOnly) ? await find($query, $sort, queryLimit + 1, fields, repository, endpointOptions) : null
     let total = null
 
-    if (config.api.allowCountQueries && count) total = await countDocuments(query, repository)
+    if (config.api.allowCountQueries && count) total = await countDocuments(query, repository, endpointOptions)
 
     return paginationResponse(params, data, total)
   } catch (err) {

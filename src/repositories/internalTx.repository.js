@@ -24,8 +24,12 @@ export function getInternalTxRepository (prismaClient) {
         return internalTxs.map(itx => internalTxEntityToRaw(itx))
       }
     },
-    async countDocuments (query = {}) {
-      return prismaClient.internal_transaction.count({ where: query })
+    async countDocuments (query = {}, { isForGetInternalTransactionsByAddress } = {}) {
+      if (isForGetInternalTransactionsByAddress) {
+        return prismaClient.address_in_itx.count({ where: query })
+      } else {
+        return prismaClient.internal_transaction.count({ where: query })
+      }
     },
     insertOne (itx) {
       const transactionQueries = []
