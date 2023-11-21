@@ -5,15 +5,15 @@ const endpoints = {
 
 // Replace with current pending transactions stored in database
 const pendingTx1 = {
-  hash: '0xc09f07204a7cf802905b06d0655d9a05cd65f4691272e9dcc8629987fbbf2ddd',
+  hash: '0x069ed178faa3c23090454e04c7e966c326a58c45e7ad3eae91cb365bcba1451f',
   from: '0xc67d9ee30d2119a384e02de568be80fe785074ba',
-  to: '0x7e2f245f7dc8e78576ecb13aefc0a101e9be1ad3'
+  to: '0x462d7082f3671a3be160638be3f8c23ca354f48a'
 }
 
 const pendingTx2 = {
-  hash: '0xb481c5eff1755ea2db7bd0fccc5db5ffd7e95f713f8a5a7ad64ea2bdf97b2740',
-  from: '0xf813c5dfe9602fb4b76ad71305788e9ca1649f31',
-  to: '0x39192498fcf1dbe11653040bb49308e09a1056ac'
+  hash: '0x68aa9fb4db62799d5280e64cd3d476d7e23cfc8408c5085109865afc8b6f9e95',
+  from: '0xf4695cff1e7dd0201b71a8a4f01d0450f89cc46c',
+  to: '0x00'
 }
 
 const fixtures = {
