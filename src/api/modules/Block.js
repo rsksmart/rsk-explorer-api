@@ -7,7 +7,7 @@ import { getInitConfig } from '../../lib/Setup'
 export class Block extends DataCollectorItem {
   constructor (key) {
     const cursorField = 'number'
-    const sortable = { [cursorField]: -1 }
+    const sortable = { [cursorField]: -1, timestamp: -1 }
     const sortDir = -1
     super(key, { sortDir, cursorField, sortable })
     this.publicActions = {

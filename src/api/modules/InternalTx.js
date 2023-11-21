@@ -5,7 +5,7 @@ export class InternalTx extends DataCollectorItem {
   constructor (key) {
     const cursorField = 'internalTxId'
     const sortDir = -1
-    const sortable = { blockNumber: -1 }
+    const sortable = {}
     super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
