@@ -22,6 +22,13 @@ const keysToSkipForContractVerification = {
   data: ['_id', ['request', '_id'], 'timestamp']
 }
 
+function removeExtraEVMVersions (postgresObject, mongoObject) {
+  return {
+    processedPostgres: postgresObject.filter(version => version !== 'london'),
+    processedMongo: mongoObject
+  }
+}
+
 describe('ContractVerification module', () => {
   describe('GET getVerifiedContracts endpoint', () => {
     const endpoint = getVerifiedContracts()
@@ -51,7 +58,10 @@ describe('ContractVerification module', () => {
   describe('GET getEvmVersions endpoint', () => {
     const endpoint = getEvmVersions()
     it(sameDataMsg(endpoint), async () => {
-      await compareDataFromBothEnvs({ endpoint })
+      await compareDataFromBothEnvs({
+        endpoint,
+        processData: removeExtraEVMVersions
+      })
     })
   })
 
