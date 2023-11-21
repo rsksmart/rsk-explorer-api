@@ -18,8 +18,8 @@ export const PERIODS = {
 }
 
 export class ExtendedStats extends DataCollectorItem {
-  constructor ({ Blocks }, key) {
-    super(Blocks, key)
+  constructor (key) {
+    super(key)
     this.hashrateCalculator = new HashrateCalculator()
     this.difficultyCalculator = new DifficultyCalculator()
     this.publicActions = {
@@ -134,16 +134,16 @@ export class ExtendedStats extends DataCollectorItem {
       hashrates: {}
     }
 
-    const block = await this.db.findOne({ number: blockNumber })
+    const query = { number: blockNumber }
+    const block = await this.repository.findOne(query, {})
     const end = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
       const start = end - timeLimit
-
-      const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
-        .project({ _id: 0, miner: 1, timestamp: 1, difficulty: 1 })
-        .toArray()
+      const query = { timestamp: { gte: start, lte: end } }
+      const project = { _id: 0, miner: 1, timestamp: 1, difficulty: 1 }
+      const blocks = await this.repository.find(query, project)
 
       extendedStats.hashrates[period] = this.hashrateCalculator.hashrates(blocks)
       extendedStats.difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE)
@@ -155,15 +155,15 @@ export class ExtendedStats extends DataCollectorItem {
   async getHashrates (blockNumber) {
     let hashrates = {}
 
-    const block = await this.db.findOne({ number: blockNumber })
+    const query = { number: blockNumber }
+    const block = await this.repository.findOne(query, {})
     const blockDate = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
-
-      const blocks = await this.db.find({ timestamp: { $gte: blockDate - timeLimit, $lte: blockDate } })
-        .project({ _id: 0, miner: 1, difficulty: 1 })
-        .toArray()
+      const query = { timestamp: { gte: blockDate - timeLimit, lte: blockDate } }
+      const project = { _id: 0, miner: 1, difficulty: 1 }
+      const blocks = await this.repository.find(query, project)
 
       hashrates[period] = this.hashrateCalculator.hashrates(blocks)
     }
@@ -174,16 +174,16 @@ export class ExtendedStats extends DataCollectorItem {
   async getDifficulties (blockNumber) {
     let difficulties = {}
 
-    const block = await this.db.findOne({ number: blockNumber })
+    const query = { number: blockNumber }
+    const block = await this.repository.findOne(query, {})
     const end = block.timestamp
 
     for (const period of Object.keys(PERIODS)) {
       const timeLimit = PERIODS[period].timeLimit
       const start = end - timeLimit
-
-      const blocks = await this.db.find({ timestamp: { $gte: start, $lte: end } })
-        .project({ _id: 0, timestamp: 1, difficulty: 1 })
-        .toArray()
+      const query = { timestamp: { gte: start, lte: end } }
+      const project = { _id: 0, timestamp: 1, difficulty: 1 }
+      const blocks = await this.repository.find(query, project)
 
       difficulties[period] = this.difficultyCalculator.difficulties(blocks, start, end, DIFFICULTY_BUCKET_SIZE)
     }

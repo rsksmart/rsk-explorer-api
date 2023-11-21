@@ -2,12 +2,11 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class Tx extends DataCollectorItem {
-  constructor (collections, key) {
-    const { Txs } = collections
+  constructor (key) {
     let cursorField = 'txId'
     let sortDir = -1
     const sortable = { txId: -1 }
-    super(Txs, key, { cursorField, sortDir, sortable })
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger
@@ -125,7 +124,12 @@ export class Tx extends DataCollectorItem {
           let logs = (tx.receipt) ? tx.receipt.logs : []
           let addresses = new Set(logs.map(log => log.address))
           addresses.add(tx.from)
-          addresses.add(tx.to)
+
+          if (tx.to) {
+            // 'to' will be null if the tx is a contract deploy
+            addresses.add(tx.to)
+          }
+
           let Address = this.parent.getModule('Address')
           let res = await Promise.all([...addresses.values()].map(address => Address.run('getAddress', { address })))
           if (res) {
@@ -209,7 +213,7 @@ export class Tx extends DataCollectorItem {
         let address = params.address
         return this.getPageData(
           {
-            $or: [{ from: address }, { to: address }]
+            OR: [{ from: address }, { to: address }]
           },
           params
         )

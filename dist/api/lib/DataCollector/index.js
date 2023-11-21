@@ -1,2 +1,0 @@
-"use strict";Object.defineProperty(exports, "__esModule", { value: true });Object.defineProperty(exports, "DataCollector", { enumerable: true, get: function () {return _DataCollector.DataCollector;} });Object.defineProperty(exports, "DataCollectorItem", { enumerable: true, get: function () {return _DataCollectorItem.DataCollectorItem;} });var _DataCollector = require("./DataCollector");
-var _DataCollectorItem = require("./DataCollectorItem");

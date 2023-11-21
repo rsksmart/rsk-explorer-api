@@ -2,12 +2,11 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class InternalTx extends DataCollectorItem {
-  constructor (collections, key) {
-    const { InternalTransactions } = collections
-    let cursorField = 'internalTxId'
-    let sortDir = -1
-    const sortable = { internalTxId: -1 }
-    super(InternalTransactions, key, { cursorField, sortDir, sortable })
+  constructor (key) {
+    const cursorField = 'internalTxId'
+    const sortDir = -1
+    const sortable = {}
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
       * @swagger
@@ -111,12 +110,7 @@ export class InternalTx extends DataCollectorItem {
     */
       getInternalTransactionsByAddress: params => {
         const { address } = params
-        return this.getPageData(
-          {
-            $or: [{ 'action.from': address }, { 'action.to': address }]
-          },
-          params
-        )
+        return this.getPageData({ address }, params, { isForGetInternalTransactionsByAddress: true })
       },
       /**
       * @swagger

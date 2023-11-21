@@ -1,126 +1,64 @@
-import defaultCollections from './collections'
 import { config as defaultConfig } from './config'
-import DB from './Db.js'
-import { StoredConfig } from './StoredConfig'
-import { nod3 as nod3Default } from './nod3Connect'
-import initConfig from './initialConfiguration'
-import { getDbBlocksCollections } from './blocksCollections'
-import { hash } from './utils'
+import { createHash } from './utils'
+import { configRepository } from '../repositories'
+import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
+import { nod3 } from './nod3Connect'
+import { nativeContracts, validateNativeContracts } from './NativeContracts'
 
-export const INIT_ID = '_explorerInitialConfiguration'
-export const COLLECTIONS_ID = '_explorerCollections'
-export const CONFIG_ID = '_explorerConfig'
-
-const readOnlyDocsIds = [INIT_ID]
-
-export function networkError (storedInitConfig, initConfig) {
-  return `Network stored id (${storedInitConfig.net.id}) is not equal to node network id (${initConfig.net.id})`
-}
-
-export async function getNetInfo (nod3) {
+export async function createInitConfig ({ log = console } = {}) {
   try {
-    let net = await nod3.net.version()
-    return net
+    validateNativeContracts(nativeContracts)
+    const net = await nod3.net.version() // Note: Throws an unhandled error if no node is found
+
+    return { nativeContracts, net }
   } catch (err) {
-    return Promise.reject(err)
+    log.error('Error creating initial configuration')
+    log.error(err)
   }
 }
 
-const defaultInstances = { nod3: nod3Default, config: defaultConfig, collections: defaultCollections }
+export const getInitConfig = () => configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
 
-export async function Setup ({ log } = {}, { nod3, config, collections } = defaultInstances) {
-  const database = new DB(config.db)
-  if (undefined !== log) database.setLogger(log)
-  log = database.getLogger()
-  const db = await database.db()
-  const storedConfig = StoredConfig(db, readOnlyDocsIds)
-
-  const createHash = thing => hash(thing, 'sha1', 'hex')
-
-  const createCollections = async (names) => {
-    names = names || config.collectionsNames
-    const validate = config.blocks.validateCollections
-    return database.createCollections(collections, { names, validate })
-  }
-
-  const getInitConfig = async () => {
+export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) {
+  const sameNetwork = (stored, current) => (stored && stored.net.id === current.net.id)
+  const sameSettingsHash = (stored, current) => stored && stored.hash === current
+  const start = async ({ skipCheck } = {}) => {
     try {
-      await nod3.isConnected().catch(err => {
-        log.debug(err)
-        throw new Error(`Cannot connect to the node`)
-      })
-      const net = await getNetInfo(nod3)
-      return Object.assign(initConfig, { net })
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  const checkStoredHash = async (id, value) => {
-    if (!id || !value) throw new Error(`Invalid id or value id:${id} value:${value}`)
-    const currentHash = createHash(value)
-    const storedHash = await storedConfig.get(id)
-    if (!storedHash) return false
-    return currentHash === storedHash.hash
-  }
-
-  const checkConfig = async () => {
-    const testConfig = await checkStoredHash(CONFIG_ID, config)
-    const testCollections = await checkStoredHash(COLLECTIONS_ID, collections)
-    return !!(testConfig && testCollections)
-  }
-
-  const saveConfig = async () => {
-    try {
-      await storedConfig.update(CONFIG_ID, { hash: createHash(config) }, { create: true })
-      await storedConfig.update(COLLECTIONS_ID, { hash: createHash(collections) }, { create: true })
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  const checkSetup = async () => {
-    try {
-      const initConfig = await getInitConfig()
-      const storedInitConfig = await storedConfig.get(INIT_ID)
-      const configMatches = await checkConfig()
-      if (!storedInitConfig || !configMatches) {
-        await createCollections()
-        await saveConfig()
-        if (!storedInitConfig) {
-          log.info(`Saving initial configuration to db`)
-          await storedConfig.save(INIT_ID, initConfig)
-          return checkSetup()
-        }
+      const currentInitConfig = await createInitConfig({ log })
+      if (skipCheck) {
+        log.warn('Skipped initial configuration check (beware that switching the network will generate inconsistencies)')
+        return { initConfig: currentInitConfig }
       }
-      if (storedInitConfig.net.id !== initConfig.net.id) {
-        throw new Error(networkError(storedInitConfig, initConfig))
+
+      // Check init config existence
+      let storedInitConfig = await getInitConfig()
+
+      if (!storedInitConfig) {
+        await configRepository[EXPLORER_INITIAL_CONFIG_ID].save(currentInitConfig)
+        log.info(`Saved initial explorer configuration`)
+
+        storedInitConfig = await getInitConfig()
       }
-      return storedInitConfig
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
 
-  const getCollections = (db) => {
-    return getDbBlocksCollections(db)
-  }
+      // Validate network
+      if (!sameNetwork(storedInitConfig, currentInitConfig)) throw new Error(`Mismatching node network ids (Stored: ${storedInitConfig.net.id}, current: ${currentInitConfig.net.id})`)
 
-  const start = async (skipCheck) => {
-    try {
-      let initConfig
-      if (skipCheck) initConfig = await storedConfig.get(INIT_ID)
-      else initConfig = await checkSetup()
-      if (!initConfig) throw new Error(`invalid init config, run checkSetup first`)
-      const collections = await getCollections(db)
-      return { initConfig, db, collections }
+      // Validate settings
+      const settingsHash = createHash(config)
+      const storedSettings = await configRepository[EXPLORER_SETTINGS_ID].get()
+
+      if (!sameSettingsHash(storedSettings, settingsHash)) {
+        await configRepository[EXPLORER_SETTINGS_ID].upsert({ hash: settingsHash })
+        log.info(`Saved new settings`)
+      }
+
+      log.info(`Initial configuration check passed. Current network: ${storedInitConfig.net.name}`)
+      return { initConfig: storedInitConfig }
     } catch (err) {
+      log.error('Error at setup start')
       log.error(err)
-      return Promise.reject(err)
     }
   }
 
-  return Object.freeze({ start, createHash })
+  return Object.freeze({ start })
 }
-
-export default Setup

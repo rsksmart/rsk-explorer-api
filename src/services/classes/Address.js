@@ -6,23 +6,21 @@ import { BcSearch } from '@rsksmart/rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx, checkInternalTransactionData } from './InternalTx'
 import { isZeroAddress } from '@rsksmart/rsk-utils'
+import { getNativeContractName, isNativeContract } from '../../lib/NativeContracts'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, initConfig, collections, tx, block, log } = {}) {
-    super({ nod3, initConfig, collections, log })
+  constructor (address, { nod3, initConfig, tx, block, log } = {}) {
+    super({ nod3, initConfig, log, name: 'Address' })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
     this.bcSearch = BcSearch(nod3)
     this.address = address
     this.fetched = false
-    this.collection = (collections) ? collections.Addrs : undefined
     this.contract = undefined
     this.block = undefined
     this.blockNumber = undefined
-    let { nativeContracts } = this
-    let nName = (nativeContracts) ? nativeContracts.getNativeContractName(address) : undefined
-    this.name = nName
-    this.isNative = !!nName
+    this.name = getNativeContractName(address) // undefined for other contracts
+    this.isNative = isNativeContract(address)
     this.dbData = undefined
     this.blockCode = undefined
     this.tx = tx
@@ -164,10 +162,9 @@ export class Address extends BcThing {
 
   async getFromDb () {
     try {
-      let { dbData, collection, address } = this
+      let { dbData, address } = this
       if (dbData) return dbData
-      if (!collection) return
-      dbData = await collection.findOne({ address })
+      dbData = await this.repository.findOne({ address }, {})
       this.dbData = dbData
       return dbData
     } catch (err) {
@@ -185,14 +182,14 @@ export class Address extends BcThing {
     try {
       await this.fetch()
       let data = this.getData(true)
-      let { collection, dbData } = this
+      let { dbData } = this
       // Optimization
       for (let p in dbData) {
         if (data[p] === dbData[p]) delete data[p]
       }
       if (Object.keys(data).length < 1) return
       data.address = address
-      let result = await saveAddressToDb(data, collection)
+      const result = await saveAddressToDb(data)
       return result
     } catch (err) {
       this.log.error(`Error updating address ${address}`)
@@ -211,8 +208,8 @@ export class Address extends BcThing {
   makeContract (deployedCode) {
     const dbData = Object.assign({}, this.getData(true))
     if (this.contract) return this.contract
-    let { address, nod3, initConfig, collections, block } = this
-    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, collections, block })
+    let { address, nod3, initConfig, block } = this
+    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, block })
   }
 
   async getContract () {
@@ -291,11 +288,11 @@ function createAddressData ({ address, isNative, name }) {
   return new Proxy({ address, type, name, isNative }, dataHandler)
 }
 
-export async function saveAddressToDb (data, collection) {
+export async function saveAddressToDb (data) {
   try {
     let { address } = data
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
-    let { result } = await collection.updateOne({ address }, { $set: data }, { upsert: true })
+    let result = await Promise.all(this.repository.insertOne(data))
     return result
   } catch (err) {
     return Promise.reject(err)

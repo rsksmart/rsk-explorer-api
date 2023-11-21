@@ -1,10 +1,12 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { tokensInterfaces, addrTypes, fields } from '../../lib/types'
+import { tokensInterfaces, addrTypes } from '../../lib/types'
 
 export class Address extends DataCollectorItem {
-  constructor ({ Addrs }, name) {
-    let sortable = { 'createdByTx.timestamp': -1 }
-    super(Addrs, name, { sortDir: 1, sortable })
+  constructor (name) {
+    const cursorField = 'id'
+    const sortable = {}
+    const sortDir = -1
+    super(name, { cursorField, sortDir, sortable })
     this.fields = { code: 0, 'createdByTx.input': 0 }
     this.publicActions = {
       /**
@@ -35,7 +37,7 @@ export class Address extends DataCollectorItem {
 
       getAddress: async params => {
         const { address } = params
-        const aData = await this.getOne({ address }, { _id: 0 })
+        const aData = await this.getOne({ address }, { id: 0 })
         if (aData && aData.data) {
           let { data } = aData
           if (data.type === addrTypes.CONTRACT) {
@@ -77,7 +79,7 @@ export class Address extends DataCollectorItem {
       getAddresses: params => {
         let type = (params.query) ? params.query.type : null
         let query = (type) ? { type } : {}
-        return this.getPageData(query, params)
+        return this.getPageData(query, params, { deleteCodeAndInput: true })
       },
       /**
        * @swagger
@@ -110,15 +112,15 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getMiners: params => {
-        let query = {}
-        const lbMined = fields.LAST_BLOCK_MINED
+        let query = { }
         let { fromBlock } = params
-        query[lbMined] = { $exists: true, $ne: null }
+
         if (fromBlock) {
           fromBlock = parseInt(fromBlock)
-          query[`${lbMined}.number`] = { $gt: fromBlock }
+          query.lastBlockMinedNumber = { gte: fromBlock }
         }
-        return this.getPageData(query, params)
+
+        return this.getPageData(query, params, { isForGetMiners: true })
       },
       /**
        * @swagger
@@ -148,10 +150,20 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getTokens: params => {
-        return this.getPageData({
+        const query = {
           type: addrTypes.CONTRACT,
-          contractInterfaces: { $in: tokensInterfaces }
-        }, params)
+          contract_contract_addressToaddress: {
+            contract_interface: {
+              some: {
+                interface: {
+                  in: tokensInterfaces
+                }
+              }
+            }
+          }
+        }
+
+        return this.getPageData(query, params, { deleteCodeAndInput: true })
       },
       /**
        * @swagger
@@ -208,18 +220,24 @@ export class Address extends DataCollectorItem {
       getCode: async params => {
         try {
           const { address } = params
-          const fields = { _id: 0, address: 1, code: 1, createdByTx: 1, contractInterfaces: 1, name: 1 }
-          const result = await this.getOne({ address }, fields)
+          const result = await this.getOne({ address }, {}, {}, { isForGetCode: true })
           let { data } = result
           if (!data) throw new Error('Unknown address')
-          const { createdByTx, code } = data
+
+          const {
+            createdByTx,
+            code
+          } = data
+
           if (!code) throw new Error('The address does not have code')
+
           if (createdByTx) {
-            // is a transaction
-            if (createdByTx.hasOwnProperty('receipt')) {
-              data.creationCode = createdByTx.input
-            } else { // is an internal transactions
+            if (createdByTx.internalTxId) {
+              // it's an internal transaction
               data.creationCode = createdByTx.action.init
+            } else {
+              // it's a regular transaction
+              data.creationCode = createdByTx.input
             }
             data.created = createdByTx.timestamp
             delete data.createdByTx
@@ -255,10 +273,16 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       findAddresses: async params => {
-        let { name } = params
+        const query = {
+          name: {
+            contains: params.name
+          }
+        }
         params.field = 'name'
-        params.sort = { _id: 1 }
-        return this.textSearch(name, params)
+        params.sort = { id: 1 }
+        delete params.field.name
+
+        return this.find(query, params, 0, {}, { deleteCodeAndInput: true })
       }
     }
   }

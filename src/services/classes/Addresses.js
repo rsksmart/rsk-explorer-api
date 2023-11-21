@@ -2,8 +2,7 @@ import Address from './Address'
 import { isAddress } from '../../lib/utils'
 
 export class Addresses {
-  constructor ({ nod3, initConfig, collections }) {
-    this.collections = collections
+  constructor ({ nod3, initConfig }) {
     this.nod3 = nod3
     this.initConfig = initConfig
     this.addresses = {}
@@ -11,8 +10,8 @@ export class Addresses {
   createAddress (address, options = {}) {
     if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
     options = options || {}
-    let { nod3, initConfig, collections } = this
-    options = Object.assign(options, { nod3, initConfig, collections })
+    let { nod3, initConfig } = this
+    options = Object.assign(options, { nod3, initConfig })
     return new Address(address, options)
   }
   add (address, options = {}) {
