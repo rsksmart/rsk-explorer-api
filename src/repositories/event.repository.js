@@ -9,12 +9,20 @@ export function getEventRepository (prismaClient) {
 
       return event ? eventEntityToRaw(event) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetEventsByAddress }) {
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetEventsByAddress }) { // sort = { [cursorField]: sortDir }
       if (isForGetEventsByAddress) {
-        const includeRelatedTables = { event: true }
-        const events = await prismaClient.address_in_event.findMany(generateFindQuery(query, {}, includeRelatedTables, {}, limit))
+        const relations = {
+          // get event
+          event: {
+            include: {
+              // get involved addresses
+              address_in_event: true
+            }
+          }
+        }
+        const eventsByAddress = await prismaClient.address_in_event.findMany(generateFindQuery(query, {}, relations, {}, limit))
 
-        return events.map(event => eventEntityToRaw(event.event))
+        return eventsByAddress.map(eventByAddress => eventEntityToRaw(eventByAddress.event))
       } else {
         const events = await prismaClient.event.findMany(generateFindQuery(query, project, eventRelatedTables, sort, limit))
         return events.map(eventEntityToRaw)

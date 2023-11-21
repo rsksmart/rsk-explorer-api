@@ -18,7 +18,7 @@ const {
 } = fixtures[network]
 
 const keysToSkipForEvent = {
-  data: ['_id']
+  data: ['_id', ['_addressData', '_id']]
 }
 
 describe('Event module', () => {

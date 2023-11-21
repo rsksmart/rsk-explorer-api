@@ -3,7 +3,7 @@ import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
   constructor (key) {
     const cursorField = 'eventId'
-    const sortable = { blockNumber: -1 }
+    const sortable = {}
     const sortDir = -1
     super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
@@ -93,7 +93,7 @@ export class Event extends DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params
         if (address) {
-          const query = {}
+          const query = { address }
           // search by events signatures, skip remasc & bridge events
           if (Array.isArray(signatures) && !isNativeContract(address)) query.eventSignature = { in: signatures }
 
