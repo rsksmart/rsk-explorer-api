@@ -30,7 +30,7 @@ function summaryEntityToRaw ({
   transaction_in_summary: transactions
 }) {
   return {
-    blockNumber,
+    number: blockNumber,
     hash,
     timestamp: Number(timestamp),
     data: {

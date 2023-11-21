@@ -2,7 +2,7 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 export class Summary extends DataCollectorItem {
   constructor (key) {
-    const cursorField = 'blockNumber'
+    const cursorField = 'number'
     const sortDir = -1
     const sortable = { [cursorField]: -1 }
     super(key, { sortDir, cursorField, sortable })
