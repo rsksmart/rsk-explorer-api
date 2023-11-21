@@ -1,7 +1,7 @@
 {
   "info": {
     "title": "rsk-explorer-api",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "description": "explorer API Documentation"
   },
   "swagger": "2.0",

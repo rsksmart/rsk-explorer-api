@@ -11,3 +11,4 @@ dist
 services.output.log
 package-lock.json
 logs
+/.idea
