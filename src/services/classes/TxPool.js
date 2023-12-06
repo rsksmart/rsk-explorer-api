@@ -1,13 +1,15 @@
-import { BlocksBase } from '../../lib/BlocksBase'
+import BlocksBase from '../../lib/BlocksBase'
 import { isHexString, base64toHex } from '../../lib/utils'
-
+import { REPOSITORIES } from '../../repositories'
 export class TxPool extends BlocksBase {
-  constructor (db, options) {
-    super(db, options)
+  constructor (options) {
+    super(options)
     this.status = {}
     this.pool = {}
-    this.TxPool = this.collections.TxPool
-    this.PendingTxs = this.collections.PendingTxs
+    this.repository = REPOSITORIES.TxPool
+    this.txPendingRepository = REPOSITORIES.TxPending
+    this.started = false
+    this.stopped = true
   }
 
   async start () {
@@ -17,10 +19,18 @@ export class TxPool extends BlocksBase {
         this.log.debug('nod3 is not connected')
         return this.start()
       }
+
+      if (this.started) return
+
+      this.started = true
+      this.stopped = false
+
       // status filter
       let status = await this.nod3.subscribe.method('txpool.status')
       status.watch(status => {
-        this.updateStatus(status)
+        if (!this.stopped) {
+          this.updateStatus(status)
+        }
       }, err => {
         this.log.debug(`Pool filter error: ${err}`)
       })
@@ -29,11 +39,16 @@ export class TxPool extends BlocksBase {
     }
   }
 
+  stop () {
+    this.stopped = true
+    this.started = false
+  }
+
   updateStatus (newStatus) {
     const status = Object.assign({}, this.status)
     let changed = Object.keys(newStatus).find(k => newStatus[k] !== status[k])
     if (changed) {
-      this.log.debug(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
+      this.log.info(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
       this.status = Object.assign({}, newStatus)
       this.updatePool()
     }
@@ -114,19 +129,20 @@ export class TxPool extends BlocksBase {
 
   async savePoolToDb (pool) {
     try {
-      this.log.debug(`Saving txPool to db`)
-      await this.TxPool.insertOne(pool)
-      await this.savePendingTxs(pool.txs)
+      this.log.info(`Saving txPool to db`)
+      const txpool = await this.repository.insertOne(pool)
+      await this.savePendingTxs(pool.txs, txpool.id)
     } catch (err) {
       this.log.error(`Error saving txPool: ${err}`)
       return Promise.reject(err)
     }
   }
 
-  async savePendingTxs (txs) {
+  async savePendingTxs (txs, poolId) {
     try {
       txs = txs || []
-      await Promise.all(txs.map(tx => this.PendingTxs.updateOne({ hash: tx.hash }, { $set: tx }, { upsert: true })))
+      const savedTxs = await Promise.all(txs.map(tx => this.txPendingRepository.upsertOne({ hash: tx.hash }, { tx, poolId })))
+      return savedTxs
     } catch (err) {
       this.log.error(`Error saving pending transactions: ${err}`)
       return Promise.reject(err)
@@ -134,8 +150,8 @@ export class TxPool extends BlocksBase {
   }
 }
 
-export function Pool (db, config) {
-  return new TxPool(db, config)
+export function Pool (config) {
+  return new TxPool(config)
 }
 
 export default Pool

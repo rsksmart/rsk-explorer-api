@@ -1,14 +1,14 @@
 import { DataCollector } from './lib/DataCollector'
-import config from '../lib/config'
-
-const collectionName = config.collectionsNames.TxPool
+import { REPOSITORIES } from '../repositories'
 
 export class TxPool extends DataCollector {
-  constructor (db) {
-    super(db, { collectionName })
+  constructor ({ log }) {
+    super()
+    this.log = log
     this.tickDelay = 1000
     this.state = {}
     this.chart = []
+    this.repository = REPOSITORIES.TxPool
   }
   start () {
     super.start()
@@ -34,16 +34,12 @@ export class TxPool extends DataCollector {
   }
 
   getPool () {
-    return this.collection.findOne({}, { sort: { _id: -1 } })
+    return this.repository.findOne({}, { sort: { _id: -1 } })
   }
 
   async updatePoolChart () {
     try {
-      let chart = await this.collection.find({})
-        .sort({ timestamp: -1 })
-        .project({ txs: 0 })
-        .limit(200)
-        .toArray()
+      let chart = await this.repository.find({}, { txs: 0 }, { timestamp: -1 }, 200)
       this.chart = chart
     } catch (err) {
       return Promise.reject(err)

@@ -1,9 +1,10 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 
 export class VerificationResults extends DataCollectorItem {
-  constructor (collections, name) {
-    const { VerificationsResults } = collections
-    super(VerificationsResults, name)
+  constructor (name) {
+    let sortable = { 'address': -1 }
+    const cursorField = 'address'
+    super(name, { cursorField, sortDir: -1, sortable })
     this.publicActions = {
       /**
      * @swagger
@@ -22,8 +23,7 @@ export class VerificationResults extends DataCollectorItem {
      */
       getResults: (params) => {
         params.fields = { address: 1 }
-        let query = { match: true }
-        return this.getPageData(query, params)
+        return this.getPageData({}, params)
       },
       /**
        * @swagger

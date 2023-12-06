@@ -1,15 +1,12 @@
 import { DataCollector, DataCollectorItem } from './lib/DataCollector/'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 
 export class Status extends DataCollector {
-  constructor (db) {
-    const collections = getDbBlocksCollections(db)
-    const { Status, Blocks } = collections
-    super(db, { collectionName: 'Status' })
-    this.tickDelay = 5000
+  constructor ({ log }) {
+    super()
+    this.log = log
     this.state = {}
-    this.addModule(new DataCollectorItem(Status, 'Status'))
-    this.addModule(new DataCollectorItem(Blocks, 'Blocks'))
+    this.addModule(new DataCollectorItem('Status'))
+    this.addModule(new DataCollectorItem('Blocks'))
   }
   tick () {
     this.updateState().then((newState) => {
@@ -21,14 +18,12 @@ export class Status extends DataCollector {
   getState () {
     return this.formatData(this.state)
   }
-  getBlocksServiceStatus () {
+  async getBlocksServiceStatus () {
     const Status = this.getModule('Status')
-    return Status.find({}, { timestamp: -1 }, 1)
-      .then(res => {
-        res = res.data[0]
-        if (res) delete (res._id)
-        return res
-      })
+    const { data } = await Status.find({}, { timestamp: -1 }, 1)
+    const [latestStatus] = data
+
+    return latestStatus
   }
   async updateState () {
     try {
@@ -58,11 +53,11 @@ export class Status extends DataCollector {
           this.getTotalBlocks()
         ])
       const status = Object.assign(blocksStatus || {}, {
-        dbLastBlockReceived: last.number,
-        dbLastBlockReceivedTime: last._received,
-        dbHighBlock: high.number,
-        dbBlocks,
-        dbMissingBlocks: high.number + 1 - dbBlocks,
+        dbLastBlockReceived: last ? last.number : '',
+        dbLastBlockReceivedTime: last ? last._received : '',
+        dbHighBlock: high ? high.number : '',
+        dbBlocks: dbBlocks >= 0 ? dbBlocks : '',
+        dbMissingBlocks: high ? high.number + 1 - dbBlocks : '',
         dbTime: Date.now()
       })
       return status
@@ -72,13 +67,13 @@ export class Status extends DataCollector {
   }
 
   getHighestBlock () {
-    return this.getModule('Blocks').db.findOne({}, { sort: { number: -1 }, limit: 1 })
+    return this.getModule('Blocks').repository.findOne({}, { sort: { number: -1 } })
   }
   getLastblockReceived () {
-    return this.getModule('Blocks').db.findOne({}, { sort: { _received: -1 }, limit: 1 })
+    return this.getModule('Blocks').repository.findOne({}, { sort: { _received: -1 } })
   }
   getTotalBlocks () {
-    return this.getModule('Blocks').db.countDocuments({})
+    return this.getModule('Blocks').repository.countDocuments({})
   }
 }
 

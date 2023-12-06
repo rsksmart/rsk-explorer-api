@@ -1,10 +1,11 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { bigNumberSum } from '../../lib/utils'
 import { BigNumber } from 'bignumber.js'
-
 export class Token extends DataCollectorItem {
-  constructor ({ TokensAddrs }, key) {
-    super(TokensAddrs, key)
+  constructor (key) {
+    const cursorField = 'address'
+    const sortable = { address: -1 }
+    super(key, { cursorField, sortable })
     this.publicActions = {
       /**
        * @swagger
@@ -68,17 +69,8 @@ export class Token extends DataCollectorItem {
        */
       getTokensByAddress: async params => {
         const address = params.address
-        const from = this.parent.collectionsNames.Addrs
         if (address) {
-          let aggregate = [
-            { $match: { address } },
-            {
-              $lookup: { from, localField: 'contract', foreignField: 'address', as: 'addressesItems' }
-            },
-            { $replaceRoot: { newRoot: { $mergeObjects: [{ $arrayElemAt: ['$addressesItems', 0] }, '$$ROOT'] } } },
-            { $project: { addressesItems: 0 } }
-          ]
-          let data = await this.getAggPageData(aggregate, params)
+          const data = await this.getPageData({ address }, params, { isForGetTokensByAddress: true })
           return data
         }
       },
@@ -108,9 +100,14 @@ export class Token extends DataCollectorItem {
        *        404:
        *          $ref: '#/responses/NotFound'
        */
-      getContractAccount: params => {
-        const { address, contract } = params
-        return this.getOne({ address, contract })
+      getContractAccount: async params => {
+        const query = {
+          address: params.address || '',
+          contract: params.contract
+        }
+        let { data } = await this.find(query, { blockNumber: -1 }, 1)
+
+        return { data: (data[0] || null) }
       },
       /**
        * @swagger
@@ -140,8 +137,11 @@ export class Token extends DataCollectorItem {
        */
       getTokenAccount: async params => {
         const { address, contract } = params
-        const account = await this.getOne({ address, contract })
-        return this.parent.addAddressData(contract, account, '_contractData')
+        const { data: [account] } = await this.find({ address: address || '', contract: contract || '' }, { blockNumber: -1 }, 1)
+
+        const tokenAccount = await this.parent.addAddressData(contract, { data: account }, '_contractData')
+
+        return tokenAccount
       },
       /**
        * @swagger
@@ -190,11 +190,26 @@ export class Token extends DataCollectorItem {
         if (!totalSupply) return
 
         query.contract = contract
-        let accounts = await this.find(query, null, null, { _id: 0, address: 1, balance: 1 })
-        if (accounts) accounts = accounts.data
-        if (!accounts) return
+        let accounts = await this.find(query)
+        let accountsBalance = '0x0'
 
-        let accountsBalance = bigNumberSum(accounts.map(account => account.balance))
+        if (accounts) {
+          // selects only the latest token balance for each account
+          accounts = accounts.data.reduce((filteredAccounts, { address, balance, block: { number } }) => {
+            if (filteredAccounts[address]) {
+              if (number > filteredAccounts[address].number) {
+                filteredAccounts[address].balance = balance
+              }
+            } else {
+              filteredAccounts[address] = { address, balance, number }
+            }
+
+            return filteredAccounts
+          }, {})
+
+          accountsBalance = bigNumberSum(Object.keys(accounts).map(key => accounts[key].balance))
+        }
+
         totalSupply = new BigNumber(totalSupply)
         let balance = (accountsBalance) ? totalSupply.minus(accountsBalance) : totalSupply
         let data = { balance, accountsBalance, totalSupply, decimals }

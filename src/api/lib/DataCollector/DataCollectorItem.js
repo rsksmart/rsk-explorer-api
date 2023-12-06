@@ -1,14 +1,8 @@
-import { Collection, ObjectID } from 'mongodb'
-import { find, findPages, aggregatePages, countDocuments } from './pagination'
-import { OBJECT_ID } from '../../../lib/types'
-import { generateTextQuery } from './textSearch'
+import { find, findPages } from './pagination'
+import { REPOSITORIES } from '../../../repositories'
 
 export class DataCollectorItem {
-  constructor (collection, name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
-    if (!(collection instanceof Collection)) {
-      throw (new Error('Collection is not mongodb Collection'))
-    }
-    this.db = collection
+  constructor (name, { cursorField = '_id', sortDir = -1, sortable = { _id: -1 } } = {}) {
     this.name = name
     this.fieldsTypes = null
     this.cursorField = cursorField
@@ -19,6 +13,7 @@ export class DataCollectorItem {
     this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
     this.fields = {}
+    this.repository = REPOSITORIES[name]
   }
 
   getName () {
@@ -40,34 +35,32 @@ export class DataCollectorItem {
   }
 
   async count (query) {
-    let collection = this.db
-    let data = await countDocuments(collection, query)
+    let data = await this.repository.countDocuments(query)
     return { data }
   }
 
-  async find (query, sort, limit, project) {
-    let collection = this.db
+  async find (query, sort, limit, project, endpointOptions = {}) {
     project = project || this.getDefaultsFields()
-    let data = await find(collection, query, sort, limit, project)
+    let data = await find(query, sort, limit, project, this.repository, endpointOptions)
     return { data }
   }
 
-  async getOne (query, projection, sort) {
+  async getOne (query, projection, sort, endpointOptions) {
     projection = projection || this.getDefaultsFields()
     sort = sort || this.sort
-    const data = await this.db.findOne(query, { projection, sort })
+    const data = await this.repository.findOne(query, { projection, sort }, endpointOptions)
     return { data }
   }
 
   async getLatest (query, project) {
     query = query || {}
-    const result = await find(this.db, query, this.sort, 1, project)
+    const result = await find(query, this.sort, 1, project, this.repository)
     const data = result.length ? result[0] : null
     return { data }
   }
 
   async setFieldsTypes () {
-    let types = await getFieldsTypes(this.db)
+    let types = await getFieldsTypes(this.repository)
     this.fieldsTypes = types
     return types
   }
@@ -99,29 +92,25 @@ export class DataCollectorItem {
   async setCursorData () {
     let { cursorField } = this
     const types = await this.getFieldsTypes()
-    this.cursorData = await getCursorData(this.db, cursorField, types)
+    this.cursorData = await getCursorData(cursorField, types, this.repository)
     return this.cursorData
   }
 
-  getPageData (query, params) {
-    return this.getPages({ query, params })
-  }
-
-  getAggPageData (aggregate, params) {
-    return this.getPages({ aggregate, params })
+  getPageData (query, params, endpointOptions = {}) {
+    return this.getPages({ query, params, endpointOptions })
   }
 
   async getPrevNext (query, project, data) {
     try {
-      let { cursorField, db } = this
+      let { cursorField } = this
       project = project || this.getDefaultsFields()
-      if (!data) data = (await this.getOne(query))
+      if (!data) data = await this.getOne(query)
       if (data) data = data.data
       if (!data) return
       let value = query[cursorField] || data[cursorField]
       if (undefined === value) throw new Error(`Missing ${cursorField} value`)
-      let prev = (await find(db, { [cursorField]: { $lt: value } }, { [cursorField]: -1 }, 1, project))[0]
-      let next = (await find(db, { [cursorField]: { $gt: value } }, { [cursorField]: 1 }, 1, project))[0]
+      let prev = (await find({ [cursorField]: { lt: value } }, { [cursorField]: -1 }, 1, project, this.repository))[0]
+      let next = (await find({ [cursorField]: { gt: value } }, { [cursorField]: 1 }, 1, project, this.repository))[0]
       return { prev, data, next }
     } catch (err) {
       return Promise.reject(err)
@@ -144,24 +133,14 @@ export class DataCollectorItem {
     }
   }
 
-  async getPages ({ aggregate, query, params }) {
+  async getPages ({ query, params, endpointOptions }) {
     try {
       let pages = this.responseParams(params)
       let cursorData = await this.getCursorData()
-      query = aggregate || query
-      let args = [this.db, cursorData, query, pages]
-      let result = (aggregate) ? await aggregatePages(...args) : await findPages(...args)
-      return formatResponse(result, pages)
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
 
-  async textSearch (value, params) {
-    try {
-      if (typeof value !== 'string') throw new Error('The text search requires an string value')
-      let query = generateTextQuery(value, params)
-      return this.find(query)
+      let args = [cursorData, query, pages, this.repository, endpointOptions]
+      let result = await findPages(...args)
+      return formatResponse(result, pages)
     } catch (err) {
       return Promise.reject(err)
     }
@@ -179,13 +158,13 @@ export function formatResponse (result, pages) {
   return { pages, data }
 }
 
-export async function getFieldsTypes (collection) {
-  let doc = await collection.findOne()
-  let fields = {}
+export async function getFieldsTypes (repository) {
+  const doc = await repository.findOne({}, {})
+
+  const fields = {}
   for (let p in doc) {
-    let value = doc[p]
+    const value = doc[p]
     let type = typeof value
-    type = (value instanceof ObjectID) ? OBJECT_ID : type
     fields[p] = type
   }
   return fields
@@ -208,6 +187,7 @@ export function fieldFilterParse (field, value, query) {
   let fieldQuery
   let inArr = []
   let ninArr = []
+
   if (typeof value === 'string') {
     fieldQuery = value
   } else if (Array.isArray(value)) {
@@ -218,15 +198,20 @@ export function fieldFilterParse (field, value, query) {
       else ninArr.push(p)
     }
   }
+
   if (inArr.length || ninArr.length) fieldQuery = {}
-  if (inArr.length) fieldQuery['$in'] = inArr
-  if (ninArr.length) fieldQuery['$nin'] = ninArr
+
+  if (inArr.length) fieldQuery['in'] = inArr
+
+  if (ninArr.length) fieldQuery.notIn = ninArr
+
   if (fieldQuery) query[field] = fieldQuery
+
   return query
 }
 
-export async function getCursorData (collection, cursorField, types) {
-  types = types || await getFieldsTypes(collection)
+export async function getCursorData (cursorField, types, repository) {
+  types = types || await getFieldsTypes(repository)
   const cursorType = types[cursorField]
   return { cursorField, cursorType, fields: types }
 }

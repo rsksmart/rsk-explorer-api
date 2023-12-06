@@ -1,6 +1,5 @@
 import { BigNumber } from 'bignumber.js'
 import { BIG_NUMBER } from './types'
-import { ObjectID } from 'mongodb'
 import { remove0x, toBuffer, isAddress } from '@rsksmart/rsk-utils'
 import crypto from 'crypto'
 export * from '@rsksmart/rsk-utils'
@@ -63,7 +62,6 @@ export const serialize = (obj) => {
   if (typeof obj !== 'object') return obj
   if (Array.isArray(obj)) return obj.map(o => serialize(o))
   if (isBigNumber(obj)) return serializeBigNumber(obj)
-  if (obj instanceof ObjectID) return obj.toString()
   let serialized = {}
   for (let p in obj) {
     let value = obj[p]
@@ -149,3 +147,5 @@ export const chunkArray = (arr, chunkSize) => {
 export const hash = (thing, alg = 'sha1', out = 'hex') => {
   return crypto.createHash(alg).update(JSON.stringify(thing)).digest(out)
 }
+
+export const createHash = (v) => hash(v, 'sha1', 'hex')

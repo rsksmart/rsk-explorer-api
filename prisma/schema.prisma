@@ -1,0 +1,493 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = ""
+}
+
+model address {
+  id                                                             Int                      @default(autoincrement())
+  address                                                        String                   @id @db.VarChar(42)
+  isNative                                                       Boolean                  @map("is_native")
+  type                                                           String                   @db.VarChar
+  name                                                           String?                  @db.VarChar
+  address_in_event_address_in_event_addressToaddress             address_in_event[]       @relation("address_in_event_addressToaddress")
+  address_in_itx_address_in_itx_addressToaddress                 address_in_itx[]         @relation("address_in_itx_addressToaddress")
+  address_in_summary_address_in_summary_addressToaddress         address_in_summary[]     @relation("address_in_summary_addressToaddress")
+  address_latest_balance_address_latest_balance_addressToaddress address_latest_balance?  @relation("address_latest_balance_addressToaddress")
+  balance_balance_addressToaddress                               balance[]                @relation("balance_addressToaddress")
+  contract_contract_addressToaddress                             contract?                @relation("contract_addressToaddress")
+  contract_destruction_tx                                        contract_destruction_tx?
+  event_event_addressToaddress                                   event[]                  @relation("event_addressToaddress")
+  miner_address_miner_address_addressToaddress                   miner_address?           @relation("miner_address_addressToaddress")
+  token_address_token_address_addressToaddress                   token_address[]          @relation("token_address_addressToaddress")
+  token_address_token_address_contractTocontract                 token_address[]          @relation("token_address_contractTocontract")
+  transaction_transaction_fromToaddress                          transaction[]            @relation("transaction_fromToaddress")
+  transaction_transaction_toToaddress                            transaction[]            @relation("transaction_toToaddress")
+
+  @@index([id], map: "index_address_id")
+}
+
+model balance {
+  id                                BigInt  @id @default(autoincrement())
+  address                           String  @db.VarChar(42)
+  balance                           String  @db.VarChar
+  blockNumber                       Int     @map("block_number")
+  blockHash                         String  @map("block_hash") @db.VarChar(66)
+  timestamp                         BigInt
+  created                           BigInt
+  address_balance_addressToaddress  address @relation("balance_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_address")
+  block_balance_block_hashToblock   block   @relation("balance_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_hash")
+  block_balance_block_numberToblock block   @relation("balance_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
+
+  @@index([address], map: "idx_balance_address")
+  @@index([blockNumber], map: "idx_balance_block_number")
+}
+
+model block {
+  id                                                            String?                  @default(dbgenerated("gen_random_uuid()")) @map("_id") @db.Uuid
+  number                                                        Int                      @id
+  hash                                                          String?                  @unique @db.VarChar(66)
+  parentHash                                                    String                   @map("parent_hash") @db.VarChar(66)
+  sha3Uncles                                                    String                   @map("sha3_uncles") @db.VarChar(66)
+  logsBloom                                                     String                   @map("logs_bloom") @db.VarChar
+  transactionsRoot                                              String                   @map("transactions_root") @db.VarChar(66)
+  stateRoot                                                     String                   @map("state_root") @db.VarChar(66)
+  receiptsRoot                                                  String                   @map("receipts_root") @db.VarChar(66)
+  miner                                                         String                   @db.VarChar
+  difficulty                                                    String                   @db.VarChar
+  totalDifficulty                                               String                   @map("total_difficulty") @db.VarChar
+  extraData                                                     String                   @map("extra_data") @db.VarChar
+  size                                                          Int
+  gasLimit                                                      Int                      @map("gas_limit")
+  gasUsed                                                       Int                      @map("gas_used")
+  timestamp                                                     BigInt
+  transactions                                                  String?                  @db.VarChar
+  uncles                                                        String?                  @db.VarChar
+  minimumGasPrice                                               String                   @map("minimum_gas_price") @db.VarChar
+  bitcoinMergedMiningHeader                                     String                   @map("bitcoin_merged_mining_header") @db.VarChar
+  bitcoinMergedMiningCoinbaseTransaction                        String                   @map("bitcoin_merged_mining_coinbase_transaction") @db.VarChar
+  bitcoinMergedMiningMerkleProof                                String                   @map("bitcoin_merged_mining_merkle_proof") @db.VarChar
+  hashForMergedMining                                           String                   @map("hash_for_merged_mining") @db.VarChar(66)
+  paidFees                                                      String                   @map("paid_fees") @db.VarChar
+  cumulativeDifficulty                                          String                   @map("cumulative_difficulty") @db.VarChar
+  received                                                      BigInt
+  address_in_summary                                            address_in_summary[]
+  address_latest_balance                                        address_latest_balance[]
+  balance_balance_block_hashToblock                             balance[]                @relation("balance_block_hashToblock")
+  balance_balance_block_numberToblock                           balance[]                @relation("balance_block_numberToblock")
+  block_summary_block_summary_block_numberToblock               block_summary?           @relation("block_summary_block_numberToblock")
+  block_summary_block_summary_hashToblock                       block_summary[]          @relation("block_summary_hashToblock")
+  block_trace                                                   block_trace[]
+  contract                                                      contract[]
+  event_event_block_hashToblock                                 event[]                  @relation("event_block_hashToblock")
+  event_event_block_numberToblock                               event[]                  @relation("event_block_numberToblock")
+  internal_transaction_internal_transaction_block_hashToblock   internal_transaction[]   @relation("internal_transaction_block_hashToblock")
+  internal_transaction_internal_transaction_block_numberToblock internal_transaction[]   @relation("internal_transaction_block_numberToblock")
+  stats_stats_block_hashToblock                                 stats[]                  @relation("stats_block_hashToblock")
+  stats_stats_block_numberToblock                               stats?                   @relation("stats_block_numberToblock")
+  token_address_token_address_block_hashToblock                 token_address[]          @relation("token_address_block_hashToblock")
+  token_address                                                 token_address[]
+  total_supply                                                  total_supply[]
+  transaction_transaction_block_hashToblock                     transaction[]            @relation("transaction_block_hashToblock")
+  transaction_transaction_block_numberToblock                   transaction[]            @relation("transaction_block_numberToblock")
+
+  @@index([miner])
+}
+
+model contract {
+  address                           String                @id @db.VarChar(42)
+  code                              String?               @db.VarChar
+  codeStoredAtBlock                 Int?                  @map("code_stored_at_block")
+  deployedCode                      String?               @map("deployed_code") @db.VarChar
+  symbol                            String?               @db.VarChar
+  decimals                          Int?                  @db.SmallInt
+  address_contract_addressToaddress address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
+  block                             block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
+  contract_creation_tx              contract_creation_tx?
+  contract_interface                contract_interface[]
+  contract_method                   contract_method[]
+  total_supply                      total_supply[]
+}
+
+model contract_interface {
+  interface       String   @db.VarChar
+  contractAddress String   @map("contract_address") @db.VarChar(42)
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_interface_contract_address")
+
+  @@id([interface, contractAddress], map: "pk_contract_interface")
+}
+
+model contract_method {
+  method          String   @db.VarChar
+  contractAddress String   @map("contract_address") @db.VarChar(42)
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_method_contract_address")
+
+  @@id([method, contractAddress], map: "pk_contract_method")
+}
+
+model contract_verification {
+  id        String   @id @map("_id") @db.VarChar
+  address   String?  @db.VarChar
+  error     String?  @db.VarChar
+  match     Boolean?
+  request   String?  @db.VarChar
+  result    String?  @db.VarChar
+  timestamp BigInt?
+}
+
+model event {
+  eventId                         String             @id @map("event_id") @db.VarChar
+  abi                             String?            @db.VarChar
+  address                         String             @db.VarChar(42)
+  args                            String?            @db.VarChar
+  topics                          String?            @db.VarChar
+  blockHash                       String             @map("block_hash") @db.VarChar(66)
+  blockNumber                     Int                @map("block_number")
+  data                            String             @db.VarChar
+  event                           String?            @db.VarChar
+  logIndex                        Int                @map("log_index")
+  signature                       String?            @db.VarChar
+  timestamp                       BigInt
+  transactionHash                 String             @map("transaction_hash") @db.VarChar(66)
+  transactionIndex                Int                @map("transaction_index")
+  txStatus                        String             @map("tx_status") @db.VarChar
+  address_in_event                address_in_event[]
+  address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_address")
+  block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_hash")
+  block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
+  transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
+  event_in_summary                event_in_summary[]
+
+  @@index([blockNumber], map: "idx_event_block_number")
+  @@index([address], map: "idx_event_address")
+  @@index([signature], map: "idx_event_signature")
+}
+
+model internal_transaction {
+  internalTxId                                   String                            @id @map("internal_tx_id") @db.VarChar
+  transactionHash                                String                            @map("transaction_hash") @db.VarChar(66)
+  blockNumber                                    Int                               @map("block_number")
+  blockHash                                      String                            @map("block_hash") @db.VarChar(66)
+  transactionPosition                            Int                               @map("transaction_position")
+  type                                           String                            @db.VarChar
+  subtraces                                      Int
+  traceAddress                                   String?                           @map("trace_address") @db.VarChar
+  result                                         String?                           @db.VarChar
+  index                                          Int
+  timestamp                                      BigInt
+  error                                          String?                           @db.VarChar
+  action                                         String?                           @db.VarChar
+  address_in_itx                                 address_in_itx[]
+  block_trace                                    block_trace[]
+  block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
+  block_internal_transaction_block_numberToblock block                             @relation("internal_transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_number")
+  transaction                                    transaction                       @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_transaction_hash")
+  internal_transaction_in_summary                internal_transaction_in_summary[]
+  suicide_in_summary                             suicide_in_summary[]
+
+  @@index([blockHash], map: "idx_internal_transaction_block_hash")
+  @@index([blockNumber], map: "idx_internal_transaction_block_number")
+  @@index([transactionHash], map: "idx_internal_transaction_transaction_hash")
+}
+
+model status {
+  id               Int     @id @default(autoincrement())
+  timestamp        BigInt
+  pendingBlocks    Int     @map("pending_blocks")
+  requestingBlocks Int     @map("requesting_blocks")
+  nodeDown         Boolean @map("node_down")
+}
+
+model token_address {
+  address                                   String                    @db.VarChar(42)
+  contract                                  String                    @db.VarChar(42)
+  blockNumber                               Int                       @map("block_number")
+  blockHash                                 String                    @map("block_hash") @db.VarChar
+  balance                                   String?                   @db.VarChar
+  address_token_address_addressToaddress    address                   @relation("token_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_address")
+  block_token_address_block_hashToblock     block                     @relation("token_address_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_hash")
+  block                                     block                     @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
+  contract_token_address_contractTocontract address                   @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
+  token_address_in_summary                  token_address_in_summary?
+
+  @@id([address, contract, blockNumber], map: "pk_token_address")
+  @@index([address])
+}
+
+model transaction {
+  hash                                  String                   @id @db.VarChar(66)
+  txId                                  String                   @map("tx_id") @db.VarChar
+  type                                  String?                  @db.VarChar
+  txType                                String                   @map("tx_type") @db.VarChar
+  from                                  String                   @db.VarChar(42)
+  to                                    String?                  @db.VarChar(42)
+  blockNumber                           Int                      @map("block_number")
+  blockHash                             String                   @map("block_hash") @db.VarChar(66)
+  transactionIndex                      Int                      @map("transaction_index")
+  nonce                                 Int
+  gas                                   Int
+  gasPrice                              String                   @map("gas_price") @db.VarChar
+  value                                 String                   @db.VarChar
+  input                                 String?                  @db.VarChar
+  v                                     String?                  @db.VarChar
+  r                                     String?                  @db.VarChar
+  s                                     String?                  @db.VarChar
+  timestamp                             BigInt
+  receipt                               String                   @db.VarChar
+  event                                 event[]
+  internal_transaction                  internal_transaction[]
+  block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
+  block_transaction_block_numberToblock block                    @relation("transaction_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_number")
+  address_transaction_fromToaddress     address                  @relation("transaction_fromToaddress", fields: [from], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_from")
+  address_transaction_toToaddress       address?                 @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
+  transaction_in_summary                transaction_in_summary[]
+
+  @@index([txId], map: "idx_transaction_tx_id")
+  @@index([blockHash], map: "idx_transaction_block_hash")
+  @@index([blockNumber], map: "idx_transaction_block_number")
+  @@index([from], map: "idx_transaction_from")
+  @@index([to], map: "idx_transaction_to")
+  @@index([txType], map: "idx_transaction_tx_type")
+}
+
+model transaction_in_pool {
+  hash             String  @db.VarChar(66)
+  poolId           Int     @map("pool_id")
+  blockHash        String  @map("block_hash") @db.VarChar(66)
+  from             String  @db.VarChar(42)
+  to               String  @db.VarChar(42)
+  blockNumber      Int     @map("block_number")
+  transactionIndex Int     @map("transaction_index")
+  nonce            Int
+  gas              Int
+  gasPrice         String  @map("gas_price") @db.VarChar
+  value            String  @db.VarChar
+  input            String  @db.VarChar
+  status           String  @db.VarChar
+  tx_pool          tx_pool @relation(fields: [poolId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_transaction_in_pool_pool_id")
+
+  @@id([hash, poolId], map: "pk_transaction_in_pool_hash_poolid")
+}
+
+model transaction_pending {
+  hash             String @id @db.VarChar(66)
+  blockHash        String @map("block_hash") @db.VarChar(66)
+  from             String @db.VarChar(42)
+  to               String @db.VarChar(42)
+  blockNumber      Int    @map("block_number")
+  transactionIndex Int    @map("transaction_index")
+  nonce            Int
+  gas              Int
+  gasPrice         String @map("gas_price") @db.VarChar
+  value            String @db.VarChar
+  input            String @db.VarChar
+  status           String @db.VarChar
+}
+
+model tx_pool {
+  id                  Int                   @id @default(autoincrement())
+  blockNumber         Int                   @map("block_number")
+  pending             Int
+  queued              Int
+  txs                 String                @db.VarChar
+  timestamp           BigInt
+  transaction_in_pool transaction_in_pool[]
+}
+
+model verification_result {
+  id        String   @id @map("_id") @db.VarChar
+  abi       String?  @db.VarChar
+  address   String?  @unique @db.VarChar
+  match     Boolean?
+  request   String?  @db.VarChar
+  result    String?  @db.VarChar
+  sources   String?  @db.VarChar
+  timestamp BigInt?
+}
+
+model stats {
+  blockNumber                     Int     @id @map("block_number")
+  blockHash                       String  @map("block_hash") @db.VarChar
+  activeAccounts                  Int     @map("active_accounts")
+  hashrate                        BigInt
+  circulatingSupply               String? @map("circulating_supply") @db.VarChar
+  totalSupply                     Int?    @map("total_supply")
+  bridgeBalance                   String? @map("bridge_balance") @db.VarChar
+  lockingCap                      String? @map("locking_cap") @db.VarChar
+  timestamp                       BigInt
+  block_stats_block_hashToblock   block   @relation("stats_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, map: "fk_stats_block_hash")
+  block_stats_block_numberToblock block   @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, map: "fk_stats_block_number")
+}
+
+model block_trace {
+  blockHash            String               @map("block_hash") @db.VarChar(66)
+  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  block                block                @relation(fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_trace_block_hash")
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_trace_internal_tx_id")
+
+  @@id([blockHash, internalTxId], map: "pk_block_trace")
+}
+
+model address_in_summary {
+  address                                     String        @db.VarChar(42)
+  balance                                     String?       @db.VarChar
+  blockNumber                                 Int           @map("block_number")
+  lastBlockMined                              Int?          @map("last_block_mined")
+  address_address_in_summary_addressToaddress address       @relation("address_in_summary_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_address")
+  block_summary                               block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  block                                       block?        @relation(fields: [lastBlockMined], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_last_block_mined")
+
+  @@id([address, blockNumber])
+}
+
+model block_summary {
+  blockNumber                             Int                               @id @map("block_number")
+  hash                                    String                            @db.VarChar
+  timestamp                               BigInt
+  address_in_summary                      address_in_summary[]
+  block_block_summary_block_numberToblock block                             @relation("block_summary_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction)
+  block_block_summary_hashToblock         block                             @relation("block_summary_hashToblock", fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_summary_hash")
+  event_in_summary                        event_in_summary[]
+  internal_transaction_in_summary         internal_transaction_in_summary[]
+  suicide_in_summary                      suicide_in_summary[]
+  token_address_in_summary                token_address_in_summary[]
+  transaction_in_summary                  transaction_in_summary[]
+
+  @@index([hash], map: "idx_block_summary_hash")
+}
+
+model event_in_summary {
+  eventId       String        @map("event_id") @db.VarChar
+  blockNumber   Int           @map("block_number")
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  event         event         @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_event_id")
+
+  @@id([eventId, blockNumber])
+}
+
+model internal_transaction_in_summary {
+  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  blockNumber          Int                  @map("block_number")
+  block_summary        block_summary        @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_in_summary_internal_tx_id")
+
+  @@id([internalTxId, blockNumber])
+}
+
+model suicide_in_summary {
+  internalTxId         String               @map("internal_tx_id") @db.VarChar
+  blockNumber          Int                  @map("block_number")
+  block_summary        block_summary        @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_suicide_in_summary_internal_tx_id")
+
+  @@id([internalTxId, blockNumber])
+}
+
+model token_address_in_summary {
+  address       String        @db.VarChar
+  contract      String        @db.VarChar
+  blockNumber   Int           @map("block_number")
+  token_address token_address @relation(fields: [address, contract, blockNumber], references: [address, contract, blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([address, contract, blockNumber])
+}
+
+model transaction_in_summary {
+  hash          String        @db.VarChar
+  blockNumber   Int           @map("block_number")
+  block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
+  transaction   transaction   @relation(fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_summary_hash")
+
+  @@id([hash, blockNumber])
+}
+
+model total_supply {
+  contractAddress String   @map("contract_address") @db.VarChar(42)
+  blockNumber     Int      @map("block_number")
+  totalSupply     String   @map("total_supply") @db.VarChar
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_total_supply_address")
+  block           block    @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_total_supply_number")
+
+  @@id([contractAddress, blockNumber], map: "pk_total_supply")
+}
+
+model contract_verifier_solc_versions {
+  id            String  @id @db.VarChar
+  builds        String? @db.VarChar
+  latestRelease String? @map("latest_release") @db.VarChar
+  releases      String? @db.VarChar
+}
+
+model explorer_initial_config {
+  id              String  @id @db.VarChar
+  nativeContracts String? @map("native_contracts") @db.VarChar
+  net             String? @db.VarChar
+}
+
+model explorer_settings {
+  id   String @id @db.VarChar
+  hash String @db.VarChar
+}
+
+model contract_creation_tx {
+  contractAddress String   @id @map("contract_address") @db.VarChar
+  timestamp       BigInt?
+  tx              String?  @db.VarChar
+  contract        contract @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_creation_tx_contract_address")
+}
+
+model address_in_event {
+  eventId                                   String  @map("event_id") @db.VarChar
+  address                                   String  @db.VarChar(42)
+  isEventEmitterAddress                     Boolean @map("is_event_emitter_address")
+  eventSignature                            String? @map("event_signature") @db.VarChar
+  address_address_in_event_addressToaddress address @relation("address_in_event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+  event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([eventId, address, isEventEmitterAddress])
+  @@index([address], map: "idx_address_in_event_address")
+  @@index([eventId], map: "idx_address_in_event_event_id")
+  @@index([eventSignature])
+}
+
+model address_latest_balance {
+  address                                         String  @id @db.VarChar(42)
+  balance                                         String  @db.VarChar
+  blockNumber                                     Int     @map("block_number")
+  address_address_latest_balance_addressToaddress address @relation("address_latest_balance_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_address")
+  block                                           block   @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_balance_block_number")
+}
+
+model contract_destruction_tx {
+  contractAddress String  @id @map("contract_address") @db.VarChar
+  timestamp       BigInt?
+  tx              String? @db.VarChar
+  address         address @relation(fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_destruction_tx_contract_address")
+}
+
+model miner_address {
+  id                                     Int     @default(autoincrement())
+  address                                String  @id @db.VarChar(42)
+  isNative                               Boolean @map("is_native")
+  type                                   String  @db.VarChar
+  name                                   String? @db.VarChar
+  balance                                String? @db.VarChar
+  blockNumber                            Int?    @map("block_number")
+  lastBlockMined                         String? @map("last_block_mined") @db.VarChar
+  lastBlockMinedNumber                   Int?    @unique @map("last_block_mined_number")
+  address_miner_address_addressToaddress address @relation("miner_address_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model address_in_itx {
+  address                                 String               @db.VarChar
+  internalTxId                            String               @map("internal_tx_id") @db.VarChar
+  role                                    String               @db.VarChar
+  address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
+  internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([address, internalTxId, role])
+}

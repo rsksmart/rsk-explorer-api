@@ -1,14 +1,14 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { StoredConfig } from '../../lib/StoredConfig'
-import { versionsId, getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
-// import { ObjectID } from 'mongodb'
 import { EVMversions } from '../../lib/types'
+import { REPOSITORIES } from '../../repositories'
 
 export class ContractVerification extends DataCollectorItem {
-  constructor (collections, name) {
-    const { ContractVerification } = collections
-    super(ContractVerification, name)
+  constructor (name) {
+    super(name)
+    this.configRepository = REPOSITORIES.Config
     this.publicActions = {
       /**
      * @swagger
@@ -87,7 +87,7 @@ export class ContractVerification extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       getSolcVersions: async () => {
-        const data = await StoredConfig(this.parent.db).get(versionsId)
+        const data = await this.configRepository[CONTRACT_VERIFIER_SOLC_VERSIONS_ID].get()
         return { data }
       },
       /**
@@ -132,7 +132,7 @@ export class ContractVerification extends DataCollectorItem {
         try {
           let { id } = params
           if (!id) throw new Error('Invalid id')
-          const verification = await this.getOne({ _id: id })
+          const verification = await this.getOne({ id })
           if (verification && verification.data) {
             const { result, match } = verification.data
             return { data: { result, match } }

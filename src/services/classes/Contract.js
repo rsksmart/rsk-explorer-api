@@ -3,10 +3,12 @@ import ContractParser from '@rsksmart/rsk-contract-parser'
 import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
+import { REPOSITORIES } from '../../repositories'
+import { isNativeContract } from '../../lib/NativeContracts'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, collections, block }) {
-    super({ nod3, initConfig, collections })
+  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block = {} }) {
+    super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
     this.deployedCode = deployedCode
@@ -19,8 +21,9 @@ class Contract extends BcThing {
     this.abi = abi
     this.parser = undefined
     this.isToken = false
-    this.isNative = !!this.nativeContracts.getNativeContractName(address)
+    this.isNative = isNativeContract(address)
     this.block = block
+    this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
   }
 
@@ -46,7 +49,7 @@ class Contract extends BcThing {
             if (proxyCheckResult && proxyCheckResult.methods.length) {
               methods = proxyCheckResult.methods
             }
-          };
+          }
 
           if (interfaces.length) this.setData({ contractInterfaces: interfaces })
           if (methods) this.setData({ contractMethods: methods })
@@ -111,9 +114,8 @@ class Contract extends BcThing {
 
   async getAbiFromVerification () {
     try {
-      let { collections, address } = this
-      if (!collections) return
-      const data = await collections.VerificationsResults.findOne({ address, match: true })
+      let { address } = this
+      const data = await this.verificationResultsRepository.findOne({ address, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)

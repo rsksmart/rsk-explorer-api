@@ -1,19 +1,15 @@
 import { DataCollector } from './lib/DataCollector'
 import { getEnabledApiModules } from './modules'
 import { txTypes } from '../lib/types'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
-import NativeContracts from '../lib/NativeContracts'
 // It is used only in case Stats cannot provide the circulating supply
 import getCirculatingSupply from './lib/getCirculatingSupply'
 
 class Api extends DataCollector {
-  constructor ({ db, initConfig }, { modules, collectionsNames, lastBlocks } = {}) {
-    const collectionName = collectionsNames.Blocks
-    super(db, { collectionName })
-    this.collectionsNames = collectionsNames
-    this.collections = getDbBlocksCollections(db)
+  constructor ({ initConfig, log }, { modules, lastBlocks } = {}) {
+    super()
+    this.log = log
     this.lastLimit = lastBlocks || 100
     this.latest = undefined
     this.lastBlocks = { data: [] }
@@ -23,8 +19,6 @@ class Api extends DataCollector {
     this.stats = { timestamp: 0 }
     this.loadModules(getEnabledApiModules(modules))
     this.initConfig = initConfig
-    const { isNativeContract } = NativeContracts(initConfig)
-    this.isNativeContract = isNativeContract
     this.tick()
   }
   tick () {
@@ -36,7 +30,7 @@ class Api extends DataCollector {
     Object.keys(modules).forEach(name => {
       const constructor = modules[name]
       if (typeof constructor === 'function') {
-        const module = new constructor(this.collections, name)
+        const module = new constructor(name)
         this.log.info(`Loading module ${name}`)
         this.addModule(module, name)
       }
@@ -44,9 +38,9 @@ class Api extends DataCollector {
   }
 
   async run (payload) {
+    let { module, action, params } = payload
     try {
       if (Object.keys(payload).length < 1) throw new Error('invalid request')
-      let { module, action, params } = payload
       if (!action) throw new Error('Missing action')
       const moduleName = MODULES[module]
       if (!moduleName) throw new Error('Unknown module')
@@ -60,6 +54,7 @@ class Api extends DataCollector {
       const res = { module, action, params, result, delayed }
       return res
     } catch (err) {
+      this.log.error(`${module}.${action}(${JSON.stringify(params)})`)
       this.log.debug(err)
       return Promise.reject(err)
     }
@@ -74,7 +69,7 @@ class Api extends DataCollector {
 
   async setLastBlocks () {
     try {
-      const Block = this.getModule('Block')
+      const Block = this.getModule('Blocks')
       const Tx = this.getModule('Tx')
       let limit = this.lastLimit
       let blocks = await Block.run('getBlocks', { limit, addMetadata: true })
@@ -165,14 +160,7 @@ class Api extends DataCollector {
     }
   }
   async getCirculatingSupplyFromDb () {
-    try {
-      const collection = this.collections.Addrs
-      const { nativeContracts } = this.initConfig
-      let circulating = await getCirculatingSupply(collection, nativeContracts)
-      return circulating
-    } catch (err) {
-      this.log.debug(err)
-    }
+    return getCirculatingSupply(this.initConfig.nativeContracts)
   }
 }
 

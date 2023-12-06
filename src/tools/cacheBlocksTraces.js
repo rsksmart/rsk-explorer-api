@@ -5,6 +5,9 @@ import { nod3Log } from '.././lib/nod3Connect'
 import { Nod3, Nod3Router } from '@rsksmart/nod3'
 import BlockTrace from '../services/classes/BlockTrace'
 import { Logger } from '../lib/Logger'
+import { REPOSITORIES } from '../repositories'
+
+const { BlockTrace: blockTraceRepository } = REPOSITORIES
 
 const { HttpProvider } = Nod3.providers
 const log = Logger('cacheTraces', { level: 'trace' })
@@ -36,7 +39,7 @@ main().then(() => {
 
 async function main () {
   try {
-    const { initConfig, collections } = await setup()
+    const { initConfig } = await setup()
     log.trace(JSON.stringify({ lowBlock: lowerBlock, highBlock: higherBlock }))
     log.info(initConfig.net)
 
@@ -44,7 +47,7 @@ async function main () {
     const tasks = []
     for (let i = 0; i < QUEUE_SIZE; i++) {
       let { hash, parentHash } = block
-      tasks.push(getBlocks(hash, { collections, initConfig }))
+      tasks.push(getBlocks(hash, { initConfig }))
       block = await nod3.eth.getBlock(parentHash)
     }
     await Promise.all(tasks)
@@ -80,13 +83,14 @@ function createNod3 (source) {
   }
 }
 
-async function saveBlockTrace (hash, { collections, initConfig }) {
+async function saveBlockTrace (hash, { initConfig }) {
   try {
     if (requested[hash] !== undefined) return
     requested[hash] = false
     log.info(`Waiting for block_trace ${hash}`)
-    let blockTrace = new BlockTrace(hash, { nod3, collections, initConfig })
-    await blockTrace.save()
+    let blockTrace = new BlockTrace(hash, { nod3, initConfig })
+    blockTrace = blockTrace.fetchFromNode()
+    await Promise.all(blockTraceRepository.insertOne(blockTrace))
     requested[hash] = true
     return hash
   } catch (err) {
@@ -104,7 +108,6 @@ const p = path => path.split('/').pop()
 function help (msg) {
   if (msg) {
     log.error(msg)
-    console.log()
   }
   const myName = p(process.argv[1])
   log.info(`Use: ${p(process.argv[0])} ${myName} [lowerBlock] [higherBlock] `)
