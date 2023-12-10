@@ -25,7 +25,7 @@ export async function staticSyncer (syncStatus) {
   log.info(`Missing segments: ${JSON.stringify(missingSegments, null, 2)}`)
   // iterate segments
   for (let i = 0; i < missingSegments.length; i++) {
-    fillSegment(syncStatus, missingSegments[i], requestingBlocks, pendingBlocks, blocksBase, { initConfig, log })
+    await fillSegment(syncStatus, missingSegments[i], requestingBlocks, pendingBlocks, blocksBase, { initConfig, log })
   }
 }
 
