@@ -300,7 +300,7 @@ model tx_pool {
 model verification_result {
   id        String   @id @map("_id") @db.VarChar
   abi       String?  @db.VarChar
-  address   String?  @unique @db.VarChar
+  address   String?  @db.VarChar
   match     Boolean?
   request   String?  @db.VarChar
   result    String?  @db.VarChar

@@ -463,7 +463,7 @@ CREATE TABLE contract_verification (
 CREATE TABLE verification_result (
   _id VARCHAR PRIMARY KEY,
   abi VARCHAR, --stringified
-  address VARCHAR UNIQUE,
+  address VARCHAR,
   match BOOLEAN,
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified
