@@ -61,9 +61,14 @@ class Api extends DataCollector {
   }
 
   info () {
-    let info = Object.assign({}, this.initConfig)
-    info.txTypes = Object.assign({}, txTypes)
-    info.modules = config.api.modules
+    const info = {
+      apiName: 'RSK Explorer API',
+      version: process.env.npm_package_version,
+      modules: config.api.modules,
+      txTypes: Object.assign({}, txTypes),
+      initialConfiguration: Object.assign({}, this.initConfig)
+    }
+
     return info
   }
 
