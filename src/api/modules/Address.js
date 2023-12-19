@@ -275,7 +275,8 @@ export class Address extends DataCollectorItem {
       findAddresses: async params => {
         const query = {
           name: {
-            contains: params.name
+            contains: params.name,
+            mode: 'insensitive'
           }
         }
         params.field = 'name'
