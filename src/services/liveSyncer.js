@@ -61,9 +61,7 @@ async function updateDbTipBlock (number, syncStatus, blocksBase, { initConfig, l
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
     log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash`)
-    syncStatus.checkingDB = true
     await reorganize(blocksBase, nextBlock, { initConfig, log })
-    syncStatus.checkingDB = false
   }
 }
 

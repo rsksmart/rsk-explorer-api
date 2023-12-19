@@ -11,7 +11,6 @@ async function main () {
   await (Setup({ log: Logger('[services-setup]') })).start()
 
   const syncStatus = {
-    checkingDB: false,
     updatingTip: false,
     lastReceived: -1
   }
