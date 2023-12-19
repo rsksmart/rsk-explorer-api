@@ -100,37 +100,8 @@ export function getBlocksRepository (prismaClient) {
 
       return prismaClient.$transaction(transactionQueries)
     },
-    async deleteBlockData (blockNumber) {
-      const transactionQueries = [prismaClient.block.deleteMany({where: {number: blockNumber}})]
-
-      // this will delete only the addresses that have been first registered with this block;
-      // if there's any other balance for the address added in another block, it won't delete the address
-      const addressesBalancesForThisBlock = await balancesRepository.find({blockNumber})
-      const addressesTokensForThisBlock = await tokenRepository.find({blockNumber})
-
-      const addressesToDeleteForThisblock = new Set(
-        addressesBalancesForThisBlock
-          .map(b => b.address)
-          .concat(addressesTokensForThisBlock.map(t => t.address))
-      )
-
-      const deletableAddresses = []
-
-      for (const address of addressesToDeleteForThisblock) {
-        const balancesForOtherBlocks = await balancesRepository.find({
-          AND: [{address}, {blockNumber: {lt: blockNumber}}]
-        })
-        const tokensForOtherBlocks = await tokenRepository.find({
-          AND: [{address}, {blockNumber: {lt: blockNumber}}]
-        })
-
-        if (!(balancesForOtherBlocks.length || tokensForOtherBlocks.length)) {
-          deletableAddresses.push(address)
-        }
-      }
-      transactionQueries.push(...addressRepository.deleteMany(deletableAddresses))
-
-      return prismaClient.$transaction(transactionQueries)
+    deleteBlockData (blockNumber) {
+      return prismaClient.block.deleteMany({ where: { number: blockNumber } })
     },
     async deleteBlocksByNumbers (blocks = []) {
       try {
