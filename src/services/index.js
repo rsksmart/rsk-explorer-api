@@ -16,7 +16,7 @@ async function main () {
     lastReceived: -1
   }
 
-  staticSyncer(syncStatus)
+  staticSyncer()
   setTimeout(() => liveSyncer(syncStatus), delay) // allow static syncer to save latest block first
   txPoolService()
 }

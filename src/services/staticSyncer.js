@@ -1,5 +1,5 @@
 import { getMissingSegments } from '../lib/getMissingSegments.js'
-import { delay, insertBlock } from '../lib/servicesUtils.js'
+import { insertBlock } from '../lib/servicesUtils.js'
 import nod3 from '../lib/nod3Connect.js'
 import Logger from '../lib/Logger.js'
 import { REPOSITORIES } from '../repositories/index.js'
@@ -9,9 +9,8 @@ import BlocksBase from '../lib/BlocksBase.js'
 const { Blocks: blocksRepository } = REPOSITORIES
 
 const log = Logger('[static-syncer-service]')
-const awaitReorgsDelay = 5000
 
-export async function staticSyncer (syncStatus) {
+export async function staticSyncer () {
   const initConfig = await getInitConfig()
   const blocksBase = new BlocksBase({ initConfig, log })
   const blocksInDb = await blocksRepository.find({}, { number: true }, { number: 'desc' })
@@ -25,21 +24,16 @@ export async function staticSyncer (syncStatus) {
   log.info(`Missing segments: ${JSON.stringify(missingSegments, null, 2)}`)
   // iterate segments
   for (let i = 0; i < missingSegments.length; i++) {
-    await fillSegment(syncStatus, missingSegments[i], requestingBlocks, pendingBlocks, blocksBase, { initConfig, log })
+    await fillSegment(missingSegments[i], requestingBlocks, pendingBlocks, blocksBase, { initConfig, log })
   }
 }
 
-async function fillSegment (syncStatus, segment, requestingBlocks, pendingBlocks, blocksBase, { initConfig, log }) {
+async function fillSegment (segment, requestingBlocks, pendingBlocks, blocksBase, { initConfig, log }) {
   let number = segment[0]
   const lastNumber = segment[1]
   const connected = await nod3.isConnected()
 
   while (number >= lastNumber) {
-    if (syncStatus.checkingDB) {
-      await delay(awaitReorgsDelay)
-      log.info(`Static sync stopped for ${awaitReorgsDelay / 1000} secs due to reorg`)
-      continue
-    }
     try {
       const timestamp = Date.now()
       const status = {
