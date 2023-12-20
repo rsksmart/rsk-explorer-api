@@ -98,6 +98,7 @@ timestamp INT8 NOT NULL,
 CONSTRAINT fk_stats_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE,
 CONSTRAINT fk_stats_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX ON stats(block_hash);
 
 CREATE TABLE tx_pool (
 id SERIAL PRIMARY KEY,
@@ -177,6 +178,7 @@ CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash)
 );
 CREATE INDEX idx_balance_address ON balance(address);
 CREATE INDEX idx_balance_block_number ON balance(block_number);
+CREATE INDEX ON balance(block_hash);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -248,6 +250,7 @@ PRIMARY KEY (address, internal_tx_id, role),
 FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
+CREATE INDEX ON address_in_itx(internal_tx_id);
 
 CREATE TABLE contract (
 address VARCHAR(42) PRIMARY KEY,
@@ -259,6 +262,7 @@ decimals INT2, -- NULL | string | number
 CONSTRAINT fk_contract_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_contract_code_stored_at_block FOREIGN KEY (code_stored_at_block) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX ON contract(code_stored_at_block);
 
 CREATE TABLE contract_creation_tx (
 contract_address VARCHAR PRIMARY KEY,
@@ -296,6 +300,8 @@ CONSTRAINT fk_token_address_block_number FOREIGN KEY (block_number) REFERENCES b
 CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX ON token_address(address);
+CREATE INDEX ON token_address(block_number);
+CREATE INDEX ON token_address(block_hash);
 
 CREATE TABLE contract_method (
 method VARCHAR,
@@ -333,9 +339,10 @@ CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) O
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
 CREATE INDEX idx_event_block_number ON event(block_number);
+CREATE INDEX ON event(block_hash);
 CREATE INDEX idx_event_address ON event(address);
 CREATE INDEX idx_event_signature ON event(signature);
-
+CREATE INDEX ON event(transaction_hash);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
@@ -357,6 +364,7 @@ CONSTRAINT pk_block_trace PRIMARY KEY (block_hash, internal_tx_id),
 CONSTRAINT fk_block_trace_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_block_trace_internal_tx_id FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE
 );
+CREATE INDEX ON block_trace(internal_tx_id);
 
 CREATE TABLE status (
 id SERIAL PRIMARY KEY,
@@ -382,6 +390,7 @@ PRIMARY KEY (hash, block_number),
 FOREIGN KEY (hash) REFERENCES transaction(hash) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
+CREATE INDEX ON transaction_in_summary(block_number);
 
 CREATE TABLE internal_transaction_in_summary (
 internal_tx_id VARCHAR,
@@ -390,6 +399,7 @@ PRIMARY KEY (internal_tx_id, block_number),
 FOREIGN KEY (internal_tx_id) REFERENCES internal_transaction(internal_tx_id) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
+CREATE INDEX ON internal_transaction_in_summary(block_number);
 
 CREATE TABLE address_in_summary (
 address VARCHAR(42),
@@ -401,6 +411,8 @@ FOREIGN KEY (last_block_mined) REFERENCES block(number) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
+CREATE INDEX ON address_in_summary(block_number);
+CREATE INDEX ON address_in_summary(last_block_mined);
 
 CREATE TABLE token_address_in_summary (
 address VARCHAR,
@@ -410,6 +422,7 @@ PRIMARY KEY (address, contract, block_number),
 FOREIGN KEY (address, contract, block_number) REFERENCES token_address(address, contract, block_number) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
+CREATE INDEX ON token_address_in_summary(block_number);
 
 CREATE TABLE event_in_summary (
 event_id VARCHAR,
@@ -418,6 +431,7 @@ PRIMARY KEY (event_id, block_number),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (block_number) REFERENCES block_summary(block_number) ON DELETE CASCADE
 );
+CREATE INDEX ON event_in_summary(block_number);
 
 CREATE TABLE suicide_in_summary (
 internal_tx_id VARCHAR,
