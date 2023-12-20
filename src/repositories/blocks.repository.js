@@ -100,17 +100,11 @@ export function getBlocksRepository (prismaClient) {
 
       return prismaClient.$transaction(transactionQueries)
     },
-    deleteBlockData (blockNumber) {
-      return prismaClient.block.deleteMany({ where: { number: blockNumber } })
+    deleteOne (query) {
+      return prismaClient.block.deleteMany({ where: query })
     },
-    async deleteBlocksByNumbers (blocks = []) {
-      try {
-        for (const number of blocks) {
-          await this.deleteBlockData(number)
-        }
-      } catch (error) {
-        throw error
-      }
+    deleteMany (query) {
+      return prismaClient.block.deleteMany({ where: query })
     }
   }
 }

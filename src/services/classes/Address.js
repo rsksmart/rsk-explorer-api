@@ -82,7 +82,7 @@ export class Address extends BcThing {
   async fetch (forceFetch) {
     try {
       if (this.fetched && !forceFetch) return this.getData(true)
-      let dbData = (this.isZeroAddress) ? {} : await this.getFromDb()
+      let dbData = {}
       this.setData(dbData)
 
       let { blockNumber } = this

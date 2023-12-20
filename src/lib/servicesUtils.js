@@ -1,5 +1,9 @@
 import Block from '../services/classes/Block.js'
 import { blocksRepository } from '../repositories/index.js'
+import { getInitConfig } from './Setup.js'
+import BlocksBase from './BlocksBase.js'
+import { updateDbTipBlock } from '../services/liveSyncer.js'
+import Logger from './Logger.js'
 
 const RETRIES = 3
 
@@ -27,7 +31,7 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false }
       const storedBlock = await blocksRepository.findOne({ number }, { number: true })
 
       if (storedBlock && storedBlock.number) {
-        log.error(`Block ${storedBlock.number} was saved but an error occurred during the process. Check the logs`)
+        log.error(`Block ${storedBlock.number} was saved but the blockchain stats saving process may have failed. Check the logs`)
         break
       }
 
@@ -39,27 +43,34 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false }
   if (!remainingAttempts) log.error(`Block ${number} could not be saved after ${RETRIES} retries.`)
 }
 
-export const getDbBlock = (number) => blocksRepository.findOne({ number })
-
-export const sameHash = (h1, h2) => h1 === h2
-
-function deleteBlocks (blocks = []) {
-  return blocksRepository.deleteBlocksByNumbers(blocks)
-}
-
-async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {
+export async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {
   for (const number of blocks) {
     await insertBlock(number, blocksBase, { initConfig, log })
   }
 }
-export async function reorganizeBlocks (blocksBase, { blocksToDelete = [], blocks: missingBlocks = [], initConfig, log }) {
-  await deleteBlocks(blocksToDelete)
-  log.info(`Deleted ${blocksToDelete.length} blocks: ${JSON.stringify(blocksToDelete)}`)
 
-  log.info(`Adding ${missingBlocks.length} new chain blocks: ${JSON.stringify(missingBlocks)}`)
-  await insertBlocks(missingBlocks, blocksBase, { initConfig, log })
+export async function saveInitialTip (syncStatus, tipSize) {
+  const initConfig = await getInitConfig()
+  const log = Logger('[savetip-service]')
+  const blocksBase = new BlocksBase({ initConfig, log })
+
+  const lastSafeBlock = syncStatus.latestBlock.number - tipSize
+  let current = syncStatus.latestBlock.number
+
+  while (current > lastSafeBlock) {
+    log.info(`Saving block ${current} from initial tip`)
+    await updateDbTipBlock(current, blocksBase, { initConfig, log }, tipSize)
+    syncStatus.startedSavingInitialTip = true
+    current--
+  }
+
+  log.info(`Finished saving initial tip.`)
 }
 
 export async function delay (time) {
   return new Promise(resolve => setTimeout(resolve, time))
 }
+
+export const getDbBlock = (number) => blocksRepository.findOne({ number })
+
+export const sameHash = (h1, h2) => h1 === h2
