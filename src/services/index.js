@@ -9,7 +9,7 @@ import { txPoolService } from './txPool'
 import { saveInitialTip } from '../lib/servicesUtils'
 
 const confirmationsThreshold = 120
-const staticSyncerCheckInterval = 20000 // 6h
+const staticSyncerCheckInterval = 21600000 // 6h
 
 async function main () {
   await (Setup({ log: Logger('[services-setup]') })).start()
