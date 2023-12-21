@@ -45,6 +45,7 @@ export class Block extends DataCollectorItem {
         const hashOrNumber = params.hashOrNumber || params.hash || params.number
         let query = {}
         if (isBlockHash(hashOrNumber)) {
+          delete params.fields
           query = { hash: hashOrNumber }
         } else {
           query = { number: parseInt(hashOrNumber) }
