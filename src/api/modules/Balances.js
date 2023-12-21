@@ -2,9 +2,11 @@ import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 
 export class Balances extends DataCollectorItem {
-  constructor ({ Balances }, name) {
-    let sortable = { timestamp: -1, blockNumber: -1 }
-    super(Balances, name, { sortDir: -1, sortable })
+  constructor (name) {
+    const cursorField = 'id'
+    const sortable = { blockNumber: -1 }
+    const sortDir = -1
+    super(name, { cursorField, sortDir, sortable })
     this.fields = {}
     this.publicActions = {
       /**
@@ -102,9 +104,19 @@ export class Balances extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
       */
       getStatus: async params => {
-        const projection = { blockHash: 1, blockNumber: 1, _id: 0 }
+        const projection = { blockHash: 1, blockNumber: 1 }
         const fromBlock = await this.getOne({}, projection, { blockNumber: 1 })
+        if (fromBlock.data) {
+          delete fromBlock.data.timestamp
+          delete fromBlock.data._created
+        }
+
         const toBlock = await this.getOne({}, projection, { blockNumber: -1 })
+        if (toBlock.data) {
+          delete toBlock.data.timestamp
+          delete toBlock.data._created
+        }
+
         return { data: { fromBlock: fromBlock.data, toBlock: toBlock.data } }
       }
     }

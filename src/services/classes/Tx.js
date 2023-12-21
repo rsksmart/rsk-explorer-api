@@ -6,11 +6,12 @@ import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
 import { isBlockObject } from '../../lib/utils'
 import { getBlock } from './BlockSummary'
+import { getNativeContractName } from '../../lib/NativeContracts'
 
 export class Tx extends BcThing {
-  constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, collections, notTrace, receipt, log } = {}) {
+  constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, notTrace, receipt, log } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
-    super({ nod3, initConfig, collections, log })
+    super({ nod3, initConfig, log })
     if (!this.isTxOrBlockHash(hash)) throw new Error(`Tx, ${hash} is not a tx hash`)
     this.hash = hash
     this.timestamp = timestamp
@@ -19,7 +20,7 @@ export class Tx extends BcThing {
     this.toAddress = undefined
     this.blockData = blockData
     if (blockTrace) traceData = getTraceDataFromBlock(hash, blockTrace)
-    addresses = addresses || new Addresses({ nod3, initConfig, collections })
+    addresses = addresses || new Addresses({ nod3, initConfig })
     this.addresses = addresses
     this.trace = (!notTrace) ? new TxTrace(hash, { traceData, timestamp, nod3, initConfig, log }) : undefined
     this.data = {
@@ -143,8 +144,7 @@ export class Tx extends BcThing {
     const receipt = tx.receipt || {}
     let { toAddress } = this
     if (toAddress && toAddress.isContract()) type = txTypes.call
-    const toIsNative = this.nativeContracts.isNativeContract(tx.to)
-    let nativeType = txTypes[toIsNative]
+    let nativeType = txTypes[getNativeContractName(tx.to)]
     if (nativeType) type = nativeType
     if (this.isAddress(receipt.contractAddress)) type = txTypes.contract
     tx.txType = type

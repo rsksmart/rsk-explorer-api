@@ -7,7 +7,7 @@
   "db": {
     "server": "localhost",
     "port": 27017,
-    "database": "blockDB"
+    "database": "explorer_db"
   },
   "api": {
     "address": "localhost",

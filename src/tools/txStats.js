@@ -1,6 +1,11 @@
 import dataSource from '../lib/dataSource.js'
-import { getDbBlocksCollections } from '../lib/blocksCollections'
 import { newBigNumber } from '../lib/utils'
+import { REPOSITORIES } from '../repositories/index.js'
+
+const {
+  Tx: txRepository,
+  Blocks: blocksRepository
+} = REPOSITORIES
 
 const fromBlock = parseInt(process.argv[2])
 const toBlock = parseInt(process.argv[3])
@@ -21,17 +26,23 @@ getData(fromBlock, toBlock)
 
 async function getData (fromBlock, toBlock) {
   try {
-    let { db } = await dataSource()
-    let collections = getDbBlocksCollections(db)
-    let { Txs } = collections
+    await dataSource()
+    // TODO: change query for prisma query when txRepository.find() is ready
     let query = {
-      $and: [
-        { blockNumber: { $gte: fromBlock } },
-        { blockNumber: { $lte: toBlock } },
-        { txType: { $ne: 'remasc' } }]
+      AND: [
+        { blockNumber: { gte: fromBlock } },
+        { blockNumber: { lte: toBlock } },
+        { txType: { ne: 'remasc' } }]
     }
-    let cursor = Txs.find(query)
-    DATA.txs = await Txs.countDocuments(query)
+    let cursor = txRepository.find(query, {}, {}, 0, false)
+
+    query = {
+      AND: [
+        { blockNumber: { gt: fromBlock } },
+        { blockNumber: { lt: toBlock } },
+        { txType: { not: 'remasc' } }]
+    }
+    DATA.txs = await txRepository.countDocuments(query)
 
     await cursor.forEach((tx) => {
       getTxData(tx)
@@ -40,8 +51,8 @@ async function getData (fromBlock, toBlock) {
     printObj(accounts)
     console.log(`Accounts that sent txs: ${Object.keys(accounts).length}`)
 
-    let fb = await getBlock(collections, fromBlock)
-    let tb = await getBlock(collections, toBlock)
+    let fb = await getBlock(fromBlock)
+    let tb = await getBlock(toBlock)
     let diff = getDiff(fb, tb)
 
     printObj(diff)
@@ -56,7 +67,7 @@ async function getData (fromBlock, toBlock) {
 async function getBlock ({ Blocks }, number) {
   try {
     let query = { number }
-    let data = await Blocks.findOne(query)
+    let data = await blocksRepository.findOne(query, {}, Blocks)
     return data
   } catch (err) {
     return Promise.reject(err)
