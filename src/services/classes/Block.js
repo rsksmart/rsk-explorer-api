@@ -44,21 +44,23 @@ export class Block extends BcThing {
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
 
       const exists = await this.repository.findOne({ number })
-      if (exists) throw new Error(`Block ${number} already in db. Skipped`)
+      if (exists) {
+        this.log.warn(`Block ${number} already in db. Skipped`)
+      } else {
+        data = this.getData(true)
+        const { balances, latestBalances } = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
+        data.balances = balances
+        data.latestBalances = latestBalances
+        data.status = this.status
 
-      data = this.getData(true)
-      const { balances, latestBalances } = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
-      data.balances = balances
-      data.latestBalances = latestBalances
-      data.status = this.status
+        // save block and all related data
+        await this.repository.saveBlockData(data)
 
-      // save block and all related data
-      await this.repository.saveBlockData(data)
-
-      // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
-      if (this.isTipBlock || forceSaveBcStats) {
-        const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
-        await this.statsRepository.insertOne(blockchainStats)
+        // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
+        if (this.isTipBlock || forceSaveBcStats) {
+          const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
+          await this.statsRepository.insertOne(blockchainStats)
+        }
       }
     } catch (error) {
       this.log.error(`Error saving block ${number} data`)

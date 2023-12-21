@@ -1,21 +1,14 @@
-export function getMissingSegments (latestBlock, blocksNumbers) {
-  const segments = []
+export function getMissingSegments (toBlock, blocksNumbers) {
+  toBlock = toBlock > 0 ? toBlock : 0
   const dbEmpty = blocksNumbers.length === 0
 
   if (dbEmpty) {
-    // only segment is from latest to 0
-    segments.push([latestBlock, 0])
+    // only segment is from toBlock to 0
+    return [[toBlock, 0]]
   } else {
-    const latestDbBlock = blocksNumbers[0]
-    if (latestBlock !== latestDbBlock) {
-      // consider the segment from latest to latestDbBlock
-      segments.push([latestBlock, latestDbBlock + 1])
-    }
-    // consider all segments between numbers under latestDbBlock
-    segments.push(...findMissingSegments([...blocksNumbers]))
+    blocksNumbers.unshift(toBlock)
+    return findMissingSegments(blocksNumbers)
   }
-
-  return segments
 }
 
 // boundaries are included for insertions

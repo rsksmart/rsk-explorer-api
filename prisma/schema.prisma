@@ -44,6 +44,7 @@ model balance {
 
   @@index([address], map: "idx_balance_address")
   @@index([blockNumber], map: "idx_balance_block_number")
+  @@index([blockHash])
 }
 
 model block {
@@ -110,6 +111,8 @@ model contract {
   contract_interface                contract_interface[]
   contract_method                   contract_method[]
   total_supply                      total_supply[]
+
+  @@index([codeStoredAtBlock])
 }
 
 model contract_interface {
@@ -164,6 +167,8 @@ model event {
   @@index([blockNumber], map: "idx_event_block_number")
   @@index([address], map: "idx_event_address")
   @@index([signature], map: "idx_event_signature")
+  @@index([blockHash])
+  @@index([transactionHash])
 }
 
 model internal_transaction {
@@ -215,6 +220,8 @@ model token_address {
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
   @@index([address])
+  @@index([blockHash])
+  @@index([blockNumber])
 }
 
 model transaction {
@@ -320,6 +327,8 @@ model stats {
   timestamp                       BigInt
   block_stats_block_hashToblock   block   @relation("stats_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, map: "fk_stats_block_hash")
   block_stats_block_numberToblock block   @relation("stats_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, map: "fk_stats_block_number")
+
+  @@index([blockHash])
 }
 
 model block_trace {
@@ -329,6 +338,7 @@ model block_trace {
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_block_trace_internal_tx_id")
 
   @@id([blockHash, internalTxId], map: "pk_block_trace")
+  @@index([internalTxId])
 }
 
 model address_in_summary {
@@ -341,6 +351,8 @@ model address_in_summary {
   block                                       block?        @relation(fields: [lastBlockMined], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_address_in_summary_last_block_mined")
 
   @@id([address, blockNumber])
+  @@index([blockNumber])
+  @@index([lastBlockMined])
 }
 
 model block_summary {
@@ -366,6 +378,7 @@ model event_in_summary {
   event         event         @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_in_summary_event_id")
 
   @@id([eventId, blockNumber])
+  @@index([blockNumber])
 }
 
 model internal_transaction_in_summary {
@@ -375,6 +388,7 @@ model internal_transaction_in_summary {
   internal_transaction internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_in_summary_internal_tx_id")
 
   @@id([internalTxId, blockNumber])
+  @@index([blockNumber])
 }
 
 model suicide_in_summary {
@@ -394,6 +408,7 @@ model token_address_in_summary {
   block_summary block_summary @relation(fields: [blockNumber], references: [blockNumber], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([address, contract, blockNumber])
+  @@index([blockNumber])
 }
 
 model transaction_in_summary {
@@ -403,6 +418,7 @@ model transaction_in_summary {
   transaction   transaction   @relation(fields: [hash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_in_summary_hash")
 
   @@id([hash, blockNumber])
+  @@index([blockNumber])
 }
 
 model total_supply {
@@ -490,4 +506,5 @@ model address_in_itx {
   internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([address, internalTxId, role])
+  @@index([internalTxId])
 }
