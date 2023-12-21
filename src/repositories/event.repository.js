@@ -20,7 +20,7 @@ export function getEventRepository (prismaClient) {
             }
           }
         }
-        const eventsByAddress = await prismaClient.address_in_event.findMany(generateFindQuery(query, {}, relations, {}, limit))
+        const eventsByAddress = await prismaClient.address_in_event.findMany(generateFindQuery(query, {}, relations, sort, limit))
 
         return eventsByAddress.map(eventByAddress => eventEntityToRaw(eventByAddress.event))
       } else {
