@@ -12,7 +12,7 @@ export function getTokenRepository (prismaClient) {
     async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress } = {}) {
       if (isForGetTokensByAddress) {
         const include = { contract_token_address_contractTocontract: { include: addressRelatedTables() } }
-        let tokensByAddress = await prismaClient.token_address.findMany(generateFindQuery(query, {}, include, sort, limit))
+        let tokensByAddress = await prismaClient.token_address.findMany(generateFindQuery(query, {}, include, { blockNumber: -1 }, limit))
         tokensByAddress = tokensByAddress.sort((t1, t2) => t2.blockNumber - t1.blockNumber)
         const tokensToReturn = []
         const latestTokens = {}
