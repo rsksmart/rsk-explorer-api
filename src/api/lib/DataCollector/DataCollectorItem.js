@@ -8,9 +8,9 @@ export class DataCollectorItem {
     this.cursorField = cursorField
     this.cursorData = null
     this.sortDir = sortDir
+    this.sort = Object.keys(sortable).length ? sortable : { [cursorField]: sortDir }
     sortable[cursorField] = sortDir
     this.sortableFields = sortable
-    this.sort = { [cursorField]: sortDir }
     this.publicActions = {}
     this.fields = {}
     this.repository = REPOSITORIES[name]
