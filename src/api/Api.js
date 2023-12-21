@@ -5,6 +5,7 @@ import { filterParams, getDelayedFields, MODULES } from './lib/apiTools'
 import config from '../lib/config'
 // It is used only in case Stats cannot provide the circulating supply
 import getCirculatingSupply from './lib/getCirculatingSupply'
+import pckgJson from '../../package.json'
 
 class Api extends DataCollector {
   constructor ({ initConfig, log }, { modules, lastBlocks } = {}) {
@@ -63,7 +64,7 @@ class Api extends DataCollector {
   info () {
     const info = {
       apiName: 'RSK Explorer API',
-      version: process.env.npm_package_version,
+      version: pckgJson.version,
       modules: config.api.modules,
       txTypes: Object.assign({}, txTypes)
     }
