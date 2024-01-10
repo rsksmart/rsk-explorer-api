@@ -319,7 +319,7 @@ model stats {
   blockNumber                     Int     @id @map("block_number")
   blockHash                       String  @map("block_hash") @db.VarChar
   activeAccounts                  Int     @map("active_accounts")
-  hashrate                        BigInt
+  hashrate                        String  @db.VarChar
   circulatingSupply               String? @map("circulating_supply") @db.VarChar
   totalSupply                     Int?    @map("total_supply")
   bridgeBalance                   String? @map("bridge_balance") @db.VarChar

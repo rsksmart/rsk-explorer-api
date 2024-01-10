@@ -11,7 +11,7 @@ function rawStatsToEntity ({
     blockNumber,
     blockHash,
     activeAccounts,
-    hashrate,
+    hashrate: String(hashrate),
     lockingCap: bridge.lockingCap,
     timestamp
   }
@@ -38,7 +38,7 @@ function statsEntityToRaw ({
 }) {
   const rawStats = {
     activeAccounts,
-    hashrate: Number(hashrate),
+    hashrate: parseFloat(hashrate),
     timestamp: Number(timestamp),
     blockHash,
     blockNumber,
