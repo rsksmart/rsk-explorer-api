@@ -1,244 +1,146 @@
-# Rsk explorer api
+# Rsk Explorer API
 
-## Description
-  
-  Rsk blockchain explorer
+# Requisites
+- postgres
+- node: v16+
+- access to JSON/RPC interface of a rskj node >= 2.0.1 with this modules enabled: eth, net, web3, txpool, debug and trace.
 
-## Components
+# Configuration steps
 
-### API server
+## Section 1: Environment setup
+- create a database 'explorer_db'
+- create sql tables using the script prisma/rsk-explorer-database.sql
+- Install pm2:
+  - npm install -g pm2
+  - Enable pm2 log rotation: pm2 install pm2-logrotate
+  - Enable log-rotation compression: pm2 set pm2-logrotate:compress true
+  - For more options:
+    - see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
+    - see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
+- Configure database credentials, node urls, etc, in src/lib/defaultConfig.js file:
 
-HTTP/WS server, see the documentation [here](doc/api.md).
-
-### Blocks services
-
-  Imports blockchain data from rsk node to DB.
-
-- **blocksRouter:** routes messages between services *REQUIRED*
-- **blocksListener:** listens to new blocks from node and announces them as service event.
-- **blocksRequester:** requests blocks from node.
-- **blocksChecker:** checks database for missing blocks and reorgs, emits missing/bad blocks.
-- **txPool:** listens to node transactions pool and stores changes in the DB.
-- **blocksBalances:** gets historical addresses balances and stores in the DB.
-- **blocksStatus:** checks DB and node status and stores changes in the DB.
-- **blocksStats:** gets BC stats and stores in the DB.
-
-### API user events service
-
- Allows to update fields on the fly and send async response to clients.
- Required by the contract verification module.
-
-## Requisites
-
-- mongodb > 4
-- node >= 12.18.2
-- access to JSON/RPC interface of a rskj node >= 2.0.1
-  with this modules enabled: eth, net, web3, txpool, debug and trace.
-
-## Install
-
-- Install dependencies
-
-``` shell
-    npm install
-  ```
-
-## Create log dir
-
-```shell
-sudo mkdir /var/log/rsk-explorer
-sudo chown $USER /var/log/rsk-explorer/
-chmod 755 /var/log/rsk-explorer
-```
-
-Note: You can change the log folder in config.json
-
-## Configuration file
-
-(optional)
-
-``` shell
-    cp config-example.json config.json
-  ```
-
-see [configuration](#configuration)
-
-## Start
-
-### Services
-
-Services can be started manually one by one, but we recommend to use [PM2](https://github.com/Unitech/pm2).
-This repo includes a pm2 ecosystem file that starts all services automatically.
-
-#### Install PM2
-
-``` shell
-  npm install -g pm2
-```
-
-To enable pm2 log rotation
-
-``` shell
-  pm2 install pm2-logrotate
-```
-
-see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
-see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
-
-e.g:
-
-```shell
-
-pm2 set pm2-logrotate:compress true
-
-```
-
-#### Start services
-
-```shell
-pm2 start dist/services/blocks.config.js
-```
-
-### API
-
-``` shell
-  pm2 start dist/api/api.config.js
-```
-
-## Show PM2 logs in pretty format
-
-All tasks
-
-```shell
-
-:~/rsk-explorer-api$ pm2 log --raw | npx bunyan
-
-```
-
-One task
-
-```shell
-
-:~/rsk-explorer-api$ pm2 log blocksListener --raw | npx bunyan
-
-```
-
-## Commands
-
-Run api in development mode
-
-``` shell
-    npm run dev
-  ```
-
-Run blocks service in development mode
-
-``` shell
-    npm run blocks
-  ```
-
-Production build to ./dist folder
-
-``` shell
-    npm run build
-  ```
-
-## Configuration
-  
-  **config.json**
-  See defaults on: **lib/defaultConfig**
-  *(config.json overrides this values)*
-
-  Use:
-  
-  ```shell
-  node dist/tools/showConfig.js
-  ```
-
-  to check current configuration
-  
-**Configuration Example:**
-
-``` javascript
-  "source": {
-    "node": "localhost",
-    "port": 4444
+```javascript
+{
+  source: {
+    protocol: 'http',
+    node: 'localhost',
+    port: 4444,
+    url: null
   },
-  "api": {
-    "address": "localhost",
-    "port": 3003
+  sourceRoutes: { // Nod3Router routes, used as default when source is an array of sources
+    subscribe: 0, // delegates subscriptions to the first node
+    rsk: 0, // delegates rsk module to the node that handle subscriptions
+    trace: 1 // delegates trace_ module to the second node
   },
-  "db": {
-    "server": "localhost",
-    "port": 27017,
-    "database": "blockDB"
-  }
+  db: {
+    protocol: 'postgres://',
+    databaseName: 'explorer_db',
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 12345678
+  },
+  api: {
+    address: 'localhost',
+    port: 3003,
+    lastBlocks: 30,
+    MIN_LIMIT: 10,
+    LIMIT: 50,
+    MAX_LIMIT: 500,
+    MAX_PAGES: 10,
+    allowUserEvents: false,
+    exposeDoc: false,
+    // All modules are enabled as default
+    modules: setAllModules(true),
+    delayedFields,
+    allowCountQueries: false
+  },
+  blocks: {
+    blocksQueueSize: 10,
+    bcTipSize: 120,
+    batchRequestSize: 20,
+    debug: false,
+    ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
+    address: '127.0.0.1',
+    services
+  },
+  forceSaveBcStats: true,
+  enableTxPoolFromApi: true
+}
+```
 
-  ```
+### api
+- **address** [string] api server bind address
+- **port**  [number] api server port
+- **exposeDoc** [boolean]: serve rsk-openapi-ui on /doc to render swagger.json
+- **allowUserEvents**  [boolean]: allow contractVerifier
+
+### To enable contract verifier module:
 
 The contractVerifier module requires a connection to a [rsk-contract-verifier](https://github.com/rsksmart/rsk-contract-verifier)
 instance. The url must be provided on api section:
 
+- set api.allowUserEvents to true
+- add the contract verifier url inside api:
 ```javascript
-"api":{
-  "contractVerifier": {
-      "url": "ws://localhost:3008"
-    }
+api:{
+  //... other configs,
+  contractVerifier: {
+      url: 'ws://localhost:3008'
+    },
+  //... other configs
 }
-
 ```
 
-### Source
+## Section 3: Build process
+Run commands:
+- npm install
+- npm run build
+- npx prisma generate
 
-  Address of rskj node or array of addresses of rskj nodes
+## Start
+- Start block service: npm run start-blocks
+- Start api: npm run start-api
 
-e.g.:
+Note: an rsk node must be running in port or url specified in defaultConfig.js. Otherwise, blocks service will crash. 
 
-```json
-{
-  "url":"http://localhost:4444"
-}
+## Section 4: Logs
+To see block service logs:
+- npm run blocks-logs-raw (production)
+- npm run blocks-logs-pretty (development)
 
-```
+To see api logs:
+- npm run api-logs-raw (production)
+- npm run api-logs-pretty (development)
 
-e.g:
+## Section 5: Tools
 
-```json
-[
-  { "url":"http://localhost:4444" },
-  { "url":"http://othernode:4444" }
-]
+Get a block:
+- node dist/tools/getBlock.js 4000 (print in console)
+- node dist/tools/getBlock.js 4000 --save (print in console and also store in database)
 
-```
+Get missing segments in database:
+- node dist/tools/missingSegments.js
 
-### db
+## Components
 
-- **server**": "localhost"
-- **port**": 27017
-- **database**: "explorerDB"
+The logic in charge of indexing the blockchain in the database and maintaining data integrity consists of 4 services:
+- [blocks-checker-service]: ensures integrity of the most recent 120 blocks in database at the moment of running the service
+- [savetip-service]: requests blocks inside the tip size threshold (the top 120 newest, starting from latest block)
+- [live-syncer-service]: requests new blocks to the RSK node, starting from latest block
+- [static-syncer-service]: Stores immutable blocks (starting from latest - 120). To do so, it checks database gaps between already indexed blocks, and requests the missing ones by iterating the gaps
 
-**Optionals:**
+API server: HTTP/WS server
+- API Documentation: [docs](doc/api.md)
+- Swagger docs: [open api specification](public/swagger.json)
 
-- **user**: < user >
-- **password**: < password >
+## Development
 
-### blocks
-  
-- **validateCollections** :[Boolean] Validate collections at blocks service start, default false
-- **blocksQueueSize**:[Number] blocksRequester queue size
-- **bcTipSize**:[Number] Number of confirmations required to check blocks
-- **debug**:[Boolean] Enable logging of nod3 requests, default false
-- **services**:[Object] {ServiceName:[Boolean]}. All services are enabled as default, to disable a service use: **serviceName:false**
+Run api in development mode: npm run dev
+Run blocks in development mode:
 
-### api
+- npm run build
+- npm prisma generate
+- npm run blocks-start
 
-- **address** [string] api server bind address
-- **port**  [number] api server port
-
-- **allowUserEvents** [boolean]: enable/disable userEventsApi
-- **exposeDoc** [boolean]: serve rsk-openapi-ui on /doc to render swagger.json
-
-## Documentation
-  
-- [api documentation](doc/api.md)
-- [open api specification](public/swagger.json)
+Note Before uploading changes, remember to execute npm run build after upgrading version in package.version, so swagger docs compile the version number too. 
