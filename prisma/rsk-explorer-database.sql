@@ -89,7 +89,7 @@ CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
 block_hash VARCHAR NOT NULL,
 active_accounts INT4 NOT NULL,
-hashrate INT8 NOT NULL,
+hashrate VARCHAR NOT NULL,
 circulating_supply VARCHAR,
 total_supply INT4,
 bridge_balance VARCHAR,
