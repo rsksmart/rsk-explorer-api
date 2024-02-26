@@ -25,6 +25,9 @@ export function getTxPendingRepository (prismaClient) {
       ])
 
       return txPending
+    },
+    updateMany (query, data) {
+      return [prismaClient.transaction_pending.updateMany({data, where: query})]
     }
   }
 }
