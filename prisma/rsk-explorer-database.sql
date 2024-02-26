@@ -2,6 +2,10 @@
 
 /*
 
+V1.0.11 Notes:
+
+- Added timestamp to transaction_pending
+
 V1.0.10 Notes:
 
 - Optimize event queries by signature
@@ -121,7 +125,8 @@ gas INT4 NOT NULL,
 gas_price VARCHAR NOT NULL,
 value VARCHAR NOT NULL,
 input VARCHAR NOT NULL,
-status VARCHAR NOT NULL
+status VARCHAR NOT NULL,
+timestamp INT8 NOT NULL DEFAULT date_part('epoch', now())
 );
 
 CREATE TABLE transaction_in_pool (

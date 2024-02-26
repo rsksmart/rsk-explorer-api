@@ -72,6 +72,10 @@ export function getBlocksRepository (prismaClient) {
         }
       }
 
+      // set status 'REMOVED' to transactions stuck on database
+      const oneHourAgo = Math.floor(new Date().getTime() / 1000) - 3600
+      transactionQueries.push(...txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, {status: 'REMOVED'}))
+
       // insert internal transactions
       for (const itx of internalTransactions) {
         transactionQueries.push(...internalTxRepository.insertOne(itx))
