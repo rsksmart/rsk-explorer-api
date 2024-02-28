@@ -292,7 +292,7 @@ model transaction_pending {
   value            String @db.VarChar
   input            String @db.VarChar
   status           String @db.VarChar
-  timestamp        BigInt @default(dbgenerated("date_part('epoch'::text, now())"))
+  timestamp        String @default(dbgenerated("(date_part('epoch'::text, now()))::character varying")) @db.VarChar
 }
 
 model tx_pool {

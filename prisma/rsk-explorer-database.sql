@@ -126,7 +126,7 @@ gas_price VARCHAR NOT NULL,
 value VARCHAR NOT NULL,
 input VARCHAR NOT NULL,
 status VARCHAR NOT NULL,
-timestamp INT8 NOT NULL DEFAULT date_part('epoch', now())
+timestamp VARCHAR NOT NULL DEFAULT CAST(DATE_PART('epoch', NOW()) AS VARCHAR)
 );
 
 CREATE TABLE transaction_in_pool (
