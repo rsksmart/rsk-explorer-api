@@ -80,7 +80,7 @@ function transactionEntityToRaw ({
     s,
     type,
     timestamp: Number(timestamp),
-    receipt: JSON.parse(receipt),
+    receipt: JSON.parse(receipt || '{}'),
     txType,
     txId
   }

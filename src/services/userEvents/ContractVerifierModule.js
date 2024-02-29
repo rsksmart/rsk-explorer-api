@@ -121,29 +121,47 @@ export function replaceImport (content, name) {
   })
 }
 
-export function extractUsedSourcesFromRequest ({ source, imports }, { usedSources }) {
-  const sourceData = imports[0]
-  // fix it with hash
-  if (source === sourceData.contents) {
-    sourceData.file = sourceData.name
-    usedSources.unshift(sourceData)
-  }
-  // replaces paths in in imports
-  imports = imports.map(i => {
-    let { name, contents } = i
-    usedSources.forEach(s => {
-      let { file } = s
-      contents = contents.split('\n').map(line => replaceImport(line, file)).join('\n')
+export function extractUsedSourcesFromRequest ({ source, imports, sources, name }, { usedSources }) {
+  if (!sources) { // solidity source file verification method
+    const sourceData = imports[0]
+    // fix it with hash
+    if (source === sourceData.contents) {
+      sourceData.file = sourceData.name
+      usedSources.unshift(sourceData)
+    }
+    // replaces paths in in imports
+    imports = imports.map(i => {
+      let { name, contents } = i
+      usedSources.forEach(s => {
+        let { file } = s
+        contents = contents.split('\n').map(line => replaceImport(line, file)).join('\n')
+      })
+      return { contents, name }
     })
-    return { contents, name }
-  })
 
-  return usedSources.map(s => {
-    let { file: name } = s
-    let imp = imports.find(i => i.name === name)
-    const { contents } = imp
-    return { name, contents }
-  })
+    return usedSources.map(s => {
+      let { file: name } = s
+      let imp = imports.find(i => i.name === name)
+      const { contents } = imp
+      return { name, contents }
+    })
+  } else { // standard json input verification method
+    const sourcesToSave = []
+    usedSources.forEach(s => {
+      const { file, path } = s
+
+      const sourceFile = sources[path]
+      const { content: contents } = sourceFile
+
+      if (file.split('.')[0] === name) { // is the main contract
+        sourcesToSave.unshift({ name: file, contents })
+      } else {
+        sourcesToSave.push({ name: file, contents })
+      }
+    })
+
+    return sourcesToSave
+  }
 }
 
 export function getVerificationId ({ address }) {
