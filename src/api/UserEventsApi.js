@@ -1,18 +1,24 @@
 import path from 'path'
 import { fork } from 'child_process'
-import config from '../lib/config'
 import { errors, formatRes } from './lib/apiTools'
+import Logger from '../lib/Logger'
 
-function UserEventsSocket () {
-  return fork(path.resolve(__dirname, '../services/userEvents/userEventsService.js'))
+function UserEventsService ({ initConfig }) {
+  const userEventsServicePath = path.resolve(__dirname, '../services/userEvents/userEventsService.js')
+  const params = [JSON.stringify(initConfig)]
+
+  return fork(userEventsServicePath, params)
 }
 
-export const UserEventsApi = (io, api, { log }) => {
-  if (!config.api.allowUserEvents) return
-  log = log || console
-  const userEvents = UserEventsSocket()
+const log = Logger('[user-events-api]')
 
-  userEvents.on('message', async msg => {
+export const UserEventsApi = (io, api, { initConfig }) => {
+  log.info('Online')
+
+  log.info('Starting user events service...')
+  const userEventsService = UserEventsService({ initConfig })
+
+  userEventsService.on('message', async msg => {
     try {
       const { payload, module } = msg
       const action = payload.action
@@ -29,7 +35,7 @@ export const UserEventsApi = (io, api, { log }) => {
       return Promise.reject(err)
     }
   })
-  return Object.freeze(userEvents)
+  return Object.freeze(userEventsService)
 }
 
 async function processMsg (msg, api) {

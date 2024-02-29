@@ -2,26 +2,19 @@ import { EventEmitter } from 'events'
 import { clearInterval } from 'timers'
 import { serialize } from '../../../lib/utils'
 import { filterParams } from '../apiTools'
-import { Db } from 'mongodb'
-import log from '../log'
 
 class Emitter extends EventEmitter { }
 const emitter = new Emitter()
 
 export class DataCollector {
-  constructor (db, options) {
-    if (!(db instanceof Db)) { throw new Error('Db is not mongodb Db') }
-    this.db = db
+  constructor (options) {
     this.options = options
-    this.collection = null
-    this._keyName = options.keyName || '_id'
     this.events = emitter
     this._interval = null
     this.modules = {}
-    this.setCollection(options.collectionName)
-    this.tickDelay = 1000
+    this.tickDelay = 15000
     this.serialize = serialize
-    this.log = options.log || log
+    this.log = null
   }
   tick () { }
   stop () {
@@ -35,12 +28,6 @@ export class DataCollector {
       this._interval = setInterval(() => {
         this.tick()
       }, this.tickDelay)
-    }
-  }
-
-  setCollection (collectionName, name = 'collection') {
-    if (collectionName && !this[name]) {
-      this[name] = this.db.collection(collectionName)
     }
   }
 

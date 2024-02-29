@@ -61,7 +61,7 @@ export const actions = {
 }
 
 export const MODULES = {
-  blocks: 'Block',
+  blocks: 'Blocks',
   transactions: 'Tx',
   addresses: 'Address',
   events: 'Event',
@@ -96,7 +96,8 @@ export const EVMversions = [
   'byzantium',
   'constantinople',
   'petersburg',
-  'istanbul'
+  'istanbul',
+  'london'
 ]
 
 export const bitcoinNetworks = {

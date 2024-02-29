@@ -1,11 +1,11 @@
+import { isNativeContract } from '../../lib/NativeContracts'
 import { DataCollectorItem } from '../lib/DataCollector'
 export class Event extends DataCollectorItem {
-  constructor (collections, key) {
-    const sortable = { eventId: -1 }
-    const { Events } = collections
-    let cursorField = 'eventId'
-    let sortDir = -1
-    super(Events, key, { cursorField, sortDir, sortable })
+  constructor (key) {
+    const cursorField = 'eventId'
+    const sortable = {}
+    const sortDir = -1
+    super(key, { cursorField, sortDir, sortable })
     this.publicActions = {
       /**
        * @swagger
@@ -93,26 +93,18 @@ export class Event extends DataCollectorItem {
       getEventsByAddress: async params => {
         const { address, signatures, contract } = params
         if (address) {
-          let query = { _addresses: address }
-
-          // search by events signatures
-          if (Array.isArray(signatures)) {
-            // skip remasc & bridge events
-            const isNative = this.parent.isNativeContract(address)
-            if (isNative !== 'bridge' || isNative !== 'remasc') {
-              query.signature = { $in: signatures }
-            }
-          }
+          const query = { address }
+          // search by events signatures, skip remasc & bridge events
+          if (Array.isArray(signatures) && !isNativeContract(address)) query.eventSignature = { in: signatures }
 
           if (contract) query.address = contract
-
-          let res = await this.getPageData(query, params)
+          let res = await this.getPageData(query, params, { isForGetEventsByAddress: true })
           if (res.data) {
             let addresses = new Set(res.data.map(d => d.address))
             addresses = [...addresses.values()]
             let AddressModule = this.parent.getModule('Address')
             if (AddressModule) {
-              let addrData = await AddressModule.find({ address: { $in: addresses } })
+              let addrData = await AddressModule.find({ address: { in: addresses } })
               let { data } = addrData
               if (data) {
                 res.data = res.data.map(d => {
@@ -156,7 +148,7 @@ export class Event extends DataCollectorItem {
       getAllEventsByAddress: async params => {
         const { address } = params
         if (address) {
-          return this.getPageData({ $or: [{ address }, { _addresses: address }] }, params)
+          return this.getPageData({ address_in_event: { some: { address } } }, params)
         }
       }
     }

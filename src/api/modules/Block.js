@@ -1,13 +1,15 @@
 import { DataCollectorItem } from '../lib/DataCollector'
 import { isBlockHash } from '../../lib/utils'
 import { addMetadataToBlocks } from '../lib/blocksMetadata'
+import { getBlock } from '../../tools/getBlockEndpointCall'
+import { getInitConfig } from '../../lib/Setup'
+
 export class Block extends DataCollectorItem {
-  constructor (collections, key) {
-    const { Blocks } = collections
-    let cursorField = 'number'
-    let sortDir = -1
-    let sortable = { timestamp: -1 }
-    super(Blocks, key, { sortDir, cursorField, sortable })
+  constructor (key) {
+    const cursorField = 'number'
+    const sortable = { [cursorField]: -1, timestamp: -1 }
+    const sortDir = -1
+    super(key, { sortDir, cursorField, sortable })
     this.publicActions = {
       /**
        * @swagger
@@ -43,6 +45,7 @@ export class Block extends DataCollectorItem {
         const hashOrNumber = params.hashOrNumber || params.hash || params.number
         let query = {}
         if (isBlockHash(hashOrNumber)) {
+          delete params.fields
           query = { hash: hashOrNumber }
         } else {
           query = { number: parseInt(hashOrNumber) }
@@ -114,6 +117,28 @@ export class Block extends DataCollectorItem {
           }
         }
         return result
+      },
+      saveBlock: async params => {
+        const number = Number(params.number)
+        if (isNaN(number)) throw new Error('Wrong number provided')
+        let message
+
+        try {
+          const { data } = await this.publicActions.getBlock({ number })
+          const exists = data && data.number === number
+          if (exists) {
+            message = `Block ${number} already in db. Skipped`
+          } else {
+            const initConfig = await getInitConfig()
+            await getBlock(number, { initConfig })
+            message = `Block ${number} saved succesfully.`
+          }
+        } catch (e) {
+          console.log(e)
+          message = 'errored'
+        }
+
+        return { message }
       }
     }
   }

@@ -14,7 +14,7 @@ import { Balances } from './Balances'
 import { getModulesNames, getEnabledModules } from '../lib/apiTools'
 
 const apiModules = {
-  Block,
+  Blocks: Block,
   Tx,
   Address,
   Event,

@@ -3,10 +3,12 @@ import ContractParser from '@rsksmart/rsk-contract-parser'
 import { tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { hasValue } from '../../lib/utils'
+import { REPOSITORIES } from '../../repositories'
+import { isNativeContract } from '../../lib/NativeContracts'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, collections, block }) {
-    super({ nod3, initConfig, collections })
+  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block = {} }) {
+    super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
     this.deployedCode = deployedCode
@@ -19,8 +21,9 @@ class Contract extends BcThing {
     this.abi = abi
     this.parser = undefined
     this.isToken = false
-    this.isNative = !!this.nativeContracts.getNativeContractName(address)
+    this.isNative = isNativeContract(address)
     this.block = block
+    this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
   }
 
@@ -28,7 +31,7 @@ class Contract extends BcThing {
     try {
       let { deployedCode, fetched } = this
       if (fetched) return this.getData()
-      let contract = await this.setContract()
+      let contract = await this.setContract(this.block.number)
       if (!this.isNative) {
         // new contracts
         if (!this.data.contractInterfaces) {
@@ -46,7 +49,7 @@ class Contract extends BcThing {
             if (proxyCheckResult && proxyCheckResult.methods.length) {
               methods = proxyCheckResult.methods
             }
-          };
+          }
 
           if (interfaces.length) this.setData({ contractInterfaces: interfaces })
           if (methods) this.setData({ contractMethods: methods })
@@ -70,12 +73,12 @@ class Contract extends BcThing {
     }
   }
 
-  async getParser () {
+  async getParser (txBlockNumber) {
     try {
       let { nod3, initConfig, log } = this
       if (!this.parser) {
         let abi = await this.getAbi()
-        this.parser = new ContractParser({ abi, nod3, initConfig, log })
+        this.parser = new ContractParser({ abi, nod3, initConfig, log, txBlockNumber })
       }
       return this.parser
     } catch (err) {
@@ -83,13 +86,13 @@ class Contract extends BcThing {
     }
   }
 
-  async setContract () {
+  async setContract (txBlockNumber) {
     try {
       let { address, contract } = this
       if (contract) return contract
       // get abi
       let abi = await this.getAbi()
-      let parser = await this.getParser()
+      let parser = await this.getParser(txBlockNumber)
       this.contract = parser.makeContract(address, abi)
       return this.contract
     } catch (err) {
@@ -111,9 +114,8 @@ class Contract extends BcThing {
 
   async getAbiFromVerification () {
     try {
-      let { collections, address } = this
-      if (!collections) return
-      const data = await collections.VerificationsResults.findOne({ address, match: true })
+      let { address } = this
+      const data = await this.verificationResultsRepository.findOne({ address, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)
