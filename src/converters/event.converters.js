@@ -17,12 +17,20 @@ function rawEventToEntity ({
   transactionIndex,
   txStatus
 }) {
+  const topic0 = topics[0] || null
+  const topic1 = topics[1] || null
+  const topic2 = topics[2] || null
+  const topic3 = topics[3] || null
+
   return {
     eventId,
     abi: JSON.stringify(abi),
     address,
     args: JSON.stringify(args),
-    topics: JSON.stringify(topics || []),
+    topic0,
+    topic1,
+    topic2,
+    topic3,
     blockHash,
     blockNumber,
     data,
@@ -41,7 +49,10 @@ function eventEntityToRaw ({
   abi,
   address,
   args,
-  topics,
+  topic0,
+  topic1,
+  topic2,
+  topic3,
   blockHash,
   blockNumber,
   data,
@@ -68,7 +79,7 @@ function eventEntityToRaw ({
     transactionHash,
     transactionIndex,
     txStatus,
-    topics: JSON.parse(topics)
+    topics: [topic0, topic1, topic2, topic3].filter(Boolean)
   }
 
   if (involvedAddresses) {

@@ -146,7 +146,10 @@ model event {
   abi                             String?            @db.VarChar
   address                         String             @db.VarChar(42)
   args                            String?            @db.VarChar
-  topics                          String?            @db.VarChar
+  topic0                          String?            @db.VarChar
+  topic1                          String?            @db.VarChar
+  topic2                          String?            @db.VarChar
+  topic3                          String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)
   blockNumber                     Int                @map("block_number")
   data                            String             @db.VarChar
@@ -169,6 +172,10 @@ model event {
   @@index([signature], map: "idx_event_signature")
   @@index([blockHash])
   @@index([transactionHash])
+  @@index([topic0])
+  @@index([topic1])
+  @@index([topic2])
+  @@index([topic3])
 }
 
 model internal_transaction {
@@ -258,6 +265,7 @@ model transaction {
   @@index([from], map: "idx_transaction_from")
   @@index([to], map: "idx_transaction_to")
   @@index([txType], map: "idx_transaction_tx_type")
+  @@index([transactionIndex])
 }
 
 model transaction_in_pool {
