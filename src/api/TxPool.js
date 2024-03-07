@@ -5,7 +5,7 @@ export class TxPool extends DataCollector {
   constructor ({ log }) {
     super()
     this.log = log
-    this.tickDelay = 1000
+    this.tickDelay = 15000
     this.state = {}
     this.chart = []
     this.repository = REPOSITORIES.TxPool
