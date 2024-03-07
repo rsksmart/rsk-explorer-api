@@ -6,6 +6,7 @@ V1.1.0 Notes:
 
 - Redesign of event table. Now topics are indexed columns.
 - Add an index for transaction_index in transaction table
+- Add an index for hash in block table
 
 V1.0.11 Notes:
 
@@ -93,6 +94,7 @@ cumulative_difficulty VARCHAR NOT NULL,
 received INT8 NOT NULL
 );
 CREATE INDEX ON block(miner);
+CREATE INDEX ON block(hash);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,

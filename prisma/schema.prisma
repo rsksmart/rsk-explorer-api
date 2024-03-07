@@ -96,6 +96,7 @@ model block {
   transaction_transaction_block_numberToblock                   transaction[]            @relation("transaction_block_numberToblock")
 
   @@index([miner])
+  @@index([hash])
 }
 
 model contract {
