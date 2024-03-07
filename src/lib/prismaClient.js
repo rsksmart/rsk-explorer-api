@@ -15,7 +15,7 @@ if (!user || !password) throw new Error('Missing database credentials in src/lib
 const prismaClient = new PrismaClient({
   datasources: {
     db: {
-      url: `${protocol}${user}:${password}@${host}:${port}/${databaseName}`
+      url: `${protocol}${user}:${password}@${host}:${port}/${databaseName}?connection_limit=30`
     }
   },
   // log: ['query', 'info', 'warn', 'error'],
