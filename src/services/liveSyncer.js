@@ -6,7 +6,7 @@ import BlocksBase from '../lib/BlocksBase'
 import { blocksRepository } from '../repositories'
 
 const TIP_BLOCK_FETCH_INTERVAL = 3000
-const log = Logger('[live-syncer-service]')
+const log = Logger('[live-syncer]')
 
 export async function liveSyncer (syncStatus, confirmationsThreshold) {
   const initConfig = await getInitConfig()

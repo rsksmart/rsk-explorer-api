@@ -46,6 +46,7 @@
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
     "express": "^4.17.1",
+    "prom-client": "^15.1.0",
     "rlp": "^2.2.5",
     "rsk-openapi-ui": "^0.0.7",
     "socket.io": "^2.2.0"

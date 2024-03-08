@@ -10,14 +10,21 @@ import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
 import Logger from '../lib/Logger'
+import { createMetricsServer } from '../lib/prismaMetrics'
 
 const port = config.api.port || '3003'
+const metricsPort = 4000
 const address = config.api.address || 'localhost'
-const log = Logger('[explorer-api]', config.api.log)
+const serviceName = 'explorer-api'
+const log = Logger(`[${serviceName}]`, config.api.log)
 
 Setup({ log })
   .start()
-  .then(({ initConfig }) => {
+  .then(async ({ initConfig }) => {
+    if (config.api.enableMetrics) {
+      await createMetricsServer({ serviceName, port: metricsPort, log })
+    }
+
     // data collectors
     const api = new Api({ initConfig, log }, config.api)
     const status = new Status({ log })

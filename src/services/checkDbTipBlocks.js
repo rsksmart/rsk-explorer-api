@@ -5,7 +5,7 @@ import { getInitConfig } from '../lib/Setup'
 import BlocksBase from '../lib/BlocksBase'
 import Logger from '../lib/Logger'
 
-const log = Logger('[blocks-checker-service]')
+const log = Logger('[database-tip-checker]')
 
 export async function checkDbTipBlocks ({ latestBlock }, confirmationsThreshold) {
   const initConfig = await getInitConfig()
