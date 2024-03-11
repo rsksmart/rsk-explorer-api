@@ -79,7 +79,7 @@ Setup({ log })
 
     // create channels
     const channels = createChannels(io)
-    const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel, balancesChannel } = channels.channels
+    const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel } = channels.channels
 
     // send blocks on join
     blocksChannel.on('join', socket => {
@@ -105,7 +105,6 @@ Setup({ log })
     api.events.on('newBlocks', result => {
       blocksChannel.emit('newBlocks', result)
       txsChannel.emit('newTransactions', api.getLastTransactions())
-      balancesChannel.emit('balancesStatus', api.getBalancesStatus())
     })
 
     // send stats on join
@@ -131,11 +130,6 @@ Setup({ log })
     // send stats to channel
     api.events.on('newStats', result => {
       statsChannel.emit('stats', result)
-    })
-
-    // send balances status on join
-    balancesChannel.on('join', socket => {
-      socket.emit('data', formatRes({ action: 'balancesStatus', result: api.getBalancesStatus() }))
     })
 
     io.on('connection', socket => {
