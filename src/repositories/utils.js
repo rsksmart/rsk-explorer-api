@@ -1,5 +1,6 @@
-function mongoSortToPrisma (num) {
-  if (num === 1) {
+function mongoSortToPrisma (value) {
+  if (isNaN(value)) return value // to return direct prisma values
+  if (value === 1) {
     return 'asc'
   } else {
     return 'desc'

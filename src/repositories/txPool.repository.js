@@ -1,12 +1,11 @@
 import {rawTxPoolToEntity} from '../converters/txPending.converters'
 import {generateFindQuery} from './utils'
-
-const txPoolRelatedTables = { transaction_in_pool: true }
+import { txPoolRelatedTables } from './includeRelatedTables'
 
 export function getTxPoolRepository (prismaClient) {
   return {
-    async findOne (query = {}, project = {}) {
-      const txPool = await prismaClient.tx_pool.findFirst(generateFindQuery(query, project, txPoolRelatedTables, { id: -1 }))
+    async findOne (query = {}, select = {}, include = txPoolRelatedTables, orderBy = { id: 'desc' }) {
+      const txPool = await prismaClient.tx_pool.findFirst(generateFindQuery(query, select, include, orderBy))
 
       if (txPool) {
         txPool.txs = [...txPool.transaction_in_pool]

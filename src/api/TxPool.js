@@ -12,6 +12,7 @@ export class TxPool extends DataCollector {
   }
   start () {
     super.start()
+    this.log.info('Tx Pool started')
     this.updatePool()
   }
 
@@ -34,7 +35,7 @@ export class TxPool extends DataCollector {
   }
 
   getPool () {
-    return this.repository.findOne({}, { sort: { _id: -1 } })
+    return this.repository.findOne({}, {}, undefined, { id: 'desc' })
   }
 
   async updatePoolChart () {
