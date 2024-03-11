@@ -1,6 +1,10 @@
--- RSK Explorer Database Schema V1.1.0
+-- RSK Explorer Database Schema V1.1.1
 
 /*
+
+V1.1.1 Notes:
+
+- add an index for received field in block table
 
 V1.1.0 Notes:
 
@@ -95,6 +99,7 @@ received INT8 NOT NULL
 );
 CREATE INDEX ON block(miner);
 CREATE INDEX ON block(hash);
+CREATE INDEX ON block(received);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,

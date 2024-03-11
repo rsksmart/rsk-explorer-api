@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["metrics"]
 }
 
@@ -98,6 +98,7 @@ model block {
 
   @@index([miner])
   @@index([hash])
+  @@index([received])
 }
 
 model contract {
