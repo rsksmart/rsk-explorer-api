@@ -314,6 +314,8 @@ model tx_pool {
   txs                 String                @db.VarChar
   timestamp           BigInt
   transaction_in_pool transaction_in_pool[]
+
+  @@index([timestamp])
 }
 
 model verification_result {

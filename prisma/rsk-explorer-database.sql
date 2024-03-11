@@ -124,6 +124,7 @@ queued INT4 NOT NULL,
 txs VARCHAR NOT NULL, -- stringified
 timestamp INT8 NOT NULL
 );
+CREATE INDEX ON tx_pool(timestamp);
 
 CREATE TABLE transaction_pending (
 hash VARCHAR(66) PRIMARY KEY,
