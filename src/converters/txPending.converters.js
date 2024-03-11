@@ -35,20 +35,4 @@ function rawTxInPoolToEntity (data) {
   }
 }
 
-function rawTxPoolToEntity ({
-  blockNumber,
-  pending,
-  queued,
-  timestamp,
-  txs
-}) {
-  return {
-    blockNumber,
-    pending,
-    queued,
-    timestamp,
-    txs: JSON.stringify(txs)
-  }
-}
-
-export {rawTxPendingToEntity, rawTxPoolToEntity, rawTxInPoolToEntity}
+export { rawTxPendingToEntity, rawTxInPoolToEntity }

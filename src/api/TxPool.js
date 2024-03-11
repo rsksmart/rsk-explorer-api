@@ -35,12 +35,12 @@ export class TxPool extends DataCollector {
   }
 
   getPool () {
-    return this.repository.findOne({}, {}, undefined, { id: 'desc' })
+    return this.repository.findOne({}, undefined, undefined, { id: 'desc' })
   }
 
   async updatePoolChart () {
     try {
-      let chart = await this.repository.find({}, { txs: 0 }, { timestamp: -1 }, 200)
+      let chart = await this.repository.find({}, undefined, undefined, { timestamp: -1 }, 200)
       this.chart = chart
     } catch (err) {
       return Promise.reject(err)
@@ -54,7 +54,6 @@ export class TxPool extends DataCollector {
 
   getState () {
     let state = Object.assign({}, this.state)
-    delete state._id
     return this.formatData(state)
   }
 }
