@@ -67,7 +67,7 @@ export default {
     enableMetrics: false,
     blocksQueueSize: 10,
     bcTipSize: 120,
-    batchRequestSize: 20,
+    batchRequestSize: 100,
     debug: false,
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
