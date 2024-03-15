@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
-import { tokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray, hasValue } from '../../lib/utils'
 import { REPOSITORIES } from '../../repositories'
@@ -171,11 +171,12 @@ class Contract extends BcThing {
 
     // Set respective balances
     for (let i = 0; i < tokenAddresses.length; i++) {
-      const tokenAddress = tokenAddresses[i]
-      const tokenAddressBalance = tokenAddressesBalances[i]
+      const address = tokenAddresses[i]
+      const balance = tokenAddressesBalances[i]
+      const TokenAddress = addresses[address]
+      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf', balance).toHexString()
 
-      const TokenAddress = addresses[tokenAddress]
-      TokenAddress.setTokenAddressBalance(contract.decodeCall('balanceOf', tokenAddressBalance).toHexString())
+      TokenAddress.setTokenAddressBalance(parsedBalance)
       data.push(TokenAddress.getData(true))
     }
     return data
