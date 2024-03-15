@@ -151,10 +151,10 @@ class Contract extends BcThing {
     const { addresses, address, contract, nod3 } = this
 
     const tokenAddresses = Object.keys(addresses)
-    const promises = []
+    let tokenAddressesBalances = []
     const data = []
 
-    // generate all batch requests promises
+    // generate all batch requests
     for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
       const batchRequest = chunk.map(tokenAddress => ([
         'eth.call',
@@ -163,10 +163,11 @@ class Contract extends BcThing {
         // block.number
       ]))
 
-      promises.push(nod3.batchRequest(batchRequest))
+      const result = await nod3.batchRequest(batchRequest)
+      tokenAddressesBalances.push(result)
     }
 
-    const tokenAddressesBalances = (await Promise.all(promises)).flat()
+    tokenAddressesBalances = tokenAddressesBalances.flat()
 
     // Set respective balances
     for (let i = 0; i < tokenAddresses.length; i++) {
