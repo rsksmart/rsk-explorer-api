@@ -45,7 +45,8 @@ export default {
     host: 'localhost',
     port: 5432,
     user: 'postgres',
-    password: 12345678
+    password: 12345678,
+    connectionLimit: 30
   },
   api: {
     address: 'localhost',
