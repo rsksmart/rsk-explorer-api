@@ -150,16 +150,25 @@ export const hash = (thing, alg = 'sha1', out = 'hex') => {
 
 export const createHash = (v) => hash(v, 'sha1', 'hex')
 
-export const measurePromiseTime = async (promise, { label = undefined, log = console, printMeasurement = false } = {}) => {
+export const measurePromiseTime = async (promise, { label = undefined, log = console, printMeasurement = false, msThreshold = 1000 } = {}) => {
   let time = Date.now()
   const result = await promise
   time = Date.now() - time
-
-  if (printMeasurement) {
+  const printMetrics = () => {
     if (label) {
       log.info(`Time taken for ${label}: ${time} ms.`)
     } else {
       log.info(`Time taken: ${time} ms.`)
+    }
+  }
+
+  if (printMeasurement) {
+    if (msThreshold) {
+      if (time > msThreshold) {
+        printMetrics()
+      }
+    } else {
+      printMetrics()
     }
   }
 
