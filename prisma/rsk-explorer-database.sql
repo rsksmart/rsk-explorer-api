@@ -5,6 +5,7 @@
 V1.1.1 Notes:
 
 - add an index for received field in block table
+- add an index for timestamp field in tx_pool table
 
 V1.1.0 Notes:
 
