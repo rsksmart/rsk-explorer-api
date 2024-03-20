@@ -12,14 +12,13 @@ import config from '../lib/config'
 
 const confirmationsThreshold = 120
 const staticSyncerCheckInterval = 21600000 // 6h
-const metricsPort = 4001
 
 const serviceName = 'blocks-service'
 const log = Logger(`[${serviceName}]`)
 
 async function main () {
   if (config.blocks.enableMetrics) {
-    await createMetricsServer({ serviceName, port: metricsPort, log })
+    await createMetricsServer({ serviceName, port: config.blocks.metricsPort, log })
   }
 
   await (Setup({ log })).start()

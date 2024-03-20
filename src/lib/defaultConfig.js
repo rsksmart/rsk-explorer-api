@@ -56,7 +56,8 @@ export default {
     LIMIT: 50,
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
-    enableMetrics: false,
+    enableMetrics: true,
+    metricsPort: 4000,
     allowUserEvents: false,
     exposeDoc: false,
     // All modules are enabled as default
@@ -65,7 +66,8 @@ export default {
     allowCountQueries: true
   },
   blocks: {
-    enableMetrics: false,
+    enableMetrics: true,
+    metricsPort: 4001,
     blocksQueueSize: 10,
     bcTipSize: 120,
     batchRequestSize: 100,

@@ -13,7 +13,6 @@ import Logger from '../lib/Logger'
 import { createMetricsServer } from '../lib/prismaMetrics'
 
 const port = config.api.port || '3003'
-const metricsPort = 4000
 const address = config.api.address || 'localhost'
 const serviceName = 'explorer-api'
 const log = Logger(`[${serviceName}]`, config.api.log)
@@ -22,7 +21,7 @@ Setup({ log })
   .start()
   .then(async ({ initConfig }) => {
     if (config.api.enableMetrics) {
-      await createMetricsServer({ serviceName, port: metricsPort, log })
+      await createMetricsServer({ serviceName, port: config.api.metricsPort, log })
     }
 
     // data collectors
