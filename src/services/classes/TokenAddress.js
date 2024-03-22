@@ -4,43 +4,42 @@ import { isBlockObject, isAddress } from '../../lib/utils'
 import { isZeroAddress } from '@rsksmart/rsk-utils'
 
 export class TokenAddress extends BcThing {
-  constructor (address, contract) {
-    if (!(contract instanceof Contract)) {
-      throw new Error('contract is not instance of Contract')
-    }
-    if (!isAddress(address)) throw new Error(`Invalid address ${address}`)
-    let { block } = contract
-    if (!isBlockObject(block)) {
-      throw new Error(`Block must be a block object`)
-    }
-    const { initConfig } = contract
+  constructor (tokenAddress, contract) {
+    if (!isAddress(tokenAddress)) throw new Error(`Invalid tokenAddress: ${tokenAddress}`)
+    if (!(contract instanceof Contract)) throw new Error(`Invalid Contract instance: ${contract}`)
+    if (!contract.block || !isBlockObject(contract.block)) throw new Error(`Invalid Block object`)
+
+    const { initConfig, address: contractAddress, block: { number, hash } } = contract
+
     super({ initConfig })
-    if (!this.isAddress(address)) {
-      throw new Error(`TokenAddress: invalid address: ${address}`)
-    }
-    this.isZeroAddress = isZeroAddress(address)
+
+    this.isZeroAddress = isZeroAddress(tokenAddress)
+    this.address = tokenAddress
     this.Contract = contract
-    this.address = address
-    let { number, hash } = block
     this.data = {
-      address,
-      contract: this.Contract.address,
+      address: tokenAddress,
+      contract: contractAddress,
       balance: null,
       block: { number, hash }
     }
   }
-  async fetch () {
+
+  async fetchTokenAddressBalance () {
+    const { isZeroAddress, Contract, address } = this
+    if (isZeroAddress) return null
+
     try {
-      let balance = await this.getBalance()
-      this.data.balance = balance
+      const balance = await Contract.call('balanceOf', [address])
+      this.setTokenAddressBalance(balance)
       return this.getData(true)
     } catch (err) {
+      this.log.error(`Error fetching token balance for tokenAddress ${address}`, err)
       return Promise.reject(err)
     }
   }
-  getBalance () {
-    if (this.isZeroAddress) return null
-    return this.Contract.call('balanceOf', [this.address])
+
+  setTokenAddressBalance (balance) {
+    this.setData({ balance })
   }
 }
 

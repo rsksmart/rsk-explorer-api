@@ -24,7 +24,6 @@ class Api extends DataCollector {
   }
   tick () {
     this.setLastBlocks()
-    this.updateBalancesStatus()
   }
 
   loadModules (modules) {
@@ -107,15 +106,6 @@ class Api extends DataCollector {
   getLastBlock () {
     let { data } = this.lastBlocks
     return data[0] || null
-  }
-
-  getBalancesStatus () {
-    return this.balancesStatus
-  }
-
-  async updateBalancesStatus () {
-    let data = await this.getModule('Balances').run('getStatus')
-    this.balancesStatus = data
   }
 
   updateLastBlocks (blocks, transactions) {

@@ -1,7 +1,6 @@
 import { rawBlockToEntity, blockEntityToRaw } from '../converters/blocks.converters'
 import { generateFindQuery } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
-import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 
 import {
   txRepository,
@@ -34,75 +33,90 @@ export function getBlocksRepository (prismaClient) {
       return count
     },
     insertOne (data) {
-      return [prismaClient.block.createMany({data: rawBlockToEntity(data), skipDuplicates: true})]
+      return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
     async saveBlockData (data) {
       const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
-      const transactionQueries = []
+      if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
-      // insert block
-      transactionQueries.push(...this.insertOne(block))
+      const getAddressesQueries = () => {
+        const queries = []
 
-      // insert addresses
-      for (const address of addresses) {
-        if (!isAddress(address.address)) {
-          throw new Error(`Invalid address ${address.address}`)
-        } else {
+        for (const address of addresses) {
           const { balance, blockNumber } = latestBalances.balances.find(b => b.address === address.address)
-          transactionQueries.push(...addressRepository.insertOne(
-            address,
-            {
-              isMiner: block.miner === address.address,
-              balance,
-              blockNumber
-            }
-          ))
+          const extraData = { isMiner: block.miner === address.address, balance, blockNumber }
+          queries.push(addressRepository.insertOne(address, extraData))
         }
+
+        return queries.flat()
       }
 
-      // insert balances
-      transactionQueries.push(...balancesRepository.insertMany(balances, latestBalances))
+      const getTxsAndPendingTxsQueries = () => {
+        const queries = []
 
-      // insert txs and delete pendings
-      if (!transactions.length && block.number > 0) {
-        throw new Error(`Couldn't get transactions for block ${block.number}`)
-      } else {
         for (const tx of transactions) {
-          transactionQueries.push(...txRepository.insertOne(tx), ...txPendingRepository.deleteOne({ hash: tx.hash }))
+          queries.push(txRepository.insertOne(tx))
+          queries.push(txPendingRepository.deleteOne({ hash: tx.hash }))
         }
+
+        // Set status 'REMOVED' to any old transactions stuck on database
+        const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
+        queries.push(txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, { status: 'REMOVED' }))
+
+        return queries
       }
 
-      // set status 'REMOVED' to transactions stuck on database
-      // const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
-      // transactionQueries.push(...txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, {status: 'REMOVED'}))
+      const getItxsQueries = () => {
+        const queries = []
 
-      // insert internal transactions
-      for (const itx of internalTransactions) {
-        transactionQueries.push(...internalTxRepository.insertOne(itx))
+        for (const itx of internalTransactions) {
+          queries.push(...internalTxRepository.insertOne(itx))
+        }
+
+        return queries
       }
 
-      // insert blockTrace
-      transactionQueries.push(...blockTraceRepository.insertOne(internalTransactions))
+      const getEventsQueries = () => {
+        const queries = []
 
-      // insert events
-      for (const event of events) {
-        transactionQueries.push(...eventRepository.insertOne(event))
+        for (const event of events) {
+          queries.push(eventRepository.insertOne(event))
+        }
+
+        return queries
       }
 
-      // insert tokenAddresses
-      for (const token of tokenAddresses) {
-        transactionQueries.push(...tokenRepository.insertOne(token))
+      const getTokensAddressesQueries = () => {
+        const queries = []
+
+        for (const tokenAddress of tokenAddresses) {
+          queries.push(tokenRepository.insertOne(tokenAddress))
+        }
+
+        return queries
       }
 
-      // save block summary
-      transactionQueries.push(...summaryRepository.insertOne(data))
+      const generateTransaction = () => {
+        const transaction = [
+          this.insertOne(block), // insert block
+          ...getAddressesQueries(), // insert addresses
+          ...balancesRepository.insertMany(balances, latestBalances), // insert balances
+          ...getTxsAndPendingTxsQueries(), // insert txs and update pending txs
+          ...getItxsQueries(), // insert internal transactions
+          blockTraceRepository.insertOne(internalTransactions), // insert blockTrace
+          ...getEventsQueries(), // insert events
+          ...getTokensAddressesQueries(), // insert tokenAddresses
+          ...summaryRepository.insertOne(data) // save block summary
+        ]
 
-      // insert status
-      if (status) {
-        transactionQueries.push(...statusRepository.insertOne(status))
+        if (status) {
+          transaction.push(statusRepository.insertOne(status)) // insert status
+        }
+
+        return transaction
       }
 
-      return prismaClient.$transaction(transactionQueries)
+      return prismaClient.$transaction(generateTransaction())
     },
     deleteOne (query) {
       return prismaClient.block.deleteMany({ where: query })

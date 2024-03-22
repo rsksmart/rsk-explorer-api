@@ -31,7 +31,7 @@ export function getSummaryRepository (prismaClient) {
       const newContractSuicides = suicides.map(({ internalTxId }) => ({ blockNumber, internalTxId }))
       const newAddresses = addresses.map(({ address, blockNumber, balance, lastBlockMined }) => ({ address, blockNumber, balance, lastBlockMined: lastBlockMined ? lastBlockMined.number : undefined }))
 
-      const transactionQueries = [
+      return [
         prismaClient.block_summary.createMany({ data: newBlockSummary, skipDuplicates: true }),
         prismaClient.transaction_in_summary.createMany({ data: newTxs, skipDuplicates: true }),
         prismaClient.internal_transaction_in_summary.createMany({ data: newItxs, skipDuplicates: true }),
@@ -40,8 +40,6 @@ export function getSummaryRepository (prismaClient) {
         prismaClient.suicide_in_summary.createMany({data: newContractSuicides, skipDuplicates: true}),
         prismaClient.address_in_summary.createMany({ data: newAddresses, skipDuplicates: true })
       ]
-
-      return transactionQueries
     },
     async deleteOne (query) {
       const deleted = await prismaClient.block_summary.delete({where: query})

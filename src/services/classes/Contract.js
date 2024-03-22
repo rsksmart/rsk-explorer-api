@@ -1,10 +1,11 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
-import { tokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
-import { hasValue } from '../../lib/utils'
+import { chunkArray, hasValue } from '../../lib/utils'
 import { REPOSITORIES } from '../../repositories'
 import { isNativeContract } from '../../lib/NativeContracts'
+import config from '../../lib/config'
 
 class Contract extends BcThing {
   constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block = {} }) {
@@ -132,17 +133,10 @@ class Contract extends BcThing {
     return parser.getTokenData(contract, { methods })
   }
 
-  addAddress (address) {
-    if (!this.isAddress(address)) return
-    if (!this.addresses[address]) {
-      let Address = this.newAddress(address)
-      this.addresses[address] = Address
-      return Address
-    }
-  }
+  addTokenAddress (address) {
+    if (this.addresses[address]) return
 
-  newAddress (address) {
-    return new TokenAddress(address, this)
+    this.addresses[address] = new TokenAddress(address, this)
   }
 
   call (method, params = []) {
@@ -151,16 +145,39 @@ class Contract extends BcThing {
     return parser.call(method, contract, params)
   }
 
-  async fetchAddresses () {
+  async fetchTokenAddressesBalances () {
     if (!this.fetched) await this.fetch()
-    let data = []
-    let { addresses } = this
-    if (!this.isToken) return data
-    for (let a in addresses) {
-      let Address = addresses[a]
-      await Address.fetch()
-      let addressData = Address.getData(true)
-      if (addressData) data.push(addressData)
+    if (!this.isToken) return []
+    const { addresses, address, contract, nod3 } = this
+
+    const tokenAddresses = Object.keys(addresses)
+    let tokenAddressesBalances = []
+    const data = []
+
+    // generate all batch requests
+    for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
+      const batchRequest = chunk.map(tokenAddress => ([
+        'eth.call',
+        { to: address, data: contract.encodeCall('balanceOf', [tokenAddress]) }
+        // uncomment this to fetch balances for the particular block instead of latest
+        // block.number
+      ]))
+
+      const result = await nod3.batchRequest(batchRequest)
+      tokenAddressesBalances.push(result)
+    }
+
+    tokenAddressesBalances = tokenAddressesBalances.flat()
+
+    // Set respective balances
+    for (let i = 0; i < tokenAddresses.length; i++) {
+      const address = tokenAddresses[i]
+      const balance = tokenAddressesBalances[i]
+      const TokenAddress = addresses[address]
+      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf', balance).toHexString()
+
+      TokenAddress.setTokenAddressBalance(parsedBalance)
+      data.push(TokenAddress.getData(true))
     }
     return data
   }

@@ -43,7 +43,7 @@ export function getTokenRepository (prismaClient) {
       return count
     },
     insertOne (data) {
-      return [prismaClient.token_address.createMany({data: rawTokenToEntity(data), skipDuplicates: true})]
+      return prismaClient.token_address.createMany({data: rawTokenToEntity(data), skipDuplicates: true})
     }
   }
 }

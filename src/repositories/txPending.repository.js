@@ -14,7 +14,7 @@ export function getTxPendingRepository (prismaClient) {
       return txsPending
     },
     deleteOne (query) {
-      return [prismaClient.transaction_pending.deleteMany({where: query})]
+      return prismaClient.transaction_pending.deleteMany({where: query})
     },
     async upsertOne (filter, { tx, poolId }) {
       const newTxPending = rawTxPendingToEntity(tx)
@@ -27,7 +27,7 @@ export function getTxPendingRepository (prismaClient) {
       return txPending
     },
     updateMany (query, data) {
-      return [prismaClient.transaction_pending.updateMany({data, where: query})]
+      return prismaClient.transaction_pending.updateMany({data, where: query})
     }
   }
 }

@@ -7,13 +7,21 @@ import { liveSyncer } from './liveSyncer'
 import { staticSyncer } from './staticSyncer'
 import { txPoolService } from './txPool'
 import { saveInitialTip } from '../lib/servicesUtils'
+import { createMetricsServer } from '../lib/prismaMetrics'
+import config from '../lib/config'
 
 const confirmationsThreshold = 120
 const staticSyncerCheckInterval = 21600000 // 6h
 
+const serviceName = 'blocks-service'
+const log = Logger(`[${serviceName}]`)
+
 async function main () {
-  await (Setup({ log: Logger('[services-setup]') })).start()
-  const log = Logger('[main-service]')
+  if (config.blocks.enableMetrics) {
+    await createMetricsServer({ serviceName, port: config.blocks.metricsPort, log })
+  }
+
+  await (Setup({ log })).start()
 
   const syncStatus = {
     updatingTip: false,

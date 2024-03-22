@@ -8,7 +8,7 @@ import BlocksBase from '../lib/BlocksBase.js'
 
 const { Blocks: blocksRepository } = REPOSITORIES
 
-const log = Logger('[static-syncer-service]')
+const log = Logger('[static-syncer]')
 
 export async function staticSyncer (syncStatus, confirmationsThreshold) {
   syncStatus.staticSyncerRunning = true

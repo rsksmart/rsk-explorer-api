@@ -20,7 +20,7 @@ export function getTxRepository (prismaClient) {
       return prismaClient.transaction.deleteMany({where: filter})
     },
     insertOne (data) {
-      return [prismaClient.transaction.create({ data: rawTxToEntity(data) })]
+      return prismaClient.transaction.create({ data: rawTxToEntity(data) })
     }
   }
 }

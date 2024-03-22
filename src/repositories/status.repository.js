@@ -16,7 +16,7 @@ export function getStatusRepository (prismaClient) {
       return statusArr.map(status => statusEntityToRaw(status))
     },
     insertOne (data) {
-      return [prismaClient.status.create({ data: rawStatusToEntity(data) })]
+      return prismaClient.status.create({ data: rawStatusToEntity(data) })
     }
   }
 }

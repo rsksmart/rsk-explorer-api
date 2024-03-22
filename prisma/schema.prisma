@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["metrics"]
 }
 
 datasource db {
@@ -97,6 +98,7 @@ model block {
 
   @@index([miner])
   @@index([hash])
+  @@index([received])
 }
 
 model contract {
@@ -312,6 +314,8 @@ model tx_pool {
   txs                 String                @db.VarChar
   timestamp           BigInt
   transaction_in_pool transaction_in_pool[]
+
+  @@index([timestamp])
 }
 
 model verification_result {
