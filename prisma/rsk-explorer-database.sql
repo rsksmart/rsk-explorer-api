@@ -142,6 +142,7 @@ input VARCHAR NOT NULL,
 status VARCHAR NOT NULL,
 timestamp VARCHAR NOT NULL DEFAULT CAST(DATE_PART('epoch', NOW()) AS VARCHAR)
 );
+CREATE INDEX ON transaction_pending(timestamp);
 
 CREATE TABLE transaction_in_pool (
 hash VARCHAR(66),

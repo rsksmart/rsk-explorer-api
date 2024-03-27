@@ -304,6 +304,8 @@ model transaction_pending {
   input            String @db.VarChar
   status           String @db.VarChar
   timestamp        String @default(dbgenerated("(date_part('epoch'::text, now()))::character varying")) @db.VarChar
+
+  @@index([timestamp])
 }
 
 model tx_pool {
