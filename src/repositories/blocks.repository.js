@@ -35,7 +35,7 @@ export function getBlocksRepository (prismaClient) {
     insertOne (data) {
       return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
-    async saveBlockData (data) {
+    async saveBlockData (data, tipBlock) {
       const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
       if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
@@ -59,9 +59,11 @@ export function getBlocksRepository (prismaClient) {
           queries.push(txPendingRepository.deleteOne({ hash: tx.hash }))
         }
 
-        // Set status 'REMOVED' to any old transactions stuck on database
-        const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
-        queries.push(txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, { status: 'REMOVED' }))
+        // Set status 'REMOVED' to any old transactions stuck on database every 120 blocks
+        if (tipBlock && block.number % 120 === 0) {
+          const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
+          queries.push(txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, { status: 'REMOVED' }))
+        }
 
         return queries
       }

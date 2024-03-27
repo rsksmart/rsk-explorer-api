@@ -37,7 +37,7 @@ export class Block extends BcThing {
     }
   }
 
-  async save () {
+  async save (tipBlock = false) {
     const { number, forceSaveBcStats } = this
     let data
     try {
@@ -54,7 +54,7 @@ export class Block extends BcThing {
         data.status = this.status
 
         // save block and all related data
-        await this.repository.saveBlockData(data)
+        await this.repository.saveBlockData(data, tipBlock)
 
         // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
         if (this.isTipBlock || forceSaveBcStats) {
