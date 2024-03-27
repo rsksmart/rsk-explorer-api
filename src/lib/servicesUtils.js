@@ -19,7 +19,7 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false }
 
       // insert block
       let savingTime = Date.now()
-      await block.save()
+      await block.save(tipBlock)
       savingTime = Date.now() - savingTime
 
       log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
