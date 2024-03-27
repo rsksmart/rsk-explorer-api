@@ -140,7 +140,7 @@ Run api in development mode: npm run dev
 Run blocks in development mode:
 
 - npm run build
-- npm prisma generate
+- npx prisma generate
 - npm run blocks-start
 
 Note Before uploading changes, remember to execute npm run build after upgrading version in package.version, so swagger docs compile the version number too. 

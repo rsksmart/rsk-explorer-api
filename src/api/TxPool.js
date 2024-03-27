@@ -5,13 +5,14 @@ export class TxPool extends DataCollector {
   constructor ({ log }) {
     super()
     this.log = log
-    this.tickDelay = 1000
+    this.tickDelay = 15000
     this.state = {}
     this.chart = []
     this.repository = REPOSITORIES.TxPool
   }
   start () {
     super.start()
+    this.log.info('Tx Pool started')
     this.updatePool()
   }
 
@@ -34,12 +35,12 @@ export class TxPool extends DataCollector {
   }
 
   getPool () {
-    return this.repository.findOne({}, { sort: { _id: -1 } })
+    return this.repository.findOne({}, undefined, undefined, { id: 'desc' })
   }
 
   async updatePoolChart () {
     try {
-      let chart = await this.repository.find({}, { txs: 0 }, { timestamp: -1 }, 200)
+      let chart = await this.repository.find({}, undefined, undefined, { timestamp: -1 }, 200)
       this.chart = chart
     } catch (err) {
       return Promise.reject(err)
@@ -53,7 +54,6 @@ export class TxPool extends DataCollector {
 
   getState () {
     let state = Object.assign({}, this.state)
-    delete state._id
     return this.formatData(state)
   }
 }

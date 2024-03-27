@@ -34,8 +34,11 @@ const summaryRelatedTables = {
   transaction_in_summary: {include: {transaction: true}}
 }
 
+const txPoolRelatedTables = { transaction_in_pool: true }
+
 export {
   addressRelatedTables,
   eventRelatedTables,
-  summaryRelatedTables
+  summaryRelatedTables,
+  txPoolRelatedTables
 }

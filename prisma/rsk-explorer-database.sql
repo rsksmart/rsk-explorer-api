@@ -1,6 +1,17 @@
--- RSK Explorer Database Schema V1.0.10
+-- RSK Explorer Database Schema V1.1.1
 
 /*
+
+V1.1.1 Notes:
+
+- add an index for received field in block table
+- add an index for timestamp field in tx_pool table
+
+V1.1.0 Notes:
+
+- Redesign of event table. Now topics are indexed columns.
+- Add an index for transaction_index in transaction table
+- Add an index for hash in block table
 
 V1.0.11 Notes:
 
@@ -88,6 +99,8 @@ cumulative_difficulty VARCHAR NOT NULL,
 received INT8 NOT NULL
 );
 CREATE INDEX ON block(miner);
+CREATE INDEX ON block(hash);
+CREATE INDEX ON block(received);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
@@ -112,6 +125,7 @@ queued INT4 NOT NULL,
 txs VARCHAR NOT NULL, -- stringified
 timestamp INT8 NOT NULL
 );
+CREATE INDEX ON tx_pool(timestamp);
 
 CREATE TABLE transaction_pending (
 hash VARCHAR(66) PRIMARY KEY,
@@ -224,6 +238,7 @@ CREATE INDEX idx_transaction_block_hash ON transaction(block_hash);
 CREATE INDEX idx_transaction_from ON transaction("from");
 CREATE INDEX idx_transaction_to ON transaction("to");
 CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
+CREATE INDEX ON transaction(transaction_index);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -327,7 +342,10 @@ event_id VARCHAR PRIMARY KEY,
 abi VARCHAR, -- stringified
 address VARCHAR(42) NOT NULL,
 args VARCHAR, -- stringified
-topics VARCHAR, -- stringified
+topic0 VARCHAR,
+topic1 VARCHAR,
+topic2 VARCHAR,
+topic3 VARCHAR,
 block_hash VARCHAR(66) NOT NULL,
 block_number INT4 NOT NULL,
 data VARCHAR NOT NULL,
@@ -348,6 +366,10 @@ CREATE INDEX ON event(block_hash);
 CREATE INDEX idx_event_address ON event(address);
 CREATE INDEX idx_event_signature ON event(signature);
 CREATE INDEX ON event(transaction_hash);
+CREATE INDEX ON event(topic0);
+CREATE INDEX ON event(topic1);
+CREATE INDEX ON event(topic2);
+CREATE INDEX ON event(topic3);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,

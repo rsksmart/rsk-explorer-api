@@ -82,6 +82,8 @@ export const OBJECT_ID = 'ObjectID'
 
 export const TOTAL_SUPPLY = 21 * 10 ** 6
 
+export const NULL_BALANCE = null
+
 export const fields = {
   LAST_BLOCK_MINED: 'lastBlockMined',
   DEPLOYED_CODE: 'deployedCode',

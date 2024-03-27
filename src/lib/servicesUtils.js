@@ -51,7 +51,7 @@ export async function insertBlocks (blocks = [], blocksBase, { initConfig, log }
 
 export async function saveInitialTip (syncStatus, tipSize) {
   const initConfig = await getInitConfig()
-  const log = Logger('[savetip-service]')
+  const log = Logger('[save-tip-blocks]')
   const blocksBase = new BlocksBase({ initConfig, log })
 
   const lastSafeBlock = syncStatus.latestBlock.number - tipSize

@@ -45,7 +45,8 @@ export default {
     host: 'localhost',
     port: 5432,
     user: 'postgres',
-    password: 12345678
+    password: 12345678,
+    connectionLimit: 30
   },
   api: {
     address: 'localhost',
@@ -55,6 +56,8 @@ export default {
     LIMIT: 50,
     MAX_LIMIT: 500,
     MAX_PAGES: 10,
+    enableMetrics: true,
+    metricsPort: 4000,
     allowUserEvents: false,
     exposeDoc: false,
     // All modules are enabled as default
@@ -63,9 +66,11 @@ export default {
     allowCountQueries: true
   },
   blocks: {
+    enableMetrics: true,
+    metricsPort: 4001,
     blocksQueueSize: 10,
     bcTipSize: 120,
-    batchRequestSize: 20,
+    batchRequestSize: 100,
     debug: false,
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',

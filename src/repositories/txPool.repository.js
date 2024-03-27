@@ -1,46 +1,37 @@
-import {rawTxPoolToEntity} from '../converters/txPending.converters'
 import {generateFindQuery} from './utils'
+import { txPoolRelatedTables } from './includeRelatedTables'
+import { rawTxPoolToEntity, txPoolEntityToRaw } from '../converters/txPool.converters'
 
-const txPoolRelatedTables = { transaction_in_pool: true }
+// Fix to prevent txs field from being fetched until prisma adds support for excluded selection values (eg: { txs: false })
+// See: https://github.com/prisma/prisma/issues/5042
+// Tx pool related tables are included in the select in this case
+const txPoolSelect = {
+  id: true,
+  blockNumber: true,
+  pending: true,
+  queued: true,
+  timestamp: true,
+  // txs: true,
+  ...txPoolRelatedTables
+}
 
 export function getTxPoolRepository (prismaClient) {
   return {
-    async findOne (query = {}, project = {}) {
-      const txPool = await prismaClient.tx_pool.findFirst(generateFindQuery(query, project, txPoolRelatedTables, { id: -1 }))
-
-      if (txPool) {
-        txPool.txs = [...txPool.transaction_in_pool]
-        delete txPool.transaction_in_pool
-
-        txPool._id = txPool.id
-        delete txPool.id
-
-        txPool.timestamp = Number(txPool.timestamp)
-      }
-
-      return txPool
+    async findOne (query = {}, select = txPoolSelect, include = txPoolRelatedTables, orderBy = { id: 'desc' }) {
+      // Include disabled. Cannot use 'include' and 'select' statements at the same time
+      include = undefined
+      const txPool = await prismaClient.tx_pool.findFirst(generateFindQuery(query, select, include, orderBy))
+      return txPool ? txPoolEntityToRaw(txPool) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, isArray = true) {
-      let txPools = await prismaClient.tx_pool.findMany(generateFindQuery(query, project, txPoolRelatedTables, { timestamp: -1 }, limit))
+    async find (query = {}, select = txPoolSelect, include = txPoolRelatedTables, orderBy = { timestamp: 'desc' }, limit = 0) {
+      // Include disabled. Cannot use 'include' and 'select' statements at the same time
+      include = undefined
 
-      txPools = txPools.map(txPool => {
-        txPool.txs = [...txPool.transaction_in_pool]
-        delete txPool.transaction_in_pool
-
-        txPool._id = txPool.id
-        delete txPool.id
-
-        txPool.timestamp = Number(txPool.timestamp)
-
-        return txPool
-      })
-
-      return txPools
+      const txPools = await prismaClient.tx_pool.findMany(generateFindQuery(query, select, include, orderBy, limit))
+      return txPools.map(txPoolEntityToRaw)
     },
     async insertOne (data) {
-      const txpool = await prismaClient.tx_pool.create({data: rawTxPoolToEntity(data)})
-
-      return txpool
+      return prismaClient.tx_pool.create({ data: rawTxPoolToEntity(data) })
     }
   }
 }

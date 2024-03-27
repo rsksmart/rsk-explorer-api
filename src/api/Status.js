@@ -7,6 +7,12 @@ export class Status extends DataCollector {
     this.state = {}
     this.addModule(new DataCollectorItem('Status'))
     this.addModule(new DataCollectorItem('Blocks'))
+    this.tickDelay = 1800000 // 30 mins
+    this.totalBlocks = {
+      delay: 3600000, // 1 hour
+      requestTime: 0,
+      count: 0
+    }
   }
   tick () {
     this.updateState().then((newState) => {
@@ -45,13 +51,18 @@ export class Status extends DataCollector {
 
   async getStatus () {
     try {
-      const [blocksStatus, last, high, dbBlocks] =
-        await Promise.all([
-          this.getBlocksServiceStatus(),
-          this.getLastblockReceived(),
-          this.getHighestBlock(),
-          this.getTotalBlocks()
-        ])
+      const time = Date.now()
+      const refetchTotalBlocks = time - this.totalBlocks.requestTime > this.totalBlocks.delay
+      if (refetchTotalBlocks) {
+        this.totalBlocks.count = await this.getTotalBlocks()
+        this.totalBlocks.requestTime = time
+      }
+
+      const dbBlocks = this.totalBlocks.count
+      const blocksStatus = await this.getBlocksServiceStatus()
+      const last = await this.getLastblockReceived()
+      const high = await this.getHighestBlock()
+
       const status = Object.assign(blocksStatus || {}, {
         dbLastBlockReceived: last ? last.number : '',
         dbLastBlockReceivedTime: last ? last._received : '',

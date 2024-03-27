@@ -10,14 +10,20 @@ import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
 import Logger from '../lib/Logger'
+import { createMetricsServer } from '../lib/prismaMetrics'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
-const log = Logger('[explorer-api]', config.api.log)
+const serviceName = 'explorer-api'
+const log = Logger(`[${serviceName}]`, config.api.log)
 
 Setup({ log })
   .start()
-  .then(({ initConfig }) => {
+  .then(async ({ initConfig }) => {
+    if (config.api.enableMetrics) {
+      await createMetricsServer({ serviceName, port: config.api.metricsPort, log })
+    }
+
     // data collectors
     const api = new Api({ initConfig, log }, config.api)
     const status = new Status({ log })
@@ -72,7 +78,7 @@ Setup({ log })
 
     // create channels
     const channels = createChannels(io)
-    const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel, balancesChannel } = channels.channels
+    const { blocksChannel, statusChannel, txPoolChannel, statsChannel, txsChannel } = channels.channels
 
     // send blocks on join
     blocksChannel.on('join', socket => {
@@ -98,7 +104,6 @@ Setup({ log })
     api.events.on('newBlocks', result => {
       blocksChannel.emit('newBlocks', result)
       txsChannel.emit('newTransactions', api.getLastTransactions())
-      balancesChannel.emit('balancesStatus', api.getBalancesStatus())
     })
 
     // send stats on join
@@ -124,11 +129,6 @@ Setup({ log })
     // send stats to channel
     api.events.on('newStats', result => {
       statsChannel.emit('stats', result)
-    })
-
-    // send balances status on join
-    balancesChannel.on('join', socket => {
-      socket.emit('data', formatRes({ action: 'balancesStatus', result: api.getBalancesStatus() }))
     })
 
     io.on('connection', socket => {

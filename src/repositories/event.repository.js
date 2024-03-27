@@ -39,7 +39,7 @@ export function getEventRepository (prismaClient) {
       const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false, eventSignature: event.signature }))
       involvedAddresses.push({ address: event.address, isEventEmitterAddress: true, eventSignature: event.signature })
 
-      const query = prismaClient.event.create({
+      return prismaClient.event.create({
         data: {
           ...rawEventToEntity(event),
           address_in_event: {
@@ -50,13 +50,9 @@ export function getEventRepository (prismaClient) {
           }
         }
       })
-
-      return [query]
     },
-    async deleteMany (filter) {
-      const deleted = await prismaClient.event.deleteMany({where: filter})
-
-      return deleted
+    async deleteMany (query) {
+      return prismaClient.event.deleteMany({ where: query })
     }
   }
 }

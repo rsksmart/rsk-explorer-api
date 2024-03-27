@@ -4,6 +4,7 @@ import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
 import { isBlockHash } from '../../lib/utils'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
+import config from '../../lib/config'
 
 export class BlockSummary extends BcThing {
   constructor (hashOrNumber, { nod3, log, initConfig }) {
@@ -63,8 +64,8 @@ export class BlockSummary extends BcThing {
       let receipts = []
 
       const txsChunks = []
-      for (let i = 0; i <= transactions.length; i += 100) {
-        txsChunks.push(transactions.slice(i, i + 100))
+      for (let i = 0; i <= transactions.length; i += config.blocks.batchRequestSize) {
+        txsChunks.push(transactions.slice(i, i + config.blocks.batchRequestSize))
       }
 
       for (const txChunk of txsChunks) {

@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 1s
+scrape_configs:
+  - job_name: "explorer-api"
+    static_configs:
+    # Host: MacOS = docker.for.mac.host.internal | Windows: docker.for.win.localhost | Linux: localhost
+    # Port: Replace for actual port where metrics are being exposed
+      - targets: ["docker.for.mac.host.internal:4000"]
+  - job_name: "blocks"
+    static_configs:
+    # Host: MacOS = docker.for.mac.host.internal | Windows: docker.for.win.localhost | Linux: localhost
+    # Port: Replace for actual port where metrics are being exposed
+      - targets: ["docker.for.mac.host.internal:4001"]
+
+# Launch Prometheus container example
+# docker run --rm -p 9090:9090 \
+#   -v `pwd`/prometheus.yml:/etc/prometheus/prometheus.yml \
+#   prom/prometheus:v2.20.1

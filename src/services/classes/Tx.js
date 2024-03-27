@@ -56,7 +56,7 @@ export class Tx extends BcThing {
       let tokenAddresses = []
       for (let contractAddress in contracts) {
         let contract = contracts[contractAddress]
-        let contractAddresses = await contract.fetchAddresses()
+        let contractAddresses = await contract.fetchTokenAddressesBalances()
         tokenAddresses = tokenAddresses.concat(contractAddresses)
       }
       this.setData({ tokenAddresses })
@@ -198,7 +198,7 @@ export class Tx extends BcThing {
           events[index] = formatEvent(event, tx)
           const { _addresses } = event
           for (let address of _addresses) {
-            contract.addAddress(address)
+            contract.addTokenAddress(address)
             this.addresses.add(address, addressOptions)
           }
         }
