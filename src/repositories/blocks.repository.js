@@ -60,8 +60,8 @@ export function getBlocksRepository (prismaClient) {
         }
 
         // Set status 'REMOVED' to any old transactions stuck on database
-        const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
-        queries.push(txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, { status: 'REMOVED' }))
+        // const oneHourAgo = String(Math.floor(new Date().getTime() / 1000) - 3600)
+        // queries.push(txPendingRepository.updateMany({ timestamp: { lte: oneHourAgo } }, { status: 'REMOVED' }))
 
         return queries
       }
