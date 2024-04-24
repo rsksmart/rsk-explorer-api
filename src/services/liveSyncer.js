@@ -35,7 +35,7 @@ async function newBlocksHandler (syncStatus, blocksBase, { initConfig, log }, co
 
     // 3.1: Gap of 2+ blocks from latest
     if (syncStatus.lastReceived >= 0 && latestBlock.number - syncStatus.lastReceived > 1) {
-      log.info(`Gap of (${latestBlock.number - syncStatus.lastReceived}) detected from last received block (${syncStatus.lastReceived}) to latest block (${latestBlock.number}). Updating...`)
+      log.info(`Gap of ${latestBlock.number - syncStatus.lastReceived} blocks detected from last received block (${syncStatus.lastReceived}) to latest block (${latestBlock.number}). Updating...`)
       let next = syncStatus.lastReceived + 1
       while (next <= latestBlock.number) {
         await updateDbTipBlock(next, blocksBase, { initConfig, log }, confirmationsThreshold)
@@ -62,7 +62,7 @@ export async function updateDbTipBlock (number, blocksBase, { initConfig, log },
     await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true })
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
-    log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash`)
+    log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash. Possible reorganization.`)
     await reorganize(blocksBase, nextBlock, { initConfig, log }, confirmationsThreshold)
   }
 }
@@ -91,6 +91,9 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
       // db block is inexistent or incongruent
       blocksToDelete.push(newChainPreviousBlock.number)
       missingBlocks.unshift(newChainPreviousBlock.number)
+
+      log.info(`Block ${current} now belongs to an old chain. Queued for deletion.`)
+
       current--
       gap--
     }
@@ -98,8 +101,7 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
     log.info(`Chains parent block found! (${current}). Reorg depth: ${confirmationsThreshold - gap}`)
     log.info(`Deleting old chain blocks... (Total: ${blocksToDelete.length}. Blocks: ${blocksToDelete})`)
     await blocksRepository.deleteMany({ number: { in: blocksToDelete } })
-    log.info(`Finished deleting old chain blocks.`)
-    log.info(`Adding new chain blocks... (Total: ${missingBlocks.length}. Blocks: ${JSON.stringify(missingBlocks)})`)
+    log.info(`Finished deleting old chain blocks. Adding new chain blocks... (Total: ${missingBlocks.length}. Blocks: ${JSON.stringify(missingBlocks)})`)
     await insertBlocks(missingBlocks, blocksBase, { initConfig, log })
     log.info(`Finished adding new chain blocks.`)
     log.info(`Finished reorganization process!`)
