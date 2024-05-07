@@ -14,6 +14,9 @@ const ITX_FIELDS = {
   action: null,
   timestamp: null,
   _index: null
+  // dynamic fields:
+  // error
+  // internalTxId (sortable id, added when loading entity)
 }
 
 export class InternalTx extends BcThing {
@@ -35,13 +38,21 @@ export class InternalTx extends BcThing {
   }
 
   getAddresses () {
-    let data = this.getData()
-    let { action } = data
-    let { isAddress } = this
-    let addresses = Object.entries(action)
-      .filter(([name, value]) => {
-        return name !== 'balance' && isAddress(value)
-      }).map(v => v[1])
+    const internalTx = this.getData()
+    const { action, type, result } = internalTx
+    const addresses = Object.entries(action).filter(([name, value]) => name !== 'balance' && isAddress(value)).map(v => v[1])
+
+    // scrape addresses from contracts created by contracts
+    const isValidContractCreationItx = type === 'create' && result !== null
+
+    if (isValidContractCreationItx) {
+      // Creation by EOA: action.creationMethod = undefined
+      // Creation by Contract (create opcode): action.creationMethod = 'create'
+      // Creation by Contract (create2 opcode): action.creationMethod = 'create2'
+      // Failed contract creation by Contract: result = null
+      addresses.push(result.address)
+    }
+
     return [...new Set(addresses)]
   }
 
