@@ -60,6 +60,7 @@ async function main () {
 
   // retrieve addresses for each block
   for (const number of blocksNumbers) {
+    if (number % 10000 === 0) console.log(`Status check: current block ${number}`)
     try {
       const BlockSummaryInstance = new BlockSummary(number, { nod3, initConfig })
       const block = await BlockSummaryInstance.getBlockData()
