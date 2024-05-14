@@ -38,7 +38,7 @@ export function getAddressRepository (prismaClient) {
 
       return count
     },
-    insertOne (data, { isMiner, balance, blockNumber }) {
+    insertOne (data, { isMiner, balance, blockNumber } = {}) {
       const transactionQueries = [prismaClient.address.createMany({ data: rawAddressToEntity(data), skipDuplicates: true })]
       const { destroyedByTx, address } = data
 

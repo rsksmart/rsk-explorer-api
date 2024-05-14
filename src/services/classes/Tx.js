@@ -39,8 +39,11 @@ export class Tx extends BcThing {
       let addressOptions = this.addressOptions()
       await this.setToAddress(tx)
       this.addresses.add(tx.from, addressOptions)
+
+      // scrape contract addresses created by EOAs
       let { contractAddress } = tx.receipt
       if (contractAddress) this.addresses.add(contractAddress, addressOptions)
+
       tx = this.txFormat(tx)
       let { events, contracts } = await this.decodeLogsAndAddresses(tx, addressOptions)
       let { logs } = tx.receipt
