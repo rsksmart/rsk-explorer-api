@@ -169,6 +169,7 @@ type VARCHAR NOT NULL,
 name VARCHAR -- NULL | string
 );
 CREATE INDEX index_address_id ON address(id);
+CREATE INDEX index_address_name ON address(name);
 
 CREATE TABLE miner_address (
 id SERIAL,
