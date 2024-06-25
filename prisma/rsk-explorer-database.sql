@@ -240,6 +240,7 @@ CREATE INDEX idx_transaction_from ON transaction("from");
 CREATE INDEX idx_transaction_to ON transaction("to");
 CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
 CREATE INDEX ON transaction(transaction_index);
+CREATE INDEX ON transaction(timestamp);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
