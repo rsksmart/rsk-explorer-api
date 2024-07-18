@@ -7,6 +7,7 @@ import { Addresses } from './Addresses'
 import { isBlockObject } from '../../lib/utils'
 import { getBlock } from './BlockSummary'
 import { getNativeContractName } from '../../lib/NativeContracts'
+import { ContractParser } from '@rsksmart/rsk-contract-parser'
 
 export class Tx extends BcThing {
   constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, notTrace, receipt, log } = {}) {
@@ -198,6 +199,31 @@ export class Tx extends BcThing {
           contracts[address] = contract
           let parser = await contract.getParser(tx.blockNumber)
           let [event] = parser.parseTxLogs([log])
+
+          if (!event.signature) {
+            // if event has no signature, it could potentially be a proxy contract and the implementation ABI must be used instead of the proxy ABI for events parsing.
+            // ABI is retrieved from verifications inside database. In the case of unverified implementation contracts, contract parser will use
+            // a default abi which covers common used abi fragments
+            const { isUpgradeable, impContractAddress } = await contract.parser.isERC1967(address)
+
+            if (isUpgradeable) {
+              contract.setImplementationAddress(impContractAddress)
+              const implementationAbi = await contract.getImplementationAbiFromVerification()
+
+              const implementationParser = new ContractParser({
+                abi: implementationAbi,
+                log: this.log,
+                initConfig: this.initConfig,
+                nod3: this.nod3,
+                txBlockNumber: tx.BlockNumber
+              })
+
+              event = implementationParser.parseTxLogs([log]).shift()
+            } else {
+              this.log.warn(`Event without signature detected: ${JSON.stringify(event)}`)
+            }
+          }
+
           events[index] = formatEvent(event, tx)
           const { _addresses } = event
           for (let address of _addresses) {
