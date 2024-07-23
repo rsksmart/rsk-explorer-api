@@ -23,6 +23,8 @@ class Contract extends BcThing {
     this.parser = undefined
     this.isToken = false
     this.isNative = isNativeContract(address)
+    this.isProxy = false
+    this.implementationAddress = undefined
     this.block = block
     this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
@@ -117,6 +119,21 @@ class Contract extends BcThing {
     try {
       let { address } = this
       const data = await this.verificationResultsRepository.findOne({ address, match: true })
+      if (data && data.abi) return data.abi
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  setImplementationAddress (address) {
+    this.isProxy = true
+    this.implementationAddress = address
+  }
+
+  async getImplementationAbiFromVerification () {
+    try {
+      let { implementationAddress } = this
+      const data = await this.verificationResultsRepository.findOne({ address: implementationAddress, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)
