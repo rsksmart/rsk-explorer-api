@@ -5,15 +5,20 @@ import Logger from '../lib/Logger.js'
 import { REPOSITORIES } from '../repositories/index.js'
 import { getInitConfig } from '../lib/Setup.js'
 import BlocksBase from '../lib/BlocksBase.js'
+import { checkBlocksCongruence } from './blocksCongruenceChecker.js'
 
 const { Blocks: blocksRepository } = REPOSITORIES
 
 const log = Logger('[static-syncer]')
 
-export async function staticSyncer (syncStatus, confirmationsThreshold) {
+export async function staticSyncer (syncStatus, confirmationsThreshold, blocksCongruenceCheckThreshold) {
   syncStatus.staticSyncerRunning = true
 
   try {
+    // congruence validation
+    await checkBlocksCongruence(blocksCongruenceCheckThreshold, { log })
+
+    // missing blocks
     const initConfig = await getInitConfig()
     const blocksBase = new BlocksBase({ initConfig, log })
     const blocksInDb = await blocksRepository.find({}, { number: true }, { number: 'desc' })
