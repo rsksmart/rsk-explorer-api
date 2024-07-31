@@ -10,7 +10,7 @@ export function getTokenRepository (prismaClient) {
 
       return token ? tokenEntityToRaw(token) : null
     },
-    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress } = {}) {
+    async find (query = {}, project = {}, sort = {}, limit = 0, { isForGetTokensByAddress, isForGetTokenAccounts } = {}) {
       if (isForGetTokensByAddress) {
         const address = query.address
 
@@ -29,6 +29,23 @@ export function getTokenRepository (prismaClient) {
           return tokensByAddress.map(token => {
             token.contract_relation = contracts.find(contract => contract.address === token.contract)
             return tokensByAddressEntityToRaw(token, token.contract_relation)
+          })
+        }
+      } else if (isForGetTokenAccounts) {
+        const contract = query.contract || query.address
+
+        if (isAddress(contract)) {
+          let tokensByAddress = await prismaClient.$queryRaw`SELECT *
+          FROM token_address t1
+          WHERE t1.contract = ${contract}
+          and t1.block_number = (
+            SELECT MAX(t2.block_number)
+            FROM token_address t2
+            WHERE t1.address = t2.address and t1.contract = t2.contract
+          );`
+
+          return tokensByAddress.map(token => {
+            return tokenEntityToRaw({ blockNumber: token.block_number, blockHash: token.block_hash, ...token})
           })
         }
       } else {
