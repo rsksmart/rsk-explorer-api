@@ -1,7 +1,7 @@
 {
   "name": "rsk-explorer-api",
-  "version": "2.1.5",
-  "description": "",
+  "version": "2.1.6",
+  "description": "RSK Explorer API",
   "main": "index.js",
   "scripts": {
     "dev": "npx nodemon src/api | ./node_modules/.bin/bunyan -o short",
