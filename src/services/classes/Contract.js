@@ -38,20 +38,51 @@ class Contract extends BcThing {
       if (!this.isNative) {
         // new contracts
         if (!this.data.contractInterfaces) {
+          // fetch contract interfaces and methods
           if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
-          let info = await this.parser.getContractInfo(deployedCode, contract)
-          let { interfaces, methods } = info
 
-          if (!interfaces.length) { // if no interfaces... double check
-            const proxyCheckResult = await this.parser.getEIP1967Info(this.address)
-            // if proxy detected, the implementation contract interfaces are used
-            if (proxyCheckResult && proxyCheckResult.interfaces.length) {
-              interfaces = proxyCheckResult.interfaces
+          let { interfaces, methods } = await this.parser.getContractInfo(deployedCode, contract)
+
+          if (!interfaces.length) { // possible proxy contract
+            let { isUpgradeable, impContractAddress } = await this.parser.isERC1967(this.address)
+
+            /***/
+            // Workaround until rsk-contract-parser address validation is fixed
+            const nullValue = '0x0000000000000000000000000000000000000000'
+            if (impContractAddress === nullValue) isUpgradeable = false
+            /***/
+
+            // For proxy contracts, update contract parser and contract instance
+            if (isUpgradeable) {
+              this.isProxy = true
+              this.implementationAddress = impContractAddress
+
+              const proxyAddress = this.address
+              const implementationABI = await this.getImplementationAbiFromVerification(impContractAddress)
+
+              if (implementationABI) {
+                // Verified implementations: update parser ABI and contract instance
+                this.parser.setAbi(implementationABI)
+                this.contract = this.parser.makeContract(proxyAddress, implementationABI)
+              } else {
+                // Unverified implementations: Use new parser with default abi. Update contract instance
+                this.parser = this.createContractParser({ useDefaultAbi: true, txBlockNumber: this.block.number })
+                this.contract = this.parser.makeContract(proxyAddress)
+              }
+
+              // Recheck EIP1967 info and set any implementation contract interfaces/methods to proxy contract
+              const proxyCheckResult = await this.parser.getEIP1967Info(proxyAddress)
+
+              if (proxyCheckResult && proxyCheckResult.interfaces.length) {
+                interfaces = proxyCheckResult.interfaces
+              }
+
+              if (proxyCheckResult && proxyCheckResult.methods.length) {
+                methods = proxyCheckResult.methods
+              }
             }
 
-            if (proxyCheckResult && proxyCheckResult.methods.length) {
-              methods = proxyCheckResult.methods
-            }
+            // Non proxy contracts: do nothing
           }
 
           if (interfaces.length) this.setData({ contractInterfaces: interfaces })
@@ -78,15 +109,21 @@ class Contract extends BcThing {
 
   async getParser (txBlockNumber) {
     try {
-      let { nod3, initConfig, log } = this
       if (!this.parser) {
         let abi = await this.getAbi()
-        this.parser = new ContractParser({ abi, nod3, initConfig, log, txBlockNumber })
+        this.parser = this.createContractParser({ abi, txBlockNumber })
       }
       return this.parser
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  createContractParser ({ useDefaultAbi, abi, txBlockNumber }) {
+    const { nod3, initConfig, log } = this
+    abi = useDefaultAbi ? undefined : abi
+
+    return new ContractParser({ abi, nod3, initConfig, log, txBlockNumber })
   }
 
   async setContract (txBlockNumber) {
@@ -125,15 +162,10 @@ class Contract extends BcThing {
     }
   }
 
-  setImplementationAddress (address) {
-    this.isProxy = true
-    this.implementationAddress = address
-  }
-
-  async getImplementationAbiFromVerification () {
+  async getImplementationAbiFromVerification (address) {
     try {
-      let { implementationAddress } = this
-      const data = await this.verificationResultsRepository.findOne({ address: implementationAddress, match: true })
+      address = address || this.implementationAddress
+      const data = await this.verificationResultsRepository.findOne({ address, match: true })
       if (data && data.abi) return data.abi
     } catch (err) {
       return Promise.reject(err)
@@ -162,7 +194,7 @@ class Contract extends BcThing {
     return parser.call(method, contract, params)
   }
 
-  async fetchTokenAddressesBalances () {
+  async fetchTokenAddressesBalances (blockNumber) {
     if (!this.fetched) await this.fetch()
     if (!this.isToken) return []
     const { addresses, address, contract, nod3 } = this
@@ -172,19 +204,25 @@ class Contract extends BcThing {
     const data = []
 
     // generate all batch requests
-    for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
-      const batchRequest = chunk.map(tokenAddress => ([
-        'eth.call',
-        { to: address, data: contract.encodeCall('balanceOf', [tokenAddress]) }
-        // uncomment this to fetch balances for the particular block instead of latest
-        // block.number
-      ]))
+    try {
+      for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
+        const batchRequest = chunk.map(tokenAddress => ([
+          'eth.call',
+          { to: address, data: contract.encodeCall('balanceOf', [tokenAddress]) },
+          // When no blockNumber is specified, latest balances will be fetched by default
+          blockNumber
+        ]))
 
-      const result = await nod3.batchRequest(batchRequest)
-      tokenAddressesBalances.push(result)
+        const result = await nod3.batchRequest(batchRequest)
+        tokenAddressesBalances.push(result)
+      }
+
+      tokenAddressesBalances = tokenAddressesBalances.flat()
+    } catch (err) {
+      this.log.error(`Error fetching token addresses balances for contract ${this.address}, block: ${this.block.number}`)
+      this.log.error(err)
+      throw err
     }
-
-    tokenAddressesBalances = tokenAddressesBalances.flat()
 
     // Set respective balances
     for (let i = 0; i < tokenAddresses.length; i++) {

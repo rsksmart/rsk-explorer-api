@@ -24,19 +24,19 @@ export class TokenAddress extends BcThing {
     }
   }
 
-  async fetchTokenAddressBalance () {
-    const { isZeroAddress, Contract, address } = this
-    if (isZeroAddress) return null
+  // async fetchTokenAddressBalance () {
+  //   const { isZeroAddress, Contract, address } = this
+  //   if (isZeroAddress) return null
 
-    try {
-      const balance = await Contract.call('balanceOf', [address])
-      this.setTokenAddressBalance(balance)
-      return this.getData(true)
-    } catch (err) {
-      this.log.error(`Error fetching token balance for tokenAddress ${address}`, err)
-      return Promise.reject(err)
-    }
-  }
+  //   try {
+  //     const balance = await Contract.call('balanceOf', [address])
+  //     this.setTokenAddressBalance(balance)
+  //     return this.getData(true)
+  //   } catch (err) {
+  //     this.log.error(`Error fetching token balance for tokenAddress ${address}`, err)
+  //     return Promise.reject(err)
+  //   }
+  // }
 
   setTokenAddressBalance (balance) {
     this.setData({ balance })
