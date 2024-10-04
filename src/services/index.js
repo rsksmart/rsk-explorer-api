@@ -10,8 +10,9 @@ import { saveInitialTip } from '../lib/servicesUtils'
 import { createMetricsServer } from '../lib/prismaMetrics'
 import config from '../lib/config'
 
-const confirmationsThreshold = 120
-const staticSyncerCheckInterval = 21600000 // 6h
+const confirmationsThreshold = config.blocks.bcTipSize
+const blocksCongruenceCheckThreshold = config.blocks.bcTipSize * 3
+const staticSyncerCheckInterval = 7200000 // 2h
 
 const serviceName = 'blocks-service'
 const log = Logger(`[${serviceName}]`)
@@ -36,12 +37,12 @@ async function main () {
   liveSyncer(syncStatus, confirmationsThreshold)
   await saveInitialTip(syncStatus, confirmationsThreshold)
 
-  staticSyncer(syncStatus, confirmationsThreshold)
+  staticSyncer(syncStatus, confirmationsThreshold, blocksCongruenceCheckThreshold)
 
   setInterval(async () => {
     if (!syncStatus.staticSyncerRunning) {
       syncStatus.latestBlock = await nod3.eth.getBlock('latest')
-      staticSyncer(syncStatus, confirmationsThreshold)
+      staticSyncer(syncStatus, confirmationsThreshold, blocksCongruenceCheckThreshold)
       log.info('Starting static syncer...')
     } else {
       log.info('Checked if static syncer is still running; no action taken.')

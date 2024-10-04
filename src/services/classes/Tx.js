@@ -31,7 +31,7 @@ export class Tx extends BcThing {
   }
   async fetch (force) {
     try {
-      let { fetched, hash } = this
+      let { fetched, hash, blockData } = this
       if (fetched && !force) return this.getData()
       let tx = await this.getTx()
       if (!tx) throw new Error('Error getting tx')
@@ -55,14 +55,14 @@ export class Tx extends BcThing {
       tx.receipt.logs = events
       this.setData({ events })
 
-      // get token addresses
-      let tokenAddresses = []
+      // get token addresses balances
+      let tokenAddressesBalances = []
       for (let contractAddress in contracts) {
         let contract = contracts[contractAddress]
-        let contractAddresses = await contract.fetchTokenAddressesBalances()
-        tokenAddresses = tokenAddresses.concat(contractAddresses)
+        let balances = await contract.fetchTokenAddressesBalances(blockData.number)
+        tokenAddressesBalances = tokenAddressesBalances.concat(balances)
       }
-      this.setData({ tokenAddresses })
+      this.setData({ tokenAddresses: tokenAddressesBalances })
 
       if (this.trace) {
         let traceData = await this.trace.fetch()
