@@ -29,7 +29,7 @@ model address {
   transaction_transaction_toToaddress                            transaction[]            @relation("transaction_toToaddress")
 
   @@index([id], map: "index_address_id")
-  @@index([name])
+  @@index([name], map: "index_address_name")
 }
 
 model balance {
