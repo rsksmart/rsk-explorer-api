@@ -1,6 +1,10 @@
--- RSK Explorer Database Schema V1.1.1
+-- RSK Explorer Database Schema V1.1.2
 
 /*
+
+V1.1.2 Notes:
+- add index for address(name)
+- add index for transaction(timestamp)
 
 V1.1.1 Notes:
 
