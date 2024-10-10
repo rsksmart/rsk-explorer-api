@@ -153,6 +153,8 @@ export class Tx extends BcThing {
     tx.txType = type
     tx.txId = getTxOrEventId(tx)
     tx.datetime = convertUnixTimestampToISO(tx.timestamp)
+    tx.gasUsed = tx.receipt.gasUsed
+
     return tx
   }
 

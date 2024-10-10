@@ -257,6 +257,7 @@ model transaction {
   timestamp                             BigInt
   receipt                               String                   @db.VarChar
   datetime                              DateTime?                @db.Timestamp(6)
+  gasUsed                               Int?                     @map("gas_used")
   event                                 event[]
   internal_transaction                  internal_transaction[]
   block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
