@@ -58,6 +58,10 @@ const cronsConfig = {
     daily3AM: {
       value: '0 3 * * *',
       description: 'every day at 3:00 AM'
+    },
+    daily4AM: {
+      value: '0 4 * * *',
+      description: 'every day at 4:00 AM'
     }
   }
 }
@@ -114,9 +118,63 @@ function dailyGasFeesUpdater () {
   }
 }
 
+// New Addresses updater
+function newAddressesUpdater () {
+  const name = 'new-addresses-updater'
+  const log = Logger(`[${name}]`)
+  const schedule = cronsConfig.schedules.daily4AM
+  const action = async () => {
+    try {
+      log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
+      log.info(`Updating new addresses...`)
+
+      const started = Date.now()
+      await prismaClient.$executeRaw`
+        WITH new_addresses AS (
+          -- Select 'from' addresses for the last day, ignoring nulls
+          SELECT datetime::date AS transaction_date, "from" AS address
+          FROM transaction
+          WHERE datetime::date = CURRENT_DATE - INTERVAL '1 day'
+            AND "from" IS NOT NULL
+          UNION ALL
+          -- Select 'to' addresses for the last day, ignoring nulls
+          SELECT datetime::date AS transaction_date, "to" AS address
+          FROM transaction
+          WHERE datetime::date = CURRENT_DATE - INTERVAL '1 day'
+            AND "to" IS NOT NULL
+        )
+        INSERT INTO bo_new_addresses (address, first_transaction_date)
+        SELECT
+            address,
+            MIN(transaction_date) AS first_transaction_date
+        FROM
+            new_addresses
+        GROUP BY
+            address
+        ON CONFLICT (address)
+        DO NOTHING;
+      `
+
+      log.info(`New addresses updated (${Date.now() - started} ms)`)
+      log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
+    } catch (error) {
+      log.error(`Error updating new addresses: ${error.message}`)
+      log.error(error.stack)
+    }
+  }
+  const cronJob = createCronJob({ schedule, action })
+
+  return {
+    schedule,
+    name,
+    cronJob,
+    start: () => cronJob.start()
+  }
+}
+
 const cronJobs = {
-  dailyGasFeesUpdater: dailyGasFeesUpdater()
-  // ...other cron jobs
+  dailyGasFeesUpdater: dailyGasFeesUpdater(),
+  newAddressesUpdater: newAddressesUpdater()
 }
 
 export function startCronJobs ({ log = Logger('[CronJobs]') } = {}) {
