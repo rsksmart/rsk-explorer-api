@@ -235,7 +235,6 @@ model token_address {
   @@index([blockNumber])
 }
 
-/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model transaction {
   hash                                  String                   @id @db.VarChar(66)
   txId                                  String                   @map("tx_id") @db.VarChar
