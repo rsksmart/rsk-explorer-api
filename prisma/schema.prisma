@@ -255,9 +255,9 @@ model transaction {
   r                                     String?                  @db.VarChar
   s                                     String?                  @db.VarChar
   timestamp                             BigInt
-  receipt                               String                   @db.VarChar
   datetime                              DateTime?                @db.Timestamp(6)
   gasUsed                               Int?                     @map("gas_used")
+  receipt                               String                   @db.VarChar
   event                                 event[]
   internal_transaction                  internal_transaction[]
   block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
@@ -527,4 +527,9 @@ model address_in_itx {
 
   @@id([address, internalTxId, role])
   @@index([internalTxId])
+}
+
+model bo_gas_fee_daily_aggregated {
+  date1  DateTime @id @map("date_1") @db.Date
+  gasFee Decimal? @map("gas_fee") @db.Decimal
 }

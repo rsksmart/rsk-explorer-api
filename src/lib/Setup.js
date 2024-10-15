@@ -4,7 +4,6 @@ import { configRepository } from '../repositories'
 import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
 import { nod3 } from './nod3Connect'
 import { nativeContracts, validateNativeContracts } from './NativeContracts'
-import { CronJob } from 'cron'
 
 export async function createInitConfig ({ log = console } = {}) {
   try {
@@ -54,16 +53,6 @@ export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) 
       }
 
       log.info(`Initial configuration check passed. Current network: ${storedInitConfig.net.name}`)
-      log.info('Executing crons...')
-
-      CronJob.from({
-        cronTime: '* * * * * *',
-        onTick: function () {
-          log.info('Cron job doing cronjob things')
-        },
-        start: true,
-        timeZone: 'America/Buenos_Aires'
-      }).start()
 
       return { initConfig: storedInitConfig }
     } catch (err) {
