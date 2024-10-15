@@ -255,7 +255,7 @@ model transaction {
   r                                     String?                  @db.VarChar
   s                                     String?                  @db.VarChar
   timestamp                             BigInt
-  datetime                              DateTime?                @db.Timestamp(6)
+  datetime                              DateTime?                @db.Timestamptz(6)
   gasUsed                               Int?                     @map("gas_used")
   receipt                               String                   @db.VarChar
   event                                 event[]

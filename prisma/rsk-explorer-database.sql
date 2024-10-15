@@ -237,7 +237,7 @@ v VARCHAR,
 r VARCHAR,
 s VARCHAR,
 timestamp INT8 NOT NULL,
-datetime TIMESTAMP,
+datetime TIMESTAMP WITH TIME ZONE,
 gas_used INT,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
