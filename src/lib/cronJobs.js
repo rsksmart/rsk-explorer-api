@@ -35,13 +35,13 @@ Check cron docs for more info: https://www.npmjs.com/package/cron
 const cronsConfig = {
   timeZone: 'UTC-0',
   schedules: {
-    everyFiveSeconds: {
-      value: '*/5 * * * * *',
-      description: 'every five seconds'
-    },
     everySecond: {
       value: '* * * * * *',
       description: 'every second'
+    },
+    everyFiveSeconds: {
+      value: '*/5 * * * * *',
+      description: 'every five seconds'
     },
     everyMinute: {
       value: '* * * * *',
@@ -55,17 +55,21 @@ const cronsConfig = {
       value: '0 0 * * *',
       description: 'every day at midnight'
     },
-    daily3AM: {
+    daily3_00AM: {
       value: '0 3 * * *',
       description: 'every day at 3:00 AM'
     },
-    daily4AM: {
-      value: '0 4 * * *',
-      description: 'every day at 4:00 AM'
+    daily3_05AM: {
+      value: '5 3 * * *',
+      description: 'every day at 3:05 AM'
     },
-    daily5AM: {
-      value: '0 5 * * *',
-      description: 'every day at 5:00 AM'
+    daily3_10AM: {
+      value: '10 3 * * *',
+      description: 'every day at 3:10 AM'
+    },
+    daily3_15AM: {
+      value: '15 3 * * *',
+      description: 'every day at 3:15 AM'
     }
   }
 }
@@ -85,7 +89,7 @@ function createCronJob ({ schedule, action }) {
 function dailyGasFeesUpdater () {
   const name = 'daily-gas-fees-updater'
   const log = Logger(`[${name}]`)
-  const schedule = cronsConfig.schedules.daily3AM
+  const schedule = cronsConfig.schedules.daily3_00AM
   const action = async () => {
     try {
       log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
@@ -126,7 +130,7 @@ function dailyGasFeesUpdater () {
 function newAddressesUpdater () {
   const name = 'new-addresses-updater'
   const log = Logger(`[${name}]`)
-  const schedule = cronsConfig.schedules.daily4AM
+  const schedule = cronsConfig.schedules.daily3_05AM
   const action = async () => {
     try {
       log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
@@ -180,7 +184,7 @@ function newAddressesUpdater () {
 function dailyActiveAddressesUpdater () {
   const name = 'daily-active-addresses'
   const log = Logger(`[${name}]`)
-  const schedule = cronsConfig.schedules.daily5AM
+  const schedule = cronsConfig.schedules.daily3_10AM
   const action = async () => {
     try {
       log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
@@ -220,10 +224,52 @@ function dailyActiveAddressesUpdater () {
   }
 }
 
+// Daily number of transactions updater
+function dailyNumberOfTransactionsUpdater () {
+  const name = 'daily-number-of-transactions'
+  const log = Logger(`[${name}]`)
+  const schedule = cronsConfig.schedules.daily3_15AM
+  const action = async () => {
+    try {
+      log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
+      log.info(`Updating daily number of transactions...`)
+
+      const started = Date.now()
+      await prismaClient.$executeRaw`
+        INSERT INTO bo_number_transactions_daily_aggregated (date_1, number_of_transactions)
+        SELECT
+            datetime::date AS date_1,
+            count(distinct(t."hash")) AS number_of_transactions
+        FROM transaction t
+        WHERE t.tx_type != 'remasc'
+        AND datetime >= NOW()::date - INTERVAL '1 day'
+        GROUP BY datetime::date
+        ON CONFLICT (date_1)
+        DO UPDATE SET number_of_transactions = EXCLUDED.number_of_transactions;
+      `
+
+      log.info(`Daily number of transactions updated (${Date.now() - started} ms)`)
+      log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
+    } catch (error) {
+      log.error(`Error updating daily number of transactions: ${error.message}`)
+      log.error(error.stack)
+    }
+  }
+  const cronJob = createCronJob({ schedule, action })
+
+  return {
+    schedule,
+    name,
+    cronJob,
+    start: () => cronJob.start()
+  }
+}
+
 const cronJobs = {
   dailyGasFeesUpdater: dailyGasFeesUpdater(),
   newAddressesUpdater: newAddressesUpdater(),
-  dailyActiveAddressesUpdater: dailyActiveAddressesUpdater()
+  dailyActiveAddressesUpdater: dailyActiveAddressesUpdater(),
+  dailyNumberOfTransactionsUpdater: dailyNumberOfTransactionsUpdater()
 }
 
 export function startCronJobs ({ log = Logger('[CronJobs]') } = {}) {

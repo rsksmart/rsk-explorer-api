@@ -9,6 +9,7 @@ V1.1.3 Notes:
 - add daily gas fees table
 - add new addresses table
 - add daily active addresses table
+- add daily number of transactions table
 
 V1.1.2 Notes:
 - add index for address(name)
@@ -545,4 +546,10 @@ CREATE TABLE bo_new_addresses (
 CREATE TABLE bo_active_addresses_daily_aggregated (
     date_1 DATE PRIMARY KEY,
     active_addresses INT
+);
+
+-- Daily number of transactions
+CREATE TABLE bo_number_transactions_daily_aggregated (
+    date_1 DATE PRIMARY KEY,
+    number_of_transactions INT
 );

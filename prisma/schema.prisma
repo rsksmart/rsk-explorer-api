@@ -542,3 +542,8 @@ model bo_active_addresses_daily_aggregated {
   date_1           DateTime @id @db.Date
   active_addresses Int?
 }
+
+model bo_number_transactions_daily_aggregated {
+  date_1                 DateTime @id @db.Date
+  number_of_transactions Int?
+}
