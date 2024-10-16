@@ -62,6 +62,10 @@ const cronsConfig = {
     daily4AM: {
       value: '0 4 * * *',
       description: 'every day at 4:00 AM'
+    },
+    daily5AM: {
+      value: '0 5 * * *',
+      description: 'every day at 5:00 AM'
     }
   }
 }
@@ -172,9 +176,54 @@ function newAddressesUpdater () {
   }
 }
 
+// Daily active addresses updater
+function dailyActiveAddressesUpdater () {
+  const name = 'daily-active-addresses'
+  const log = Logger(`[${name}]`)
+  const schedule = cronsConfig.schedules.daily5AM
+  const action = async () => {
+    try {
+      log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
+      log.info(`Updating daily active addresses...`)
+
+      const started = Date.now()
+      await prismaClient.$executeRaw`
+        INSERT INTO bo_active_addresses_daily_aggregated (date_1, active_addresses)
+        SELECT
+            datetime::date AS date_1,
+            COUNT(DISTINCT t."from") AS active_addresses
+        FROM
+            transaction t
+        WHERE
+            t.tx_type != 'remasc'
+            AND datetime >= NOW()::date - INTERVAL '1 day'
+        GROUP BY
+            datetime::date
+        ON CONFLICT (date_1)
+        DO UPDATE SET active_addresses = EXCLUDED.active_addresses;
+      `
+
+      log.info(`Daily active addresses updated (${Date.now() - started} ms)`)
+      log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
+    } catch (error) {
+      log.error(`Error updating daily active addresses: ${error.message}`)
+      log.error(error.stack)
+    }
+  }
+  const cronJob = createCronJob({ schedule, action })
+
+  return {
+    schedule,
+    name,
+    cronJob,
+    start: () => cronJob.start()
+  }
+}
+
 const cronJobs = {
   dailyGasFeesUpdater: dailyGasFeesUpdater(),
-  newAddressesUpdater: newAddressesUpdater()
+  newAddressesUpdater: newAddressesUpdater(),
+  dailyActiveAddressesUpdater: dailyActiveAddressesUpdater()
 }
 
 export function startCronJobs ({ log = Logger('[CronJobs]') } = {}) {
