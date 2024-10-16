@@ -532,3 +532,8 @@ model bo_gas_fee_daily_aggregated {
   date1  DateTime @id @map("date_1") @db.Date
   gasFee Decimal? @map("gas_fee") @db.Decimal
 }
+
+model bo_new_addresses {
+  address                String    @id
+  first_transaction_date DateTime? @db.Date
+}
