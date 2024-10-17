@@ -17,7 +17,9 @@ function rawTxToEntity ({
   timestamp,
   receipt,
   txType,
-  txId
+  txId,
+  datetime,
+  gasUsed
 }) {
   return {
     hash,
@@ -38,7 +40,9 @@ function rawTxToEntity ({
     timestamp,
     receipt: JSON.stringify(receipt),
     txType,
-    txId
+    txId,
+    datetime,
+    gasUsed
   }
 }
 
@@ -61,7 +65,9 @@ function transactionEntityToRaw ({
   timestamp,
   receipt,
   txType,
-  txId
+  txId,
+  datetime,
+  gasUsed
 }) {
   const txToReturn = {
     hash,
@@ -82,7 +88,9 @@ function transactionEntityToRaw ({
     timestamp: Number(timestamp),
     receipt: JSON.parse(receipt || '{}'),
     txType,
-    txId
+    txId,
+    datetime,
+    gasUsed
   }
 
   return txToReturn

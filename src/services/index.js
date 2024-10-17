@@ -9,6 +9,7 @@ import { txPoolService } from './txPool'
 import { saveInitialTip } from '../lib/servicesUtils'
 import { createMetricsServer } from '../lib/prismaMetrics'
 import config from '../lib/config'
+import { startCronJobs } from '../lib/cronJobs'
 
 const confirmationsThreshold = config.blocks.bcTipSize
 const blocksCongruenceCheckThreshold = config.blocks.bcTipSize * 3
@@ -31,6 +32,8 @@ async function main () {
     staticSyncerRunning: false,
     startedSavingInitialTip: false
   }
+
+  startCronJobs({ log })
 
   await checkDbTipBlocks(syncStatus, confirmationsThreshold)
 

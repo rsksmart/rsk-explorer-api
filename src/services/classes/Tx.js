@@ -4,7 +4,7 @@ import { txTypes } from '../../lib/types'
 import { getTxOrEventId } from '../../lib/ids'
 import TxTrace from './TxTrace'
 import { Addresses } from './Addresses'
-import { isBlockObject } from '../../lib/utils'
+import { convertUnixTimestampToISO, isBlockObject } from '../../lib/utils'
 import { getBlock } from './BlockSummary'
 import { getNativeContractName } from '../../lib/NativeContracts'
 
@@ -152,6 +152,9 @@ export class Tx extends BcThing {
     if (this.isAddress(receipt.contractAddress)) type = txTypes.contract
     tx.txType = type
     tx.txId = getTxOrEventId(tx)
+    tx.datetime = convertUnixTimestampToISO(tx.timestamp)
+    tx.gasUsed = tx.receipt.gasUsed
+
     return tx
   }
 
