@@ -99,13 +99,13 @@ function dailyGasFeesUpdater () {
       await prismaClient.$executeRaw`
         INSERT INTO bo_gas_fee_daily_aggregated (date_1, gas_fee)
         SELECT
-            datetime::date AS date_1,
+            date AS date_1,
             SUM(gas_price::bigint * 1.0 * 10^(-18) * gas_used) AS gas_fee
         FROM
             "transaction"
-        WHERE datetime >= NOW()::date - INTERVAL '1 day'
+        WHERE date = (timezone('UTC', now())::date - INTERVAL '1 day')
         GROUP BY
-            datetime::date
+            date
         ON CONFLICT (date_1)
         DO UPDATE SET gas_fee = EXCLUDED.gas_fee;
       `
@@ -140,15 +140,15 @@ function newAddressesUpdater () {
       await prismaClient.$executeRaw`
         WITH new_addresses AS (
           -- Select 'from' addresses for the last day, ignoring nulls
-          SELECT datetime::date AS transaction_date, "from" AS address
+          SELECT date AS transaction_date, "from" AS address
           FROM transaction
-          WHERE datetime::date = CURRENT_DATE - INTERVAL '1 day'
+          WHERE date = (timezone('UTC', now())::date - INTERVAL '1 day')
             AND "from" IS NOT NULL
           UNION ALL
           -- Select 'to' addresses for the last day, ignoring nulls
-          SELECT datetime::date AS transaction_date, "to" AS address
+          SELECT date AS transaction_date, "to" AS address
           FROM transaction
-          WHERE datetime::date = CURRENT_DATE - INTERVAL '1 day'
+          WHERE date = (timezone('UTC', now())::date - INTERVAL '1 day')
             AND "to" IS NOT NULL
         )
         INSERT INTO bo_new_addresses (address, first_transaction_date)
@@ -194,15 +194,15 @@ function dailyActiveAddressesUpdater () {
       await prismaClient.$executeRaw`
         INSERT INTO bo_active_addresses_daily_aggregated (date_1, active_addresses)
         SELECT
-            datetime::date AS date_1,
+            date AS date_1,
             COUNT(DISTINCT t."from") AS active_addresses
         FROM
             transaction t
         WHERE
             t.tx_type != 'remasc'
-            AND datetime >= NOW()::date - INTERVAL '1 day'
+            AND date = (timezone('UTC', now())::date - INTERVAL '1 day')
         GROUP BY
-            datetime::date
+            date
         ON CONFLICT (date_1)
         DO UPDATE SET active_addresses = EXCLUDED.active_addresses;
       `
@@ -238,12 +238,12 @@ function dailyNumberOfTransactionsUpdater () {
       await prismaClient.$executeRaw`
         INSERT INTO bo_number_transactions_daily_aggregated (date_1, number_of_transactions)
         SELECT
-            datetime::date AS date_1,
-            count(distinct(t."hash")) AS number_of_transactions
+            date AS date_1,
+            COUNT(DISTINCT(t."hash")) AS number_of_transactions
         FROM transaction t
         WHERE t.tx_type != 'remasc'
-        AND datetime >= NOW()::date - INTERVAL '1 day'
-        GROUP BY datetime::date
+        AND date = (timezone('UTC', now())::date - INTERVAL '1 day')
+        GROUP BY date
         ON CONFLICT (date_1)
         DO UPDATE SET number_of_transactions = EXCLUDED.number_of_transactions;
       `

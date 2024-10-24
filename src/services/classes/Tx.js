@@ -152,8 +152,12 @@ export class Tx extends BcThing {
     if (this.isAddress(receipt.contractAddress)) type = txTypes.contract
     tx.txType = type
     tx.txId = getTxOrEventId(tx)
-    tx.datetime = convertUnixTimestampToISO(tx.timestamp)
     tx.gasUsed = tx.receipt.gasUsed
+
+    const timestampDate = convertUnixTimestampToISO(tx.timestamp)
+
+    tx.date = timestampDate // date
+    tx.datetime = timestampDate // date and time
 
     return tx
   }

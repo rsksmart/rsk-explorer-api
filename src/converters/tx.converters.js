@@ -19,6 +19,7 @@ function rawTxToEntity ({
   txType,
   txId,
   datetime,
+  date,
   gasUsed
 }) {
   return {
@@ -42,6 +43,7 @@ function rawTxToEntity ({
     txType,
     txId,
     datetime,
+    date,
     gasUsed
   }
 }
@@ -67,6 +69,7 @@ function transactionEntityToRaw ({
   txType,
   txId,
   datetime,
+  date,
   gasUsed
 }) {
   const txToReturn = {
@@ -90,6 +93,7 @@ function transactionEntityToRaw ({
     txType,
     txId,
     datetime,
+    date,
     gasUsed
   }
 
