@@ -3,8 +3,9 @@
 /*
 
 V1.1.3 Notes:
-- add datetime and gas_used fields to transaction table
+- add datetime, date and gas_used fields to transaction table
 - add index for transaction(datetime)
+- add index for transaction(date)
 
 - add daily gas fees table
 - add new addresses table
@@ -241,6 +242,7 @@ r VARCHAR,
 s VARCHAR,
 timestamp INT8 NOT NULL,
 datetime TIMESTAMP WITH TIME ZONE,
+date date,
 gas_used INT,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
@@ -257,6 +259,7 @@ CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
 CREATE INDEX ON transaction(transaction_index);
 CREATE INDEX ON transaction(timestamp);
 CREATE INDEX idx_transaction_datetime ON transaction(datetime);
+CREATE INDEX idx_transaction_date ON transaction(date);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
