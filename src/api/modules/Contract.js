@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js'
 import nod3 from '../../lib/nod3Connect'
 import { verificationResultsRepository } from '../../repositories'
 import { DataCollectorItem } from '../lib/DataCollector'
@@ -59,30 +60,30 @@ function mapToRemixFormat (verification, proxyData) {
   if (!verification.address) throw new Error('Invalid verification address')
   if (!verification.result) throw new Error('Invalid verification result')
 
-  const { address, result } = verification
+  const { address, result, sources } = verification
 
   if (!result.name) throw new Error('Invalid verification result name')
   const { name, usedSettings, abi, usedSources, encodedConstructorArguments } = result
   const { evmVersion, optimizer, compiler, libraries, metadata, outputSelection } = usedSettings
 
   const sourceCodeByContractName = usedSources.find(source => source.name === `${name}.sol`)
-  const defaultUsedSource = usedSources[0] // fallback. This assumes first element is the main source code, TBD if it's always the case
-  const AdditionalSources = usedSources.map(({ name, contents, file }) => ({ SourceCode: contents, Filename: file }))
+  const defaultUsedSource = usedSources[0]
+  const AdditionalSources = sources.map(({ name, contents }) => ({ SourceCode: contents, Filename: name }))
 
   const data = {
     AdditionalSources,
     CompilerSettings: {
-      evmVersion: evmVersion ? evmVersion : undefined,
-      libraries: libraries ? libraries : {},
-      metadata: metadata ? metadata : {},
-      optimizer: optimizer ? optimizer : {},
-      outputSelection: outputSelection ? outputSelection : {}
+      evmVersion: evmVersion || undefined,
+      libraries: libraries || {},
+      metadata: metadata || {},
+      optimizer: optimizer || {},
+      outputSelection: outputSelection || {}
     },
     ConstructorArguments: encodedConstructorArguments,
     OptimizationRuns: 0,
     ImplementationAddress: proxyData.implementationAddress,
     ImplementationAddresses: [proxyData.implementationAddress],
-    IsProxy: proxyData.isProxy,
+    IsProxy: String(proxyData.isProxy),
     SourceCode: sourceCodeByContractName && sourceCodeByContractName.contents ? sourceCodeByContractName.contents : defaultUsedSource.contents,
     ABI: JSON.stringify(abi),
     ContractName: name,
@@ -115,7 +116,14 @@ async function isERC1967Contract (address) {
   // 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc storage address where the implementation address is stored
   const implementationSlot = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc'
   const storedValue = await nod3.eth.getStorageAt(address, implementationSlot)
-  const isProxy = BigInt(storedValue) !== 0n
+  const isProxy = !!BigNumber(storedValue).comparedTo(BigNumber(0))
+  /*
+    BigNumber(x).comparedTo(BigNumber(n)) values:
+    1 -> x is greater than n
+    -1 -> x is less than n
+    0 -> x equals n
+    null -> x or n is NaN
+  */
 
   if (isProxy) {
     const implementationAddress = `0x${storedValue.slice(-40)}` // extract contract address
