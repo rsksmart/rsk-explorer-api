@@ -30,8 +30,9 @@ export class Contract extends DataCollectorItem {
       */
       getsourcecode: async params => {
         try {
-          const { address } = params
-          if (!address) throw new Error('Address is required')
+          let { address } = params
+          if (typeof address !== 'string') throw new Error('Address is required')
+          address = address.toLowerCase()
 
           const result = []
           const verification = await verificationResultsRepository.findOne({ address })
