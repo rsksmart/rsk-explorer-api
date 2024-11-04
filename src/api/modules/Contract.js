@@ -67,8 +67,8 @@ function mapToRemixFormat (verification, proxyData) {
   const { name, usedSettings, abi, usedSources, encodedConstructorArguments } = result
   const { evmVersion, optimizer, compiler, libraries, metadata, outputSelection } = usedSettings
 
-  const sourceCodeByContractName = usedSources.find(source => source.name === `${name}.sol`)
-  const defaultUsedSource = usedSources[0]
+  const sourceCodeByContractName = sources.find(source => source.name === `${name}.sol`)
+  const defaultUsedSource = sources[0]
   const AdditionalSources = sources.map(({ name, contents }) => ({ SourceCode: contents, Filename: name }))
 
   const data = {
