@@ -64,7 +64,7 @@ function mapToRemixFormat (verification, proxyData) {
   const { address, result, sources } = verification
 
   if (!result.name) throw new Error('Invalid verification result name')
-  const { name, usedSettings, abi, usedSources, encodedConstructorArguments } = result
+  const { name, usedSettings, abi, encodedConstructorArguments } = result
   const { evmVersion, optimizer, compiler, libraries, metadata, outputSelection } = usedSettings
 
   const sourceCodeByContractName = sources.find(source => source.name === `${name}.sol`)
