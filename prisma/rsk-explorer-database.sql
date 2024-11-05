@@ -3,8 +3,9 @@
 /*
 
 V1.1.3 Notes:
-- add datetime field to internal_transaction table
-- add index for internal_transaction(datetime)
+
+- add datetime field to internal_transaction and tx_pool tables
+- add index for internal_transaction(datetime) and tx_pool(datetime)
 
 - add datetime, date and gas_used fields to transaction table
 - add index for transaction(datetime)
@@ -140,9 +141,11 @@ block_number INT4 NOT NULL,
 pending INT4 NOT NULL,
 queued INT4 NOT NULL,
 txs VARCHAR NOT NULL, -- stringified
-timestamp INT8 NOT NULL
+timestamp INT8 NOT NULL,
+datetime TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX ON tx_pool(timestamp);
+CREATE INDEX idx_tx_pool_datetime ON tx_pool(datetime);
 
 CREATE TABLE transaction_pending (
 hash VARCHAR(66) PRIMARY KEY,

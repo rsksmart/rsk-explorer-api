@@ -1,5 +1,5 @@
 import BlocksBase from '../../lib/BlocksBase'
-import { isHexString, base64toHex } from '../../lib/utils'
+import { isHexString, base64toHex, convertUnixTimestampToISO } from '../../lib/utils'
 import { REPOSITORIES } from '../../repositories'
 export class TxPool extends BlocksBase {
   constructor (options) {
@@ -48,7 +48,7 @@ export class TxPool extends BlocksBase {
     const status = Object.assign({}, this.status)
     let changed = Object.keys(newStatus).find(k => newStatus[k] !== status[k])
     if (changed) {
-      // this.log.trace(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
+      this.log.trace(`TxPool status changed: pending: ${newStatus.pending} queued: ${newStatus.queued}`)
       this.status = Object.assign({}, newStatus)
       this.updatePool()
     }
@@ -118,7 +118,10 @@ export class TxPool extends BlocksBase {
     try {
       let pool = await this.getPool()
       if (!pool) throw new Error('getPool returns nothing')
-      pool.timestamp = Date.now()
+
+      pool.timestamp = Date.now() // this is in milliseconds
+      pool.datetime = convertUnixTimestampToISO(Math.floor(pool.timestamp / 1000))
+
       this.pool = pool
       return this.savePoolToDb(pool)
     } catch (err) {
@@ -129,7 +132,7 @@ export class TxPool extends BlocksBase {
 
   async savePoolToDb (pool) {
     try {
-      // this.log.trace(`Saving txPool to db`)
+      this.log.trace(`Saving txPool to db`)
       const txpool = await this.repository.insertOne(pool)
       await this.savePendingTxs(pool.txs, txpool.id)
     } catch (err) {
