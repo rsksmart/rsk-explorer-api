@@ -3,6 +3,9 @@
 /*
 
 V1.1.3 Notes:
+- add datetime field to internal_transaction table
+- add index for internal_transaction(datetime)
+
 - add datetime, date and gas_used fields to transaction table
 - add index for transaction(datetime)
 - add index for transaction(date)
@@ -273,6 +276,7 @@ trace_address VARCHAR,
 result VARCHAR,
 index INT4 NOT NULL,
 timestamp INT8 NOT NULL,
+datetime TIMESTAMP WITH TIME ZONE,
 error VARCHAR,
 action VARCHAR, -- stringified
 CONSTRAINT fk_internal_transaction_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
@@ -282,6 +286,7 @@ CONSTRAINT fk_internal_transaction_block_hash FOREIGN KEY (block_hash) REFERENCE
 CREATE INDEX idx_internal_transaction_transaction_hash ON internal_transaction(transaction_hash);
 CREATE INDEX idx_internal_transaction_block_number ON internal_transaction(block_number);
 CREATE INDEX idx_internal_transaction_block_hash ON internal_transaction(block_hash);
+CREATE INDEX idx_internal_transaction_datetime ON internal_transaction(datetime);
 
 CREATE TABLE address_in_itx (
 address VARCHAR NOT NULL,
