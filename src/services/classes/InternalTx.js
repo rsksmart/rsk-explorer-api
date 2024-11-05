@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import { generateId } from '../../lib/ids'
-import { isBlockHash, isAddress } from '../../lib/utils'
+import { isBlockHash, isAddress, convertUnixTimestampToISO } from '../../lib/utils'
 
 const ITX_FIELDS = {
   blockNumber: null,
@@ -17,6 +17,7 @@ const ITX_FIELDS = {
   // dynamic fields:
   // error
   // internalTxId (sortable id, added when loading entity)
+  // datetime (added when loading entity)
 }
 
 export class InternalTx extends BcThing {
@@ -31,6 +32,7 @@ export class InternalTx extends BcThing {
 
   setData (data) {
     data = this.checkData(data)
+    data.datetime = convertUnixTimestampToISO(data.timestamp)
     let id = getInternalTxId(data)
     if (!id) throw new Error(`Invalid internalTxId: ${id}`)
     data.internalTxId = id

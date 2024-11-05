@@ -196,6 +196,7 @@ model internal_transaction {
   timestamp                                      BigInt
   error                                          String?                           @db.VarChar
   action                                         String?                           @db.VarChar
+  datetime                                       DateTime?                         @db.Timestamptz(6)
   address_in_itx                                 address_in_itx[]
   block_trace                                    block_trace[]
   block_internal_transaction_block_hashToblock   block                             @relation("internal_transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_internal_transaction_block_hash")
@@ -207,6 +208,7 @@ model internal_transaction {
   @@index([blockHash], map: "idx_internal_transaction_block_hash")
   @@index([blockNumber], map: "idx_internal_transaction_block_number")
   @@index([transactionHash], map: "idx_internal_transaction_transaction_hash")
+  @@index([datetime], map: "idx_internal_transaction_datetime")
 }
 
 model status {
@@ -320,9 +322,11 @@ model tx_pool {
   queued              Int
   txs                 String                @db.VarChar
   timestamp           BigInt
+  datetime            DateTime?             @db.Timestamptz(6)
   transaction_in_pool transaction_in_pool[]
 
   @@index([timestamp])
+  @@index([datetime], map: "idx_tx_pool_datetime")
 }
 
 model verification_result {
