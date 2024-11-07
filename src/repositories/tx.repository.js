@@ -32,7 +32,7 @@ export function getTxRepository (prismaClient) {
     async getTransactionsCountLast30Days () {
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-  
+
       const aggregationResult = await prismaClient.bo_number_transactions_daily_aggregated.aggregate({
         _sum: { numberOfTransactions: true },
         where: {
