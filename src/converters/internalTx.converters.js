@@ -12,6 +12,7 @@ function rawInternalTransactionToEntity ({
   action,
   _index,
   timestamp,
+  datetime,
   type,
   error
 }) {
@@ -27,6 +28,7 @@ function rawInternalTransactionToEntity ({
     action: JSON.stringify(action),
     index: _index,
     timestamp,
+    datetime,
     type,
     error
   }
@@ -34,6 +36,7 @@ function rawInternalTransactionToEntity ({
 
 function internalTxEntityToRaw ({
   timestamp,
+  datetime,
   blockHash,
   blockNumber,
   transactionHash,
@@ -59,6 +62,7 @@ function internalTxEntityToRaw ({
     result: removeNullFields(JSON.parse(result)),
     _index: index,
     timestamp: Number(timestamp),
+    datetime,
     internalTxId
   }
 

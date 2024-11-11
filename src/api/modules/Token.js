@@ -37,7 +37,7 @@ export class Token extends DataCollectorItem {
        */
       getTokenAccounts: params => {
         const contract = params.contract || params.address
-        if (contract) return this.getPageData({ contract }, params)
+        if (contract) return this.getPageData({ contract }, params, { isForGetTokenAccounts: true })
       },
       /**
        * @swagger

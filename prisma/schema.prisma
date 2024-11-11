@@ -29,7 +29,7 @@ model address {
   transaction_transaction_toToaddress                            transaction[]            @relation("transaction_toToaddress")
 
   @@index([id], map: "index_address_id")
-  @@index([name])
+  @@index([name], map: "index_address_name")
 }
 
 model balance {
@@ -117,6 +117,7 @@ model contract {
   total_supply                      total_supply[]
 
   @@index([codeStoredAtBlock])
+  @@index([symbol], map: "idx_contract_symbol")
 }
 
 model contract_interface {
@@ -194,6 +195,7 @@ model internal_transaction {
   result                                         String?                           @db.VarChar
   index                                          Int
   timestamp                                      BigInt
+  datetime                                       DateTime?                         @db.Timestamptz(6)
   error                                          String?                           @db.VarChar
   action                                         String?                           @db.VarChar
   address_in_itx                                 address_in_itx[]
@@ -207,6 +209,7 @@ model internal_transaction {
   @@index([blockHash], map: "idx_internal_transaction_block_hash")
   @@index([blockNumber], map: "idx_internal_transaction_block_number")
   @@index([transactionHash], map: "idx_internal_transaction_transaction_hash")
+  @@index([datetime], map: "idx_internal_transaction_datetime")
 }
 
 model status {
@@ -254,6 +257,9 @@ model transaction {
   r                                     String?                  @db.VarChar
   s                                     String?                  @db.VarChar
   timestamp                             BigInt
+  datetime                              DateTime?                @db.Timestamptz(6)
+  date                                  DateTime?                @db.Date
+  gasUsed                               Int?                     @map("gas_used")
   receipt                               String                   @db.VarChar
   event                                 event[]
   internal_transaction                  internal_transaction[]
@@ -271,6 +277,8 @@ model transaction {
   @@index([txType], map: "idx_transaction_tx_type")
   @@index([transactionIndex])
   @@index([timestamp])
+  @@index([datetime], map: "idx_transaction_datetime")
+  @@index([date], map: "idx_transaction_date")
 }
 
 model transaction_in_pool {
@@ -315,9 +323,11 @@ model tx_pool {
   queued              Int
   txs                 String                @db.VarChar
   timestamp           BigInt
+  datetime            DateTime?             @db.Timestamptz(6)
   transaction_in_pool transaction_in_pool[]
 
   @@index([timestamp])
+  @@index([datetime], map: "idx_tx_pool_datetime")
 }
 
 model verification_result {
@@ -523,4 +533,24 @@ model address_in_itx {
 
   @@id([address, internalTxId, role])
   @@index([internalTxId])
+}
+
+model bo_gas_fee_daily_aggregated {
+  date1  DateTime @id @map("date_1") @db.Date
+  gasFee Decimal? @map("gas_fee") @db.Decimal
+}
+
+model bo_new_addresses {
+  address              String    @id
+  firstTransactionDate DateTime? @map("first_transaction_date") @db.Date
+}
+
+model bo_active_addresses_daily_aggregated {
+  date1           DateTime @id @map("date_1") @db.Date
+  activeAddresses Int?     @map("active_addresses")
+}
+
+model bo_number_transactions_daily_aggregated {
+  date1                DateTime @id @map("date_1") @db.Date
+  numberOfTransactions Int?     @map("number_of_transactions")
 }
