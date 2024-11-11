@@ -2,6 +2,9 @@
 
 /*
 
+V1.1.3 Notes:
+- add index on table contract(symbol)
+
 V1.1.1 Notes:
 
 - add an index for received field in block table
@@ -285,6 +288,7 @@ CONSTRAINT fk_contract_address FOREIGN KEY (address) REFERENCES address(address)
 CONSTRAINT fk_contract_code_stored_at_block FOREIGN KEY (code_stored_at_block) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX ON contract(code_stored_at_block);
+CREATE INDEX idx_contract_symbol ON contract(symbol);
 
 CREATE TABLE contract_creation_tx (
 contract_address VARCHAR PRIMARY KEY,
