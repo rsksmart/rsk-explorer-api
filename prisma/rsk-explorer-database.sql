@@ -3,6 +3,7 @@
 /*
 
 V1.1.3 Notes:
+- add index on table contract(symbol)
 
 - add datetime field to internal_transaction and tx_pool tables
 - add index for internal_transaction(datetime) and tx_pool(datetime)
@@ -312,6 +313,7 @@ CONSTRAINT fk_contract_address FOREIGN KEY (address) REFERENCES address(address)
 CONSTRAINT fk_contract_code_stored_at_block FOREIGN KEY (code_stored_at_block) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX ON contract(code_stored_at_block);
+CREATE INDEX idx_contract_symbol ON contract(symbol);
 
 CREATE TABLE contract_creation_tx (
 contract_address VARCHAR PRIMARY KEY,

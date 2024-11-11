@@ -117,6 +117,7 @@ model contract {
   total_supply                      total_supply[]
 
   @@index([codeStoredAtBlock])
+  @@index([symbol], map: "idx_contract_symbol")
 }
 
 model contract_interface {
