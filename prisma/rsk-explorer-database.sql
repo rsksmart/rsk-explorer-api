@@ -1,6 +1,25 @@
--- RSK Explorer Database Schema V1.1.1
+-- RSK Explorer Database Schema V1.1.3
 
 /*
+
+V1.1.3 Notes:
+- add index on table contract(symbol)
+
+- add datetime field to internal_transaction and tx_pool tables
+- add index for internal_transaction(datetime) and tx_pool(datetime)
+
+- add datetime, date and gas_used fields to transaction table
+- add index for transaction(datetime)
+- add index for transaction(date)
+
+- add daily gas fees table
+- add new addresses table
+- add daily active addresses table
+- add daily number of transactions table
+
+V1.1.2 Notes:
+- add index for address(name)
+- add index for transaction(timestamp)
 
 V1.1.1 Notes:
 
@@ -123,9 +142,11 @@ block_number INT4 NOT NULL,
 pending INT4 NOT NULL,
 queued INT4 NOT NULL,
 txs VARCHAR NOT NULL, -- stringified
-timestamp INT8 NOT NULL
+timestamp INT8 NOT NULL,
+datetime TIMESTAMP WITH TIME ZONE
 );
 CREATE INDEX ON tx_pool(timestamp);
+CREATE INDEX idx_tx_pool_datetime ON tx_pool(datetime);
 
 CREATE TABLE transaction_pending (
 hash VARCHAR(66) PRIMARY KEY,
@@ -227,6 +248,9 @@ v VARCHAR,
 r VARCHAR,
 s VARCHAR,
 timestamp INT8 NOT NULL,
+datetime TIMESTAMP WITH TIME ZONE,
+date date,
+gas_used INT,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
@@ -241,6 +265,8 @@ CREATE INDEX idx_transaction_to ON transaction("to");
 CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
 CREATE INDEX ON transaction(transaction_index);
 CREATE INDEX ON transaction(timestamp);
+CREATE INDEX idx_transaction_datetime ON transaction(datetime);
+CREATE INDEX idx_transaction_date ON transaction(date);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -254,6 +280,7 @@ trace_address VARCHAR,
 result VARCHAR,
 index INT4 NOT NULL,
 timestamp INT8 NOT NULL,
+datetime TIMESTAMP WITH TIME ZONE,
 error VARCHAR,
 action VARCHAR, -- stringified
 CONSTRAINT fk_internal_transaction_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
@@ -263,6 +290,7 @@ CONSTRAINT fk_internal_transaction_block_hash FOREIGN KEY (block_hash) REFERENCE
 CREATE INDEX idx_internal_transaction_transaction_hash ON internal_transaction(transaction_hash);
 CREATE INDEX idx_internal_transaction_block_number ON internal_transaction(block_number);
 CREATE INDEX idx_internal_transaction_block_hash ON internal_transaction(block_hash);
+CREATE INDEX idx_internal_transaction_datetime ON internal_transaction(datetime);
 
 CREATE TABLE address_in_itx (
 address VARCHAR NOT NULL,
@@ -285,6 +313,7 @@ CONSTRAINT fk_contract_address FOREIGN KEY (address) REFERENCES address(address)
 CONSTRAINT fk_contract_code_stored_at_block FOREIGN KEY (code_stored_at_block) REFERENCES block(number) ON UPDATE CASCADE ON DELETE CASCADE
 );
 CREATE INDEX ON contract(code_stored_at_block);
+CREATE INDEX idx_contract_symbol ON contract(symbol);
 
 CREATE TABLE contract_creation_tx (
 contract_address VARCHAR PRIMARY KEY,
@@ -512,4 +541,28 @@ CREATE TABLE verification_result (
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
   timestamp INT8
+);
+
+-- Daily gas fees
+CREATE TABLE bo_gas_fee_daily_aggregated (
+    date_1 DATE PRIMARY KEY,
+    gas_fee NUMERIC
+);
+
+-- New addresses
+CREATE TABLE bo_new_addresses (
+    address TEXT PRIMARY KEY,
+    first_transaction_date DATE
+);
+
+-- Daily active addresses
+CREATE TABLE bo_active_addresses_daily_aggregated (
+    date_1 DATE PRIMARY KEY,
+    active_addresses INT
+);
+
+-- Daily number of transactions
+CREATE TABLE bo_number_transactions_daily_aggregated (
+    date_1 DATE PRIMARY KEY,
+    number_of_transactions INT
 );

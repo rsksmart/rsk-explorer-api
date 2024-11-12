@@ -274,10 +274,22 @@ export class Address extends DataCollectorItem {
        */
       findAddresses: async params => {
         const query = {
-          name: {
-            contains: params.name,
-            mode: 'insensitive'
-          }
+          OR: [
+            {
+              name: {
+                contains: params.name,
+                mode: 'insensitive'
+              }
+            },
+            {
+              contract_contract_addressToaddress: {
+                symbol: {
+                  contains: params.name,
+                  mode: 'insensitive'
+                }
+              }
+            }
+          ]
         }
         params.field = 'name'
         params.sort = { id: 1 }

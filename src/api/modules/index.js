@@ -11,6 +11,7 @@ import { VerificationResults } from './VerificationResults'
 import { ContractVerification } from './ContractVerification'
 import { InternalTx } from './InternalTx'
 import { Balances } from './Balances'
+import { Contract } from './Contract'
 import { getModulesNames, getEnabledModules } from '../lib/apiTools'
 
 const apiModules = {
@@ -25,7 +26,8 @@ const apiModules = {
   ContractVerification,
   VerificationResults,
   InternalTx,
-  Balances
+  Balances,
+  Contract
 }
 
 export const getEnabledApiModules = modules => {

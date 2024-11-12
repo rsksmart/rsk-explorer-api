@@ -57,6 +57,7 @@ export function Setup ({ log = console } = {}, { config = defaultConfig } = {}) 
       }
 
       log.info(`Initial configuration check passed. Current network: ${storedInitConfig.net.name}`)
+
       return { initConfig: storedInitConfig }
     } catch (err) {
       log.error('Error at setup start')
