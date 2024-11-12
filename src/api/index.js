@@ -18,7 +18,7 @@ const serviceName = 'explorer-api'
 const log = Logger(`[${serviceName}]`, config.api.log)
 
 Setup({ log })
-  .start()
+  .start({skipCheck: true})
   .then(async ({ initConfig }) => {
     if (config.api.enableMetrics) {
       await createMetricsServer({ serviceName, port: config.api.metricsPort, log })

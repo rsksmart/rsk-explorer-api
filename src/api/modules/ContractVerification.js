@@ -52,6 +52,7 @@ export class ContractVerification extends DataCollectorItem {
           const { request } = params
           if (!request) throw new InvalidAddressError()
           const { address } = request
+          console.log('ContractVerifier.verify address is', {address});
           const aData = await this.parent.getModule('Address').run('getCode', { address })
           const { data } = aData
           if (!data) throw new Error400('Unknown address or address is not a contract')

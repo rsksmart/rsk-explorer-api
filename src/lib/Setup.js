@@ -2,13 +2,17 @@ import { config as defaultConfig } from './config'
 import { createHash } from './utils'
 import { configRepository } from '../repositories'
 import { EXPLORER_INITIAL_CONFIG_ID, EXPLORER_SETTINGS_ID } from './defaultConfig'
-import { nod3 } from './nod3Connect'
 import { nativeContracts, validateNativeContracts } from './NativeContracts'
 
 export async function createInitConfig ({ log = console } = {}) {
   try {
     validateNativeContracts(nativeContracts)
-    const net = await nod3.net.version() // Note: Throws an unhandled error if no node is found
+    // const net = await nod3.net.version() // Note: Throws an unhandled error if no node is found
+    const net = {
+      // testnet
+      id: '31',
+      name: 'RSK Testnet'
+    }
 
     return { nativeContracts, net }
   } catch (err) {

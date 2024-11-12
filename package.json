@@ -38,10 +38,6 @@
   "homepage": "https://github.com/rsksmart/rsk-explorer-api",
   "dependencies": {
     "@prisma/client": "^5.11.0",
-    "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "^1.0.4",
-    "@rsksmart/rsk-js-cli": "^1.0.0",
-    "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
@@ -69,7 +65,7 @@
     "eslint-plugin-standard": "^3.1.0",
     "mocha": "^7.2.0",
     "nodemon": "^2.0.4",
-    "prisma": "^5.11.0",
+    "prisma": "^5.22.0",
     "swagger-jsdoc": "^3.2.9",
     "swagger-markdown": "^1.4.2"
   }
