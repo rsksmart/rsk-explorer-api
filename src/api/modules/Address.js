@@ -273,29 +273,42 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       findAddresses: async params => {
-        const query = {
-          OR: [
-            {
-              name: {
-                contains: params.name,
-                mode: 'insensitive'
-              }
-            },
-            {
-              contract_contract_addressToaddress: {
-                symbol: {
-                  contains: params.name,
-                  mode: 'insensitive'
-                }
-              }
-            }
-          ]
+        const str = params.name
+        let query = {}
+
+        const queryParams = {
+          contains: str,
+          mode: 'insensitive'
         }
+
+        const queryByAddressName = {
+          name: { ...queryParams }
+        }
+
+        const queryByContractSymbol = {
+          contract_contract_addressToaddress: {
+            symbol: { ...queryParams }
+          }
+        }
+
+        if (str.length <= 1) {
+          // For 1 character long, search only by symbol
+          query = queryByContractSymbol
+          params.limit = 20
+        } else {
+          query = {
+            OR: [
+              queryByAddressName,
+              queryByContractSymbol
+            ]
+          }
+        }
+
         params.field = 'name'
         params.sort = { id: 1 }
         delete params.field.name
 
-        return this.find(query, params, 0, {}, { deleteCodeAndInput: true })
+        return this.find(query, params, params.limit, {}, { deleteCodeAndInput: true })
       }
     }
   }
