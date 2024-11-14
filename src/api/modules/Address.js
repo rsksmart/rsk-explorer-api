@@ -273,29 +273,39 @@ export class Address extends DataCollectorItem {
        *          $ref: '#/responses/NotFound'
        */
       findAddresses: async params => {
-        const str = params.name
+        const strValue = params.name
         let query = {}
 
-        const queryParams = {
-          contains: str,
-          mode: 'insensitive'
-        }
-
         const queryByAddressName = {
-          name: { ...queryParams }
+          name: {
+            contains: strValue,
+            mode: 'insensitive'
+          }
         }
 
         const queryByContractSymbol = {
           contract_contract_addressToaddress: {
-            symbol: { ...queryParams }
+            symbol: {
+              contains: strValue,
+              mode: 'insensitive'
+            }
           }
         }
 
-        if (str.length <= 1) {
-          // For 1 character long, search only by symbol
-          query = queryByContractSymbol
-          params.limit = 20
+        const queryBySingleCharSymbol = {
+          contract_contract_addressToaddress: {
+            symbol: {
+              equals: strValue,
+              mode: 'insensitive'
+            }
+          }
+        }
+
+        if (strValue.length <= 1) {
+          // search only 1-length symbols
+          query = queryBySingleCharSymbol
         } else {
+          // search by name or symbol
           query = {
             OR: [
               queryByAddressName,
