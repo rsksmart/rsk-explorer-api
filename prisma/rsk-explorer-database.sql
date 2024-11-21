@@ -2,6 +2,9 @@
 
 /*
 
+V1.1.4 Notes:
+- add index on table transaction_in_pool(pool_id)
+
 V1.1.3 Notes:
 - add index on table contract(symbol)
 
@@ -181,6 +184,7 @@ status VARCHAR NOT NULL,
 CONSTRAINT pk_transaction_in_pool_hash_poolId PRIMARY KEY (hash, pool_id),
 CONSTRAINT fk_transaction_in_pool_poolId FOREIGN KEY (pool_id) REFERENCES tx_pool(id)
 );
+CREATE INDEX idx_transaction_in_pool_pool_id ON transaction_in_pool(pool_id);
 
 CREATE TABLE address (
 id SERIAL,

@@ -13,7 +13,7 @@ export class TxPool extends DataCollector {
   start () {
     super.start()
     this.log.info('Tx Pool started')
-    this.updatePool()
+    this.tick()
   }
 
   tick () {
@@ -22,12 +22,18 @@ export class TxPool extends DataCollector {
 
   async updatePool () {
     try {
+      // this.log.debug(`Checking for new tx pools... (checking every ${this.tickDelay} ms)`)
       let pool = await this.getPool()
       if (pool && pool.timestamp !== this.state.timestamp) {
+        // this.log.debug("New tx pool detected")
         this.state = Object.assign({}, pool)
         this.events.emit('newPool', this.getState())
+
+        // this.log.debug("Updating tx pool chart...")
         await this.updatePoolChart()
         this.events.emit('poolChart', this.getPoolChart())
+      } else {
+        // this.log.debug("No new tx pool detected")
       }
     } catch (err) {
       this.log.error(err)
