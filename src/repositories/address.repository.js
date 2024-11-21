@@ -17,6 +17,38 @@ export function getAddressRepository (prismaClient) {
       return address ? addressEntityToRaw(address, endpointOptions) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0, endpointOptions) {
+      const { useV2, action } = endpointOptions
+      if (useV2) {
+        if (action === 'getAddresses') {
+          if (query) {
+            // sanitize id query
+            if (typeof query.id === 'string') query.id = { eq: Number(query.id) }
+            if (query.id && query.id.lt) query.id.lt = Number(query.id.lt)
+            if (query.id && query.id.gt) query.id.gt = Number(query.id.gt)
+          }
+          const projection = {}
+          const latestBalanceRelation = 'address_latest_balance_address_latest_balance_addressToaddress'
+          const include = { [latestBalanceRelation]: true }
+
+          const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
+          const rawAddresses = await prismaClient.address.findMany(prismaQuery)
+          const addresses = rawAddresses.map(address => {
+            if (address[latestBalanceRelation]) {
+              const { balance, blockNumber } = address[latestBalanceRelation]
+              address.balance = balance
+              address.blockNumber = blockNumber
+              delete address[latestBalanceRelation]
+            } else {
+              address.balance = '0'
+              address.blockNumber = 0
+            }
+            return address
+          })
+
+          return addresses
+        }
+      }
+
       if (endpointOptions.isForGetMiners) {
         const miners = await prismaClient.miner_address.findMany(generateFindQuery(query, project, {}, sort, limit))
 
