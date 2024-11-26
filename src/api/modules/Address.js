@@ -163,7 +163,7 @@ export class Address extends DataCollectorItem {
           }
         }
 
-        return this.getPageData(query, params, { deleteCodeAndInput: true })
+        return this.getPageData(query, params, { useV2: true, action: 'getTokens' })
       },
       /**
        * @swagger
