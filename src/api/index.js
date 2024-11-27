@@ -4,13 +4,13 @@ import Api from './Api'
 import Status from './Status'
 import TxPool from './TxPool'
 import config from '../lib/config'
-import UserEventsApi from './UserEventsApi'
 import { HttpServer } from './HttpServer'
 import { createChannels } from './channels'
 import { errors, formatError, formatRes } from './lib/apiTools'
 import { evaluateError } from './lib/evaluateError'
 import Logger from '../lib/Logger'
 import { createMetricsServer } from '../lib/prismaMetrics'
+import ContractVerifierModule from '../services/userEvents/ContractVerifierModule'
 
 const port = config.api.port || '3003'
 const address = config.api.address || 'localhost'
@@ -33,6 +33,7 @@ Setup({ log })
     txPool.start()
 
     let userEventsApi
+    let verifierModule
 
     const delayedResult = (res, payload, socket) => {
       const { params, result, delayed } = res
@@ -69,7 +70,8 @@ Setup({ log })
 
     // start userEvents api
     if (config.api.allowUserEvents) {
-      userEventsApi = UserEventsApi(io, api, { initConfig })
+      const verifierConfig = config.api.contractVerifier
+      verifierModule = ContractVerifierModule(verifierConfig, { log })
     }
 
     io.httpServer.on('listening', () => {

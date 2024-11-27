@@ -1,10 +1,10 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { getVerificationId } from '../../services/userEvents/ContractVerifierModule'
+import { getVerificationId, requestVerification } from '../../services/userEvents/ContractVerifierModule'
 import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
 import { Error404, Error400, InvalidAddressError } from '../lib/Errors'
 import { EVMversions } from '../../lib/types'
 import { REPOSITORIES } from '../../repositories'
-
+import config from '../../lib/config'
 export class ContractVerification extends DataCollectorItem {
   constructor (name) {
     super(name)
@@ -52,7 +52,6 @@ export class ContractVerification extends DataCollectorItem {
           const { request } = params
           if (!request) throw new InvalidAddressError()
           const { address } = request
-          console.log('ContractVerifier.verify address is', {address});
           const aData = await this.parent.getModule('Address').run('getCode', { address })
           const { data } = aData
           if (!data) throw new Error400('Unknown address or address is not a contract')
@@ -67,7 +66,9 @@ export class ContractVerification extends DataCollectorItem {
           request.bytecode = creationCode
           // request.deployedBytecode = code
           request._id = getVerificationId(request)
-          return { data: request }
+
+          const verificationResult = await requestVerification(params, config.api.contractVerifier.url)
+          return verificationResult
         } catch (err) {
           return Promise.reject(err)
         }
