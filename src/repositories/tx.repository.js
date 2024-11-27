@@ -21,6 +21,29 @@ export function getTxRepository (prismaClient) {
     },
     insertOne (data) {
       return prismaClient.transaction.create({ data: rawTxToEntity(data) })
+    },
+    async getTransactionsCount () {
+      const aggregationResult = await prismaClient.bo_number_transactions_daily_aggregated.aggregate({
+        _sum: { numberOfTransactions: true }
+      })
+
+      return aggregationResult._sum.numberOfTransactions || 0
+    },
+    async getTransactionsCountLast30Days () {
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30)
+      thirtyDaysAgo.setUTCHours(0, 0, 0, 0)
+
+      const aggregationResult = await prismaClient.bo_number_transactions_daily_aggregated.aggregate({
+        _sum: { numberOfTransactions: true },
+        where: {
+          date1: {
+            gte: thirtyDaysAgo
+          }
+        }
+      })
+
+      return aggregationResult._sum.numberOfTransactions || 0
     }
   }
 }

@@ -73,7 +73,8 @@ export const MODULES = {
   contractVerifier: 'ContractVerification',
   verificationResults: 'VerificationResults',
   internalTransactions: 'InternalTx',
-  balances: 'Balances'
+  balances: 'Balances',
+  contract: 'Contract'
 }
 
 export const BIG_NUMBER = 'BigNumber'

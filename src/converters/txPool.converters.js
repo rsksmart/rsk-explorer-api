@@ -3,6 +3,7 @@ export function rawTxPoolToEntity ({
   pending,
   queued,
   timestamp,
+  datetime,
   txs
 }) {
   return {
@@ -10,6 +11,7 @@ export function rawTxPoolToEntity ({
     pending,
     queued,
     timestamp,
+    datetime,
     txs: JSON.stringify(txs)
   }
 }
@@ -20,6 +22,7 @@ export function txPoolEntityToRaw ({
   pending,
   queued,
   timestamp,
+  datetime,
   transaction_in_pool: poolTransactions
 }) {
   return {
@@ -27,6 +30,7 @@ export function txPoolEntityToRaw ({
     pending,
     queued,
     timestamp: Number(timestamp),
+    datetime,
     txs: [...poolTransactions]
   }
 }

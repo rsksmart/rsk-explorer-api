@@ -4,6 +4,10 @@ import { remove0x, toBuffer, isAddress } from '@rsksmart/rsk-utils'
 import crypto from 'crypto'
 export * from '@rsksmart/rsk-utils'
 
+export function convertUnixTimestampToISO (unixTimestamp) {
+  return new Date(unixTimestamp * 1000).toISOString()
+}
+
 export const bigNumberDoc = bigNumber => {
   return typeof bigNumber.toHexString !== 'undefined'
     ? bigNumber.toHexString()

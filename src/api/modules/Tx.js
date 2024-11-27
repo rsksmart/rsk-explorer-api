@@ -217,6 +217,21 @@ export class Tx extends DataCollectorItem {
           },
           params
         )
+      },
+      getTransactionsCount: async (params) => {
+        try {
+          const transactionsCount = await this.repository.getTransactionsCount()
+          const transactionsCountLast30Days = await this.repository.getTransactionsCountLast30Days()
+
+          const data = {
+            transactionsCount,
+            transactionsCountLast30Days
+          }
+
+          return { data }
+        } catch (error) {
+          return Promise.reject(error)
+        }
       }
     }
   }
