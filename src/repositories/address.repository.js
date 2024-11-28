@@ -29,18 +29,18 @@ export function getAddressRepository (prismaClient) {
 
           const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
           const rawAddresses = await prismaClient.address.findMany(prismaQuery)
-          
+
           return formatAddressesWithBalances(rawAddresses)
         } else if (action === 'getTokens') {
-            const projection = {}
-            const include = {
-              [relatedTables.latestBalance]: true,
-            }
+          const projection = {}
+          const include = {
+            [relatedTables.latestBalance]: true
+          }
 
-            const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
-            const rawTokens = await prismaClient.address.findMany(prismaQuery)
-          
-            return formatAddressesWithBalances(rawTokens)
+          const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
+          const rawTokens = await prismaClient.address.findMany(prismaQuery)
+
+          return formatAddressesWithBalances(rawTokens)
         }
       }
 
@@ -151,7 +151,6 @@ function generateSaveContractQueries (data, prismaClient, upserting) {
 
   return transactionQueries
 }
-
 
 function formatAddressesWithBalances (rawAddresses) {
   return rawAddresses.map(address => {
