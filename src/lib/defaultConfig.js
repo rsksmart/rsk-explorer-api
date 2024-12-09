@@ -59,11 +59,14 @@ export default {
     enableMetrics: true,
     metricsPort: 4000,
     allowUserEvents: false,
-    exposeDoc: false,
+    exposeDoc: true,
     // All modules are enabled as default
     modules: setAllModules(true),
     delayedFields,
-    allowCountQueries: true
+    allowCountQueries: true,
+    contractVerifier: {
+      url: 'ws://localhost:3008'
+    }
   },
   blocks: {
     enableMetrics: true,
