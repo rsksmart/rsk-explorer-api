@@ -19,14 +19,23 @@ const prismaClient = new PrismaClient({
       url: `${protocol}${user}:${password}@${host}:${port}/${databaseName}?connection_limit=${connectionLimit}`
     }
   },
-  // log: ['query', 'info', 'warn', 'error'],
   errorFormat: 'pretty'
 })
 
-// prismaClient.$on('query', (e) => {
-//   console.log('Query: ' + e.query)
-//   console.log('Params: ' + e.params)
-//   console.log('Duration: ' + e.duration + 'ms')
-// })
+const prismaClientWithLogging = new PrismaClient({
+  datasources: {
+    db: {
+      url: `${protocol}${user}:${password}@${host}:${port}/${databaseName}?connection_limit=${connectionLimit}`
+    }
+  },
+  log: ['query', 'info', 'warn', 'error'],
+  errorFormat: 'pretty'
+})
 
-export { prismaClient }
+prismaClientWithLogging.$on('query', (e) => {
+  console.log('Query: ' + e.query)
+  console.log('Params: ' + e.params)
+  console.log('Duration: ' + e.duration + 'ms')
+})
+
+export { prismaClient, prismaClientWithLogging }

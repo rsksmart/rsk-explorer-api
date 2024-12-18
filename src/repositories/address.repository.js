@@ -9,6 +9,10 @@ import { generateFindQuery } from './utils'
 import { addressRelatedTables } from './includeRelatedTables'
 import { addrTypes } from '../lib/types'
 
+const relatedTables = {
+  latestBalance: 'address_latest_balance_address_latest_balance_addressToaddress'
+}
+
 export function getAddressRepository (prismaClient) {
   return {
     async findOne (query = {}, project = {}, endpointOptions) {
@@ -17,6 +21,29 @@ export function getAddressRepository (prismaClient) {
       return address ? addressEntityToRaw(address, endpointOptions) : null
     },
     async find (query = {}, project = {}, sort = {}, limit = 0, endpointOptions) {
+      const { useV2, action } = endpointOptions
+      if (useV2) {
+        if (action === 'getAddresses') {
+          const projection = {}
+          const include = { [relatedTables.latestBalance]: true }
+
+          const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
+          const rawAddresses = await prismaClient.address.findMany(prismaQuery)
+
+          return formatAddressesWithBalances(rawAddresses)
+        } else if (action === 'getTokens') {
+          const projection = {}
+          const include = {
+            [relatedTables.latestBalance]: true
+          }
+
+          const prismaQuery = generateFindQuery(query, projection, include, sort, limit)
+          const rawTokens = await prismaClient.address.findMany(prismaQuery)
+
+          return formatAddressesWithBalances(rawTokens)
+        }
+      }
+
       if (endpointOptions.isForGetMiners) {
         const miners = await prismaClient.miner_address.findMany(generateFindQuery(query, project, {}, sort, limit))
 
@@ -123,4 +150,19 @@ function generateSaveContractQueries (data, prismaClient, upserting) {
   }
 
   return transactionQueries
+}
+
+function formatAddressesWithBalances (rawAddresses) {
+  return rawAddresses.map(address => {
+    if (address[relatedTables.latestBalance]) {
+      const { balance, blockNumber } = address[relatedTables.latestBalance]
+      address.balance = balance
+      address.blockNumber = blockNumber
+      delete address[relatedTables.latestBalance]
+    } else {
+      address.balance = '0'
+      address.blockNumber = 0
+    }
+    return address
+  })
 }
