@@ -79,7 +79,7 @@ export class Address extends DataCollectorItem {
       getAddresses: params => {
         let type = (params.query) ? params.query.type : null
         let query = (type) ? { type } : {}
-        return this.getPageData(query, params, { deleteCodeAndInput: true })
+        return this.getPageData(query, params, { useV2: true, action: 'getAddresses' })
       },
       /**
        * @swagger
@@ -163,7 +163,7 @@ export class Address extends DataCollectorItem {
           }
         }
 
-        return this.getPageData(query, params, { deleteCodeAndInput: true })
+        return this.getPageData(query, params, { useV2: true, action: 'getTokens' })
       },
       /**
        * @swagger

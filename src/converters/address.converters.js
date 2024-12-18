@@ -58,6 +58,7 @@ function rawContractToEntity ({
 }
 
 function addressEntityToRaw ({
+  id,
   address,
   address_latest_balance_address_latest_balance_addressToaddress: latestBalance,
   isNative,
@@ -112,6 +113,8 @@ function addressEntityToRaw ({
     delete addressToReturn.code
     if (addressToReturn.createdByTx) delete addressToReturn.createdByTx.input
   }
+
+  addressToReturn.id = id
 
   return removeNullFields(addressToReturn, ['name'])
 }
