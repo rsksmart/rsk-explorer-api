@@ -73,6 +73,6 @@
     "nodemon": "^2.0.4",
     "prisma": "^5.11.0",
     "swagger-jsdoc": "^3.2.9",
-    "swagger-markdown": "^1.4.2"
+    "swagger-markdown": "^2.3.2"
   }
 }
