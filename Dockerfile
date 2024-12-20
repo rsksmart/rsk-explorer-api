@@ -1,4 +1,4 @@
-FROM node:12 as node
+FROM node:23 as node
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && \
     apt-get install -y build-essential apt-utils git curl software-properties-common && \
