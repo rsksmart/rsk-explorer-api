@@ -1,5 +1,6 @@
 
-import { newBigNumber, add0x } from '../../lib/utils'
+import { newBigNumber } from '../../lib/utils'
+import { add0x } from '@rsksmart/rsk-utils'
 export const BLOCK_METADATA_FIELD = '_metadata'
 
 export function addMetadataToBlocks (blocks) {

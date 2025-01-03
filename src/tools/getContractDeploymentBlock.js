@@ -1,4 +1,4 @@
-import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
+import { isAddress } from '@rsksmart/rsk-utils'
 import nod3 from '../lib/nod3Connect'
 import { BcSearch } from '@rsksmart/rsk-contract-parser'
 

@@ -1,4 +1,4 @@
-import { isAddress } from './utils'
+import { isAddress } from '@rsksmart/rsk-utils'
 
 export const nativeContracts = {
   bridge: '0x0000000000000000000000000000000001000006',
