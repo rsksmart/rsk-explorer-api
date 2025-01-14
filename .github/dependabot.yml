@@ -13,6 +13,10 @@ updates:
       interval: daily
 
   - package-ecosystem: docker
-    directory: /
+    directories:
+      - /
+      - dockerized/explorer-api
+      - dockerized/mongod
+      - dockerized/rsk-node
     schedule:
       interval: daily
