@@ -41,7 +41,7 @@
     "@rsksmart/nod3": "^0.5.0",
     "@rsksmart/rsk-contract-parser": "^1.0.4",
     "@rsksmart/rsk-js-cli": "^1.0.0",
-    "@rsksmart/rsk-utils": "^1.1.0",
+    "@rsksmart/rsk-utils": "^2.0.5",
     "bignumber.js": "^7.2.1",
     "body-parser": "^1.19.0",
     "bunyan": "^2.0.4",
