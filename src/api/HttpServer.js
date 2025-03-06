@@ -15,6 +15,17 @@ export const HttpServer = ({ api, status, log }, send) => {
   app.use(cors())
   app.options('*', cors())
 
+  // Middleware to measure http endpoints response time
+  app.use((req, res, next) => {
+    const start = process.hrtime()
+    res.on('finish', () => {
+      const duration = process.hrtime(start)
+      const durationInMs = (duration[0] * 1e3 + duration[1] / 1e6).toFixed(3)
+      console.log(`${req.method} ${req.url} (${Math.round(durationInMs)} ms)`)
+    })
+    next()
+  })
+
   // status
   app.get('/status', (req, res) => {
     const data = status.getState().data
