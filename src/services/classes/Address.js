@@ -205,13 +205,22 @@ export class Address extends BcThing {
     return !!blockCode
   }
 
+  /**
+   * Creates a Contract instance.
+   * @param {string} deployedCode The contract deployed code
+   * @returns {Contract} The Contract instance
+   */
   makeContract (deployedCode) {
     const dbData = Object.assign({}, this.getData(true))
     if (this.contract) return this.contract
-    let { address, nod3, initConfig, block } = this
-    this.contract = new Contract(address, deployedCode, { dbData, nod3, initConfig, block })
+    let { address, nod3, initConfig, block, log } = this
+    this.contract = new Contract(address, deployedCode, { dbData, nod3, log, initConfig, block })
   }
 
+  /**
+   * Retrieves the Contract instance. If the Contract instance is not yet created, it will be created.
+   * @returns {Promise<Contract>} The Contract instance
+   */
   async getContract () {
     try {
       await this.fetch()
