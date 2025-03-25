@@ -1,17 +1,17 @@
 import getCirculatingSupply from '../api/lib/getCirculatingSupply'
 import getActiveAccounts from '../api/lib/getActiveAccounts'
-import { Contract, abi as ABI } from '@rsksmart/rsk-contract-parser'
+import { Contract, getBridgeAbiByBlockNumber } from '@rsksmart/rsk-contract-parser'
 import { serialize } from './utils'
 import { nativeContracts } from './NativeContracts'
 import nod3 from './nod3Connect'
 
 const bridge = nativeContracts.bridge
 
-async function bridgeCall (bitcoinNetwork, method, params = []) {
-  const abi = ABI.bridge({ bitcoinNetwork })
-  const contract = Contract(abi, { address: bridge, nod3 })
-  const res = await contract.call(method, params)
-  return res
+async function getLockingCap (blockNumber, network) {
+  const bridgeAbi = getBridgeAbiByBlockNumber(blockNumber, network)
+  const contract = new Contract(bridgeAbi, { address: bridge, nod3 })
+
+  return contract.call('getLockingCap', [])
 }
 
 export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumber }) {
@@ -20,7 +20,7 @@ export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumb
   const circulating = await getCirculatingSupply({ bridge })
   const activeAccounts = await getActiveAccounts()
   const hashrate = await nod3.eth.netHashrate()
-  const lockingCap = await bridgeCall(bitcoinNetwork, 'getLockingCap')
+  const lockingCap = await getLockingCap(blockNumber, bitcoinNetwork)
   const timestamp = Date.now()
 
   return {
