@@ -2,184 +2,170 @@ import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
 import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
-import { chunkArray, hasValue } from '../../lib/utils'
-import { REPOSITORIES } from '../../repositories'
+import { chunkArray } from '../../lib/utils'
 import { isNativeContract } from '../../lib/NativeContracts'
 import config from '../../lib/config'
+import { verificationResultsRepository } from '../../repositories'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, abi, nod3, initConfig, block = {} }) {
+  constructor (address, deployedCode, { dbData, nod3, log, initConfig, block = { number: null } }) {
     super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
     this.deployedCode = deployedCode
     this.data = {
-      address
+      address,
+      type: null,
+      isNative: false,
+      balance: null,
+      blockNumber: null,
+      contractInterfaces: [],
+      contractMethods: [],
+      name: null,
+      symbol: null,
+      decimals: null,
+      totalSupply: null
     }
     this.addresses = {}
     this.fetched = false
-    this.contract = undefined
-    this.abi = abi
-    this.parser = undefined
+    // Default parser instance. Uses default ABI
+    this.parser = new ContractParser({ nod3, initConfig, log, txBlockNumber: block.number })
+    this.contract = this.parser.makeContract(address)
+
     this.isToken = false
     this.isNative = isNativeContract(address)
-    this.isProxy = false
-    this.implementationAddress = undefined
     this.block = block
-    this.verificationResultsRepository = REPOSITORIES.VerificationResults
     if (dbData) this.setData(dbData)
   }
 
   async fetch () {
     try {
-      let { deployedCode, fetched } = this
-      if (fetched) return this.getData()
-      let contract = await this.setContract(this.block.number)
-      if (!this.isNative) {
-        // new contracts
-        if (!this.data.contractInterfaces) {
-          // fetch contract interfaces and methods
-          if (!deployedCode) throw new Error(`Missing deployed code for contract: ${this.address}`)
+      if (this.fetched) return this.getData()
 
-          let { interfaces, methods } = await this.parser.getContractInfo(deployedCode, contract)
+      // Prevent fetching for native contracts
+      if (this.isNative) return this.getData()
 
-          if (!interfaces.length) { // possible proxy contract
-            let { isUpgradeable, impContractAddress } = await this.parser.isERC1967(this.address)
+      // Set contract parser
+      const verifiedAbi = await this.getVerifiedAbiFromDatabase(this.address)
+      this.setContractParser({
+        txBlockNumber: this.block.number,
+        abi: verifiedAbi
+      })
 
-            /***/
-            // Workaround until rsk-contract-parser address validation is fixed
-            const nullValue = '0x0000000000000000000000000000000000000000'
-            if (impContractAddress === nullValue) isUpgradeable = false
-            /***/
+      // Set contract instance
+      this.setInteractiveContractInstance(this.address)
 
-            // For proxy contracts, update contract parser and contract instance
-            if (isUpgradeable) {
-              this.isProxy = true
-              this.implementationAddress = impContractAddress
+      const {
+        isProxy,
+        implementationAddress,
+        methods: contractMethods,
+        interfaces: contractInterfaces
+      } = await this.parser.getContractDetails(this.address)
 
-              const proxyAddress = this.address
-              const implementationABI = await this.getImplementationAbiFromVerification(impContractAddress)
+      // Normal contracts: Set contract interfaces and methods
+      this.setData({ contractInterfaces, contractMethods })
 
-              if (implementationABI) {
-                // Verified implementations: update parser ABI and contract instance
-                this.parser.setAbi(implementationABI)
-                this.contract = this.parser.makeContract(proxyAddress, implementationABI)
-              } else {
-                // Unverified implementations: Use new parser with default abi. Update contract instance
-                this.parser = this.createContractParser({ useDefaultAbi: true, txBlockNumber: this.block.number })
-                this.contract = this.parser.makeContract(proxyAddress)
-              }
+      // Proxy contracts: Set the implementation contract methods and interfaces
+      if (isProxy) {
+        // Set the implementation abi for contract parser.
+        // If no verified implementation abi is found, parser will use the default abi
+        const verifiedImplementationAbi = await this.getVerifiedAbiFromDatabase(implementationAddress)
 
-              // Recheck EIP1967 info and set any implementation contract interfaces/methods to proxy contract
-              const proxyCheckResult = await this.parser.getEIP1967Info(proxyAddress)
+        this.setContractParser({
+          txBlockNumber: this.block.number,
+          abi: verifiedImplementationAbi
+        })
 
-              if (proxyCheckResult && proxyCheckResult.interfaces.length) {
-                interfaces = proxyCheckResult.interfaces
-              }
+        // Refresh interactive contract instance so it uses the proxy contract with the implementation abi
+        const proxyAddress = this.address
+        this.setInteractiveContractInstance(proxyAddress)
 
-              if (proxyCheckResult && proxyCheckResult.methods.length) {
-                methods = proxyCheckResult.methods
-              }
-            }
-
-            // Non proxy contracts: do nothing
-          }
-
-          if (interfaces.length) this.setData({ contractInterfaces: interfaces })
-          if (methods) this.setData({ contractMethods: methods })
-        }
-        let { contractInterfaces, tokenData } = this.data
-        this.isToken = hasValue(contractInterfaces || [], tokensInterfaces)
-        // get token data
-        if (!tokenData) {
-          let tokenData = await this.getTokenData()
-          if (tokenData) this.setData(tokenData)
-        }
+        // Get contract details for proxy contract using the implementation abi
+        const { interfaces, methods } = await this.parser.getContractDetails(proxyAddress, this.block.number)
+        this.setData({ contractInterfaces: interfaces, contractMethods: methods })
       }
-      // update totalSupply
-      let totalSupply = await this.getTokenData(['totalSupply'])
-      if (undefined !== totalSupply) this.setData(totalSupply)
-      let data = this.getData()
+
+      // Set token flag
+      this.isToken = tokensInterfaces.some(i => this.data.contractInterfaces.includes(i))
+
+      if (this.isToken) {
+        // Get token data
+        const tokenData = await this.getDefaultTokenData(this.block.number)
+        this.setData(tokenData)
+      }
+
       this.fetched = true
-      return data
+      return this.getData()
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
-  async getParser (txBlockNumber) {
+  /**
+   * Retrieves the contract parser instance
+   * @returns {ContractParser} The contract parser instance
+   */
+  getParser () {
+    return this.parser
+  }
+
+  /**
+   * Retrieves the blockchain interactive contract instance
+   */
+  getContractInstance () {
+    return this.contract
+  }
+
+  /**
+   * Set the contract parser instance for a given address and block number. If no abi is provided, a default ABI will be used.
+   * @param {Object} options
+   * @param {number} options.txBlockNumber The block number of the transaction
+   * @param {any[]} options.abi The ABI of the contract
+   */
+  setContractParser ({ txBlockNumber, abi } = {}) {
+    this.parser = new ContractParser({
+      abi,
+      nod3: this.nod3,
+      initConfig: this.initConfig,
+      log: this.log,
+      txBlockNumber
+    })
+  }
+
+  /**
+   * Sets the interactive contract instance. Useful for calling contract methods.
+   * @param {string} address The target contract address
+   */
+  setInteractiveContractInstance (address) {
+    const { parser } = this
+    if (!parser) throw new Error('setInteractiveContractInstance(): Set contract parser first')
+
+    this.contract = parser.makeContract(address)
+  }
+
+  /**
+   * Retrieves the verified ABI for a given address
+   * @param {string} address The address of the contract
+   * @returns {Promise<any[] | null>} The verified ABI
+   */
+  async getVerifiedAbiFromDatabase (address) {
     try {
-      if (!this.parser) {
-        let abi = await this.getAbi()
-        this.parser = this.createContractParser({ abi, txBlockNumber })
-      }
-      return this.parser
+      const data = await verificationResultsRepository.findOne({ address, match: true })
+      if (!data || !data.abi) return null
+
+      return data.abi
     } catch (err) {
       return Promise.reject(err)
     }
   }
 
-  createContractParser ({ useDefaultAbi, abi, txBlockNumber }) {
-    const { nod3, initConfig, log } = this
-    abi = useDefaultAbi ? undefined : abi
-
-    return new ContractParser({ abi, nod3, initConfig, log, txBlockNumber })
-  }
-
-  async setContract (txBlockNumber) {
-    try {
-      let { address, contract } = this
-      if (contract) return contract
-      // get abi
-      let abi = await this.getAbi()
-      let parser = await this.getParser(txBlockNumber)
-      this.contract = parser.makeContract(address, abi)
-      return this.contract
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  async getAbi () {
-    try {
-      if (!this.abi) {
-        let abi = await this.getAbiFromVerification()
-        this.abi = abi
-      }
-      return this.abi
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  async getAbiFromVerification () {
-    try {
-      let { address } = this
-      const data = await this.verificationResultsRepository.findOne({ address, match: true })
-      if (data && data.abi) return data.abi
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  async getImplementationAbiFromVerification (address) {
-    try {
-      address = address || this.implementationAddress
-      const data = await this.verificationResultsRepository.findOne({ address, match: true })
-      if (data && data.abi) return data.abi
-    } catch (err) {
-      return Promise.reject(err)
-    }
-  }
-
-  getTokenData (methods) {
-    let { contractMethods } = this.data
-    let { parser, contract } = this
-    if (!contractMethods) return
-    methods = methods || ['name', 'symbol', 'decimals', 'totalSupply']
-    methods = methods.filter(m => contractMethods.includes(`${m}()`))
-    if (!methods.length) return
-    return parser.getTokenData(contract, { methods })
+  /**
+   * Get the token data for a given contract
+   * @param {number?} blockNumber The specific block number to use for the call. Can be a block number or a tag. Defaults to tag 'latest'.
+   * @returns {Promise<Object>} The token data
+   */
+  async getDefaultTokenData (blockNumber = 'latest') {
+    return this.parser.getDefaultTokenData(this.contract, blockNumber)
   }
 
   addTokenAddress (address) {
@@ -191,7 +177,7 @@ class Contract extends BcThing {
   call (method, params = []) {
     let { contract, parser } = this
     if (!contract) throw new Error('Fetch first')
-    return parser.call(method, contract, params)
+    return parser.call(contract, method, params)
   }
 
   async fetchTokenAddressesBalances (blockNumber) {

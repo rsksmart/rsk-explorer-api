@@ -1,8 +1,8 @@
 import { bridge } from '@rsksmart/rsk-precompiled-abis'
 
-// Block 7351440 - Bridge ABI: V7 LOVELL
 export const Bridge = {
   address: '0x0000000000000000000000000000000001000006',
+  blockNumber: 7351440, // LOVELL
   deployedCode: undefined,
   dbData: {
     address: '0x0000000000000000000000000000000001000006',
@@ -55,34 +55,54 @@ export const Bridge = {
   expectedInitialState: {
     address: '0x0000000000000000000000000000000001000006',
     type: 'contract',
-    name: 'bridge',
     isNative: true,
     balance: '0x115e51ba54927496afdfac',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'bridge',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedStateAfterFetch: {
     address: '0x0000000000000000000000000000000001000006',
     type: 'contract',
-    name: 'bridge',
     isNative: true,
     balance: '0x115e51ba54927496afdfac',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'bridge',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedVerifiedInitialState: {
     address: '0x0000000000000000000000000000000001000006',
     type: 'contract',
-    name: 'bridge',
     isNative: true,
     balance: '0x115e51ba54927496afdfac',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'bridge',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedVerifiedStateAfterFetch: {
     address: '0x0000000000000000000000000000000001000006',
     type: 'contract',
-    name: 'bridge',
     isNative: true,
     balance: '0x115e51ba54927496afdfac',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'bridge',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   name: 'Bridge',
   network: 'mainnet',

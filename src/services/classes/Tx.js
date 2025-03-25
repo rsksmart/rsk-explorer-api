@@ -9,6 +9,13 @@ import { getBlock } from './BlockSummary'
 import { getNativeContractName } from '../../lib/NativeContracts'
 
 export class Tx extends BcThing {
+  /**
+   * Creates a Tx instance
+   * @param {string} hash The transaction hash
+   * @param {number} timestamp The transaction timestamp
+   * @param {Object} options The options object
+   * @param {Addresses} options.addresses The Addresses instance
+   */
   constructor (hash, timestamp, { addresses, txData, blockTrace, blockData, traceData, nod3, initConfig, notTrace, receipt, log } = {}) {
     if (!hash || !timestamp) throw new Error(`Tx, missing arguments`)
     super({ nod3, initConfig, log })
@@ -203,8 +210,9 @@ export class Tx extends BcThing {
           events[index] = formatEvent(log, tx)
         } else {
           contracts[address] = contract
-          let parser = await contract.getParser(tx.blockNumber)
-          let [event] = parser.parseTxLogs([log])
+          await contract.fetch()
+          const contractParser = contract.getParser()
+          let [event] = contractParser.parseTxLogs([log])
           events[index] = formatEvent(event, tx)
           const { _addresses } = event
           for (let address of _addresses) {

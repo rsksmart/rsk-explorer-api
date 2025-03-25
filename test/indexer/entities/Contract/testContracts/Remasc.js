@@ -1,6 +1,6 @@
-// Block 7351440
 export const Remasc = {
   address: '0x0000000000000000000000000000000001000008',
+  blockNumber: 7351440,
   deployedCode: undefined,
   dbData: {
     address: '0x0000000000000000000000000000000001000008',
@@ -53,34 +53,54 @@ export const Remasc = {
   expectedInitialState: {
     address: '0x0000000000000000000000000000000001000008',
     type: 'contract',
-    name: 'remasc',
     isNative: true,
     balance: '0x22b4374373bf59b0',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'remasc',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedStateAfterFetch: {
     address: '0x0000000000000000000000000000000001000008',
     type: 'contract',
-    name: 'remasc',
     isNative: true,
     balance: '0x22b4374373bf59b0',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'remasc',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedVerifiedInitialState: {
     address: '0x0000000000000000000000000000000001000008',
     type: 'contract',
-    name: 'remasc',
     isNative: true,
     balance: '0x22b4374373bf59b0',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'remasc',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   expectedVerifiedStateAfterFetch: {
     address: '0x0000000000000000000000000000000001000008',
     type: 'contract',
-    name: 'remasc',
     isNative: true,
     balance: '0x22b4374373bf59b0',
-    blockNumber: 7351440
+    blockNumber: 7351440,
+    contractMethods: [],
+    contractInterfaces: [],
+    name: 'remasc',
+    symbol: null,
+    decimals: null,
+    totalSupply: null
   },
   name: 'Remasc',
   network: 'mainnet',
