@@ -14,6 +14,13 @@ export class Addresses {
     options = Object.assign(options, { nod3, initConfig })
     return new Address(address, options)
   }
+
+  /**
+   * Adds a new Address instance. If theres already one with the same address, it will be returned.
+   * @param {string} address The address to add
+   * @param {Object} options The options object
+   * @returns {Address} The Address instance
+   */
   add (address, options = {}) {
     if (!this.addresses[address]) {
       this.addresses[address] = this.createAddress(address, options)
