@@ -425,7 +425,7 @@ export const USDRIF = {
     symbol: 'USDRIF',
     decimals: 18,
     totalSupply: {
-      _hex: '0xdebec84937a0d0e50bb1',
+      _hex: '0xe80419d6133f3a750bb1',
       _isBigNumber: true
     }
   },
@@ -705,7 +705,7 @@ export const USDRIF = {
     symbol: 'USDRIF',
     decimals: 18,
     totalSupply: {
-      _hex: '0xdebec84937a0d0e50bb1',
+      _hex: '0xe80419d6133f3a750bb1',
       _isBigNumber: true
     }
   },
