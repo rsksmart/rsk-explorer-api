@@ -63,6 +63,7 @@ export const isObj = (value) => {
 }
 
 export const serialize = (obj) => {
+  if (typeof obj === 'undefined' || obj === null) return obj
   if (typeof obj !== 'object') return obj
   if (Array.isArray(obj)) return obj.map(o => serialize(o))
   if (isBigNumber(obj)) return serializeBigNumber(obj)
