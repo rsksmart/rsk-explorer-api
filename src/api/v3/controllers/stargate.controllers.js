@@ -1,6 +1,6 @@
 import { formatFiatBalance, getAddressBalance, getRBTCPrice } from '../utils'
 import Logger from '../../../lib/Logger'
-import { config } from '../lib/config'
+import config from '../../../lib/config'
 
 const log = Logger('[v3.stargate.controllers]')
 

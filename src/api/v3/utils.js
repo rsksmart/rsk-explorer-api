@@ -1,7 +1,7 @@
 import Logger from '../../lib/Logger'
 import axios from 'axios'
 import { rskNode } from './lib/nodeProvider'
-import { config } from './lib/config'
+import config from '../../lib/config'
 
 const log = Logger('[v3.utils]')
 
@@ -34,7 +34,7 @@ export const getAddressBalance = async (address) => {
 
 export const getRBTCPrice = async () => {
   try {
-    const response = await axios.get(config.priceFeeders.RBTC.url)
+    const response = await axios.get(config.stargate.rbtcPriceFeederUrl)
 
     if (response.status !== 200) throw new Error('Invalid response status from RBTC price endpoint')
     if (!response.data) throw new Error('No response data from RBTC price endpoint')

@@ -1,5 +1,16 @@
 import Nod3 from '@rsksmart/nod3'
-import { config, PUBLIC_NODE_PROVIDERS } from './config'
+import config from '../../../lib/config'
+
+const PUBLIC_NODE_PROVIDERS = {
+  mainnet: {
+    url: 'https://public-node.rsk.co',
+    id: '30'
+  },
+  testnet: {
+    url: 'https://public-node.testnet.rsk.co',
+    id: '31'
+  }
+}
 
 /**
  * Creates an RSK node provider instance for the given network
@@ -22,4 +33,4 @@ export const createRskNodeProvider = (network, customUrl) => {
 /**
  * Default RSK node instance using the network and custom URL from the config
  */
-export const rskNode = createRskNodeProvider(config.network, config.rskNodeProviderUrl)
+export const rskNode = createRskNodeProvider(config.stargate.network, config.source.url)
