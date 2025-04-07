@@ -1,7 +1,7 @@
 import Logger from '../../lib/Logger'
 import axios from 'axios'
-import { rskNode } from './lib/nodeProvider'
 import config from '../../lib/config'
+import { nod3 } from '../../lib/nod3Connect'
 
 const log = Logger('[v3.utils]')
 
@@ -22,7 +22,7 @@ const formatBalance = (hexBalance, decimals = 18) => {
 
 export const getAddressBalance = async (address) => {
   try {
-    const balance = await rskNode.eth.getBalance(address)
+    const balance = await nod3.eth.getBalance(address)
 
     return formatBalance(balance)
   } catch (error) {
@@ -34,7 +34,7 @@ export const getAddressBalance = async (address) => {
 
 export const getRBTCPrice = async () => {
   try {
-    const response = await axios.get(config.stargate.rbtcPriceFeederUrl)
+    const response = await axios.get(config.api.stargate.rbtcPriceFeederUrl)
 
     if (response.status !== 200) throw new Error('Invalid response status from RBTC price endpoint')
     if (!response.data) throw new Error('No response data from RBTC price endpoint')

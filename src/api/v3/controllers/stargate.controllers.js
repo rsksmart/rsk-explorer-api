@@ -11,7 +11,7 @@ export const validateStargateAddress = async (req, res) => {
     const rbtcPrice = await getRBTCPrice()
     const assetsValue = formatFiatBalance(balance * rbtcPrice)
 
-    const isEligible = assetsValue > config.stargate.minAssetsValueThresholdInUSDT
+    const isEligible = assetsValue > config.api.stargate.minAssetsValueThresholdInUSDT
 
     // todo: Normalize output according to Galxe standards
     const data = {
@@ -22,7 +22,7 @@ export const validateStargateAddress = async (req, res) => {
         rbtcPrice,
         assetsValueInUSDT: assetsValue,
         isEligible,
-        minAssetsValueThresholdInUSDT: config.stargate.minAssetsValueThresholdInUSDT
+        minAssetsValueThresholdInUSDT: config.api.stargate.minAssetsValueThresholdInUSDT
       }
     }
 
