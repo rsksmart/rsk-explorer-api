@@ -5,6 +5,12 @@ import { nod3 } from '../../lib/nod3Connect'
 
 const log = Logger('[v3.utils]')
 
+const isTestEnvironment = () => {
+  return process.env.NODE_ENV === 'test' ||
+    process.argv.some(arg => arg.includes('mocha')) ||
+    process.env.npm_lifecycle_event === 'test'
+}
+
 export const formatFiatBalance = (balance) => {
   if (typeof balance !== 'number') throw new Error('Balance must be a number')
   if (balance < 0) throw new Error('Balance must be equal or greater than 0')
@@ -12,10 +18,10 @@ export const formatFiatBalance = (balance) => {
   return Math.round(balance * 100) / 100
 }
 
-const formatBalance = (hexBalance, decimals = 18) => {
+export const formatBalance = (hexBalance, decimals = 18) => {
   if (typeof hexBalance !== 'string' || !hexBalance.startsWith('0x')) throw new Error('Balance must be a hex string')
   if (decimals && typeof decimals !== 'number') throw new Error('Decimals must be a number')
-  if (decimals && decimals < 0) throw new Error('Decimals must be greater than 0')
+  if (decimals && decimals < 0) throw new Error('Decimals must be equal or greater than 0')
 
   return parseInt(hexBalance, 16) / 10 ** decimals
 }
@@ -26,8 +32,10 @@ export const getAddressBalance = async (address) => {
 
     return formatBalance(balance)
   } catch (error) {
-    log.error('Error getting address balance')
-    log.error(error)
+    if (!isTestEnvironment()) {
+      log.error('Error getting address balance')
+      log.error(error)
+    }
     return Promise.reject(error)
   }
 }
@@ -45,8 +53,10 @@ export const getRBTCPrice = async () => {
 
     return lastPrice
   } catch (error) {
-    log.error('Error getting RBTC price')
-    log.error(error)
+    if (!isTestEnvironment()) {
+      log.error('Error getting RBTC price')
+      log.error(error)
+    }
     return Promise.reject(error)
   }
 }
