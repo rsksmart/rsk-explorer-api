@@ -1,32 +1,42 @@
 import { formatFiatBalance, getAddressBalance, getRBTCPrice } from '../utils'
 import Logger from '../../../lib/Logger'
 import config from '../../../lib/config'
+import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 
 const log = Logger('[v3.stargate.controllers]')
 
 export const validateStargateAddress = async (req, res) => {
   try {
     const { address } = req.params
+
+    if (!address || !isAddress(address)) {
+      return res.status(400).send({
+        error: 'A valid address is required'
+      })
+    }
+
     const balance = await getAddressBalance(address)
     const rbtcPrice = await getRBTCPrice()
-    const assetsValue = formatFiatBalance(balance * rbtcPrice)
+    const assetsValueInUSDT = formatFiatBalance(balance * rbtcPrice)
 
-    const isEligible = assetsValue > config.api.stargate.minAssetsValueThresholdInUSDT
+    /*
+     galxe expression:
 
-    // todo: Normalize output according to Galxe standards
-    const data = {
-      result: isEligible ? 1 : 0,
-      test: {
+      function(resp) {
+        return resp.data.isEligible ? 1 : 0;
+      }
+    */
+
+    res.send({
+      data: {
         address,
         balance,
         rbtcPrice,
-        assetsValueInUSDT: assetsValue,
-        isEligible,
+        assetsValueInUSDT,
+        isEligible: assetsValueInUSDT > config.api.stargate.minAssetsValueThresholdInUSDT,
         minAssetsValueThresholdInUSDT: config.api.stargate.minAssetsValueThresholdInUSDT
       }
-    }
-
-    res.send({ data })
+    })
   } catch (error) {
     log.error('Error validating stargate address')
     log.error(error)
