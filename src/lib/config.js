@@ -3,10 +3,37 @@ import fs from 'fs'
 import URL from 'url'
 import defaultConf from './defaultConfig'
 
-export const config = createConfig('../../config.json')
+const validateConfigs = {
+  stargate: (config) => {
+    if (!config) {
+      throw new Error('config is required')
+    }
+
+    if (!config.api) {
+      throw new Error('config.api is required')
+    }
+
+    if (!config.api.stargate) {
+      throw new Error('config.api.stargate config is required')
+    }
+
+    if (!config.api.stargate.rbtcPriceFeederUrl) {
+      throw new Error('config.api.stargate.rbtcPriceFeederUrl is required')
+    }
+
+    if (!config.api.stargate.minAssetsValueThresholdInUSDT) {
+      throw new Error('config.api.stargate.minAssetsValueThresholdInUSDT is required')
+    }
+  }
+}
 
 export function createConfig (file) {
-  return makeConfig(loadConfig(file))
+  const config = makeConfig(loadConfig(file))
+
+  // validations
+  validateConfigs.stargate(config)
+
+  return config
 }
 
 export function makeConfig (config = {}) {
@@ -83,5 +110,7 @@ export function createNodeSource (s) {
   protocol = protocol.replace(/:$/, '')
   return { protocol, node, port, url }
 }
+
+export const config = createConfig('../../config.json')
 
 export default config
