@@ -7,7 +7,7 @@ const log = Logger('[v3.utils]')
 
 export const formatFiatBalance = (balance) => {
   if (typeof balance !== 'number') throw new Error('Balance must be a number')
-  if (balance < 0) throw new Error('Balance must be greater than 0')
+  if (balance < 0) throw new Error('Balance must be equal or greater than 0')
 
   return Math.round(balance * 100) / 100
 }
