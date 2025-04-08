@@ -11,7 +11,7 @@
     "status": "npx nodemon src/tools/statusClient.js",
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
-    "test": "npx mocha",
+    "test": "npx mocha --exit",
     "api-docs": "mkdir -p public && npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
     "start-api": "mkdir -p logs/api && pm2 start dist/api/api.pm2.config.js",
     "stop-api": "pm2 stop dist/api/api.pm2.config.js",
@@ -73,6 +73,7 @@
     "mocha": "^7.2.0",
     "nodemon": "^2.0.4",
     "prisma": "^5.11.0",
+    "sinon": "^20.0.0",
     "swagger-jsdoc": "^3.2.9",
     "swagger-markdown": "^1.4.2"
   }
