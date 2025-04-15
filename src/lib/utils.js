@@ -156,11 +156,20 @@ export const createHash = (v) => hash(v, 'sha1', 'hex')
 
 const enableAllMeasuresLogging = false
 
-export const measurePromiseTime = async (promise, { name = 'Measurement', forceMeasureLogging = false, ...extraData }) => {
-  const time = Date.now()
+export const measurePromiseTime = async (promise, { name = 'Measurement', forceMeasureLogging = false, ...extraData } = {}) => {
+  const startTime = Date.now()
   const result = await promise
+  const endTime = Date.now()
+  const durationMs = endTime - startTime
 
-  if (enableAllMeasuresLogging || forceMeasureLogging) console.dir({ [name]: `${Date.now() - time}ms`, ...extraData }, { depth: null })
+  if (enableAllMeasuresLogging || forceMeasureLogging) console.dir({ [name]: `${durationMs}ms`, ...extraData }, { depth: null })
 
-  return result
+  return {
+    name,
+    result,
+    startTime,
+    endTime,
+    durationMs,
+    extraData
+  }
 }
