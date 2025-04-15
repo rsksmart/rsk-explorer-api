@@ -3,12 +3,13 @@ import fs from 'fs'
 import URL from 'url'
 import defaultConf from './defaultConfig'
 
-const validateConfigs = {
-  stargate: (config) => {
+const validateConfig = {
+  existence: (config) => {
     if (!config) {
       throw new Error('config is required')
     }
-
+  },
+  stargate: (config) => {
     if (!config.api) {
       throw new Error('config.api is required')
     }
@@ -17,12 +18,17 @@ const validateConfigs = {
       throw new Error('config.api.stargate config is required')
     }
 
-    if (!config.api.stargate.rbtcPriceFeederUrl) {
-      throw new Error('config.api.stargate.rbtcPriceFeederUrl is required')
-    }
+    const requiredStargateConfigFields = [
+      'minValueInUSDT',
+      'binanceApiUrl',
+      'tickerUrl',
+      'allowedTokens'
+    ]
 
-    if (!config.api.stargate.minAssetsValueThresholdInUSDT) {
-      throw new Error('config.api.stargate.minAssetsValueThresholdInUSDT is required')
+    for (const field of requiredStargateConfigFields) {
+      if (!config.api.stargate[field]) {
+        throw new Error(`config.api.stargate.${field} is required`)
+      }
     }
   }
 }
@@ -31,7 +37,8 @@ export function createConfig (file) {
   const config = makeConfig(loadConfig(file))
 
   // validations
-  validateConfigs.stargate(config)
+  validateConfig.existence(config)
+  validateConfig.stargate(config)
 
   return config
 }
