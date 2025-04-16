@@ -13,3 +13,5 @@ package-lock.json
 logs
 /.idea
 public/swagger.json
+
+.env
