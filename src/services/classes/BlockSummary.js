@@ -3,7 +3,7 @@ import Tx from './Tx'
 import BlockTrace from './BlockTrace'
 import { BlockAddresses } from './BlockAddresses'
 import { isBlockHash } from '../../lib/utils'
-import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
+import { isAddress } from '@rsksmart/rsk-utils'
 import config from '../../lib/config'
 
 export class BlockSummary extends BcThing {

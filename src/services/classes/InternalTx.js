@@ -1,6 +1,7 @@
 import { BcThing } from './BcThing'
 import { generateId } from '../../lib/ids'
-import { isBlockHash, isAddress, convertUnixTimestampToISO } from '../../lib/utils'
+import { isBlockHash, convertUnixTimestampToISO } from '../../lib/utils'
+import { isAddress } from '@rsksmart/rsk-utils'
 
 const ITX_FIELDS = {
   blockNumber: null,

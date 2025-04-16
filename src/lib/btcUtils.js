@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import * as bs58 from 'bs58'
-import { remove0x, add0x, keccak256 } from './utils'
+import { remove0x, add0x, keccak256 } from '@rsksmart/rsk-utils'
 import secp256k1 from 'secp256k1'
 
 const PREFIXES = {

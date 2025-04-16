@@ -1,7 +1,7 @@
 import { BcThing } from './BcThing'
 import Contract from './Contract'
-import { isBlockObject, isAddress } from '../../lib/utils'
-import { isZeroAddress } from '@rsksmart/rsk-utils'
+import { isBlockObject } from '../../lib/utils'
+import { isZeroAddress, isAddress } from '@rsksmart/rsk-utils'
 
 export class TokenAddress extends BcThing {
   constructor (tokenAddress, contract) {

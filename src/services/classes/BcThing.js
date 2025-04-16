@@ -1,4 +1,5 @@
-import { isAddress, serialize, isTxOrBlockHash, isBlockHash } from '../../lib/utils'
+import { serialize, isBlockHash } from '../../lib/utils'
+import { isAddress, isTxOrBlockHash } from '@rsksmart/rsk-utils'
 import { REPOSITORIES } from '../../repositories'
 export class BcThing {
   constructor ({ nod3, initConfig, log, name } = {}) {

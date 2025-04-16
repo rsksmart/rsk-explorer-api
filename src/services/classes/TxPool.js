@@ -1,5 +1,6 @@
 import BlocksBase from '../../lib/BlocksBase'
-import { isHexString, base64toHex, convertUnixTimestampToISO } from '../../lib/utils'
+import { convertUnixTimestampToISO } from '../../lib/utils'
+import { isHexString, base64toHex } from '@rsksmart/rsk-utils'
 import { REPOSITORIES } from '../../repositories'
 export class TxPool extends BlocksBase {
   constructor (options) {
