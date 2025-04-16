@@ -97,13 +97,34 @@ export const getAssetsValueInUSDT = async (address, tokens) => {
   }
 }
 
+const priceCache = {
+  prices: {},
+  timestamps: {},
+  // Binance Market data API has request limits. Check rateLimits for more info
+  // Docs: https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints
+  // Rate limits: https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits
+  expirationTime: 10000
+}
+
 export const getTokenPriceFromBinance = async (token, currency) => {
   try {
     if (typeof token !== 'string' || typeof currency !== 'string') throw new Error('Token and currency must be strings')
 
+    const symbolPair = `${token}${currency}`
+    const currentTime = Date.now()
+
+    if (
+      priceCache.prices[symbolPair] !== undefined &&
+      priceCache.timestamps[symbolPair] !== undefined &&
+      currentTime - priceCache.timestamps[symbolPair] < priceCache.expirationTime
+    ) {
+      return priceCache.prices[symbolPair]
+    }
+
+    // If no valid cache, fetch new price from Binance
     const binanceApiUrl = config.api.stargate.binanceApiUrl
     const tickerUrl = config.api.stargate.tickerUrl
-    const response = await axios.get(`${binanceApiUrl}/${tickerUrl}${token}${currency}`)
+    const response = await axios.get(`${binanceApiUrl}/${tickerUrl}${symbolPair}`)
 
     if (response.status !== 200) throw new Error('Invalid response status from Binance price endpoint')
     if (!response.data) throw new Error('No response data from Binance price endpoint')
@@ -111,6 +132,10 @@ export const getTokenPriceFromBinance = async (token, currency) => {
 
     const lastPrice = parseFloat(response.data.lastPrice)
     if (isNaN(lastPrice)) throw new Error('Provided last price is not a number')
+
+    // Update cache
+    priceCache.prices[symbolPair] = lastPrice
+    priceCache.timestamps[symbolPair] = currentTime
 
     return lastPrice
   } catch (error) {
