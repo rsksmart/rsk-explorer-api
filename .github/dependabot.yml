@@ -1,0 +1,22 @@
+version: 2
+updates:
+  # Maintain dependencies for GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+
+  # Maintain dependencies for npm
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directories:
+      - /
+      - dockerized/explorer-api
+      - dockerized/mongod
+      - dockerized/rsk-node
+    schedule:
+      interval: daily
