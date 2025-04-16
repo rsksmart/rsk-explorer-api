@@ -4,8 +4,6 @@ import apiRoutes from './routes/api'
 import docRoutes from './routes/doc'
 import config from '../lib/config'
 import cors from 'cors'
-import httpLogger from './httpLogger'
-import v3ApiRoutes from './v3/api'
 
 export const HttpServer = ({ api, status, log }, send) => {
   const app = express()
@@ -36,12 +34,6 @@ export const HttpServer = ({ api, status, log }, send) => {
   if (config.api.exposeDoc) {
     app.use('/doc', docRoutes({ log, app }))
   }
-
-  // v3 api
-  app.use('/v3/api', express.json())
-  app.use('/v3/api', express.urlencoded({ extended: true }))
-  app.use(httpLogger)
-  app.use('/v3/api', v3ApiRoutes)
 
   // 404
   app.use((req, res, next) => res.status(404).send())
