@@ -1,7 +1,7 @@
-import Logger from '../../../lib/Logger'
-import config from '../../../lib/config'
+import Logger from '../../lib/Logger'
+import config from '../../lib/config'
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { getCurrentNetwork, getAssetsValueInUSDT } from '../utils'
+import { getCurrentNetwork, getAssetsValueInUSDT } from './utils'
 
 const log = Logger('[v3.stargate.controllers]')
 
