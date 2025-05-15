@@ -1,6 +1,5 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import stargateRoutes from '../stargate/stargate.routes'
 
 const router = express.Router()
 
@@ -45,8 +44,6 @@ const Routes = ({ log, api }, send) => {
   router.post('/', bodyParser.json({ limit: '5mb' }), (req, res, next) => {
     return sendResult({ res, req, next }, req.body)
   })
-
-  router.use('/stargate', stargateRoutes)
 
   return router
 }
