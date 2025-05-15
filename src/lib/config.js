@@ -8,28 +8,6 @@ const validateConfig = {
     if (!config) {
       throw new Error('config is required')
     }
-  },
-  stargate: (config) => {
-    if (!config.api) {
-      throw new Error('config.api is required')
-    }
-
-    if (!config.api.stargate) {
-      throw new Error('config.api.stargate config is required')
-    }
-
-    const requiredStargateConfigFields = [
-      'minValueInUSDT',
-      'binanceApiUrl',
-      'tickerUrl',
-      'allowedTokens'
-    ]
-
-    for (const field of requiredStargateConfigFields) {
-      if (!config.api.stargate[field]) {
-        throw new Error(`config.api.stargate.${field} is required`)
-      }
-    }
   }
 }
 
@@ -38,7 +16,6 @@ export function createConfig (file) {
 
   // validations
   validateConfig.existence(config)
-  validateConfig.stargate(config)
 
   return config
 }
