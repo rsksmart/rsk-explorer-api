@@ -1,5 +1,5 @@
 import Address from './Address'
-import { isAddress } from '../../lib/utils'
+import { isAddress } from '@rsksmart/rsk-utils'
 
 export class Addresses {
   constructor ({ nod3, initConfig }) {

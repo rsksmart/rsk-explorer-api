@@ -1,11 +1,11 @@
 import { BcThing } from './BcThing'
-import { isBlockObject, isNullData, isAddress, isValidBlockNumber } from '../../lib/utils'
+import { isBlockObject, isValidBlockNumber } from '../../lib/utils'
+import { isAddress, isNullData, isZeroAddress } from '@rsksmart/rsk-utils'
 import { fields, addrTypes } from '../../lib/types'
 import Contract from './Contract'
 import { BcSearch } from '@rsksmart/rsk-contract-parser'
 import { createTxObject } from './Tx'
 import { InternalTx, checkInternalTransactionData } from './InternalTx'
-import { isZeroAddress } from '@rsksmart/rsk-utils'
 import { getNativeContractName, isNativeContract } from '../../lib/NativeContracts'
 
 export class Address extends BcThing {

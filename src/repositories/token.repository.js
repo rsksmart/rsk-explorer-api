@@ -1,7 +1,7 @@
 import { rawTokenToEntity, tokenEntityToRaw, tokensByAddressEntityToRaw } from '../converters/token.converters'
 import { addressRelatedTables } from './includeRelatedTables'
 import { generateFindQuery } from './utils'
-import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
+import { isAddress } from '@rsksmart/rsk-utils'
 
 export function getTokenRepository (prismaClient) {
   return {

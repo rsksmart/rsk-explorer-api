@@ -1,4 +1,5 @@
-import { isTxOrBlockHash, isBlockHash } from './utils'
+import { isBlockHash } from './utils'
+import { isTxOrBlockHash } from '@rsksmart/rsk-utils'
 
 const checkNumbers = payload => {
   for (let name in payload) {
