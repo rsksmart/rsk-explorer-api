@@ -8,7 +8,7 @@ import config from '../../lib/config'
 import { verificationResultsRepository } from '../../repositories'
 
 class Contract extends BcThing {
-  constructor (address, deployedCode, { dbData, nod3, log, initConfig, block = { number: null } }) {
+  constructor (address, deployedCode, { dbData, nod3, log, initConfig, block = { number: undefined } }) {
     super({ nod3, initConfig })
     if (!this.isAddress(address)) throw new Error(`Contract: invalid address ${address}`)
     this.address = address
