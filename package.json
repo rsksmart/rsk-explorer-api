@@ -39,7 +39,7 @@
   "dependencies": {
     "@prisma/client": "^5.11.0",
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "^2.0.0",
+    "@rsksmart/rsk-contract-parser": "^2.0.9",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-precompiled-abis": "^7.1.0-LOVELL",
     "@rsksmart/rsk-utils": "^1.1.0",
