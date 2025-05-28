@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "2.2.1",
+  "version": "2.2.3",
   "description": "RSK Explorer API",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,7 @@
     "status": "npx nodemon src/tools/statusClient.js",
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "lint": "npx eslint src/**/* --quiet",
-    "test": "npx mocha",
+    "test": "npx mocha --exit",
     "api-docs": "mkdir -p public && npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
     "start-api": "mkdir -p logs/api && pm2 start dist/api/api.pm2.config.js",
     "stop-api": "pm2 stop dist/api/api.pm2.config.js",
@@ -48,6 +48,7 @@
     "bunyan": "^2.0.4",
     "cors": "^2.8.5",
     "cron": "^3.1.7",
+    "dotenv": "^16.4.7",
     "express": "^4.17.1",
     "prom-client": "^15.1.0",
     "rlp": "^2.2.5",
@@ -60,7 +61,7 @@
     "@babel/node": "^7.10.4",
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
-    "axios": "^1.5.0",
+    "axios": "^1.8.4",
     "chai": "^4.2.0",
     "deep-equal-in-any-order": "^2.0.6",
     "eslint": "^4.19.1",
@@ -73,7 +74,7 @@
     "mocha": "^7.2.0",
     "nodemon": "^2.0.4",
     "prisma": "^5.11.0",
-    "sinon": "^19.0.4",
+    "sinon": "^20.0.0",
     "swagger-jsdoc": "^3.2.9",
     "swagger-markdown": "^1.4.2"
   }
