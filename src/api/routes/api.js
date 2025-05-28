@@ -1,7 +1,5 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import httpLogger from '../httpLogger'
-import v3ApiRoutes from '../v3/api'
 
 const router = express.Router()
 
@@ -46,12 +44,6 @@ const Routes = ({ log, api }, send) => {
   router.post('/', bodyParser.json({ limit: '5mb' }), (req, res, next) => {
     return sendResult({ res, req, next }, req.body)
   })
-
-  // v3
-  router.use('/v3', httpLogger)
-  router.use('/v3', express.json())
-  router.use('/v3', express.urlencoded({ extended: true }))
-  router.use('/v3', v3ApiRoutes)
 
   return router
 }
