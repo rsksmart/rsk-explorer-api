@@ -122,15 +122,6 @@ export class Block extends BcThing {
       }
     })
   }
-  async fetchContractsAddresses () {
-    let data = []
-    for (let c in this.contracts) {
-      let contract = this.contracts[c]
-      let addData = await contract.fetchAddresses()
-      if (addData.length) data = data.concat(addData)
-    }
-    return data
-  }
 }
 
 export const getBlockFromDb = async (number) => {
