@@ -1,6 +1,5 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { updateUndecodedContractEvents } from '../lib/utils'
-import Logger from '../lib/Logger'
 
 // Sometimes, contract events are not decoded correctly. This could happen due to several reasons
 // The most probable ones are:
@@ -19,7 +18,7 @@ async function main () {
   }
 
   try {
-    await updateUndecodedContractEvents({ contractAddress: targetAddress, log: Logger('test-logger') })
+    await updateUndecodedContractEvents({ contractAddress: targetAddress })
   } catch (error) {
     const toolName = process.argv[1].split('/').pop()
     console.log(`[Tool ${toolName}]: Error updating contract events`)
