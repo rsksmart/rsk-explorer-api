@@ -83,23 +83,22 @@ export class ContractEventsUpdater {
       }
     }
 
+    this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
+
     const { events, next } = await this.fetchPaginatedEvents(query, pageSize)
 
     // No events
     if (events.length === 0) return result
 
-    this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
+    // First page
+    const processedEventsResult = await this.processEvents(parser, events, isBridge)
+    result.updatedEvents.events.push(...processedEventsResult)
+    result.updatedEvents.amount = result.updatedEvents.events.length
 
-    // One page
-    if (!next) {
-      result.updatedEvents.events = await this.processEvents(parser, events, isBridge)
-      result.updatedEvents.amount = result.updatedEvents.events.length
-      return result
-    }
+    if (!next) return result
 
+    // Next pages
     let cursor = next
-
-    // Multiple pages
     while (cursor) {
       const { events, next } = await this.fetchPaginatedEvents({
         address: contractAddress,
@@ -111,7 +110,7 @@ export class ContractEventsUpdater {
 
       const processedEventsResult = await this.processEvents(parser, events, isBridge)
       result.updatedEvents.events.push(...processedEventsResult)
-      result.updatedEvents.amount += processedEventsResult.length
+      result.updatedEvents.amount = result.updatedEvents.events.length
 
       cursor = next
     }

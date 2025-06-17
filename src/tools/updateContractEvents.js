@@ -55,7 +55,7 @@ async function main () {
   try {
     console.log(`${toolName}`)
     console.log(`Target address: ${targetAddress}`)
-    console.log(`Page size: ${parsedPageSize}`)
+    console.log(`Page size: ${parsedPageSize}. Note that this value could be overridden according to event updater limits.`)
     if (parsedSinceBlockNumber) {
       console.log(`Since block number: #${parsedSinceBlockNumber}`)
     }
