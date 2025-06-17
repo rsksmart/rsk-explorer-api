@@ -38,21 +38,20 @@ export class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
-  async updateAllContractsEvents (pageSize = 100) {
+  async updateAllContractsEvents (pageSize, sinceBlockNumber = 0) {
     const contracts = await prismaClient.contract.findMany({ select: { address: true } })
     const contractAddresses = contracts.map(contract => contract.address)
     const results = {}
 
     for (const contractAddress of contractAddresses) {
-      this.log.info(`Updating events for contract ${contractAddress}`)
-      const result = await this.updateContractEvents(contractAddress, pageSize)
+      const result = await this.updateContractEvents(contractAddress, pageSize, sinceBlockNumber)
       results[contractAddress] = result
     }
 
     return results
   }
 
-  async updateContractEvents (contractAddress, pageSize = 100) {
+  async updateContractEvents (contractAddress, pageSize, sinceBlockNumber = 0) {
     const result = {
       contractDetails: null,
       verifiedAbi: false,
@@ -73,13 +72,23 @@ export class ContractEventsUpdater {
     result.contractDetails = contractDetails
     result.verifiedAbi = isBridge ? true : verifiedAbi
 
-    const { events, next } = await this.fetchPaginatedEvents({
+    const query = {
       address: contractAddress,
       event: null
-    }, pageSize)
+    }
+
+    if (!isNaN(sinceBlockNumber)) {
+      query.blockNumber = {
+        gte: sinceBlockNumber
+      }
+    }
+
+    const { events, next } = await this.fetchPaginatedEvents(query, pageSize)
 
     // No events
     if (events.length === 0) return result
+
+    this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}` : '.'}`)
 
     // One page
     if (!next) {
@@ -143,7 +152,7 @@ export class ContractEventsUpdater {
       for (const event of events) {
         // Bridge events should be parsed individually by block height to avoid ABI inconsistencies
         const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
-        console.log(`Parsing bridge event ${event.eventId} (blockHeight: ${event.blockNumber})...`)
+        this.log.info(`Parsing bridge event ${event.eventId} (blockHeight: ${event.blockNumber})...`)
         const [parsedEvent] = bridgeParser.parseTxLogs([event])
         parsedEvents.push(parsedEvent)
       }
