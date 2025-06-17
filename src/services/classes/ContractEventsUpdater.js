@@ -125,8 +125,16 @@ export default class ContractEventsUpdater {
         cursor = next
       }
 
-      this.log.info(`Updated ${result.updatedEvents.amount} events for contract ${contractAddress}`)
+      const updatedEventsMsg = result.updatedEvents.amount > 0
+        ? `Updated ${result.updatedEvents.amount} events for contract ${contractAddress}`
+        : `No events could be updated for contract ${contractAddress}`
 
+      const verifiedAbiMsg = result.verifiedAbi
+        ? `Verified ABI: ${result.verifiedAbi}`
+        : 'No verified ABI found for contract. Note that a verified ABI is required to decode all events correctly.'
+
+      this.log.info(updatedEventsMsg)
+      this.log.info(verifiedAbiMsg)
       return result
     } catch (error) {
       const msg = isAddress(contractAddress)
@@ -205,7 +213,11 @@ export default class ContractEventsUpdater {
       const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
       const transactionResult = await prismaClient.$transaction(upsertQueries)
 
-      this.log.info(`Processed ${transactionResult.length} events.`)
+      const processingMsg = transactionResult.length > 0
+        ? `Processed ${transactionResult.length} events...`
+        : 'No events to process in this page...'
+
+      this.log.info(processingMsg)
 
       return transactionResult.map(upsertEvent => {
         return {
