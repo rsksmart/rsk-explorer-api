@@ -58,7 +58,6 @@ export class ContractEventsUpdater {
 
     // One page
     if (!next) {
-      console.log('One page')
       result.updatedEvents.events = await this.processEvents(parser, events)
       result.updatedEvents.amount = result.updatedEvents.events.length
       return result
@@ -68,7 +67,6 @@ export class ContractEventsUpdater {
 
     // Multiple pages
     while (cursor) {
-      console.log('Multiple pages')
       const { events, next } = await this.fetchPaginatedEvents({
         address: contractAddress,
         eventId: {
