@@ -4,10 +4,20 @@ import { configRepository, eventRepository, verificationResultsRepository } from
 import { prismaClient } from '../../lib/prismaClient'
 import nod3 from '../../lib/nod3Connect'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
+import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
 
 export class ContractEventsUpdater {
   constructor ({ log = console }) {
     this.log = log
+    this.initConfig = null
+  }
+
+  async getInitConfig () {
+    if (!this.initConfig) {
+      this.initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
+    }
+
+    return this.initConfig
   }
 
   validateContractAddress (contractAddress) {
@@ -28,6 +38,20 @@ export class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
+  async updateAllContractsEvents (pageSize = 100) {
+    const contracts = await prismaClient.contract.findMany({ select: { address: true } })
+    const contractAddresses = contracts.map(contract => contract.address)
+    const results = {}
+
+    for (const contractAddress of contractAddresses) {
+      this.log.info(`Updating events for contract ${contractAddress}`)
+      const result = await this.updateContractEvents(contractAddress, pageSize)
+      results[contractAddress] = result
+    }
+
+    return results
+  }
+
   async updateContractEvents (contractAddress, pageSize = 100) {
     const result = {
       contractDetails: null,
@@ -43,10 +67,11 @@ export class ContractEventsUpdater {
 
     // Normalize contract address
     contractAddress = contractAddress.toLowerCase()
+    const isBridge = contractAddress === getBridgeAddress()
 
     const { parser, contractDetails, verifiedAbi } = await this.getContractParser(contractAddress)
     result.contractDetails = contractDetails
-    result.verifiedAbi = verifiedAbi
+    result.verifiedAbi = isBridge ? true : verifiedAbi
 
     const { events, next } = await this.fetchPaginatedEvents({
       address: contractAddress,
@@ -58,7 +83,7 @@ export class ContractEventsUpdater {
 
     // One page
     if (!next) {
-      result.updatedEvents.events = await this.processEvents(parser, events)
+      result.updatedEvents.events = await this.processEvents(parser, events, isBridge)
       result.updatedEvents.amount = result.updatedEvents.events.length
       return result
     }
@@ -75,7 +100,7 @@ export class ContractEventsUpdater {
         event: null
       }, pageSize)
 
-      const processedEventsResult = await this.processEvents(parser, events)
+      const processedEventsResult = await this.processEvents(parser, events, isBridge)
       result.updatedEvents.events.push(...processedEventsResult)
       result.updatedEvents.amount += processedEventsResult.length
 
@@ -87,6 +112,7 @@ export class ContractEventsUpdater {
 
   async fetchPaginatedEvents (query, pageSize) {
     if (!query) throw new Error('Invalid query provided')
+    this.validatePageSize(pageSize)
 
     const select = undefined
     const sort = { eventId: 'desc' }
@@ -107,8 +133,37 @@ export class ContractEventsUpdater {
     }
   }
 
-  async processEvents (parser, events = []) {
+  async processEvents (parser, events = [], isBridge = false) {
     if (!parser || !(parser instanceof ContractParser)) throw new Error('Invalid contract parser provided')
+
+    // Bridge events
+    if (isBridge) {
+      const parsedEvents = []
+
+      for (const event of events) {
+        // Bridge events should be parsed individually by block height to avoid ABI inconsistencies
+        const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
+        console.log(`Parsing bridge event ${event.eventId} (blockHeight: ${event.blockNumber})...`)
+        const [parsedEvent] = bridgeParser.parseTxLogs([event])
+        parsedEvents.push(parsedEvent)
+      }
+
+      const decodedEvents = parsedEvents
+      // .filter(event => event.event !== null)
+      const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
+      const transactionResult = await prismaClient.$transaction(upsertQueries)
+
+      return transactionResult.map(upsertEvent => {
+        return {
+          eventId: upsertEvent.eventId,
+          decoded: upsertEvent.event !== null,
+          name: upsertEvent.event,
+          blockNumber: upsertEvent.blockNumber,
+          transactionHash: upsertEvent.transactionHash,
+          timestamp: new Date(Number(upsertEvent.timestamp) * 1000).toISOString()
+        }
+      })
+    }
 
     const parsedEvents = parser.parseTxLogs(events)
     const decodedEvents = parsedEvents.filter(event => event.event !== null)
@@ -130,7 +185,7 @@ export class ContractEventsUpdater {
   async getContractParser (contractAddress) {
     this.validateContractAddress(contractAddress)
 
-    const initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
+    const initConfig = await this.getInitConfig()
     const parser = new ContractParser({ nod3, initConfig })
     let contractDetails = await parser.getContractDetails(contractAddress)
     const verifiedAbi = await this.getContractABI(contractAddress, contractDetails)
@@ -145,6 +200,21 @@ export class ContractEventsUpdater {
       parser,
       contractDetails,
       verifiedAbi: !!verifiedAbi
+    }
+  }
+
+  async getBridgeContractParser (blockNumber) {
+    if (!blockNumber || (isNaN(blockNumber) && blockNumber !== 'latest')) throw new Error('Invalid blockNumber provided')
+
+    const bridgeAddress = getBridgeAddress()
+    const initConfig = await this.getInitConfig()
+    const parser = new ContractParser({ nod3, initConfig, txBlockNumber: blockNumber })
+    const contractDetails = await parser.getContractDetails(bridgeAddress)
+
+    return {
+      parser,
+      contractDetails,
+      verifiedAbi: true
     }
   }
 
