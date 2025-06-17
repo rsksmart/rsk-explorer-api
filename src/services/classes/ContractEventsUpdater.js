@@ -7,7 +7,7 @@ import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
 import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
 
 export class ContractEventsUpdater {
-  constructor ({ log = console }) {
+  constructor ({ log = console } = {}) {
     this.log = log
     this.initConfig = null
   }
@@ -88,7 +88,7 @@ export class ContractEventsUpdater {
     // No events
     if (events.length === 0) return result
 
-    this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}` : '.'}`)
+    this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
 
     // One page
     if (!next) {
@@ -115,6 +115,8 @@ export class ContractEventsUpdater {
 
       cursor = next
     }
+
+    this.log.info(`Updated ${result.updatedEvents.amount} events for contract ${contractAddress}`)
 
     return result
   }
@@ -157,8 +159,7 @@ export class ContractEventsUpdater {
         parsedEvents.push(parsedEvent)
       }
 
-      const decodedEvents = parsedEvents
-      // .filter(event => event.event !== null)
+      const decodedEvents = parsedEvents.filter(event => event.event !== null)
       const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
       const transactionResult = await prismaClient.$transaction(upsertQueries)
 
