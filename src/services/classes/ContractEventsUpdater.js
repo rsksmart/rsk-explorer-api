@@ -128,7 +128,7 @@ export class ContractEventsUpdater {
     const select = undefined
     const sort = { eventId: 'desc' }
     const options = {}
-    const MIN_PAGE_SIZE = 1
+    const MIN_PAGE_SIZE = 2
     const MAX_PAGE_SIZE = 1000
     const take = Math.min(Math.max(pageSize, MIN_PAGE_SIZE), MAX_PAGE_SIZE) + 1
     const events = await eventRepository.find(query, select, sort, take, options)
