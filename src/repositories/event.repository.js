@@ -51,6 +51,32 @@ export function getEventRepository (prismaClient) {
         }
       })
     },
+    upsertOne (event) {
+      const involvedAddresses = event._addresses.map(address => ({ address, isEventEmitterAddress: false, eventSignature: event.signature }))
+      involvedAddresses.push({ address: event.address, isEventEmitterAddress: true, eventSignature: event.signature })
+
+      return prismaClient.event.upsert({
+        where: { eventId: event.eventId },
+        create: {
+          ...rawEventToEntity(event),
+          address_in_event: {
+            createMany: {
+              data: involvedAddresses,
+              skipDuplicates: true
+            }
+          }
+        },
+        update: {
+          ...rawEventToEntity(event),
+          address_in_event: {
+            createMany: {
+              data: involvedAddresses,
+              skipDuplicates: true
+            }
+          }
+        }
+      })
+    },
     async deleteMany (query) {
       return prismaClient.event.deleteMany({ where: query })
     }

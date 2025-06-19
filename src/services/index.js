@@ -10,6 +10,7 @@ import { saveInitialTip } from '../lib/servicesUtils'
 import { createMetricsServer } from '../lib/prismaMetrics'
 import config from '../lib/config'
 import { startCronJobs } from '../lib/cronJobs'
+import packageJson from '../../package.json'
 
 const confirmationsThreshold = config.blocks.bcTipSize
 const blocksCongruenceCheckThreshold = config.blocks.bcTipSize * 3
@@ -19,6 +20,8 @@ const serviceName = 'blocks-service'
 const log = Logger(`[${serviceName}]`)
 
 async function main () {
+  log.info(`Rootstock Indexer v${packageJson.version}`)
+  log.info(`Starting blocks indexing service...`)
   if (config.blocks.enableMetrics) {
     await createMetricsServer({ serviceName, port: config.blocks.metricsPort, log })
   }
