@@ -65,6 +65,7 @@ export default class ContractEventsUpdater {
       const result = {
         contractDetails: null,
         verifiedAbi: false,
+        // TODO: update names according to which events were updated and which not
         updatedEvents: {
           amount: 0,
           events: []
@@ -176,59 +177,77 @@ export default class ContractEventsUpdater {
     }
   }
 
+  validateEvent (event) {
+    if (!event) throw new Error('Invalid event provided')
+    if (!event.eventId) throw new Error('Invalid event provided: Missing eventId')
+    if (!isAddress(event.address)) throw new Error('Invalid event provided: Missing address')
+    if (isNaN(event.blockNumber)) throw new Error('Invalid event provided: Invalid blockNumber')
+    if (!event.transactionHash) throw new Error('Invalid event provided: Missing transactionHash')
+    if (isNaN(event.logIndex)) throw new Error('Invalid event provided: Invalid logIndex')
+  }
+
+  // Note: This function assumes all events were emitted by the same contract address
   async processEvents (parser, events = [], isBridge = false) {
     try {
       if (!parser || !(parser instanceof ContractParser)) throw new Error('Invalid contract parser provided')
 
-      // Bridge events
-      if (isBridge) {
-        const parsedEvents = []
+      const result = []
 
-        for (const event of events) {
-          // Bridge events should be parsed individually by block height to avoid ABI inconsistencies
-          const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
-          this.log.info(`Parsing bridge event ${event.eventId} (blockHeight: ${event.blockNumber})...`)
-          const [parsedEvent] = bridgeParser.parseTxLogs([event])
-          parsedEvents.push(parsedEvent)
+      for (const event of events) {
+        const eventDetails = {
+          eventId: null,
+          name: null,
+          blockNumber: null,
+          transactionHash: null,
+          logIndex: null,
+          timestamp: null,
+          decoded: false,
+          updated: false,
+          error: false,
+          errorMessage: null,
+          eventDebugData: null
         }
 
-        const decodedEvents = parsedEvents.filter(event => event.event !== null)
-        const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
-        const transactionResult = await prismaClient.$transaction(upsertQueries)
+        result.push(eventDetails)
 
-        return transactionResult.map(upsertEvent => {
-          return {
-            eventId: upsertEvent.eventId,
-            decoded: upsertEvent.event !== null,
-            name: upsertEvent.event,
-            blockNumber: upsertEvent.blockNumber,
-            transactionHash: upsertEvent.transactionHash,
-            timestamp: new Date(Number(upsertEvent.timestamp) * 1000).toISOString()
+        try {
+          this.validateEvent(event)
+
+          // Bridge: Get custom parser according to event block height since bridge ABI changes at certain block heights
+          if (isBridge) {
+            const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
+            parser = bridgeParser
           }
-        })
+
+          eventDetails.eventId = event.eventId
+          eventDetails.blockNumber = event.blockNumber
+          eventDetails.transactionHash = event.transactionHash
+          eventDetails.logIndex = event.logIndex
+          eventDetails.timestamp = event.timestamp
+
+          // Parse event
+          const [parsedEvent] = parser.parseTxLogs([event])
+
+          // Undecodeable events
+          if (parsedEvent.event === null) throw new Error('Unable to decode event')
+
+          eventDetails.decoded = true
+          eventDetails.name = parsedEvent.event
+
+          // Update event
+          const updatedEvent = await eventRepository.upsertOne(parsedEvent)
+          eventDetails.updated = !!updatedEvent
+
+          this.log.info(`Updated event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}`)
+        } catch (error) {
+          this.log.error(`Error processing event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}: ${error.message}. Skipping...`)
+          eventDetails.error = true
+          eventDetails.errorMessage = error.message
+          eventDetails.eventDebugData = event
+        }
       }
 
-      const parsedEvents = parser.parseTxLogs(events)
-      const decodedEvents = parsedEvents.filter(event => event.event !== null)
-      const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
-      const transactionResult = await prismaClient.$transaction(upsertQueries)
-
-      const processingMsg = transactionResult.length > 0
-        ? `Processed ${transactionResult.length} events...`
-        : 'No events to process in this page...'
-
-      this.log.info(processingMsg)
-
-      return transactionResult.map(upsertEvent => {
-        return {
-          eventId: upsertEvent.eventId,
-          decoded: upsertEvent.event !== null,
-          name: upsertEvent.event,
-          blockNumber: upsertEvent.blockNumber,
-          transactionHash: upsertEvent.transactionHash,
-          timestamp: new Date(Number(upsertEvent.timestamp) * 1000).toISOString()
-        }
-      })
+      return result
     } catch (error) {
       this.log.error(`Error processing events: ${error.message}`)
       return []
