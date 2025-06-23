@@ -20,6 +20,10 @@ export default class ContractEventsUpdater {
     return this.initConfig
   }
 
+  isBridgeAddress (address) {
+    return address === getBridgeAddress()
+  }
+
   validateContractAddress (contractAddress) {
     if (!contractAddress || !isAddress(contractAddress)) {
       throw new Error('Invalid contract address')
@@ -77,8 +81,8 @@ export default class ContractEventsUpdater {
 
       // Normalize contract address
       contractAddress = contractAddress.toLowerCase()
-      const isBridge = contractAddress === getBridgeAddress()
 
+      const isBridge = this.isBridgeAddress(contractAddress)
       const { parser, contractDetails, verifiedAbi } = await this.getContractParser(contractAddress)
       result.contractDetails = contractDetails
       result.verifiedAbi = isBridge ? true : verifiedAbi
@@ -94,21 +98,22 @@ export default class ContractEventsUpdater {
         }
       }
 
-      this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
+      this.log.info(`Processing events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
 
       const { events, next } = await this.fetchPaginatedEvents(query, pageSize)
 
       // No events
-      if (events.length === 0) return result
+      if (events.length === 0) {
+        this.log.info(`No undecoded events found for contract ${contractAddress}`)
+        return result
+      }
 
-      // First page
-      const processedEventsResult = await this.processEvents(parser, events, isBridge)
+      // Process first page
+      const processedEventsResult = await this.processEvents(parser, events, { contractDetails })
       result.updatedEvents.events.push(...processedEventsResult)
       result.updatedEvents.amount = result.updatedEvents.events.length
 
-      if (!next) return result
-
-      // Next pages
+      // Process next pages (if any)
       let cursor = next
       while (cursor) {
         const { events, next } = await this.fetchPaginatedEvents({
@@ -119,22 +124,20 @@ export default class ContractEventsUpdater {
           event: null
         }, pageSize)
 
-        const processedEventsResult = await this.processEvents(parser, events, isBridge)
+        const processedEventsResult = await this.processEvents(parser, events, { contractDetails })
         result.updatedEvents.events.push(...processedEventsResult)
         result.updatedEvents.amount = result.updatedEvents.events.length
 
         cursor = next
       }
 
-      const updatedEventsMsg = result.updatedEvents.amount > 0
-        ? `Updated ${result.updatedEvents.amount} events for contract ${contractAddress}`
-        : `No events could be updated for contract ${contractAddress}`
+      const resultMsg = result.updatedEvents.amount > 0
+        ? `Processed a total of ${result.updatedEvents.amount} events for contract ${contractAddress}`
+        : `No undecoded events found for contract ${contractAddress}`
 
-      const verifiedAbiMsg = result.verifiedAbi
-        ? `Verified ABI: ${result.verifiedAbi}`
-        : 'No verified ABI found for contract. Note that a verified ABI is required to decode all events correctly.'
+      const verifiedAbiMsg = `Verified ABI: ${result.verifiedAbi ? 'Yes' : 'No'}. Note that a verified ABI is required to decode all events correctly.`
 
-      this.log.info(updatedEventsMsg)
+      this.log.info(resultMsg)
       this.log.info(verifiedAbiMsg)
       return result
     } catch (error) {
@@ -187,11 +190,13 @@ export default class ContractEventsUpdater {
   }
 
   // Note: This function assumes all events were emitted by the same contract address
-  async processEvents (parser, events = [], isBridge = false) {
+  async processEvents (parser, events = [], { contractDetails }) {
     try {
       if (!parser || !(parser instanceof ContractParser)) throw new Error('Invalid contract parser provided')
 
       const result = []
+      const isBridge = this.isBridgeAddress(contractDetails.address)
+      let proxyParser = null
 
       for (const event of events) {
         const eventDetails = {
@@ -210,18 +215,24 @@ export default class ContractEventsUpdater {
 
         const debugData = {
           event,
-          parsedEvent: null
+          parsedEvent: null,
+          isProxyEvent: false
         }
 
         result.push(eventDetails)
 
         try {
           this.validateEvent(event)
+          // by default, the provided parser is used
+          let contractParser = parser
+          let eventToStore = null
 
-          // Bridge: Get custom parser according to event block height since bridge ABI changes at certain block heights
           if (isBridge) {
-            const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
-            parser = bridgeParser
+            // Bridge: Use bridge parser according to event block height since bridge ABI changes at certain block heights
+            const bridgeParserData = await this.getBridgeContractParser(event.blockNumber)
+
+            // Switch to bridge parser
+            contractParser = bridgeParserData.parser
           }
 
           eventDetails.eventId = event.eventId
@@ -231,17 +242,38 @@ export default class ContractEventsUpdater {
           eventDetails.timestamp = event.timestamp
 
           // Parse event
-          const [parsedEvent] = parser.parseTxLogs([event])
+          const [parsedEvent] = contractParser.parseTxLogs([event])
+          eventToStore = parsedEvent
           debugData.parsedEvent = parsedEvent
 
-          // Undecodeable events
-          if (parsedEvent.event === null) throw new Error('Unable to decode event')
+          if (parsedEvent.event === null) {
+            // Non-proxy events: throw error
+            if (!contractDetails.isProxy) throw new Error(`Unable to decode event`)
+
+            // Proxy events: try decoding with the proxy contract parser
+            this.log.info(`Event ${event.eventId} for contract ${event.address} could not be decoded using implementation ABI. Retrying with proxy ABI...`)
+
+            if (!proxyParser) {
+              const proxyParserData = await this.getProxyContractParser(contractDetails.address)
+              proxyParser = proxyParserData.parser
+            }
+
+            contractParser = proxyParser
+
+            const [parsedProxyEvent] = contractParser.parseTxLogs([event])
+            eventToStore = parsedProxyEvent
+            debugData.parsedEvent = parsedProxyEvent
+
+            if (parsedProxyEvent.event === null) throw new Error(`Unable to decode event using proxy ABI`)
+
+            debugData.isProxyEvent = true
+          }
 
           eventDetails.decoded = true
-          eventDetails.name = parsedEvent.event
+          eventDetails.name = eventToStore.event
 
           // Update event
-          const updatedEvent = await eventRepository.upsertOne(parsedEvent)
+          const updatedEvent = await eventRepository.upsertOne(eventToStore)
           eventDetails.updated = !!updatedEvent
 
           this.log.info(`Updated event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}`)
@@ -252,6 +284,8 @@ export default class ContractEventsUpdater {
           eventDetails.eventDebugData = debugData
         }
       }
+
+      this.log.info(`Processed ${result.length} events for contract ${contractDetails.address}`)
 
       return result
     } catch (error) {
@@ -268,6 +302,35 @@ export default class ContractEventsUpdater {
       const parser = new ContractParser({ nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.getContractABI(contractAddress, contractDetails)
+
+      if (verifiedAbi) {
+        parser.setAbi(verifiedAbi)
+        // Get full contract details
+        contractDetails = await parser.getContractDetails(contractAddress)
+      }
+
+      return {
+        parser,
+        contractDetails,
+        verifiedAbi: !!verifiedAbi
+      }
+    } catch (error) {
+      const msg = isAddress(contractAddress)
+        ? `Error getting contract parser for contract ${contractAddress}: ${error.message}`
+        : `Error getting contract parser: ${error.message}`
+      this.log.error(msg)
+      return Promise.reject(error)
+    }
+  }
+
+  async getProxyContractParser (contractAddress) {
+    try {
+      this.validateContractAddress(contractAddress)
+
+      const initConfig = await this.getInitConfig()
+      const parser = new ContractParser({ nod3, initConfig })
+      let contractDetails = await parser.getContractDetails(contractAddress)
+      const verifiedAbi = await this.fetchAbiFromDb(contractAddress)
 
       if (verifiedAbi) {
         parser.setAbi(verifiedAbi)
