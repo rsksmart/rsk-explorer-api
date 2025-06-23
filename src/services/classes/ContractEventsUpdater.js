@@ -208,6 +208,11 @@ export default class ContractEventsUpdater {
           eventDebugData: null
         }
 
+        const debugData = {
+          event,
+          parsedEvent: null
+        }
+
         result.push(eventDetails)
 
         try {
@@ -227,6 +232,7 @@ export default class ContractEventsUpdater {
 
           // Parse event
           const [parsedEvent] = parser.parseTxLogs([event])
+          debugData.parsedEvent = parsedEvent
 
           // Undecodeable events
           if (parsedEvent.event === null) throw new Error('Unable to decode event')
@@ -243,7 +249,7 @@ export default class ContractEventsUpdater {
           this.log.error(`Error processing event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}: ${error.message}. Skipping...`)
           eventDetails.error = true
           eventDetails.errorMessage = error.message
-          eventDetails.eventDebugData = event
+          eventDetails.eventDebugData = debugData
         }
       }
 
