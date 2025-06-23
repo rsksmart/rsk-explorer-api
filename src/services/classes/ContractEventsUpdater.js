@@ -20,6 +20,10 @@ export default class ContractEventsUpdater {
     return this.initConfig
   }
 
+  isBridgeAddress (address) {
+    return address === getBridgeAddress()
+  }
+
   validateContractAddress (contractAddress) {
     if (!contractAddress || !isAddress(contractAddress)) {
       throw new Error('Invalid contract address')
@@ -65,6 +69,7 @@ export default class ContractEventsUpdater {
       const result = {
         contractDetails: null,
         verifiedAbi: false,
+        // TODO: update names according to which events were updated and which not
         updatedEvents: {
           amount: 0,
           events: []
@@ -76,8 +81,8 @@ export default class ContractEventsUpdater {
 
       // Normalize contract address
       contractAddress = contractAddress.toLowerCase()
-      const isBridge = contractAddress === getBridgeAddress()
 
+      const isBridge = this.isBridgeAddress(contractAddress)
       const { parser, contractDetails, verifiedAbi } = await this.getContractParser(contractAddress)
       result.contractDetails = contractDetails
       result.verifiedAbi = isBridge ? true : verifiedAbi
@@ -93,21 +98,22 @@ export default class ContractEventsUpdater {
         }
       }
 
-      this.log.info(`Updating events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
+      this.log.info(`Processing events for contract ${contractAddress}${sinceBlockNumber ? ` since block number: ${sinceBlockNumber}...` : '...'}`)
 
       const { events, next } = await this.fetchPaginatedEvents(query, pageSize)
 
       // No events
-      if (events.length === 0) return result
+      if (events.length === 0) {
+        this.log.info(`No undecoded events found for contract ${contractAddress}`)
+        return result
+      }
 
-      // First page
-      const processedEventsResult = await this.processEvents(parser, events, isBridge)
+      // Process first page
+      const processedEventsResult = await this.processEvents(parser, events, { contractDetails })
       result.updatedEvents.events.push(...processedEventsResult)
       result.updatedEvents.amount = result.updatedEvents.events.length
 
-      if (!next) return result
-
-      // Next pages
+      // Process next pages (if any)
       let cursor = next
       while (cursor) {
         const { events, next } = await this.fetchPaginatedEvents({
@@ -118,22 +124,20 @@ export default class ContractEventsUpdater {
           event: null
         }, pageSize)
 
-        const processedEventsResult = await this.processEvents(parser, events, isBridge)
+        const processedEventsResult = await this.processEvents(parser, events, { contractDetails })
         result.updatedEvents.events.push(...processedEventsResult)
         result.updatedEvents.amount = result.updatedEvents.events.length
 
         cursor = next
       }
 
-      const updatedEventsMsg = result.updatedEvents.amount > 0
-        ? `Updated ${result.updatedEvents.amount} events for contract ${contractAddress}`
-        : `No events could be updated for contract ${contractAddress}`
+      const resultMsg = result.updatedEvents.amount > 0
+        ? `Processed a total of ${result.updatedEvents.amount} events for contract ${contractAddress}`
+        : `No undecoded events found for contract ${contractAddress}`
 
-      const verifiedAbiMsg = result.verifiedAbi
-        ? `Verified ABI: ${result.verifiedAbi}`
-        : 'No verified ABI found for contract. Note that a verified ABI is required to decode all events correctly.'
+      const verifiedAbiMsg = `Verified ABI: ${result.verifiedAbi ? 'Yes' : 'No'}. Note that a verified ABI is required to decode all events correctly.`
 
-      this.log.info(updatedEventsMsg)
+      this.log.info(resultMsg)
       this.log.info(verifiedAbiMsg)
       return result
     } catch (error) {
@@ -176,59 +180,114 @@ export default class ContractEventsUpdater {
     }
   }
 
-  async processEvents (parser, events = [], isBridge = false) {
+  validateEvent (event) {
+    if (!event) throw new Error('Invalid event provided')
+    if (!event.eventId) throw new Error('Invalid event provided: Missing eventId')
+    if (!isAddress(event.address)) throw new Error('Invalid event provided: Missing address')
+    if (isNaN(event.blockNumber)) throw new Error('Invalid event provided: Invalid blockNumber')
+    if (!event.transactionHash) throw new Error('Invalid event provided: Missing transactionHash')
+    if (isNaN(event.logIndex)) throw new Error('Invalid event provided: Invalid logIndex')
+  }
+
+  // Note: This function assumes all events were emitted by the same contract address
+  async processEvents (parser, events = [], { contractDetails }) {
     try {
       if (!parser || !(parser instanceof ContractParser)) throw new Error('Invalid contract parser provided')
 
-      // Bridge events
-      if (isBridge) {
-        const parsedEvents = []
+      const result = []
+      const isBridge = this.isBridgeAddress(contractDetails.address)
+      let proxyParser = null
 
-        for (const event of events) {
-          // Bridge events should be parsed individually by block height to avoid ABI inconsistencies
-          const { parser: bridgeParser } = await this.getBridgeContractParser(event.blockNumber)
-          this.log.info(`Parsing bridge event ${event.eventId} (blockHeight: ${event.blockNumber})...`)
-          const [parsedEvent] = bridgeParser.parseTxLogs([event])
-          parsedEvents.push(parsedEvent)
+      for (const event of events) {
+        const eventDetails = {
+          eventId: null,
+          name: null,
+          blockNumber: null,
+          transactionHash: null,
+          logIndex: null,
+          timestamp: null,
+          decoded: false,
+          updated: false,
+          error: false,
+          errorMessage: null,
+          eventDebugData: null
         }
 
-        const decodedEvents = parsedEvents.filter(event => event.event !== null)
-        const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
-        const transactionResult = await prismaClient.$transaction(upsertQueries)
+        const debugData = {
+          event,
+          parsedEvent: null,
+          isProxyEvent: false
+        }
 
-        return transactionResult.map(upsertEvent => {
-          return {
-            eventId: upsertEvent.eventId,
-            decoded: upsertEvent.event !== null,
-            name: upsertEvent.event,
-            blockNumber: upsertEvent.blockNumber,
-            transactionHash: upsertEvent.transactionHash,
-            timestamp: new Date(Number(upsertEvent.timestamp) * 1000).toISOString()
+        result.push(eventDetails)
+
+        try {
+          this.validateEvent(event)
+          // by default, the provided parser is used
+          let contractParser = parser
+          let eventToStore = null
+
+          if (isBridge) {
+            // Bridge: Use bridge parser according to event block height since bridge ABI changes at certain block heights
+            const bridgeParserData = await this.getBridgeContractParser(event.blockNumber)
+
+            // Switch to bridge parser
+            contractParser = bridgeParserData.parser
           }
-        })
+
+          eventDetails.eventId = event.eventId
+          eventDetails.blockNumber = event.blockNumber
+          eventDetails.transactionHash = event.transactionHash
+          eventDetails.logIndex = event.logIndex
+          eventDetails.timestamp = event.timestamp
+
+          // Parse event
+          const [parsedEvent] = contractParser.parseTxLogs([event])
+          eventToStore = parsedEvent
+          debugData.parsedEvent = parsedEvent
+
+          if (parsedEvent.event === null) {
+            // Non-proxy events: throw error
+            if (!contractDetails.isProxy) throw new Error(`Unable to decode event`)
+
+            // Proxy events: try decoding with the proxy contract parser
+            this.log.info(`Event ${event.eventId} for contract ${event.address} could not be decoded using implementation ABI. Retrying with proxy ABI...`)
+
+            if (!proxyParser) {
+              const proxyParserData = await this.getProxyContractParser(contractDetails.address)
+              proxyParser = proxyParserData.parser
+            }
+
+            contractParser = proxyParser
+
+            const [parsedProxyEvent] = contractParser.parseTxLogs([event])
+            eventToStore = parsedProxyEvent
+            debugData.parsedEvent = parsedProxyEvent
+
+            if (parsedProxyEvent.event === null) throw new Error(`Unable to decode event using proxy ABI`)
+
+            debugData.isProxyEvent = true
+          }
+
+          eventDetails.decoded = true
+          eventDetails.name = eventToStore.event
+
+          // Update event
+          const updatedEvent = await eventRepository.upsertOne(eventToStore)
+          eventDetails.updated = !!updatedEvent
+
+          this.log.info(`Updated event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}`)
+        } catch (error) {
+          this.log.error(`Error processing event ${event.eventId} for contract ${event.address} at block ${event.blockNumber}, tx ${event.transactionHash}, logIndex: ${event.logIndex}: ${error.message}. Skipping...`)
+          eventDetails.error = true
+          eventDetails.errorMessage = error.message
+          eventDetails.eventDebugData = debugData
+        }
       }
 
-      const parsedEvents = parser.parseTxLogs(events)
-      const decodedEvents = parsedEvents.filter(event => event.event !== null)
-      const upsertQueries = decodedEvents.map(event => eventRepository.upsertOne(event))
-      const transactionResult = await prismaClient.$transaction(upsertQueries)
+      this.log.info(`Processed ${result.length} events for contract ${contractDetails.address}`)
 
-      const processingMsg = transactionResult.length > 0
-        ? `Processed ${transactionResult.length} events...`
-        : 'No events to process in this page...'
-
-      this.log.info(processingMsg)
-
-      return transactionResult.map(upsertEvent => {
-        return {
-          eventId: upsertEvent.eventId,
-          decoded: upsertEvent.event !== null,
-          name: upsertEvent.event,
-          blockNumber: upsertEvent.blockNumber,
-          transactionHash: upsertEvent.transactionHash,
-          timestamp: new Date(Number(upsertEvent.timestamp) * 1000).toISOString()
-        }
-      })
+      return result
     } catch (error) {
       this.log.error(`Error processing events: ${error.message}`)
       return []
@@ -243,6 +302,35 @@ export default class ContractEventsUpdater {
       const parser = new ContractParser({ nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.getContractABI(contractAddress, contractDetails)
+
+      if (verifiedAbi) {
+        parser.setAbi(verifiedAbi)
+        // Get full contract details
+        contractDetails = await parser.getContractDetails(contractAddress)
+      }
+
+      return {
+        parser,
+        contractDetails,
+        verifiedAbi: !!verifiedAbi
+      }
+    } catch (error) {
+      const msg = isAddress(contractAddress)
+        ? `Error getting contract parser for contract ${contractAddress}: ${error.message}`
+        : `Error getting contract parser: ${error.message}`
+      this.log.error(msg)
+      return Promise.reject(error)
+    }
+  }
+
+  async getProxyContractParser (contractAddress) {
+    try {
+      this.validateContractAddress(contractAddress)
+
+      const initConfig = await this.getInitConfig()
+      const parser = new ContractParser({ nod3, initConfig })
+      let contractDetails = await parser.getContractDetails(contractAddress)
+      const verifiedAbi = await this.fetchAbiFromDb(contractAddress)
 
       if (verifiedAbi) {
         parser.setAbi(verifiedAbi)

@@ -1,5 +1,7 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
+import fs from 'fs'
+import path from 'path'
 
 // Sometimes, contract events are not decoded correctly. This could happen due to several reasons
 // The most probable ones are:
@@ -62,7 +64,14 @@ async function main () {
 
     const contractEventsUpdater = new ContractEventsUpdater()
     const result = await contractEventsUpdater.updateContractEvents(targetAddress, parsedPageSize, parsedSinceBlockNumber)
-    console.dir(result, { depth: null })
+
+    console.log(`Saving result file...`)
+    const fileName = `events-update-${targetAddress}-${Date.now()}.json`
+    const resultFilePath = path.join(__dirname, fileName)
+    fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2))
+    console.log(`Result file saved to ${resultFilePath}`)
+
+    process.exit(0)
   } catch (error) {
     console.log(`[Tool ${toolName}]: Error updating contract events`)
     console.error(error)
