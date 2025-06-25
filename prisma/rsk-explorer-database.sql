@@ -1,6 +1,9 @@
--- RSK Explorer Database Schema V1.1.3
+-- RSK Explorer Database Schema V1.1.5
 
 /*
+
+V1.1.5 Notes:
+- remove foreign key constraint from address_in_event table (address field)
 
 V1.1.4 Notes:
 - add index on table transaction_in_pool(pool_id)
@@ -412,8 +415,7 @@ address VARCHAR(42),
 is_event_emitter_address BOOLEAN,
 event_signature VARCHAR,
 PRIMARY KEY (event_id, address, is_event_emitter_address),
-FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
-FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
+FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE
 );
 CREATE INDEX idx_address_in_event_address ON address_in_event(address);
 CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
