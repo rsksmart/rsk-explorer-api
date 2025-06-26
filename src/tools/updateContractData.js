@@ -26,195 +26,149 @@ function toHex (value) {
 }
 
 async function getContractData (contractAddress, blockNumber) {
-  if (!isAddress(contractAddress)) {
-    throw new Error('Invalid contract address')
-  }
-
-  if (contractAddress === getBridgeAddress()) {
-    throw new Error('Bridge contract is not supported')
-  }
-
-  if (isNaN(blockNumber)) {
-    throw new Error('Invalid block number')
-  }
-
-  const contractData = {
-    contractAddress: contractAddress.toLowerCase(),
-    blockNumber,
-    name: null,
-    symbol: null,
-    decimals: null,
-    totalSupply: null,
-    contractMethods: [],
-    contractInterfaces: []
-  }
-
-  const parser = new ContractParser({ nod3 })
-  const contractDetails = await parser.getContractDetails(contractAddress)
-
-  // proxies
-  if (contractDetails.isProxy) {
-    console.log('Contract is a proxy. Checking for verified implementation ABI...')
-    const implementationAddress = contractDetails.implementationAddress
-    const implementationAbi = await fetchAbiFromDb(implementationAddress)
-    if (!implementationAbi) {
-      console.log('No verified implementation found. Using default ABI.')
-      // set default details
-      contractData.contractMethods = contractDetails.methods
-      contractData.contractInterfaces = contractDetails.interfaces
-    } else {
-      console.log('Verified implementation found. Using verified ABI.')
-      parser.setAbi(implementationAbi)
-      const verifiedContractDetails = await parser.getContractDetails(contractAddress)
-      // set verified details
-      contractData.contractMethods = verifiedContractDetails.methods
-      contractData.contractInterfaces = verifiedContractDetails.interfaces
+  try {
+    if (!isAddress(contractAddress)) {
+      throw new Error('Invalid contract address')
     }
-  } else {
-    // non-proxies
-    console.log('Contract is not a proxy. Checking for verified ABI...')
-    const abi = await fetchAbiFromDb(contractAddress)
-    if (!abi) {
-      console.log('No verified ABI found. Using default ABI.')
-      // set default details
-      contractData.contractMethods = contractDetails.methods
-      contractData.contractInterfaces = contractDetails.interfaces
-    } else {
-      console.log('Verified ABI found. Using verified ABI.')
-      parser.setAbi(abi)
-      const verifiedContractDetails = await parser.getContractDetails(contractAddress)
-      // set verified details
-      contractData.contractMethods = verifiedContractDetails.methods
-      contractData.contractInterfaces = verifiedContractDetails.interfaces
+
+    if (contractAddress === getBridgeAddress()) {
+      throw new Error('Bridge contract is not supported')
     }
+
+    if (isNaN(blockNumber)) {
+      throw new Error('Invalid block number')
+    }
+
+    const contractData = {
+      contractAddress: contractAddress.toLowerCase(),
+      blockNumber,
+      name: null,
+      symbol: null,
+      decimals: null,
+      totalSupply: null,
+      contractMethods: [],
+      contractInterfaces: []
+    }
+
+    const parser = new ContractParser({ nod3 })
+    const contractDetails = await parser.getContractDetails(contractAddress)
+
+    // proxies
+    if (contractDetails.isProxy) {
+      console.log('Contract is a proxy. Checking for verified implementation ABI...')
+      const implementationAddress = contractDetails.implementationAddress
+
+      if (!isAddress(implementationAddress)) throw new Error('Invalid implementation address')
+
+      const implementationAbi = await fetchAbiFromDb(implementationAddress)
+      if (!implementationAbi) {
+        console.log('No verified implementation found. Using default ABI for data fetch...')
+        // set default details
+        contractData.contractMethods = contractDetails.methods
+        contractData.contractInterfaces = contractDetails.interfaces
+      } else {
+        console.log('Verified implementation found. Using verified ABI for data fetch...')
+        parser.setAbi(implementationAbi)
+        const verifiedContractDetails = await parser.getContractDetails(contractAddress)
+        // set verified details
+        contractData.contractMethods = verifiedContractDetails.methods
+        contractData.contractInterfaces = verifiedContractDetails.interfaces
+      }
+    } else {
+      // non-proxies
+      console.log('Contract is not a proxy. Checking for verified ABI...')
+      const abi = await fetchAbiFromDb(contractAddress)
+      if (!abi) {
+        console.log('No verified ABI found. Using default ABI for data fetch...')
+        // set default details
+        contractData.contractMethods = contractDetails.methods
+        contractData.contractInterfaces = contractDetails.interfaces
+      } else {
+        console.log('Verified ABI found. Using verified ABI for data fetch...')
+        parser.setAbi(abi)
+        const verifiedContractDetails = await parser.getContractDetails(contractAddress)
+        // set verified details
+        contractData.contractMethods = verifiedContractDetails.methods
+        contractData.contractInterfaces = verifiedContractDetails.interfaces
+      }
+    }
+
+    const contract = await parser.makeContract(contractAddress)
+    const tokenData = await parser.getDefaultTokenData(contract, blockNumber)
+
+    // set token data
+    contractData.name = tokenData.name
+    contractData.symbol = tokenData.symbol
+    contractData.decimals = tokenData.decimals
+    contractData.totalSupply = toHex(tokenData.totalSupply)
+
+    return contractData
+  } catch (error) {
+    console.error('Error during contract data fetch')
+    console.error(error)
+    return null
   }
-
-  const contract = await parser.makeContract(contractAddress)
-  const tokenData = await parser.getDefaultTokenData(contract, blockNumber)
-
-  // set token data
-  contractData.name = tokenData.name
-  contractData.symbol = tokenData.symbol
-  contractData.decimals = tokenData.decimals
-  contractData.totalSupply = toHex(tokenData.totalSupply)
-
-  return contractData
 }
 
 async function updateContractData (newContractData) {
-  const { contractAddress, blockNumber, name, symbol, decimals, totalSupply, contractMethods, contractInterfaces } = newContractData
-
-  const address = await prismaClient.address.findUnique({
-    where: {
-      address: contractAddress
-    }
-  })
-
-  console.log('Address found:')
-  console.log(address)
-
   try {
-    // Update address name
-    console.log('Updating address name...')
-    const addressResult = await prismaClient.address.update({
-      where: {
-        address: contractAddress
-      },
-      data: {
-        name
-      }
+    const {
+      contractAddress,
+      blockNumber,
+      name,
+      symbol,
+      decimals,
+      totalSupply,
+      contractMethods,
+      contractInterfaces
+    } = newContractData
+
+    const address = await prismaClient.address.findFirst({
+      where: { address: contractAddress }
     })
-    console.log('Address updated:')
-    console.log(addressResult)
 
-    // Update contract symbol and decimals
-    console.log('Updating contract symbol and decimals...')
-    const contractResult = await prismaClient.contract.update({
-      where: {
-        address: contractAddress
-      },
-      data: {
-        symbol,
-        decimals
-      }
-    })
-    console.log('Contract updated:')
-    console.log(contractResult)
+    if (!address) throw new Error('Address not found in database')
 
-    // Delete old methods
-    console.log('Deleting old methods...')
-    const deleteMethodsResult = await prismaClient.contract_method.deleteMany({
-      where: {
-        contractAddress: contractAddress
-      }
-    })
-    console.log('Old methods deleted:')
-    console.log(deleteMethodsResult)
+    const transactionQueries = [
+      // Update address name
+      prismaClient.address.update({
+        where: { address: contractAddress },
+        data: { name }
+      }),
+      // Update contract symbol and decimals
+      prismaClient.contract.update({
+        where: { address: contractAddress },
+        data: { symbol, decimals }
+      }),
+      // Delete old methods
+      prismaClient.contract_method.deleteMany({
+        where: { contractAddress }
+      }),
+      // Insert new methods
+      prismaClient.contract_method.createMany({
+        data: contractMethods.map(method => ({ method, contractAddress }))
+      }),
+      // Delete old interfaces
+      prismaClient.contract_interface.deleteMany({
+        where: { contractAddress }
+      }),
+      // Insert new interfaces
+      prismaClient.contract_interface.createMany({
+        data: contractInterfaces.map(interf => ({ interface: interf, contractAddress }))
+      }),
+      // Delete old total supply
+      prismaClient.total_supply.deleteMany({
+        where: { contractAddress }
+      }),
+      // Insert new total supply
+      prismaClient.total_supply.create({
+        data: { contractAddress, blockNumber, totalSupply }
+      })
+    ]
 
-    // Insert new methods
-    console.log('Inserting new methods...')
-    const methodsToInsert = contractMethods.map(method => ({
-      method,
-      contractAddress: contractAddress
-    }))
-    console.log('Methods to insert:')
-    console.log(methodsToInsert)
-
-    const insertMethodsResult = await prismaClient.contract_method.createMany({
-      data: methodsToInsert
-    })
-    console.log('New methods inserted:')
-    console.log(insertMethodsResult)
-
-    // Delete old interfaces
-    console.log('Deleting old interfaces...')
-    const deleteInterfacesResult = await prismaClient.contract_interface.deleteMany({
-      where: {
-        contractAddress: contractAddress
-      }
-    })
-    console.log('Old interfaces deleted:')
-    console.log(deleteInterfacesResult)
-
-    // Insert new interfaces
-    console.log('Inserting new interfaces...')
-    const interfacesToInsert = contractInterfaces.map(interf => ({
-      interface: interf,
-      contractAddress: contractAddress
-    }))
-    console.log('Interfaces to insert:')
-    console.log(interfacesToInsert)
-
-    const insertInterfacesResult = await prismaClient.contract_interface.createMany({
-      data: interfacesToInsert
-    })
-    console.log('New interfaces inserted:')
-    console.log(insertInterfacesResult)
-
-    // Delete and insert total supply
-    console.log('Deleting old total supply...')
-    const deleteTotalSupplyResult = await prismaClient.total_supply.deleteMany({
-      where: {
-        contractAddress: contractAddress
-      }
-    })
-    console.log('Old total supply deleted:')
-    console.log(deleteTotalSupplyResult)
-
-    console.log('Inserting new total supply...')
-    const insertTotalSupplyResult = await prismaClient.total_supply.create({
-      data: {
-        contractAddress: contractAddress,
-        blockNumber: blockNumber,
-        totalSupply: totalSupply
-      }
-    })
-    console.log('New total supply inserted:')
-    console.log(insertTotalSupplyResult)
-
-    console.log('All operations completed successfully!')
+    await prismaClient.$transaction(transactionQueries)
   } catch (error) {
-    console.error('Error during update:')
+    console.error('Error during contract data update:')
     console.error(error)
   }
 }
@@ -238,8 +192,23 @@ async function main () {
   contractAddress = contractAddress.toLowerCase()
   blockNumber = parseInt(blockNumber)
 
+  console.log(`Fetching details for contact ${contractAddress} at block ${blockNumber}...`)
+
   const contractData = await getContractData(contractAddress, blockNumber)
+
+  if (!contractData) {
+    console.error('Failed to fetch contract data')
+    return
+  }
+
+  console.log(`Contract data fetched successfully!`)
+  console.dir(contractData, { depth: null })
+
+  console.log('Updating contract data...')
   await updateContractData(contractData)
+
+  console.log('Contract data updated successfully!')
+  process.exit(0)
 }
 
-main().catch(console.error)
+main()
