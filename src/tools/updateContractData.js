@@ -166,11 +166,16 @@ async function updateContractData (newContractData) {
       })
     ]
 
-    await prismaClient.$transaction(transactionQueries)
+    return prismaClient.$transaction(transactionQueries)
   } catch (error) {
     console.error('Error during contract data update:')
     console.error(error)
   }
+}
+
+function printUsageAndExit () {
+  console.error('Usage: node updateContractData.js <contractAddress> <blockNumber>')
+  process.exit(1)
 }
 
 async function main () {
@@ -178,15 +183,18 @@ async function main () {
   let blockNumber = process.argv[3]
 
   if (!isAddress(contractAddress)) {
-    throw new Error('Invalid contract address')
+    console.error('Invalid contract address')
+    printUsageAndExit()
   }
 
   if (contractAddress === getBridgeAddress()) {
-    throw new Error('Bridge contract is not supported')
+    console.error('Bridge contract is not supported')
+    printUsageAndExit()
   }
 
   if (isNaN(parseInt(blockNumber))) {
-    throw new Error('Invalid block number')
+    console.error('Invalid block number')
+    printUsageAndExit()
   }
 
   contractAddress = contractAddress.toLowerCase()
@@ -196,16 +204,14 @@ async function main () {
 
   const contractData = await getContractData(contractAddress, blockNumber)
 
-  if (!contractData) {
-    console.error('Failed to fetch contract data')
-    return
-  }
+  if (!contractData) throw new Error('Failed to fetch contract data')
 
   console.log(`Contract data fetched successfully!`)
   console.dir(contractData, { depth: null })
-
   console.log('Updating contract data...')
-  await updateContractData(contractData)
+
+  const result = await updateContractData(contractData)
+  if (!result) throw new Error('Failed to update contract data')
 
   console.log('Contract data updated successfully!')
   process.exit(0)
