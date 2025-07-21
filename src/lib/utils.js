@@ -174,3 +174,20 @@ export const measurePromiseTime = async (promise, { name = 'Measurement', forceM
     extraData
   }
 }
+
+export function removeNullCharacters (str) {
+  if (typeof str !== 'string') return str
+
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/\x00/g, '')
+}
+
+export function sanitizeString (str) {
+  if (typeof str !== 'string') return str
+
+  const stringSanitizers = [
+    removeNullCharacters
+  ]
+
+  return stringSanitizers.reduce((acc, sanitizer) => sanitizer(acc), str)
+}
