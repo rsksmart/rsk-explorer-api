@@ -1,5 +1,5 @@
-const { expect } = require('chai')
-const { removeNullCharacters, sanitizeString } = require('../../src/lib/utils')
+import { expect } from 'chai'
+import { removeNullCharacters, sanitizeString } from '../../src/lib/utils'
 
 const testCases = {
   controlCharacters: [
