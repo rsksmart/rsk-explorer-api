@@ -168,10 +168,15 @@ class Contract extends BcThing {
     return this.parser.getDefaultTokenData(this.contract, blockNumber)
   }
 
-  addTokenAddress (address) {
-    if (this.addresses[address]) return
+  addTokenAddress (address, { blockNumber, blockHash }) {
+    const contractData = {
+      initConfig: this.initConfig,
+      contractAddress: this.address,
+      blockNumber,
+      blockHash
+    }
 
-    this.addresses[address] = new TokenAddress(address, this)
+    this.addresses[address] = new TokenAddress(address, contractData)
   }
 
   call (method, params = []) {

@@ -216,7 +216,11 @@ export class Tx extends BcThing {
           events[index] = formatEvent(event, tx)
           const { _addresses } = event
           for (let address of _addresses) {
-            contract.addTokenAddress(address)
+            // FUTURE: split this logic. Not all contracts are tokens, this means we cant assume that detected addresses from ALL events will be token addresses
+            contract.addTokenAddress(address, {
+              blockNumber: addressOptions.block.number,
+              blockHash: addressOptions.block.hash
+            })
             this.addresses.add(address, addressOptions)
           }
         }
