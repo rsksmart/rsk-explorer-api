@@ -175,19 +175,51 @@ export const measurePromiseTime = async (promise, { name = 'Measurement', forceM
   }
 }
 
-export function removeNullCharacters (str) {
+export function removeNonPrintableControlCharacters (str) {
   if (typeof str !== 'string') return str
 
   // eslint-disable-next-line no-control-regex
-  return str.replace(/\x00/g, '')
+  return str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 }
 
-export function sanitizeString (str) {
+export function removeLineBreaksAndTabs (str) {
   if (typeof str !== 'string') return str
 
-  const stringSanitizers = [
-    removeNullCharacters
-  ]
+  // eslint-disable-next-line no-control-regex
+  return str.replace(/[\x09\x0A\x0D]/g, '')
+}
 
-  return stringSanitizers.reduce((acc, sanitizer) => sanitizer(acc), str)
+export function limitStringLength (str, maxLength) {
+  if (typeof str !== 'string') return str
+  if (str.length <= maxLength) return str
+  return str.slice(0, maxLength)
+}
+
+export function limitStringTo256 (str) {
+  return limitStringLength(str, 256)
+}
+
+/**
+ * Sanitizes a string according to the provided sanitizers. Removes non printable control characters by default.
+ * @param {string} str The string to sanitize.
+ * @param {Array} [sanitizers] optional - An array of sanitization functions to apply.
+ * @returns {string} The sanitized string.
+ */
+export function sanitizeString (str, sanitizers = [removeNonPrintableControlCharacters]) {
+  if (typeof str !== 'string') return str
+
+  return sanitizers.reduce((acc, sanitizer) => sanitizer(acc), str)
+}
+
+/**
+ * Sanitizes a contract name or symbol.
+ * @param {string} nameOrSymbol The name or symbol to sanitize.
+ * @returns {string} The sanitized name or symbol.
+ */
+export function sanitizeContractNameOrSymbol (nameOrSymbol) {
+  return sanitizeString(nameOrSymbol, [
+    removeNonPrintableControlCharacters,
+    removeLineBreaksAndTabs,
+    limitStringTo256
+  ])
 }
