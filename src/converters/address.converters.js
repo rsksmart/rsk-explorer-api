@@ -1,6 +1,7 @@
 import { removeNullFields } from '../repositories/utils'
 import { blockEntityToRaw } from './blocks.converters'
 import { isNativeContract } from '../lib/NativeContracts'
+import { sanitizeContractNameOrSymbol } from '../lib/utils'
 
 function rawAddressToEntity ({
   address,
@@ -12,7 +13,7 @@ function rawAddressToEntity ({
     address,
     isNative,
     type,
-    name
+    name: sanitizeContractNameOrSymbol(name)
   }
 }
 
@@ -29,7 +30,7 @@ function rawMinerAddressToEntity ({
     address,
     isNative,
     type,
-    name,
+    name: sanitizeContractNameOrSymbol(name),
     balance,
     blockNumber,
     lastBlockMined: JSON.stringify(lastBlockMined),
@@ -50,7 +51,7 @@ function rawContractToEntity ({
     code,
     codeStoredAtBlock,
     deployedCode,
-    symbol,
+    symbol: sanitizeContractNameOrSymbol(symbol),
     decimals
   }
 
