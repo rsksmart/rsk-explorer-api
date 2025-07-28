@@ -1,6 +1,10 @@
--- RSK Explorer Database Schema V1.1.3
+-- RSK Explorer Database Schema V1.1.5
 
 /*
+
+V1.1.5 Notes:
+- add status field to transaction table
+- add index on table transaction(status)
 
 V1.1.4 Notes:
 - add index on table transaction_in_pool(pool_id)
@@ -255,6 +259,7 @@ timestamp INT8 NOT NULL,
 datetime TIMESTAMP WITH TIME ZONE,
 date date,
 gas_used INT,
+status VARCHAR,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
@@ -271,6 +276,7 @@ CREATE INDEX ON transaction(transaction_index);
 CREATE INDEX ON transaction(timestamp);
 CREATE INDEX idx_transaction_datetime ON transaction(datetime);
 CREATE INDEX idx_transaction_date ON transaction(date);
+CREATE INDEX idx_transaction_status ON transaction(status);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,

@@ -237,6 +237,7 @@ export function createTxObject (tx, { timestamp, receipt }) {
   if (!Object.keys(receipt).length) throw new Error('invalid tx receipt')
   // TODO check timestamp
   tx.timestamp = timestamp
+  tx.status = receipt.status
   tx.receipt = receipt
   return tx
 }
