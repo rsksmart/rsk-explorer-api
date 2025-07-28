@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "2.2.9",
+  "version": "2.2.10",
   "description": "RSK Explorer API",
   "main": "index.js",
   "scripts": {
