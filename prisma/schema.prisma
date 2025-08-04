@@ -260,7 +260,7 @@ model transaction {
   datetime                              DateTime?                @db.Timestamptz(6)
   date                                  DateTime?                @db.Date
   gasUsed                               Int?                     @map("gas_used")
-  receipt                               String                   @db.VarChar
+  receipt                               Json                     @db.JsonB
   status                                String?                  @db.VarChar
   event                                 event[]
   internal_transaction                  internal_transaction[]
