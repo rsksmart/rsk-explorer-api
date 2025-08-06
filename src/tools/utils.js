@@ -87,6 +87,9 @@ export async function getContractData (contractAddress, blockNumber) {
       blockNumber,
       isToken: false,
       isProxy: false,
+      proxyType: null,
+      implementationAddress: null,
+      beaconAddress: null,
       isNative: false,
       name: null,
       symbol: null,
@@ -107,12 +110,16 @@ export async function getContractData (contractAddress, blockNumber) {
     }
 
     const parser = new ContractParser({ nod3 })
-    const contractDetails = await parser.getContractDetails(contractAddress)
+    const contractDetails = await parser.getContractDetails(contractAddress, blockNumber)
 
     // proxies
     if (contractDetails.isProxy) {
       contractData.isProxy = true
-      const implementationAddress = contractDetails.implementationAddress
+      contractData.proxyType = contractDetails.proxyType
+      contractData.implementationAddress = contractDetails.implementationAddress
+      contractData.beaconAddress = contractDetails.beaconAddress
+
+      const implementationAddress = contractData.implementationAddress
 
       if (!isAddress(implementationAddress)) throw new Error('Invalid implementation address')
 
@@ -123,7 +130,7 @@ export async function getContractData (contractAddress, blockNumber) {
         contractData.contractInterfaces = contractDetails.interfaces
       } else {
         parser.setAbi(implementationAbi)
-        const verifiedContractDetails = await parser.getContractDetails(contractAddress)
+        const verifiedContractDetails = await parser.getContractDetails(contractAddress, blockNumber)
         // set verified details
         contractData.contractMethods = verifiedContractDetails.methods
         contractData.contractInterfaces = verifiedContractDetails.interfaces
@@ -137,7 +144,7 @@ export async function getContractData (contractAddress, blockNumber) {
         contractData.contractInterfaces = contractDetails.interfaces
       } else {
         parser.setAbi(abi)
-        const verifiedContractDetails = await parser.getContractDetails(contractAddress)
+        const verifiedContractDetails = await parser.getContractDetails(contractAddress, blockNumber)
         // set verified details
         contractData.contractMethods = verifiedContractDetails.methods
         contractData.contractInterfaces = verifiedContractDetails.interfaces
