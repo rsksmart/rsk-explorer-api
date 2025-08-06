@@ -403,7 +403,6 @@ export const USDRIF = {
     contractInterfaces: [
       'ERC20',
       'ERC165',
-      'ERC1822',
       'ERC1967'
     ],
     contractMethods: [
@@ -667,7 +666,6 @@ export const USDRIF = {
     contractInterfaces: [
       'ERC20',
       'ERC165',
-      'ERC1822',
       'ERC1967'
     ],
     contractMethods: [
