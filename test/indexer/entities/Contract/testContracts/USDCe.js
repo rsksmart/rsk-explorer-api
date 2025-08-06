@@ -204,7 +204,7 @@ export const USDCe = {
       'removeMinter(address)',
       'burn(uint256)'
     ],
-    contractInterfaces: ['ERC20', 'ERC1822'],
+    contractInterfaces: ['ERC20'],
     name: 'Bridged USDC (Stargate)',
     symbol: 'USDC.e',
     decimals: 6,
@@ -360,7 +360,7 @@ export const USDCe = {
       'updateRescuer(address)',
       'version()'
     ],
-    contractInterfaces: [ 'ERC20', 'ERC1822' ],
+    contractInterfaces: [ 'ERC20' ],
     name: 'Bridged USDC (Stargate)',
     symbol: 'USDC.e',
     decimals: 6,
