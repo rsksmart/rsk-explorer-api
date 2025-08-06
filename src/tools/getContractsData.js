@@ -1,13 +1,18 @@
 import fs from 'fs'
 import path from 'path'
-import { getLatestBlockNumber, fetchPaginatedContracts, getContractData } from './utils.js'
+import { getLatestBlockNumber, fetchPaginatedContracts, getContractData, parseArguments } from './utils.js'
 
 const toolName = process.argv[1].split('/').pop()
 
 function printUsageAndExit () {
-  console.log(`Usage: node dist/tools/${toolName}.js [pageSize(number: optional)] [limit(number: optional)]`)
-  console.log(`  pageSize: Number of contracts to process per page (default: 50)`)
-  console.log(`  limit: Maximum number of contracts to process (default: 0 = no limit)`)
+  console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
+  console.log(`Options:`)
+  console.log(`  --pageSize <number>  Number of contracts to process per page (default: 50)`)
+  console.log(`  --limit <number>     Maximum number of contracts to process (default: 0 = no limit)`)
+  console.log(`Examples:`)
+  console.log(`  npx babel-node src/tools/${toolName}`)
+  console.log(`  npx babel-node src/tools/${toolName} --pageSize 25`)
+  console.log(`  npx babel-node src/tools/${toolName} --pageSize 25 --limit 100`)
   process.exit(1)
 }
 
@@ -84,32 +89,29 @@ async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
 }
 
 async function main () {
-  const pageSize = process.argv[2]
-  const limit = process.argv[3]
-
-  const parsedPageSize = pageSize ? parseInt(pageSize) : 50
-  const parsedLimit = limit ? parseInt(limit) : 0
-
-  if (pageSize && (isNaN(parsedPageSize) || parsedPageSize <= 0)) {
-    console.log('Invalid pageSize provided. Must be a positive number')
-    printUsageAndExit()
+  const validOptions = {
+    '--pageSize': { name: 'pageSize', type: 'number', default: 50, min: 1 },
+    '--limit': { name: 'limit', type: 'number', default: 0, min: 0 }
   }
 
-  if (limit && (isNaN(parsedLimit) || parsedLimit < 0)) {
-    console.log('Invalid limit provided. Must be a non-negative number')
+  let options
+  try {
+    options = parseArguments(validOptions)
+  } catch (error) {
+    console.log(`Error: ${error.message}`)
     printUsageAndExit()
   }
 
   try {
     console.log(`${toolName}`)
-    console.log(`Page size: ${parsedPageSize}`)
-    if (parsedLimit > 0) {
-      console.log(`Limit: ${parsedLimit} contracts`)
+    console.log(`Page size: ${options.pageSize}`)
+    if (options.limit > 0) {
+      console.log(`Limit: ${options.limit} contracts`)
     }
     console.log('Depending on the page size and limit, this tool could take a while to complete.')
     console.log('Starting...')
 
-    const result = await getContractsData({ pageSize: parsedPageSize, limit: parsedLimit })
+    const result = await getContractsData({ pageSize: options.pageSize, limit: options.limit })
 
     console.log(`\n=== RESULTS ===`)
     console.log(`Total: ${result.totalContracts}`)

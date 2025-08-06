@@ -257,3 +257,56 @@ export async function updateContractData (newContractData) {
     return Promise.reject(error)
   }
 }
+
+export function parseArguments (validOptions) {
+  const args = process.argv.slice(2)
+  const options = {}
+
+  // Initialize all valid options with their default values using config.name
+  for (const [, config] of Object.entries(validOptions)) {
+    options[config.name] = config.default
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i]
+
+    if (!validOptions[arg]) {
+      throw new Error(`Unknown option '${arg}'`)
+    }
+
+    const config = validOptions[arg]
+
+    if (i + 1 >= args.length) {
+      throw new Error(`${arg} requires a value`)
+    }
+
+    const value = args[i + 1]
+
+    // Validate and parse the value
+    if (config.type === 'number') {
+      const parsedValue = parseInt(value)
+      if (isNaN(parsedValue) || (config.min !== undefined && parsedValue < config.min) || (config.max !== undefined && parsedValue > config.max)) {
+        const minMsg = config.min !== undefined ? ` >= ${config.min}` : ''
+        const maxMsg = config.max !== undefined ? ` <= ${config.max}` : ''
+        throw new Error(`${arg} value must be a number${minMsg}${maxMsg}`)
+      }
+      options[config.name] = parsedValue
+    } else if (config.type === 'string') {
+      if (config.required && !value) {
+        throw new Error(`${arg} requires a non-empty value`)
+      }
+      options[config.name] = value
+    }
+
+    i++ // Skip the next argument since we consumed it
+  }
+
+  // Check required options
+  for (const [optionName, config] of Object.entries(validOptions)) {
+    if (config.required && (options[config.name] === null || options[config.name] === undefined)) {
+      throw new Error(`${optionName} is required`)
+    }
+  }
+
+  return options
+}

@@ -1,41 +1,43 @@
 import fs from 'fs'
 import path from 'path'
-import { getLatestBlockNumber, getContractData } from './utils.js'
+import { getLatestBlockNumber, getContractData, parseArguments } from './utils.js'
 
 const toolName = process.argv[1].split('/').pop()
 
 function printUsageAndExit () {
-  console.log(`Usage: node dist/tools/${toolName}.js contractAddress [blockNumber(number: optional)]`)
-  console.log(`  contractAddress: The contract address to fetch data for`)
-  console.log(`  blockNumber: Block number to fetch data at (default: latest block)`)
+  console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
+  console.log(`Options:`)
+  console.log(`  --address <string>   The contract address to fetch data for (required)`)
+  console.log(`  --block <number>     Block number to fetch data at (default: latest block)`)
+  console.log(`Examples:`)
+  console.log(`  npx babel-node src/tools/${toolName} --address 0x123...`)
+  console.log(`  npx babel-node src/tools/${toolName} --address 0x123... --block 5000000`)
   process.exit(1)
 }
 
 async function main () {
-  const contractAddress = process.argv[2]
-  const blockNumber = process.argv[3]
-
-  if (!contractAddress) {
-    console.log('Contract address is required')
-    printUsageAndExit()
+  const validOptions = {
+    '--address': { name: 'address', type: 'string', default: null, required: true },
+    '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 }
   }
 
-  const parsedBlockNumber = blockNumber ? parseInt(blockNumber) : null
-
-  if (blockNumber && (isNaN(parsedBlockNumber) || parsedBlockNumber < 0)) {
-    console.log('Invalid blockNumber provided. Must be a non-negative number (or leave it blank to use latest block)')
+  let options
+  try {
+    options = parseArguments(validOptions)
+  } catch (error) {
+    console.log(`Error: ${error.message}`)
     printUsageAndExit()
   }
 
   try {
     // Normalize address
-    const normalizedAddress = contractAddress.toLowerCase()
+    const normalizedAddress = options.address.toLowerCase()
 
     console.log(`${toolName}`)
     console.log(`Fetching data for contract: ${normalizedAddress}`)
 
     // Get block number if not provided
-    let targetBlockNumber = parsedBlockNumber
+    let targetBlockNumber = options.blockNumber
     if (!targetBlockNumber) {
       targetBlockNumber = await getLatestBlockNumber()
       console.log(`Using latest block: ${targetBlockNumber}`)
