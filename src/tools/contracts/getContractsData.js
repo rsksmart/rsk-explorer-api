@@ -1,20 +1,20 @@
 import fs from 'fs'
 import path from 'path'
-import { getLatestBlockNumber, fetchPaginatedContracts, getContractData, parseArguments } from './utils.js'
+import { getLatestBlockNumber, fetchPaginatedContracts, getContractData, parseArguments } from '../utils.js'
 
 const toolName = process.argv[1].split('/').pop()
 const resultFileName = `contracts-data-${Date.now()}.json`
 const resultFilePath = path.join(__dirname, resultFileName)
 
 function printUsageAndExit () {
-  console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
+  console.log(`Usage: npx babel-node src/tools/contracts/${toolName} [options]`)
   console.log(`Options:`)
   console.log(`  --pageSize <number>  Number of contracts to process per page (default: 50)`)
   console.log(`  --limit <number>     Maximum number of contracts to process (default: 0 = no limit)`)
   console.log(`Examples:`)
-  console.log(`  npx babel-node src/tools/${toolName}`)
-  console.log(`  npx babel-node src/tools/${toolName} --pageSize 25`)
-  console.log(`  npx babel-node src/tools/${toolName} --pageSize 25 --limit 100`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName}`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName} --pageSize 25`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName} --pageSize 25 --limit 100`)
   process.exit(1)
 }
 
