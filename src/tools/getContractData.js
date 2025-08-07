@@ -54,6 +54,7 @@ async function main () {
 
     console.log('\n=== RESULT ===')
     console.dir(result, { depth: null })
+    console.log(`\nFetch time: ${contractData.fetchTimeMs}ms`)
 
     // Save result to file
     const fileName = `contract-data-${normalizedAddress}-${Date.now()}.json`

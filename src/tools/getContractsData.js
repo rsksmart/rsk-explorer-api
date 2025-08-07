@@ -68,7 +68,7 @@ async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
 
           results.successfulFetches++
           results.contracts[contractAddress] = contractData
-          console.log(`Contract ${contractAddress} fetched.`)
+          console.log(`Contract ${contractAddress} fetched (${contractData.fetchTimeMs}ms).`)
         } catch (error) {
           results.failedFetches++
           results.errors[contractAddress] = error.message

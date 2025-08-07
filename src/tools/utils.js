@@ -73,6 +73,8 @@ export async function fetchPaginatedContracts (pageSize, cursor = null) {
 }
 
 export async function getContractData (contractAddress, blockNumber) {
+  const startTime = Date.now()
+
   try {
     if (!isAddress(contractAddress)) {
       throw new Error('Invalid contract address')
@@ -96,7 +98,9 @@ export async function getContractData (contractAddress, blockNumber) {
       decimals: null,
       totalSupply: null,
       contractMethods: [],
-      contractInterfaces: []
+      contractInterfaces: [],
+      fetchTimeMs: null,
+      updateTimeMs: null
     }
 
     // Native contracts
@@ -106,6 +110,7 @@ export async function getContractData (contractAddress, blockNumber) {
       contractData.contractMethods = NativeContracts.getNativeContractMethods(contractAddress)
       contractData.contractInterfaces = NativeContracts.getNativeContractInterfaces(contractAddress)
 
+      contractData.fetchTimeMs = Date.now() - startTime
       return contractData
     }
 
@@ -164,6 +169,7 @@ export async function getContractData (contractAddress, blockNumber) {
       contractData.totalSupply = toHex(tokenData.totalSupply || 0)
     }
 
+    contractData.fetchTimeMs = Date.now() - startTime
     return contractData
   } catch (error) {
     console.error(`[getContractData] Error fetching contract data for ${contractAddress} at block ${blockNumber}`)
@@ -172,6 +178,8 @@ export async function getContractData (contractAddress, blockNumber) {
 }
 
 export async function updateContractData (newContractData) {
+  const startTime = Date.now()
+
   try {
     const {
       contractAddress,
@@ -251,7 +259,12 @@ export async function updateContractData (newContractData) {
       contractQueries.push(...tokenContractQueries)
     }
 
-    return prismaClient.$transaction(contractQueries)
+    const result = await prismaClient.$transaction(contractQueries)
+
+    // Update the contractData with updateTime
+    newContractData.updateTimeMs = Date.now() - startTime
+
+    return result
   } catch (error) {
     console.error(`[updateContractData] Error updating contract data for ${newContractData.contractAddress} at block ${newContractData.blockNumber}`)
     return Promise.reject(error)

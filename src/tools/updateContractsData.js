@@ -73,7 +73,7 @@ async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = 
 
           results.successfulUpdates++
           results.contracts[contractAddress] = contractData
-          console.log(`Contract ${contractAddress} updated.`)
+          console.log(`Contract ${contractAddress} updated (fetch: ${contractData.fetchTimeMs}ms, update: ${contractData.updateTimeMs}ms).`)
         } catch (error) {
           results.failedUpdates++
           results.errors[contractAddress] = error.message
