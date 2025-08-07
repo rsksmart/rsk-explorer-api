@@ -9,16 +9,19 @@ function printUsageAndExit () {
   console.log(`Options:`)
   console.log(`  --address <string>   The contract address to fetch data for (required)`)
   console.log(`  --block <number>     Block number to fetch data at (default: latest block)`)
+  console.log(`  --save               Save results to file (optional)`)
   console.log(`Examples:`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --address 0x123...`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --address 0x123... --block 5000000`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName} --address 0x123... --save`)
   process.exit(1)
 }
 
 async function main () {
   const validOptions = {
     '--address': { name: 'address', type: 'string', default: null, required: true },
-    '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 }
+    '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 },
+    '--save': { name: 'save', type: 'boolean', default: false }
   }
 
   let options
@@ -56,11 +59,13 @@ async function main () {
     console.dir(result, { depth: null })
     console.log(`\nFetch time: ${contractData.fetchTimeMs}ms`)
 
-    // Save result to file
-    const fileName = `contract-data-${normalizedAddress}-${Date.now()}.json`
-    const resultFilePath = path.join(__dirname, fileName)
-    fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2))
-    console.log(`\nResults saved to: ${fileName}`)
+    // Save result to file if --save flag is provided
+    if (options.save) {
+      const fileName = `contract-data-${normalizedAddress}-${Date.now()}.json`
+      const resultFilePath = path.join(__dirname, fileName)
+      fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2))
+      console.log(`\nResults saved to: ${fileName}`)
+    }
 
     process.exit(0)
   } catch (error) {

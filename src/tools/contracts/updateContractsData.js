@@ -12,15 +12,17 @@ function printUsageAndExit () {
   console.log(`  --block <number>     Block number to update data at (default: latest block)`)
   console.log(`  --pageSize <number>  Number of contracts to process per page (default: 50)`)
   console.log(`  --limit <number>     Maximum number of contracts to process (default: 0 = no limit)`)
+  console.log(`  --save               Save results to file (optional)`)
   console.log(`Examples:`)
   console.log(`  npx babel-node src/tools/contracts/${toolName}`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --block 5000000`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --pageSize 25 --limit 100`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --block 5000000 --pageSize 25 --limit 100`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName} --save`)
   process.exit(1)
 }
 
-async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = {}) {
+async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0, save = false } = {}) {
   const results = {
     totalContracts: 0,
     processedContracts: 0,
@@ -39,7 +41,9 @@ async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = 
       console.log(`Using specified block: ${targetBlockNumber}`)
     }
     console.log(`Updating contracts at block ${targetBlockNumber}`)
-    console.log(`Results will be saved to: ${resultFileName}`)
+    if (save) {
+      console.log(`Results will be saved to: ${resultFileName}`)
+    }
 
     let cursor = null
     let pageCount = 0
@@ -83,9 +87,13 @@ async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = 
         results.processedContracts++
       }
 
-      // Save current page progress
-      fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
-      console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
+      // Save current page progress if --save flag is provided
+      if (save) {
+        fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
+        console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
+      } else {
+        console.log(`Page ${pageCount} completed.`)
+      }
 
       if (limit > 0 && totalProcessed >= limit) {
         break
@@ -106,7 +114,8 @@ async function main () {
   const validOptions = {
     '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 },
     '--pageSize': { name: 'pageSize', type: 'number', default: 50, min: 1 },
-    '--limit': { name: 'limit', type: 'number', default: 0, min: 0 }
+    '--limit': { name: 'limit', type: 'number', default: 0, min: 0 },
+    '--save': { name: 'save', type: 'boolean', default: false }
   }
 
   let options
@@ -129,9 +138,12 @@ async function main () {
       console.log(`Limit: ${options.limit} contracts`)
     }
     console.log('Depending on the page size and limit, this tool could take a while to complete.')
+    if (options.save) {
+      console.log(`Results will be saved to: ${resultFileName}`)
+    }
     console.log('Starting...')
 
-    const result = await updateContractsData({ blockNumber: options.blockNumber, pageSize: options.pageSize, limit: options.limit })
+    const result = await updateContractsData({ blockNumber: options.blockNumber, pageSize: options.pageSize, limit: options.limit, save: options.save })
 
     console.log(`\n=== RESULTS ===`)
     console.log(`Total: ${result.totalContracts}`)
@@ -143,8 +155,9 @@ async function main () {
       console.log(`\nErrors: ${Object.keys(result.errors).length}`)
     }
 
-    const resultFileName = `contracts-update-${Date.now()}.json`
-    console.log(`Final results saved to: ${resultFileName}`)
+    if (options.save) {
+      console.log(`Final results saved to: ${resultFileName}`)
+    }
 
     process.exit(0)
   } catch (error) {

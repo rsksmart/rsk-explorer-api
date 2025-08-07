@@ -289,6 +289,12 @@ export function parseArguments (validOptions) {
 
     const config = validOptions[arg]
 
+    // Boolean flags: no value required
+    if (config.type === 'boolean') {
+      options[config.name] = true
+      continue
+    }
+
     if (i + 1 >= args.length) {
       throw new Error(`${arg} requires a value`)
     }

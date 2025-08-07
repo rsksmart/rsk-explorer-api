@@ -11,14 +11,16 @@ function printUsageAndExit () {
   console.log(`Options:`)
   console.log(`  --pageSize <number>  Number of contracts to process per page (default: 50)`)
   console.log(`  --limit <number>     Maximum number of contracts to process (default: 0 = no limit)`)
+  console.log(`  --save               Save results to file (optional)`)
   console.log(`Examples:`)
   console.log(`  npx babel-node src/tools/contracts/${toolName}`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --pageSize 25`)
   console.log(`  npx babel-node src/tools/contracts/${toolName} --pageSize 25 --limit 100`)
+  console.log(`  npx babel-node src/tools/contracts/${toolName} --save`)
   process.exit(1)
 }
 
-async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
+async function getContractsData ({ pageSize = 50, limit = 0, save = false } = {}) {
   try {
     const latestBlockNumber = await getLatestBlockNumber()
     console.log(`Processing contracts at block ${latestBlockNumber}`)
@@ -78,9 +80,13 @@ async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
         results.processedContracts++
       }
 
-      // Save current page progress
-      fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
-      console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
+      // Save current page progress if --save flag is provided
+      if (save) {
+        fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
+        console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
+      } else {
+        console.log(`Page ${pageCount} completed.`)
+      }
 
       if (limit > 0 && totalProcessed >= limit) {
         break
@@ -99,7 +105,8 @@ async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
 async function main () {
   const validOptions = {
     '--pageSize': { name: 'pageSize', type: 'number', default: 50, min: 1 },
-    '--limit': { name: 'limit', type: 'number', default: 0, min: 0 }
+    '--limit': { name: 'limit', type: 'number', default: 0, min: 0 },
+    '--save': { name: 'save', type: 'boolean', default: false }
   }
 
   let options
@@ -117,10 +124,12 @@ async function main () {
       console.log(`Limit: ${options.limit} contracts`)
     }
     console.log('Depending on the page size and limit, this tool could take a while to complete.')
-    console.log(`Results will be saved to: ${resultFileName}`)
+    if (options.save) {
+      console.log(`Results will be saved to: ${resultFileName}`)
+    }
     console.log('Starting...')
 
-    const result = await getContractsData({ pageSize: options.pageSize, limit: options.limit })
+    const result = await getContractsData({ pageSize: options.pageSize, limit: options.limit, save: options.save })
 
     console.log(`\n=== RESULTS ===`)
     console.log(`Total: ${result.totalContracts}`)
@@ -132,7 +141,9 @@ async function main () {
       console.log(`\nErrors: ${Object.keys(result.errors).length}`)
     }
 
-    console.log(`Final results saved to: ${resultFileName}`)
+    if (options.save) {
+      console.log(`Final results saved to: ${resultFileName}`)
+    }
 
     process.exit(0)
   } catch (error) {

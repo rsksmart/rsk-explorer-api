@@ -23,14 +23,16 @@ describe('parseArguments', () => {
 
       const validOptions = {
         '--name': { name: 'name', type: 'string', default: 'default' },
-        '--count': { name: 'count', type: 'number', default: 10 }
+        '--count': { name: 'count', type: 'number', default: 10 },
+        '--save': { name: 'save', type: 'boolean', default: false }
       }
 
       const result = parseArguments(validOptions)
 
       expect(result).to.deep.equal({
         name: 'default',
-        count: 10
+        count: 10,
+        save: false
       })
     })
 
@@ -63,14 +65,16 @@ describe('parseArguments', () => {
 
       const validOptions = {
         '--name': { name: 'name', type: 'string', default: 'default' },
-        '--count': { name: 'count', type: 'number', default: 0 }
+        '--count': { name: 'count', type: 'number', default: 0 },
+        '--save': { name: 'save', type: 'boolean', default: false }
       }
 
       const result = parseArguments(validOptions)
 
       expect(result).to.deep.equal({
         name: 'test',
-        count: 100
+        count: 100,
+        save: false
       })
     })
   })
@@ -229,6 +233,49 @@ describe('parseArguments', () => {
       const result = parseArguments(validOptions)
       expect(result.count).to.equal(999999999)
     })
+
+    it('should handle boolean flags', () => {
+      mockArgv(['--save'])
+
+      const validOptions = {
+        '--save': { name: 'save', type: 'boolean', default: false }
+      }
+
+      const result = parseArguments(validOptions)
+      expect(result.save).to.equal(true)
+    })
+
+    it('should handle boolean flags with other arguments', () => {
+      mockArgv(['--name', 'test', '--save', '--count', '100'])
+
+      const validOptions = {
+        '--name': { name: 'name', type: 'string', default: 'default' },
+        '--save': { name: 'save', type: 'boolean', default: false },
+        '--count': { name: 'count', type: 'number', default: 0 }
+      }
+
+      const result = parseArguments(validOptions)
+      expect(result).to.deep.equal({
+        name: 'test',
+        save: true,
+        count: 100
+      })
+    })
+
+    it('should handle multiple boolean flags', () => {
+      mockArgv(['--save', '--verbose'])
+
+      const validOptions = {
+        '--save': { name: 'save', type: 'boolean', default: false },
+        '--verbose': { name: 'verbose', type: 'boolean', default: false }
+      }
+
+      const result = parseArguments(validOptions)
+      expect(result).to.deep.equal({
+        save: true,
+        verbose: true
+      })
+    })
   })
 
   describe('real-world scenarios', () => {
@@ -270,14 +317,33 @@ describe('parseArguments', () => {
       const validOptions = {
         '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 },
         '--pageSize': { name: 'pageSize', type: 'number', default: 50, min: 1 },
-        '--limit': { name: 'limit', type: 'number', default: 0, min: 0 }
+        '--limit': { name: 'limit', type: 'number', default: 0, min: 0 },
+        '--save': { name: 'save', type: 'boolean', default: false }
       }
 
       const result = parseArguments(validOptions)
       expect(result).to.deep.equal({
         blockNumber: 5000000,
         pageSize: 50,
-        limit: 0
+        limit: 0,
+        save: false
+      })
+    })
+
+    it('should handle getContractData with save flag', () => {
+      mockArgv(['--address', '0x1234567890abcdef', '--save'])
+
+      const validOptions = {
+        '--address': { name: 'address', type: 'string', default: null, required: true },
+        '--block': { name: 'blockNumber', type: 'number', default: null, min: 0 },
+        '--save': { name: 'save', type: 'boolean', default: false }
+      }
+
+      const result = parseArguments(validOptions)
+      expect(result).to.deep.equal({
+        address: '0x1234567890abcdef',
+        blockNumber: null,
+        save: true
       })
     })
   })
