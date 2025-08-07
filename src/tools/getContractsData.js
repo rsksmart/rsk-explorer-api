@@ -3,6 +3,8 @@ import path from 'path'
 import { getLatestBlockNumber, fetchPaginatedContracts, getContractData, parseArguments } from './utils.js'
 
 const toolName = process.argv[1].split('/').pop()
+const resultFileName = `contracts-data-${Date.now()}.json`
+const resultFilePath = path.join(__dirname, resultFileName)
 
 function printUsageAndExit () {
   console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
@@ -66,13 +68,19 @@ async function getContractsData ({ pageSize = 50, limit = 0 } = {}) {
 
           results.successfulFetches++
           results.contracts[contractAddress] = contractData
+          console.log(`Contract ${contractAddress} fetched.`)
         } catch (error) {
           results.failedFetches++
           results.errors[contractAddress] = error.message
+          console.log(`Contract ${contractAddress} fetch failed. Error: ${error.message}`)
         }
 
         results.processedContracts++
       }
+
+      // Save current page progress
+      fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
+      console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
 
       if (limit > 0 && totalProcessed >= limit) {
         break
@@ -109,6 +117,7 @@ async function main () {
       console.log(`Limit: ${options.limit} contracts`)
     }
     console.log('Depending on the page size and limit, this tool could take a while to complete.')
+    console.log(`Results will be saved to: ${resultFileName}`)
     console.log('Starting...')
 
     const result = await getContractsData({ pageSize: options.pageSize, limit: options.limit })
@@ -123,10 +132,7 @@ async function main () {
       console.log(`\nErrors: ${Object.keys(result.errors).length}`)
     }
 
-    const fileName = `contracts-data-${Date.now()}.json`
-    const resultFilePath = path.join(__dirname, fileName)
-    fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2))
-    console.log(`Results saved to: ${fileName}`)
+    console.log(`Final results saved to: ${resultFileName}`)
 
     process.exit(0)
   } catch (error) {

@@ -3,6 +3,8 @@ import path from 'path'
 import { getLatestBlockNumber, fetchPaginatedContracts, getContractData, updateContractData, parseArguments } from './utils.js'
 
 const toolName = process.argv[1].split('/').pop()
+const resultFileName = `contracts-update-${Date.now()}.json`
+const resultFilePath = path.join(__dirname, resultFileName)
 
 function printUsageAndExit () {
   console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
@@ -37,6 +39,7 @@ async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = 
       console.log(`Using specified block: ${targetBlockNumber}`)
     }
     console.log(`Updating contracts at block ${targetBlockNumber}`)
+    console.log(`Results will be saved to: ${resultFileName}`)
 
     let cursor = null
     let pageCount = 0
@@ -79,6 +82,10 @@ async function updateContractsData ({ blockNumber, pageSize = 50, limit = 0 } = 
 
         results.processedContracts++
       }
+
+      // Save current page progress
+      fs.writeFileSync(resultFilePath, JSON.stringify(results, null, 2))
+      console.log(`Page ${pageCount} completed. Progress saved to ${resultFileName}`)
 
       if (limit > 0 && totalProcessed >= limit) {
         break
@@ -136,10 +143,8 @@ async function main () {
       console.log(`\nErrors: ${Object.keys(result.errors).length}`)
     }
 
-    const fileName = `contracts-update-${Date.now()}.json`
-    const resultFilePath = path.join(__dirname, fileName)
-    fs.writeFileSync(resultFilePath, JSON.stringify(result, null, 2))
-    console.log(`Results saved to: ${fileName}`)
+    const resultFileName = `contracts-update-${Date.now()}.json`
+    console.log(`Final results saved to: ${resultFileName}`)
 
     process.exit(0)
   } catch (error) {
