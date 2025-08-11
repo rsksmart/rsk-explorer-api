@@ -262,6 +262,7 @@ model transaction {
   gasUsed                               Int?                     @map("gas_used")
   receipt                               String                   @db.VarChar
   status                                String?                  @db.VarChar
+  isSuccessful                          Boolean?                 @map("is_successful")
   event                                 event[]
   internal_transaction                  internal_transaction[]
   block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
@@ -281,6 +282,10 @@ model transaction {
   @@index([datetime], map: "idx_transaction_datetime")
   @@index([date], map: "idx_transaction_date")
   @@index([status], map: "idx_transaction_status")
+  @@index([isSuccessful], map: "idx_transaction_is_successful")
+  @@index([to, isSuccessful], map: "idx_transaction_is_successful_to")
+  @@index([from, isSuccessful], map: "idx_transaction_is_successful_from")
+  @@index([txId, isSuccessful], map: "idx_transaction_is_successful_tx_id")
 }
 
 model transaction_in_pool {

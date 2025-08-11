@@ -238,6 +238,7 @@ export function createTxObject (tx, { timestamp, receipt }) {
   // TODO check timestamp
   tx.timestamp = timestamp
   tx.status = receipt.status
+  tx.isSuccessful = receipt.status === '0x1'
   tx.receipt = receipt
   return tx
 }

@@ -2,6 +2,9 @@
 
 /*
 
+V1.1.6 Notes:
+- add isSuccessful column to transaction table
+
 V1.1.5 Notes:
 - add status field to transaction table
 - add index on table transaction(status)
@@ -260,6 +263,7 @@ datetime TIMESTAMP WITH TIME ZONE,
 date date,
 gas_used INT,
 status VARCHAR,
+isSuccessful BOOLEAN,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
@@ -277,6 +281,10 @@ CREATE INDEX ON transaction(timestamp);
 CREATE INDEX idx_transaction_datetime ON transaction(datetime);
 CREATE INDEX idx_transaction_date ON transaction(date);
 CREATE INDEX idx_transaction_status ON transaction(status);
+CREATE INDEX idx_transaction_is_successful ON transaction(is_successful);
+CREATE INDEX idx_transaction_is_successful_to ON TRANSACTION ("to", is_successful);
+CREATE INDEX idx_transaction_is_successful_from ON TRANSACTION ("from", is_successful);
+CREATE INDEX idx_transaction_is_successful_tx_id ON TRANSACTION (tx_id, is_successful);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
