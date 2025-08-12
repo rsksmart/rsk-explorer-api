@@ -1,6 +1,11 @@
--- RSK Explorer Database Schema V1.1.5
+-- RSK Explorer Database Schema V1.1.7
 
 /*
+
+V1.1.7 Notes:
+- add composite indexes for balance table (address, id) and (address, block_number)
+- add composite index for event table (address, event, event_id)
+- add unique index for transaction table (block_number, transaction_index)
 
 V1.1.6 Notes:
 - add isSuccessful column to transaction table
@@ -231,6 +236,8 @@ CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash)
 CREATE INDEX idx_balance_address ON balance(address);
 CREATE INDEX idx_balance_block_number ON balance(block_number);
 CREATE INDEX ON balance(block_hash);
+CREATE INDEX idx_balance_address_id ON balance (address, id DESC);
+CREATE INDEX idx_balance_address_block_number ON balance (address, block_number DESC);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -285,6 +292,7 @@ CREATE INDEX idx_transaction_is_successful ON transaction(is_successful);
 CREATE INDEX idx_transaction_is_successful_to ON TRANSACTION ("to", is_successful);
 CREATE INDEX idx_transaction_is_successful_from ON TRANSACTION ("from", is_successful);
 CREATE INDEX idx_transaction_is_successful_tx_id ON TRANSACTION (tx_id, is_successful);
+CREATE UNIQUE INDEX unique_block_number_transaction_index ON transaction (block_number, transaction_index);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -419,6 +427,7 @@ CREATE INDEX ON event(topic0);
 CREATE INDEX ON event(topic1);
 CREATE INDEX ON event(topic2);
 CREATE INDEX ON event(topic3);
+CREATE INDEX idx_event_address_event_event_id ON event (address, event, event_id DESC);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
