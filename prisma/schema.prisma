@@ -47,6 +47,8 @@ model balance {
   @@index([address], map: "idx_balance_address")
   @@index([blockNumber], map: "idx_balance_block_number")
   @@index([blockHash])
+  @@index([address, blockNumber(sort: Desc)], map: "idx_balance_address_block_number")
+  @@index([address, id(sort: Desc)], map: "idx_balance_address_id")
 }
 
 model block {
@@ -146,6 +148,7 @@ model contract_verification {
   timestamp BigInt?
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model event {
   eventId                         String             @id @map("event_id") @db.VarChar
   abi                             String?            @db.VarChar
@@ -181,6 +184,7 @@ model event {
   @@index([topic1])
   @@index([topic2])
   @@index([topic3])
+  @@index([address, event, eventId(sort: Desc)], map: "idx_event_address_event_event_id")
 }
 
 model internal_transaction {
@@ -271,6 +275,7 @@ model transaction {
   address_transaction_toToaddress       address?                 @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
   transaction_in_summary                transaction_in_summary[]
 
+  @@unique([blockNumber, transactionIndex], map: "unique_block_number_transaction_index")
   @@index([txId], map: "idx_transaction_tx_id")
   @@index([blockHash], map: "idx_transaction_block_hash")
   @@index([blockNumber], map: "idx_transaction_block_number")
