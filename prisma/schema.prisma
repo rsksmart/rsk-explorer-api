@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgres://postgres:12345678@localhost:5432/explorer"
+  url      = ""
 }
 
 model address {
@@ -356,6 +356,9 @@ model verification_result {
   result    String?  @db.VarChar
   sources   String?  @db.VarChar
   timestamp BigInt?
+
+  @@index([address], map: "idx_verification_result_address")
+  @@index([match], map: "idx_verification_result_match")
 }
 
 model stats {

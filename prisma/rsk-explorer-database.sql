@@ -573,6 +573,8 @@ CREATE TABLE verification_result (
   sources VARCHAR, -- stringified
   timestamp INT8
 );
+CREATE INDEX idx_verification_result_match ON verification_result(match);
+CREATE INDEX idx_verification_result_address ON verification_result(address);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (
