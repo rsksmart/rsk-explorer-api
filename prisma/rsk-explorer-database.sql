@@ -8,7 +8,7 @@ V1.1.7 Notes:
 - add unique index for transaction table (block_number, transaction_index)
 
 V1.1.6 Notes:
-- add isSuccessful column to transaction table
+- add is_successful column to transaction table
 
 V1.1.5 Notes:
 - add status field to transaction table
@@ -270,7 +270,7 @@ datetime TIMESTAMP WITH TIME ZONE,
 date date,
 gas_used INT,
 status VARCHAR,
-isSuccessful BOOLEAN,
+is_successful BOOLEAN,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
