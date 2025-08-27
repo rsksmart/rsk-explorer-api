@@ -293,6 +293,9 @@ CREATE INDEX idx_transaction_is_successful_to ON TRANSACTION ("to", is_successfu
 CREATE INDEX idx_transaction_is_successful_from ON TRANSACTION ("from", is_successful);
 CREATE INDEX idx_transaction_is_successful_tx_id ON TRANSACTION (tx_id, is_successful);
 CREATE UNIQUE INDEX unique_block_number_transaction_index ON transaction (block_number, transaction_index);
+CREATE INDEX idx_transaction_blocknumber_transactionindex ON transaction (block_number, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_desc ON transaction (block_number DESC, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_reverse ON transaction (block_number DESC, transaction_index);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
