@@ -431,6 +431,7 @@ CREATE INDEX ON event(topic1);
 CREATE INDEX ON event(topic2);
 CREATE INDEX ON event(topic3);
 CREATE INDEX idx_event_address_event_event_id ON event (address, event, event_id DESC);
+CREATE INDEX idx_event_event ON event(event);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,

@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = ""
+  url      = "postgres://postgres:12345678@localhost:5432/explorer"
 }
 
 model address {
@@ -185,6 +185,7 @@ model event {
   @@index([topic2])
   @@index([topic3])
   @@index([address, event, eventId(sort: Desc)], map: "idx_event_address_event_event_id")
+  @@index([event], map: "idx_event_event")
 }
 
 model internal_transaction {
