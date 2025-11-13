@@ -1,0 +1,643 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+// This structure corresponds to the V1.2.1 sql schema
+
+Table "block" {
+  "_id" UUID [default: `gen_random_uuid()`]
+  "number" INT4 [pk]
+  "hash" VARCHAR(66) [unique]
+  "parent_hash" VARCHAR(66) [not null]
+  "sha3_uncles" VARCHAR(66) [not null]
+  "logs_bloom" VARCHAR [not null]
+  "transactions_root" VARCHAR(66) [not null]
+  "state_root" VARCHAR(66) [not null]
+  "receipts_root" VARCHAR(66) [not null]
+  "miner" VARCHAR [not null]
+  "difficulty" VARCHAR [not null]
+  "total_difficulty" VARCHAR [not null]
+  "extra_data" VARCHAR [not null]
+  "size" INT4 [not null]
+  "gas_limit" INT4 [not null]
+  "gas_used" INT4 [not null]
+  "timestamp" INT8 [not null]
+  "transactions" VARCHAR
+  "uncles" VARCHAR
+  "minimum_gas_price" VARCHAR [not null]
+  "bitcoin_merged_mining_header" VARCHAR [not null]
+  "bitcoin_merged_mining_coinbase_transaction" VARCHAR [not null]
+  "bitcoin_merged_mining_merkle_proof" VARCHAR [not null]
+  "hash_for_merged_mining" VARCHAR(66) [not null]
+  "paid_fees" VARCHAR [not null]
+  "cumulative_difficulty" VARCHAR [not null]
+  "received" INT8 [not null]
+
+  Indexes {
+    miner
+    hash
+    received
+  }
+}
+
+Table "stats" {
+  "block_number" INT4 [pk]
+  "block_hash" VARCHAR [not null]
+  "active_accounts" INT4 [not null]
+  "hashrate" VARCHAR [not null]
+  "circulating_supply" VARCHAR
+  "total_supply" INT4
+  "bridge_balance" VARCHAR
+  "locking_cap" VARCHAR
+  "timestamp" INT8 [not null]
+
+  Indexes {
+    block_hash
+  }
+}
+
+Table "tx_pool" {
+  "id" SERIAL [pk, increment]
+  "block_number" INT4 [not null]
+  "pending" INT4 [not null]
+  "queued" INT4 [not null]
+  "txs" VARCHAR [not null]
+  "timestamp" INT8 [not null]
+  "datetime" TIMESTAMP
+
+  Indexes {
+    timestamp
+    datetime [name: "idx_tx_pool_datetime"]
+  }
+}
+
+Table "transaction_pending" {
+  "hash" VARCHAR(66) [pk]
+  "block_hash" VARCHAR(66) [not null]
+  "from" VARCHAR(42) [not null]
+  "to" VARCHAR(42) [not null]
+  "block_number" INT4 [not null]
+  "transaction_index" INT4 [not null]
+  "nonce" INT4 [not null]
+  "gas" INT4 [not null]
+  "gas_price" VARCHAR [not null]
+  "value" VARCHAR [not null]
+  "input" VARCHAR [not null]
+  "status" VARCHAR [not null]
+  "timestamp" VARCHAR [not null, default: `CAST(DATE_PART('epoch',NOW())ASVARCHAR)`]
+}
+
+Table "transaction_in_pool" {
+  "hash" VARCHAR(66)
+  "pool_id" INT
+  "block_hash" VARCHAR(66) [not null]
+  "from" VARCHAR(42) [not null]
+  "to" VARCHAR(42) [not null]
+  "block_number" INT4 [not null]
+  "transaction_index" INT4 [not null]
+  "nonce" INT4 [not null]
+  "gas" INT4 [not null]
+  "gas_price" VARCHAR [not null]
+  "value" VARCHAR [not null]
+  "input" VARCHAR [not null]
+  "status" VARCHAR [not null]
+
+  Indexes {
+    (hash, pool_id) [pk, name: "pk_transaction_in_pool_hash_poolId"]
+    pool_id [name: "idx_transaction_in_pool_pool_id"]
+  }
+}
+
+Table "address" {
+  "id" SERIAL [increment]
+  "address" VARCHAR(42) [pk]
+  "is_native" BOOLEAN [not null]
+  "type" VARCHAR [not null]
+  "name" VARCHAR
+
+  Indexes {
+    id [name: "index_address_id"]
+    name [name: "index_address_name"]
+  }
+}
+
+Table "miner_address" {
+  "id" SERIAL [increment]
+  "address" VARCHAR(42) [pk]
+  "is_native" BOOLEAN [not null]
+  "type" VARCHAR [not null]
+  "name" VARCHAR
+  "balance" VARCHAR
+  "block_number" INT
+  "last_block_mined" VARCHAR
+  "last_block_mined_number" INT [unique]
+}
+
+Table "balance" {
+  "id" BIGSERIAL [pk, increment]
+  "address" VARCHAR(42) [not null]
+  "balance" VARCHAR [not null]
+  "block_number" INT4 [not null]
+  "block_hash" VARCHAR(66) [not null]
+  "timestamp" INT8 [not null]
+  "created" INT8 [not null]
+
+  Indexes {
+    address [name: "idx_balance_address"]
+    block_number [name: "idx_balance_block_number"]
+    block_hash
+  }
+}
+
+Table "address_latest_balance" {
+  "address" VARCHAR(42) [pk]
+  "balance" VARCHAR [not null]
+  "block_number" INT4 [not null]
+}
+
+Table "transaction" {
+  "hash" VARCHAR(66) [pk]
+  "tx_id" VARCHAR [not null]
+  "type" VARCHAR
+  "tx_type" VARCHAR [not null]
+  "from" VARCHAR(42) [not null]
+  "to" VARCHAR(42)
+  "block_number" INT4 [not null]
+  "block_hash" VARCHAR(66) [not null]
+  "transaction_index" INT4 [not null]
+  "nonce" INT4 [not null]
+  "gas" INT4 [not null]
+  "gas_price" VARCHAR [not null]
+  "value" VARCHAR [not null]
+  "input" VARCHAR
+  "v" VARCHAR
+  "r" VARCHAR
+  "s" VARCHAR
+  "timestamp" INT8 [not null]
+  "datetime" TIMESTAMP
+  "date" date
+  "gas_used" INT
+  "status" VARCHAR
+  "is_successful" BOOLEAN
+  "receipt" VARCHAR [not null]
+
+  Indexes {
+    tx_id [name: "idx_transaction_tx_id"]
+    block_number [name: "idx_transaction_block_number"]
+    block_hash [name: "idx_transaction_block_hash"]
+    from [name: "idx_transaction_from"]
+    to [name: "idx_transaction_to"]
+    tx_type [name: "idx_transaction_tx_type"]
+    transaction_index
+    timestamp
+    datetime [name: "idx_transaction_datetime"]
+    date [name: "idx_transaction_date"]
+    status [name: "idx_transaction_status"]
+    is_successful [name: "idx_transaction_is_successful"]
+  }
+}
+
+Table "receipt" {
+  "transaction_hash" VARCHAR(66) [pk]
+  "contract_address" VARCHAR(42)
+  "logs_bloom" VARCHAR [not null]
+  "cumulative_gas_used" INT4 [not null]
+  "effective_gas_price" VARCHAR [not null]
+  "block_hash" VARCHAR(66) [not null]
+  "logs" VARCHAR [not null]
+  "block_number" INT4 [not null]
+  "gas_used" INT4 [not null]
+  "to" VARCHAR(42)
+  "from" VARCHAR(42)
+  "type" VARCHAR [not null]
+  "status" VARCHAR [not null]
+  "transaction_index" INT4 [not null]
+
+  Indexes {
+    block_number [name: "idx_receipt_block_number"]
+    block_hash [name: "idx_receipt_block_hash"]
+    from [name: "idx_receipt_from"]
+    to [name: "idx_receipt_to"]
+    status [name: "idx_receipt_status"]
+    contract_address [name: "idx_receipt_contract_address"]
+  }
+}
+
+Table "internal_transaction" {
+  "internal_tx_id" VARCHAR [pk]
+  "transaction_hash" VARCHAR(66) [not null]
+  "block_number" INT4 [not null]
+  "block_hash" VARCHAR(66) [not null]
+  "transaction_position" INT4 [not null]
+  "type" VARCHAR [not null]
+  "subtraces" INT4 [not null]
+  "trace_address" VARCHAR
+  "result" VARCHAR
+  "index" INT4 [not null]
+  "timestamp" INT8 [not null]
+  "datetime" TIMESTAMP
+  "error" VARCHAR
+  "action" VARCHAR
+
+  Indexes {
+    transaction_hash [name: "idx_internal_transaction_transaction_hash"]
+    block_number [name: "idx_internal_transaction_block_number"]
+    block_hash [name: "idx_internal_transaction_block_hash"]
+    datetime [name: "idx_internal_transaction_datetime"]
+  }
+}
+
+Table "address_in_itx" {
+  "address" VARCHAR [not null]
+  "internal_tx_id" VARCHAR [not null]
+  "role" VARCHAR [not null]
+
+  Indexes {
+    (address, internal_tx_id, role) [pk]
+    internal_tx_id
+  }
+}
+
+Table "contract" {
+  "address" VARCHAR(42) [pk]
+  "code" VARCHAR
+  "code_stored_at_block" INT4
+  "deployed_code" VARCHAR
+  "symbol" VARCHAR
+  "decimals" INT2
+
+  Indexes {
+    code_stored_at_block
+    symbol [name: "idx_contract_symbol"]
+  }
+}
+
+Table "contract_creation_tx" {
+  "contract_address" VARCHAR [pk]
+  "timestamp" INT8
+  "tx" VARCHAR
+}
+
+Table "contract_destruction_tx" {
+  "contract_address" VARCHAR [pk]
+  "timestamp" INT8
+  "tx" VARCHAR
+}
+
+Table "total_supply" {
+  "contract_address" VARCHAR(42)
+  "block_number" INT
+  "total_supply" VARCHAR [not null]
+
+  Indexes {
+    (contract_address, block_number) [pk, name: "pk_total_supply"]
+  }
+}
+
+Table "token_address" {
+  "address" VARCHAR(42)
+  "contract" VARCHAR(42)
+  "block_number" INT4
+  "block_hash" VARCHAR [not null]
+  "balance" VARCHAR
+
+  Indexes {
+    (address, contract, block_number) [pk, name: "pk_token_address"]
+    address
+    block_number
+    block_hash
+  }
+}
+
+Table "contract_method" {
+  "method" VARCHAR
+  "contract_address" VARCHAR(42)
+
+  Indexes {
+    (method, contract_address) [pk, name: "pk_contract_method"]
+  }
+}
+
+Table "contract_interface" {
+  "interface" VARCHAR
+  "contract_address" VARCHAR(42)
+
+  Indexes {
+    (interface, contract_address) [pk, name: "pk_contract_interface"]
+  }
+}
+
+Table "event" {
+  "event_id" VARCHAR [pk]
+  "abi" VARCHAR
+  "address" VARCHAR(42) [not null]
+  "args" VARCHAR
+  "topic0" VARCHAR
+  "topic1" VARCHAR
+  "topic2" VARCHAR
+  "topic3" VARCHAR
+  "block_hash" VARCHAR(66) [not null]
+  "block_number" INT4 [not null]
+  "data" VARCHAR [not null]
+  "event" VARCHAR
+  "log_index" INT4 [not null]
+  "signature" VARCHAR
+  "timestamp" INT8 [not null]
+  "transaction_hash" VARCHAR(66) [not null]
+  "transaction_index" INT4 [not null]
+  "tx_status" VARCHAR [not null]
+
+  Indexes {
+    block_number [name: "idx_event_block_number"]
+    block_hash
+    address [name: "idx_event_address"]
+    signature [name: "idx_event_signature"]
+    transaction_hash
+    topic0
+    topic1
+    topic2
+    topic3
+    (transaction_hash, log_index) [name: "idx_event_transaction_hash_log_index"]
+  }
+}
+
+Table "address_in_event" {
+  "event_id" VARCHAR
+  "address" VARCHAR(42)
+  "is_event_emitter_address" BOOLEAN
+  "event_signature" VARCHAR
+
+  Indexes {
+    (event_id, address, is_event_emitter_address) [pk]
+    address [name: "idx_address_in_event_address"]
+    event_id [name: "idx_address_in_event_event_id"]
+    event_signature
+  }
+}
+
+Table "block_trace" {
+  "block_hash" VARCHAR(66)
+  "internal_tx_id" VARCHAR
+
+  Indexes {
+    (block_hash, internal_tx_id) [pk, name: "pk_block_trace"]
+    internal_tx_id
+  }
+}
+
+Table "status" {
+  "id" SERIAL [pk, increment]
+  "timestamp" INT8 [not null]
+  "pending_blocks" INT4 [not null]
+  "requesting_blocks" INT4 [not null]
+  "node_down" BOOLEAN [not null]
+}
+
+Table "block_summary" {
+  "block_number" INT4 [pk]
+  "hash" VARCHAR [not null]
+  "timestamp" INT8 [not null]
+
+  Indexes {
+    hash [name: "idx_block_summary_hash"]
+  }
+}
+
+Table "transaction_in_summary" {
+  "hash" VARCHAR
+  "block_number" INT4
+
+  Indexes {
+    (hash, block_number) [pk]
+    block_number
+  }
+}
+
+Table "internal_transaction_in_summary" {
+  "internal_tx_id" VARCHAR
+  "block_number" INT4
+
+  Indexes {
+    (internal_tx_id, block_number) [pk]
+    block_number
+  }
+}
+
+Table "address_in_summary" {
+  "address" VARCHAR(42)
+  "balance" VARCHAR
+  "block_number" INT4
+  "last_block_mined" INT4
+
+  Indexes {
+    (address, block_number) [pk]
+    block_number
+    last_block_mined
+  }
+}
+
+Table "token_address_in_summary" {
+  "address" VARCHAR
+  "contract" VARCHAR
+  "block_number" INT4
+
+  Indexes {
+    (address, contract, block_number) [pk]
+    block_number
+  }
+}
+
+Table "event_in_summary" {
+  "event_id" VARCHAR
+  "block_number" INT4
+
+  Indexes {
+    (event_id, block_number) [pk]
+    block_number
+  }
+}
+
+Table "suicide_in_summary" {
+  "internal_tx_id" VARCHAR
+  "block_number" INT4
+
+  Indexes {
+    (internal_tx_id, block_number) [pk]
+  }
+}
+
+Table "explorer_initial_config" {
+  "id" VARCHAR [pk]
+  "native_contracts" VARCHAR
+  "net" VARCHAR
+}
+
+Table "explorer_settings" {
+  "id" VARCHAR [pk]
+  "hash" VARCHAR [not null]
+}
+
+Table "contract_verifier_solc_versions" {
+  "id" VARCHAR [pk]
+  "builds" VARCHAR
+  "latest_release" VARCHAR
+  "releases" VARCHAR
+}
+
+Table "contract_verification" {
+  "_id" VARCHAR [pk]
+  "address" VARCHAR
+  "error" VARCHAR
+  "match" BOOLEAN
+  "request" VARCHAR
+  "result" VARCHAR
+  "timestamp" INT8
+}
+
+Table "verification_result" {
+  "_id" VARCHAR [pk]
+  "abi" VARCHAR
+  "address" VARCHAR
+  "match" BOOLEAN
+  "request" VARCHAR
+  "result" VARCHAR
+  "sources" VARCHAR
+  "timestamp" INT8
+}
+
+Table "bo_gas_fee_daily_aggregated" {
+  "date_1" DATE [pk]
+  "gas_fee" NUMERIC
+}
+
+Table "bo_new_addresses" {
+  "address" TEXT [pk]
+  "first_transaction_date" DATE
+}
+
+Table "bo_active_addresses_daily_aggregated" {
+  "date_1" DATE [pk]
+  "active_addresses" INT
+}
+
+Table "bo_number_transactions_daily_aggregated" {
+  "date_1" DATE [pk]
+  "number_of_transactions" INT
+}
+
+Ref "fk_stats_block_number":"block"."number" < "stats"."block_number" [update: cascade, delete: cascade]
+
+Ref "fk_stats_block_hash":"block"."hash" < "stats"."block_hash" [update: cascade, delete: cascade]
+
+Ref "fk_transaction_in_pool_poolId":"tx_pool"."id" < "transaction_in_pool"."pool_id"
+
+Ref:"address"."address" < "miner_address"."address" [delete: cascade]
+
+Ref "fk_balance_address":"address"."address" < "balance"."address" [delete: cascade]
+
+Ref "fk_balance_block_number":"block"."number" < "balance"."block_number" [delete: cascade]
+
+Ref "fk_balance_block_hash":"block"."hash" < "balance"."block_hash" [delete: cascade]
+
+Ref "fk_balance_address":"address"."address" < "address_latest_balance"."address" [delete: cascade]
+
+Ref "fk_balance_block_number":"block"."number" < "address_latest_balance"."block_number" [delete: cascade]
+
+Ref "fk_transaction_from":"address"."address" < "transaction"."from" [delete: cascade]
+
+Ref "fk_transaction_to":"address"."address" < "transaction"."to" [delete: cascade]
+
+Ref "fk_transaction_block_number":"block"."number" < "transaction"."block_number" [delete: cascade]
+
+Ref "fk_transaction_block_hash":"block"."hash" < "transaction"."block_hash" [delete: cascade]
+
+Ref "fk_internal_transaction_transaction_hash":"transaction"."hash" < "internal_transaction"."transaction_hash" [delete: cascade]
+
+Ref "fk_internal_transaction_block_number":"block"."number" < "internal_transaction"."block_number" [delete: cascade]
+
+Ref "fk_internal_transaction_block_hash":"block"."hash" < "internal_transaction"."block_hash" [delete: cascade]
+
+Ref:"internal_transaction"."internal_tx_id" < "address_in_itx"."internal_tx_id" [delete: cascade]
+
+Ref:"address"."address" < "address_in_itx"."address" [delete: cascade]
+
+Ref "fk_contract_address":"address"."address" < "contract"."address" [delete: cascade]
+
+Ref "fk_contract_code_stored_at_block":"block"."number" < "contract"."code_stored_at_block" [update: cascade, delete: cascade]
+
+Ref "fk_contract_creation_tx_contract_address":"contract"."address" < "contract_creation_tx"."contract_address" [delete: cascade]
+
+Ref "fk_contract_destruction_tx_contract_address":"address"."address" < "contract_destruction_tx"."contract_address" [delete: cascade]
+
+Ref "fk_total_supply_address":"contract"."address" < "total_supply"."contract_address" [delete: cascade]
+
+Ref "fk_total_supply_block_number":"block"."number" < "total_supply"."block_number" [delete: cascade]
+
+Ref "fk_token_address_address":"address"."address" < "token_address"."address" [delete: cascade]
+
+Ref "fk_token_address_contract":"address"."address" < "token_address"."contract" [delete: cascade]
+
+Ref "fk_token_address_block_number":"block"."number" < "token_address"."block_number" [delete: cascade]
+
+Ref "fk_token_address_block_hash":"block"."hash" < "token_address"."block_hash" [delete: cascade]
+
+Ref "fk_contract_method_contract_address":"contract"."address" < "contract_method"."contract_address" [delete: cascade]
+
+Ref "fk_contract_interface_contract_address":"contract"."address" < "contract_interface"."contract_address" [delete: cascade]
+
+Ref "fk_event_transaction_hash":"transaction"."hash" < "event"."transaction_hash" [delete: cascade]
+
+Ref "fk_event_address":"address"."address" < "event"."address" [delete: cascade]
+
+Ref "fk_event_block_hash":"block"."hash" < "event"."block_hash" [delete: cascade]
+
+Ref "fk_event_block_number":"block"."number" < "event"."block_number" [delete: cascade]
+
+Ref:"event"."event_id" < "address_in_event"."event_id" [delete: cascade]
+
+Ref:"address"."address" < "address_in_event"."address" [delete: cascade]
+
+Ref "fk_block_trace_block_hash":"block"."hash" < "block_trace"."block_hash" [delete: cascade]
+
+Ref "fk_block_trace_internal_tx_id":"internal_transaction"."internal_tx_id" < "block_trace"."internal_tx_id" [delete: cascade]
+
+Ref:"block"."hash" < "block_summary"."hash" [delete: cascade]
+
+Ref:"block"."number" < "block_summary"."block_number" [delete: cascade]
+
+Ref:"transaction"."hash" < "transaction_in_summary"."hash" [delete: cascade]
+
+Ref:"block_summary"."block_number" < "transaction_in_summary"."block_number" [delete: cascade]
+
+Ref:"internal_transaction"."internal_tx_id" < "internal_transaction_in_summary"."internal_tx_id" [delete: cascade]
+
+Ref:"block_summary"."block_number" < "internal_transaction_in_summary"."block_number" [delete: cascade]
+
+Ref:"block"."number" < "address_in_summary"."last_block_mined" [delete: cascade]
+
+Ref:"address"."address" < "address_in_summary"."address" [delete: cascade]
+
+Ref:"block_summary"."block_number" < "address_in_summary"."block_number" [delete: cascade]
+
+Ref:"token_address".("address", "contract", "block_number") < "token_address_in_summary".("address", "contract", "block_number") [delete: cascade]
+
+Ref:"block_summary"."block_number" < "token_address_in_summary"."block_number" [delete: cascade]
+
+Ref:"event"."event_id" < "event_in_summary"."event_id" [delete: cascade]
+
+Ref:"block_summary"."block_number" < "event_in_summary"."block_number" [delete: cascade]
+
+Ref:"internal_transaction"."internal_tx_id" < "suicide_in_summary"."internal_tx_id" [delete: cascade]
+
+Ref:"block_summary"."block_number" < "suicide_in_summary"."block_number" [delete: cascade]
+
+Ref "fk_receipt_transaction_hash":"transaction"."hash" < "receipt"."transaction_hash" [delete: cascade]
+
+Ref "fk_receipt_block_number":"block"."number" < "receipt"."block_number" [delete: cascade]
+
+Ref "fk_receipt_block_hash":"block"."hash" < "receipt"."block_hash" [delete: cascade]
+
+Ref "fk_receipt_from":"address"."address" < "receipt"."from" [delete: cascade]
+
+Ref "fk_receipt_to":"address"."address" < "receipt"."to" [delete: cascade]
+
+Ref "fk_receipt_contract_address":"address"."address" < "receipt"."contract_address" [delete: cascade]
+
