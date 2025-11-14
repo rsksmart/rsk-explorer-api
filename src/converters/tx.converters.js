@@ -108,7 +108,17 @@ function transactionEntityToRaw ({
   return txToReturn
 }
 
+function rawReceiptToEntity (data) {
+  const receiptEntity = {
+    ...data,
+    logs: JSON.stringify(data.logs)
+  }
+
+  return receiptEntity
+}
+
 export {
   rawTxToEntity,
-  transactionEntityToRaw
+  transactionEntityToRaw,
+  rawReceiptToEntity
 }

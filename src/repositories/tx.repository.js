@@ -1,4 +1,4 @@
-import { rawTxToEntity, transactionEntityToRaw } from '../converters/tx.converters'
+import { rawTxToEntity, transactionEntityToRaw, rawReceiptToEntity } from '../converters/tx.converters'
 import { generateFindQuery } from './utils'
 
 export function getTxRepository (prismaClient) {
@@ -19,8 +19,13 @@ export function getTxRepository (prismaClient) {
     async deleteMany (filter) {
       return prismaClient.transaction.deleteMany({where: filter})
     },
-    insertOne (data) {
-      return prismaClient.transaction.create({ data: rawTxToEntity(data) })
+    insertOne (tx) {
+      const transactionQueries = []
+
+      transactionQueries.push(prismaClient.transaction.create({ data: rawTxToEntity(tx) }))
+      transactionQueries.push(prismaClient.receipt.create({ data: rawReceiptToEntity(tx.receipt) }))
+
+      return transactionQueries
     },
     async getTransactionsCount () {
       const aggregationResult = await prismaClient.bo_number_transactions_daily_aggregated.aggregate({
