@@ -1,6 +1,5 @@
 // Use DBML to define your database structure
 // Docs: https://dbml.dbdiagram.io/docs
-// This structure corresponds to the V1.2.1 sql schema
 
 Table "block" {
   "_id" UUID [default: `gen_random_uuid()`]
@@ -583,7 +582,7 @@ Ref "fk_contract_method_contract_address":"contract"."address" < "contract_metho
 
 Ref "fk_contract_interface_contract_address":"contract"."address" < "contract_interface"."contract_address" [delete: cascade]
 
-Ref "fk_event_transaction_hash":"transaction"."hash" < "event"."transaction_hash" [delete: cascade]
+Ref "fk_event_transaction_hash":"receipt"."transaction_hash" < "event"."transaction_hash" [delete: cascade]
 
 Ref "fk_event_address":"address"."address" < "event"."address" [delete: cascade]
 

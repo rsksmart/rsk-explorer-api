@@ -1,6 +1,9 @@
--- RSK Explorer Database Schema V1.2.1
+-- RSK Explorer Database Schema V1.2.2
 
 /*
+
+V1.2.2 Notes:
+- Updated event foreign key to point to receipt table
 
 V1.2.1 Notes:
 - Fixed typo in table creation for receipt.is_successful (isSuccessful -> is_successful)
@@ -447,7 +450,7 @@ timestamp INT8 NOT NULL,
 transaction_hash VARCHAR(66) NOT NULL,
 transaction_index INT4 NOT NULL,
 tx_status VARCHAR NOT NULL,
-CONSTRAINT fk_event_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
+CONSTRAINT fk_event_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES receipt(transaction_hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE

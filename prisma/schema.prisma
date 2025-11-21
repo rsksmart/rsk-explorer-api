@@ -173,7 +173,7 @@ model event {
   address_event_addressToaddress  address            @relation("event_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_address")
   block_event_block_hashToblock   block              @relation("event_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_hash")
   block_event_block_numberToblock block              @relation("event_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_block_number")
-  transaction                     transaction        @relation(fields: [transactionHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
+  receipt                         receipt            @relation(fields: [transactionHash], references: [transactionHash], onDelete: Cascade, onUpdate: NoAction, map: "fk_event_transaction_hash")
   event_in_summary                event_in_summary[]
 
   @@index([blockNumber], map: "idx_event_block_number")
@@ -265,10 +265,9 @@ model transaction {
   datetime                              DateTime?                @db.Timestamptz(6)
   date                                  DateTime?                @db.Date
   gasUsed                               Int?                     @map("gas_used")
-  receipt                               String                   @db.VarChar
   status                                String?                  @db.VarChar
   isSuccessful                          Boolean?                 @map("is_successful")
-  event                                 event[]
+  receipt                               String                   @db.VarChar
   internal_transaction                  internal_transaction[]
   transaction_receipt                   receipt?
   block_transaction_block_hashToblock   block                    @relation("transaction_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_block_hash")
@@ -584,6 +583,7 @@ model receipt {
   type                                      String      @map("type") @db.VarChar
   status                                    String      @map("status") @db.VarChar
   transactionIndex                          Int         @map("transaction_index")
+  event                                     event[]
   block_receipt_block_hashToblock           block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_hash")
   block_receipt_block_numberToblock         block       @relation("receipt_block_numberToblock", fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_number")
   address_receipt_contract_addressToaddress address?    @relation("receipt_contract_addressToaddress", fields: [contractAddress], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_contract_address")
