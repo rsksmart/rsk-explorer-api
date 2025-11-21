@@ -580,8 +580,8 @@ model receipt {
   gasUsed                                   Int         @map("gas_used")
   to                                        String?     @db.VarChar(42)
   from                                      String?     @db.VarChar(42)
-  type                                      String      @map("type") @db.VarChar
-  status                                    String      @map("status") @db.VarChar
+  type                                      String      @db.VarChar
+  status                                    String      @db.VarChar
   transactionIndex                          Int         @map("transaction_index")
   event                                     event[]
   block_receipt_block_hashToblock           block       @relation("receipt_block_hashToblock", fields: [blockHash], references: [hash], onDelete: Cascade, onUpdate: NoAction, map: "fk_receipt_block_hash")
