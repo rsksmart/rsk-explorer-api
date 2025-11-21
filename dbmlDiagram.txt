@@ -1,6 +1,3 @@
-// Use DBML to define your database structure
-// Docs: https://dbml.dbdiagram.io/docs
-
 Table "block" {
   "_id" UUID [default: `gen_random_uuid()`]
   "number" INT4 [pk]
@@ -548,6 +545,18 @@ Ref "fk_transaction_block_number":"block"."number" < "transaction"."block_number
 
 Ref "fk_transaction_block_hash":"block"."hash" < "transaction"."block_hash" [delete: cascade]
 
+Ref "fk_receipt_transaction_hash":"transaction"."hash" < "receipt"."transaction_hash" [delete: cascade]
+
+Ref "fk_receipt_block_number":"block"."number" < "receipt"."block_number" [delete: cascade]
+
+Ref "fk_receipt_block_hash":"block"."hash" < "receipt"."block_hash" [delete: cascade]
+
+Ref "fk_receipt_from":"address"."address" < "receipt"."from" [delete: cascade]
+
+Ref "fk_receipt_to":"address"."address" < "receipt"."to" [delete: cascade]
+
+Ref "fk_receipt_contract_address":"address"."address" < "receipt"."contract_address" [delete: cascade]
+
 Ref "fk_internal_transaction_transaction_hash":"transaction"."hash" < "internal_transaction"."transaction_hash" [delete: cascade]
 
 Ref "fk_internal_transaction_block_number":"block"."number" < "internal_transaction"."block_number" [delete: cascade]
@@ -627,16 +636,3 @@ Ref:"block_summary"."block_number" < "event_in_summary"."block_number" [delete: 
 Ref:"internal_transaction"."internal_tx_id" < "suicide_in_summary"."internal_tx_id" [delete: cascade]
 
 Ref:"block_summary"."block_number" < "suicide_in_summary"."block_number" [delete: cascade]
-
-Ref "fk_receipt_transaction_hash":"transaction"."hash" < "receipt"."transaction_hash" [delete: cascade]
-
-Ref "fk_receipt_block_number":"block"."number" < "receipt"."block_number" [delete: cascade]
-
-Ref "fk_receipt_block_hash":"block"."hash" < "receipt"."block_hash" [delete: cascade]
-
-Ref "fk_receipt_from":"address"."address" < "receipt"."from" [delete: cascade]
-
-Ref "fk_receipt_to":"address"."address" < "receipt"."to" [delete: cascade]
-
-Ref "fk_receipt_contract_address":"address"."address" < "receipt"."contract_address" [delete: cascade]
-
