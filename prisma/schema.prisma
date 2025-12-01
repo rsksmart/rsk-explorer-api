@@ -8,7 +8,7 @@ datasource db {
 }
 
 model address {
-  id                                                             Int                      @default(autoincrement())
+  id                                                             Int                      @unique @default(autoincrement())
   address                                                        String                   @id @db.VarChar(42)
   isNative                                                       Boolean                  @map("is_native")
   type                                                           String                   @db.VarChar
@@ -49,6 +49,8 @@ model balance {
   @@index([address], map: "idx_balance_address")
   @@index([blockNumber], map: "idx_balance_block_number")
   @@index([blockHash])
+  @@index([address, blockNumber], map: "idx_address_blockNumber")
+  @@index([address, id], map: "idx_balance_address_id")
 }
 
 model block {
@@ -104,6 +106,7 @@ model block {
   @@index([miner])
   @@index([hash])
   @@index([received])
+  @@index([timestamp], map: "idx_block_timestamp")
 }
 
 model contract {
@@ -119,6 +122,7 @@ model contract {
   contract_interface                contract_interface[]
   contract_method                   contract_method[]
   total_supply                      total_supply[]
+  token_address                     token_address[]
 
   @@index([codeStoredAtBlock])
   @@index([symbol], map: "idx_contract_symbol")
@@ -160,7 +164,7 @@ model event {
   topic2                          String?            @db.VarChar
   topic3                          String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)
-  blockNumber                     Int                @map("block_number")
+  blockNumber                     Int                @unique @map("block_number")
   data                            String             @db.VarChar
   event                           String?            @db.VarChar
   logIndex                        Int                @map("log_index")
@@ -236,6 +240,7 @@ model token_address {
   block                                     block                     @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
   contract_token_address_contractTocontract address                   @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
   token_address_in_summary                  token_address_in_summary?
+  contract_details                          contract?                 @relation(fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract_details")
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
   @@index([address])
@@ -276,6 +281,7 @@ model transaction {
   address_transaction_toToaddress       address?                 @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
   transaction_in_summary                transaction_in_summary[]
 
+  @@unique([txId])
   @@index([txId], map: "idx_transaction_tx_id")
   @@index([blockHash], map: "idx_transaction_block_hash")
   @@index([blockNumber], map: "idx_transaction_block_number")
@@ -544,7 +550,7 @@ model address_in_itx {
   address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
   internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([address, internalTxId, role])
+  @@id([address, internalTxId, role], map: "address_in_itx_pkey")
   @@index([internalTxId])
 }
 
