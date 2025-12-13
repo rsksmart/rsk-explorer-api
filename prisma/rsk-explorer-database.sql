@@ -1,6 +1,8 @@
--- RSK Explorer Database Schema V1.2.2
-
+-- RSK Explorer Database Schema V1.2.3
 /*
+
+V1.2.3 Notes:
+- Normalized SQL schema across environments
 
 V1.2.2 Notes:
 - Updated event foreign key to point to receipt table
@@ -143,6 +145,7 @@ received INT8 NOT NULL
 CREATE INDEX ON block(miner);
 CREATE INDEX ON block(hash);
 CREATE INDEX ON block(received);
+CREATE INDEX block_timestamp_idx ON block(timestamp);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
@@ -186,6 +189,7 @@ input VARCHAR NOT NULL,
 status VARCHAR NOT NULL,
 timestamp VARCHAR NOT NULL DEFAULT CAST(DATE_PART('epoch', NOW()) AS VARCHAR)
 );
+CREATE INDEX transaction_pending_timestamp_idx ON transaction_pending(timestamp);
 
 CREATE TABLE transaction_in_pool (
 hash VARCHAR(66),
@@ -213,8 +217,8 @@ is_native BOOLEAN NOT NULL,
 type VARCHAR NOT NULL,
 name VARCHAR -- NULL | string
 );
-CREATE INDEX index_address_id ON address(id);
-CREATE INDEX index_address_name ON address(name);
+CREATE INDEX address_name_idx ON address(name);
+CREATE UNIQUE INDEX idx_address_id ON address(id);
 
 CREATE TABLE miner_address (
 id SERIAL,
@@ -244,6 +248,8 @@ CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash)
 CREATE INDEX idx_balance_address ON balance(address);
 CREATE INDEX idx_balance_block_number ON balance(block_number);
 CREATE INDEX ON balance(block_hash);
+CREATE INDEX idx_balance_address_block_number ON balance(address, block_number DESC);
+CREATE INDEX idx_balance_address_id ON balance(address, id DESC);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -283,14 +289,14 @@ CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON D
 CONSTRAINT fk_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
-CREATE INDEX idx_transaction_tx_id ON transaction(tx_id);
+CREATE UNIQUE INDEX idx_transaction_tx_id ON transaction(tx_id);
 CREATE INDEX idx_transaction_block_number ON transaction(block_number);
 CREATE INDEX idx_transaction_block_hash ON transaction(block_hash);
 CREATE INDEX idx_transaction_from ON transaction("from");
 CREATE INDEX idx_transaction_to ON transaction("to");
 CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
-CREATE INDEX ON transaction(transaction_index);
-CREATE INDEX ON transaction(timestamp);
+CREATE INDEX transaction_transaction_index_idx ON transaction(transaction_index);
+CREATE INDEX transaction_timestamp_idx ON transaction(timestamp);
 CREATE INDEX idx_transaction_datetime ON transaction(datetime);
 CREATE INDEX idx_transaction_date ON transaction(date);
 CREATE INDEX idx_transaction_status ON transaction(status);
@@ -298,6 +304,14 @@ CREATE INDEX idx_transaction_is_successful ON transaction(is_successful);
 CREATE INDEX idx_transaction_is_successful_to ON TRANSACTION ("to", is_successful);
 CREATE INDEX idx_transaction_is_successful_from ON TRANSACTION ("from", is_successful);
 CREATE INDEX idx_transaction_is_successful_tx_id ON TRANSACTION (tx_id, is_successful);
+CREATE UNIQUE INDEX unique_block_number_transaction_index ON transaction(block_number, transaction_index);
+CREATE INDEX idx_transaction_blocknumber_transactionindex ON transaction(block_number, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_desc ON transaction(block_number DESC, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_reverse ON transaction(block_number DESC, transaction_index);
+CREATE INDEX idx_transaction_date_recent ON transaction(date) WHERE (date >= '2024-10-01'::date);
+CREATE INDEX idx_transaction_from_txid_desc ON transaction("from", tx_id DESC);
+CREATE INDEX idx_transaction_recent_blocks ON transaction(date) WHERE (block_number >= 5600000);
+CREATE INDEX idx_transaction_to_txid_desc ON transaction("to", tx_id DESC);
 
 CREATE TABLE receipt (
 transaction_hash VARCHAR(66) PRIMARY KEY,
@@ -411,7 +425,8 @@ CONSTRAINT pk_token_address PRIMARY KEY (address, contract, block_number),
 CONSTRAINT fk_token_address_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_contract FOREIGN KEY (contract) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
-CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
+CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
+CONSTRAINT fk_token_address_contract_details FOREIGN KEY (contract) REFERENCES contract(address) ON DELETE CASCADE ON UPDATE NO ACTION
 );
 CREATE INDEX ON token_address(address);
 CREATE INDEX ON token_address(block_number);
@@ -455,7 +470,7 @@ CONSTRAINT fk_event_address FOREIGN KEY (address) REFERENCES address(address) ON
 CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
-CREATE INDEX idx_event_block_number ON event(block_number);
+CREATE UNIQUE INDEX idx_event_block_number ON event(block_number);
 CREATE INDEX ON event(block_hash);
 CREATE INDEX idx_event_address ON event(address);
 CREATE INDEX idx_event_signature ON event(signature);
@@ -465,6 +480,9 @@ CREATE INDEX ON event(topic1);
 CREATE INDEX ON event(topic2);
 CREATE INDEX ON event(topic3);
 CREATE INDEX idx_event_transaction_hash_log_index ON event(transaction_hash, log_index);
+CREATE INDEX idx_event_address_event_event_id ON event(address, event, event_id DESC);
+CREATE INDEX idx_event_event ON event(event);
+CREATE INDEX idx_event_lowercase_event ON event(lower((event)::text));
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
@@ -604,8 +622,11 @@ CREATE TABLE verification_result (
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
-  timestamp INT8
+  timestamp INT8,
+  status VARCHAR
 );
+CREATE INDEX idx_verification_result_address ON verification_result(address);
+CREATE INDEX idx_verification_result_match ON verification_result USING btree (match);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (
