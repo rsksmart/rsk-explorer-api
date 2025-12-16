@@ -8,7 +8,7 @@ datasource db {
 }
 
 model address {
-  id                                                             Int                      @unique @default(autoincrement())
+  id                                                             Int                      @unique(map: "idx_address_id") @default(autoincrement())
   address                                                        String                   @id @db.VarChar(42)
   isNative                                                       Boolean                  @map("is_native")
   type                                                           String                   @db.VarChar
@@ -30,8 +30,7 @@ model address {
   transaction_transaction_fromToaddress                          transaction[]            @relation("transaction_fromToaddress")
   transaction_transaction_toToaddress                            transaction[]            @relation("transaction_toToaddress")
 
-  @@index([id], map: "index_address_id")
-  @@index([name], map: "index_address_name")
+  @@index([name])
 }
 
 model balance {
@@ -49,8 +48,8 @@ model balance {
   @@index([address], map: "idx_balance_address")
   @@index([blockNumber], map: "idx_balance_block_number")
   @@index([blockHash])
-  @@index([address, blockNumber], map: "idx_address_blockNumber")
-  @@index([address, id], map: "idx_balance_address_id")
+  @@index([address, blockNumber(sort: Desc)], map: "idx_balance_address_block_number")
+  @@index([address, id(sort: Desc)], map: "idx_balance_address_id")
 }
 
 model block {
@@ -106,23 +105,23 @@ model block {
   @@index([miner])
   @@index([hash])
   @@index([received])
-  @@index([timestamp], map: "idx_block_timestamp")
+  @@index([timestamp])
 }
 
 model contract {
-  address                           String                @id @db.VarChar(42)
-  code                              String?               @db.VarChar
-  codeStoredAtBlock                 Int?                  @map("code_stored_at_block")
-  deployedCode                      String?               @map("deployed_code") @db.VarChar
-  symbol                            String?               @db.VarChar
-  decimals                          Int?                  @db.SmallInt
-  address_contract_addressToaddress address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
-  block                             block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
-  contract_creation_tx              contract_creation_tx?
-  contract_interface                contract_interface[]
-  contract_method                   contract_method[]
-  total_supply                      total_supply[]
-  token_address                     token_address[]
+  address                                        String                @id @db.VarChar(42)
+  code                                           String?               @db.VarChar
+  codeStoredAtBlock                              Int?                  @map("code_stored_at_block")
+  deployedCode                                   String?               @map("deployed_code") @db.VarChar
+  symbol                                         String?               @db.VarChar
+  decimals                                       Int?                  @db.SmallInt
+  address_contract_addressToaddress              address               @relation("contract_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_contract_address")
+  block                                          block?                @relation(fields: [codeStoredAtBlock], references: [number], onDelete: Cascade, map: "fk_contract_code_stored_at_block")
+  contract_creation_tx                           contract_creation_tx?
+  contract_interface                             contract_interface[]
+  contract_method                                contract_method[]
+  token_address_contract_details                 token_address[]       @relation("token_address_contractDetailsTocontract")
+  total_supply                                   total_supply[]
 
   @@index([codeStoredAtBlock])
   @@index([symbol], map: "idx_contract_symbol")
@@ -154,6 +153,7 @@ model contract_verification {
   timestamp BigInt?
 }
 
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model event {
   eventId                         String             @id @map("event_id") @db.VarChar
   abi                             String?            @db.VarChar
@@ -164,7 +164,7 @@ model event {
   topic2                          String?            @db.VarChar
   topic3                          String?            @db.VarChar
   blockHash                       String             @map("block_hash") @db.VarChar(66)
-  blockNumber                     Int                @unique @map("block_number")
+  blockNumber                     Int                @map("block_number")
   data                            String             @db.VarChar
   event                           String?            @db.VarChar
   logIndex                        Int                @map("log_index")
@@ -190,6 +190,8 @@ model event {
   @@index([topic2])
   @@index([topic3])
   @@index([transactionHash, logIndex], map: "idx_event_transaction_hash_log_index")
+  @@index([address, event, eventId(sort: Desc)], map: "idx_event_address_event_event_id")
+  @@index([event], map: "idx_event_event")
 }
 
 model internal_transaction {
@@ -240,7 +242,7 @@ model token_address {
   block                                     block                     @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
   contract_token_address_contractTocontract address                   @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
   token_address_in_summary                  token_address_in_summary?
-  contract_details                          contract?                 @relation(fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract_details")
+  contract_details                          contract?                 @relation("token_address_contractDetailsTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract_details")
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
   @@index([address])
@@ -250,7 +252,7 @@ model token_address {
 
 model transaction {
   hash                                  String                   @id @db.VarChar(66)
-  txId                                  String                   @map("tx_id") @db.VarChar
+  txId                                  String                   @unique(map: "idx_transaction_tx_id") @map("tx_id") @db.VarChar
   type                                  String?                  @db.VarChar
   txType                                String                   @map("tx_type") @db.VarChar
   from                                  String                   @db.VarChar(42)
@@ -281,8 +283,7 @@ model transaction {
   address_transaction_toToaddress       address?                 @relation("transaction_toToaddress", fields: [to], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_transaction_to")
   transaction_in_summary                transaction_in_summary[]
 
-  @@unique([txId])
-  @@index([txId], map: "idx_transaction_tx_id")
+  @@unique([blockNumber, transactionIndex], map: "unique_block_number_transaction_index")
   @@index([blockHash], map: "idx_transaction_block_hash")
   @@index([blockNumber], map: "idx_transaction_block_number")
   @@index([from], map: "idx_transaction_from")
@@ -297,6 +298,11 @@ model transaction {
   @@index([to, isSuccessful], map: "idx_transaction_is_successful_to")
   @@index([from, isSuccessful], map: "idx_transaction_is_successful_from")
   @@index([txId, isSuccessful], map: "idx_transaction_is_successful_tx_id")
+  @@index([blockNumber, transactionIndex(sort: Desc)], map: "idx_transaction_blocknumber_transactionindex")
+  @@index([blockNumber(sort: Desc), transactionIndex(sort: Desc)], map: "idx_transaction_blocknumber_transactionindex_desc")
+  @@index([blockNumber(sort: Desc), transactionIndex], map: "idx_transaction_blocknumber_transactionindex_reverse")
+  @@index([from, txId(sort: Desc)], map: "idx_transaction_from_txid_desc")
+  @@index([to, txId(sort: Desc)], map: "idx_transaction_to_txid_desc")
 }
 
 model transaction_in_pool {
@@ -333,6 +339,8 @@ model transaction_pending {
   input            String @db.VarChar
   status           String @db.VarChar
   timestamp        String @default(dbgenerated("(date_part('epoch'::text, now()))::character varying")) @db.VarChar
+
+  @@index([timestamp])
 }
 
 model tx_pool {
@@ -358,6 +366,10 @@ model verification_result {
   result    String?  @db.VarChar
   sources   String?  @db.VarChar
   timestamp BigInt?
+  status    String?  @db.VarChar
+
+  @@index([address], map: "idx_verification_result_address")
+  @@index([match], map: "idx_verification_result_match")
 }
 
 model stats {
@@ -550,7 +562,7 @@ model address_in_itx {
   address_address_in_itx_addressToaddress address              @relation("address_in_itx_addressToaddress", fields: [address], references: [address], onDelete: Cascade, onUpdate: NoAction)
   internal_transaction                    internal_transaction @relation(fields: [internalTxId], references: [internalTxId], onDelete: Cascade, onUpdate: NoAction)
 
-  @@id([address, internalTxId, role], map: "address_in_itx_pkey")
+  @@id([address, internalTxId, role])
   @@index([internalTxId])
 }
 

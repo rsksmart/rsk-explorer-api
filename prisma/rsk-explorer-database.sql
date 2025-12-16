@@ -470,7 +470,7 @@ CONSTRAINT fk_event_address FOREIGN KEY (address) REFERENCES address(address) ON
 CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
 );
-CREATE UNIQUE INDEX idx_event_block_number ON event(block_number);
+CREATE INDEX idx_event_block_number ON event(block_number);
 CREATE INDEX ON event(block_hash);
 CREATE INDEX idx_event_address ON event(address);
 CREATE INDEX idx_event_signature ON event(signature);
