@@ -626,7 +626,9 @@ CREATE TABLE verification_result (
   status VARCHAR
 );
 CREATE INDEX idx_verification_result_address ON verification_result(address);
-CREATE INDEX idx_verification_result_match ON verification_result USING btree (match);
+CREATE INDEX idx_verification_result_match ON verification_result(match);
+CREATE INDEX idx_verification_result_status ON verification_result(status);
+CREATE INDEX idx_verification_result_timestamp ON verification_result(timestamp);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (

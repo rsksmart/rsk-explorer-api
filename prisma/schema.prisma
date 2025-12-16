@@ -370,6 +370,8 @@ model verification_result {
 
   @@index([address], map: "idx_verification_result_address")
   @@index([match], map: "idx_verification_result_match")
+  @@index([status], map: "idx_verification_result_status")
+  @@index([timestamp], map: "idx_verification_result_timestamp")
 }
 
 model stats {
