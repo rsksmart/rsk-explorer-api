@@ -31,6 +31,7 @@ Table "block" {
     miner
     hash
     received
+    timestamp [name: "block_timestamp_idx"]
   }
 }
 
@@ -79,6 +80,10 @@ Table "transaction_pending" {
   "input" VARCHAR [not null]
   "status" VARCHAR [not null]
   "timestamp" VARCHAR [not null, default: `CAST(DATE_PART('epoch',NOW())ASVARCHAR)`]
+
+  Indexes {
+    timestamp [name: "transaction_pending_timestamp_idx"]
+  }
 }
 
 Table "transaction_in_pool" {
@@ -110,8 +115,8 @@ Table "address" {
   "name" VARCHAR
 
   Indexes {
-    id [name: "index_address_id"]
-    name [name: "index_address_name"]
+    name [name: "address_name_idx"]
+    id [unique, name: "idx_address_id"]
   }
 }
 
@@ -140,6 +145,8 @@ Table "balance" {
     address [name: "idx_balance_address"]
     block_number [name: "idx_balance_block_number"]
     block_hash
+    (address, block_number) [name: "idx_balance_address_block_number"]
+    (address, id) [name: "idx_balance_address_id"]
   }
 }
 
@@ -176,18 +183,26 @@ Table "transaction" {
   "receipt" VARCHAR [not null]
 
   Indexes {
-    tx_id [name: "idx_transaction_tx_id"]
+    tx_id [unique, name: "idx_transaction_tx_id"]
     block_number [name: "idx_transaction_block_number"]
     block_hash [name: "idx_transaction_block_hash"]
     from [name: "idx_transaction_from"]
     to [name: "idx_transaction_to"]
     tx_type [name: "idx_transaction_tx_type"]
-    transaction_index
-    timestamp
+    transaction_index [name: "transaction_transaction_index_idx"]
+    timestamp [name: "transaction_timestamp_idx"]
     datetime [name: "idx_transaction_datetime"]
     date [name: "idx_transaction_date"]
     status [name: "idx_transaction_status"]
     is_successful [name: "idx_transaction_is_successful"]
+    (block_number, transaction_index) [unique, name: "unique_block_number_transaction_index"]
+    (block_number, transaction_index) [name: "idx_transaction_blocknumber_transactionindex"]
+    (block_number, transaction_index) [name: "idx_transaction_blocknumber_transactionindex_desc"]
+    (block_number, transaction_index) [name: "idx_transaction_blocknumber_transactionindex_reverse"]
+    date [name: "idx_transaction_date_recent"]
+    (from, tx_id) [name: "idx_transaction_from_txid_desc"]
+    date [name: "idx_transaction_recent_blocks"]
+    (to, tx_id) [name: "idx_transaction_to_txid_desc"]
   }
 }
 
@@ -196,7 +211,7 @@ Table "receipt" {
   "contract_address" VARCHAR(42)
   "logs_bloom" VARCHAR [not null]
   "cumulative_gas_used" INT4 [not null]
-  "effective_gas_price" VARCHAR [not null]
+  "effective_gas_price" VARCHAR
   "block_hash" VARCHAR(66) [not null]
   "logs" VARCHAR [not null]
   "block_number" INT4 [not null]
@@ -352,6 +367,9 @@ Table "event" {
     topic2
     topic3
     (transaction_hash, log_index) [name: "idx_event_transaction_hash_log_index"]
+    (address, event, event_id) [name: "idx_event_address_event_event_id"]
+    event [name: "idx_event_event"]
+    `lower((event)::text)` [name: "idx_event_lowercase_event"]
   }
 }
 
@@ -497,6 +515,14 @@ Table "verification_result" {
   "result" VARCHAR
   "sources" VARCHAR
   "timestamp" INT8
+  "status" VARCHAR
+
+  Indexes {
+    address [name: "idx_verification_result_address"]
+    match [name: "idx_verification_result_match"]
+    status [name: "idx_verification_result_status"]
+    timestamp [name: "idx_verification_result_timestamp"]
+  }
 }
 
 Table "bo_gas_fee_daily_aggregated" {
@@ -586,6 +612,8 @@ Ref "fk_token_address_contract":"address"."address" < "token_address"."contract"
 Ref "fk_token_address_block_number":"block"."number" < "token_address"."block_number" [delete: cascade]
 
 Ref "fk_token_address_block_hash":"block"."hash" < "token_address"."block_hash" [delete: cascade]
+
+Ref "fk_token_address_contract_details":"contract"."address" < "token_address"."contract" [update: no action, delete: cascade]
 
 Ref "fk_contract_method_contract_address":"contract"."address" < "contract_method"."contract_address" [delete: cascade]
 
