@@ -318,7 +318,7 @@ transaction_hash VARCHAR(66) PRIMARY KEY,
 contract_address VARCHAR(42),
 logs_bloom VARCHAR NOT NULL,
 cumulative_gas_used INT4 NOT NULL,
-effective_gas_price VARCHAR NOT NULL,
+effective_gas_price VARCHAR,
 block_hash VARCHAR(66) NOT NULL,
 logs VARCHAR NOT NULL, -- stringified (legacy, maintained for backward compatibility)
 -- NOTE: Logs can be reconstructed from event table using:
