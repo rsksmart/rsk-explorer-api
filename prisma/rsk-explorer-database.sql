@@ -1,9 +1,24 @@
--- RSK Explorer Database Schema V1.1.5
-
+-- RSK Explorer Database Schema V1.2.3
 /*
 
+V1.2.3 Notes:
+- Normalized SQL schema across environments
+
+V1.2.2 Notes:
+- Updated event foreign key to point to receipt table
+
+V1.2.1 Notes:
+- Fixed typo in table creation for receipt.is_successful (isSuccessful -> is_successful)
+- Implemented receipt table
+- Logs reconstruction using event table
+  * receipt.logs (VARCHAR) is maintained for backward compatibility
+  * Logs are stored individually in event table with transaction_hash and log_index
+  * To reconstruct: SELECT * FROM event WHERE transaction_hash = ? ORDER BY log_index
+  * Topics array is reconstructed from event.topic0, topic1, topic2, topic3 as: topics = [topic0, topic1, topic2, topic3] (filtering NULLs)
+  * Index added: idx_event_transaction_hash_log_index for optimized JOIN queries
+
 V1.1.6 Notes:
-- add isSuccessful column to transaction table
+- add is_successful column to transaction table
 
 V1.1.5 Notes:
 - add status field to transaction table
@@ -130,6 +145,7 @@ received INT8 NOT NULL
 CREATE INDEX ON block(miner);
 CREATE INDEX ON block(hash);
 CREATE INDEX ON block(received);
+CREATE INDEX block_timestamp_idx ON block(timestamp);
 
 CREATE TABLE stats (
 block_number INT4 PRIMARY KEY,
@@ -173,6 +189,7 @@ input VARCHAR NOT NULL,
 status VARCHAR NOT NULL,
 timestamp VARCHAR NOT NULL DEFAULT CAST(DATE_PART('epoch', NOW()) AS VARCHAR)
 );
+CREATE INDEX transaction_pending_timestamp_idx ON transaction_pending(timestamp);
 
 CREATE TABLE transaction_in_pool (
 hash VARCHAR(66),
@@ -200,8 +217,8 @@ is_native BOOLEAN NOT NULL,
 type VARCHAR NOT NULL,
 name VARCHAR -- NULL | string
 );
-CREATE INDEX index_address_id ON address(id);
-CREATE INDEX index_address_name ON address(name);
+CREATE INDEX address_name_idx ON address(name);
+CREATE UNIQUE INDEX idx_address_id ON address(id);
 
 CREATE TABLE miner_address (
 id SERIAL,
@@ -231,6 +248,8 @@ CONSTRAINT fk_balance_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash)
 CREATE INDEX idx_balance_address ON balance(address);
 CREATE INDEX idx_balance_block_number ON balance(block_number);
 CREATE INDEX ON balance(block_hash);
+CREATE INDEX idx_balance_address_block_number ON balance(address, block_number DESC);
+CREATE INDEX idx_balance_address_id ON balance(address, id DESC);
 
 CREATE TABLE address_latest_balance (
 address VARCHAR(42) PRIMARY KEY,
@@ -263,21 +282,21 @@ datetime TIMESTAMP WITH TIME ZONE,
 date date,
 gas_used INT,
 status VARCHAR,
-isSuccessful BOOLEAN,
+is_successful BOOLEAN,
 receipt VARCHAR NOT NULL, -- stringified
 CONSTRAINT fk_transaction_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
 CONSTRAINT fk_transaction_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
-CREATE INDEX idx_transaction_tx_id ON transaction(tx_id);
+CREATE UNIQUE INDEX idx_transaction_tx_id ON transaction(tx_id);
 CREATE INDEX idx_transaction_block_number ON transaction(block_number);
 CREATE INDEX idx_transaction_block_hash ON transaction(block_hash);
 CREATE INDEX idx_transaction_from ON transaction("from");
 CREATE INDEX idx_transaction_to ON transaction("to");
 CREATE INDEX idx_transaction_tx_type ON transaction(tx_type);
-CREATE INDEX ON transaction(transaction_index);
-CREATE INDEX ON transaction(timestamp);
+CREATE INDEX transaction_transaction_index_idx ON transaction(transaction_index);
+CREATE INDEX transaction_timestamp_idx ON transaction(timestamp);
 CREATE INDEX idx_transaction_datetime ON transaction(datetime);
 CREATE INDEX idx_transaction_date ON transaction(date);
 CREATE INDEX idx_transaction_status ON transaction(status);
@@ -285,6 +304,46 @@ CREATE INDEX idx_transaction_is_successful ON transaction(is_successful);
 CREATE INDEX idx_transaction_is_successful_to ON TRANSACTION ("to", is_successful);
 CREATE INDEX idx_transaction_is_successful_from ON TRANSACTION ("from", is_successful);
 CREATE INDEX idx_transaction_is_successful_tx_id ON TRANSACTION (tx_id, is_successful);
+CREATE UNIQUE INDEX unique_block_number_transaction_index ON transaction(block_number, transaction_index);
+CREATE INDEX idx_transaction_blocknumber_transactionindex ON transaction(block_number, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_desc ON transaction(block_number DESC, transaction_index DESC);
+CREATE INDEX idx_transaction_blocknumber_transactionindex_reverse ON transaction(block_number DESC, transaction_index);
+CREATE INDEX idx_transaction_date_recent ON transaction(date) WHERE (date >= '2024-10-01'::date);
+CREATE INDEX idx_transaction_from_txid_desc ON transaction("from", tx_id DESC);
+CREATE INDEX idx_transaction_recent_blocks ON transaction(date) WHERE (block_number >= 5600000);
+CREATE INDEX idx_transaction_to_txid_desc ON transaction("to", tx_id DESC);
+
+CREATE TABLE receipt (
+transaction_hash VARCHAR(66) PRIMARY KEY,
+contract_address VARCHAR(42),
+logs_bloom VARCHAR NOT NULL,
+cumulative_gas_used INT4 NOT NULL,
+effective_gas_price VARCHAR,
+block_hash VARCHAR(66) NOT NULL,
+logs VARCHAR NOT NULL, -- stringified (legacy, maintained for backward compatibility)
+-- NOTE: Logs can be reconstructed from event table using:
+-- SELECT * FROM event WHERE transaction_hash = receipt.transaction_hash ORDER BY log_index
+-- Topics array is reconstructed from event.topic0, topic1, topic2, topic3 as: topics = [topic0, topic1, topic2, topic3] (filtering NULLs)
+block_number INT4 NOT NULL,
+gas_used INT4 NOT NULL,
+"to" VARCHAR(42),
+"from" VARCHAR(42),
+type VARCHAR NOT NULL,
+status VARCHAR NOT NULL,
+transaction_index INT4 NOT NULL,
+CONSTRAINT fk_receipt_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
+CONSTRAINT fk_receipt_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
+CONSTRAINT fk_receipt_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
+CONSTRAINT fk_receipt_from FOREIGN KEY ("from") REFERENCES address(address) ON DELETE CASCADE,
+CONSTRAINT fk_receipt_to FOREIGN KEY ("to") REFERENCES address(address) ON DELETE CASCADE,
+CONSTRAINT fk_receipt_contract_address FOREIGN KEY (contract_address) REFERENCES address(address) ON DELETE CASCADE
+);
+CREATE INDEX idx_receipt_block_number ON receipt(block_number);
+CREATE INDEX idx_receipt_block_hash ON receipt(block_hash);
+CREATE INDEX idx_receipt_from ON receipt("from");
+CREATE INDEX idx_receipt_to ON receipt("to");
+CREATE INDEX idx_receipt_status ON receipt(status);
+CREATE INDEX idx_receipt_contract_address ON receipt(contract_address);
 
 CREATE TABLE internal_transaction (
 internal_tx_id VARCHAR PRIMARY KEY,
@@ -369,6 +428,7 @@ CONSTRAINT fk_token_address_block_number FOREIGN KEY (block_number) REFERENCES b
 CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX ON token_address(address);
+CREATE INDEX idx_token_address_contract ON token_address(contract);
 CREATE INDEX ON token_address(block_number);
 CREATE INDEX ON token_address(block_hash);
 
@@ -405,7 +465,7 @@ timestamp INT8 NOT NULL,
 transaction_hash VARCHAR(66) NOT NULL,
 transaction_index INT4 NOT NULL,
 tx_status VARCHAR NOT NULL,
-CONSTRAINT fk_event_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES transaction(hash) ON DELETE CASCADE,
+CONSTRAINT fk_event_transaction_hash FOREIGN KEY (transaction_hash) REFERENCES receipt(transaction_hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
 CONSTRAINT fk_event_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE
@@ -419,6 +479,10 @@ CREATE INDEX ON event(topic0);
 CREATE INDEX ON event(topic1);
 CREATE INDEX ON event(topic2);
 CREATE INDEX ON event(topic3);
+CREATE INDEX idx_event_transaction_hash_log_index ON event(transaction_hash, log_index);
+CREATE INDEX idx_event_address_event_event_id ON event(address, event, event_id DESC);
+CREATE INDEX idx_event_event ON event(event);
+CREATE INDEX idx_event_lowercase_event ON event(lower((event)::text));
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
@@ -558,8 +622,13 @@ CREATE TABLE verification_result (
   request VARCHAR, -- stringified
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
-  timestamp INT8
+  timestamp INT8,
+  status VARCHAR
 );
+CREATE INDEX idx_verification_result_address ON verification_result(address);
+CREATE INDEX idx_verification_result_match ON verification_result(match);
+CREATE INDEX idx_verification_result_status ON verification_result(status);
+CREATE INDEX idx_verification_result_timestamp ON verification_result(timestamp);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (

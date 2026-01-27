@@ -55,7 +55,7 @@ export function getBlocksRepository (prismaClient) {
         const queries = []
 
         for (const tx of transactions) {
-          queries.push(txRepository.insertOne(tx))
+          queries.push(...txRepository.insertOne(tx))
           queries.push(txPendingRepository.deleteOne({ hash: tx.hash }))
         }
 
