@@ -120,7 +120,6 @@ model contract {
   contract_creation_tx              contract_creation_tx?
   contract_interface                contract_interface[]
   contract_method                   contract_method[]
-  token_address_contract_details    token_address[]       @relation("token_address_contractDetailsTocontract")
   total_supply                      total_supply[]
 
   @@index([codeStoredAtBlock])
@@ -242,12 +241,12 @@ model token_address {
   block                                     block                     @relation(fields: [blockNumber], references: [number], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_block_number")
   contract_token_address_contractTocontract address                   @relation("token_address_contractTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract")
   token_address_in_summary                  token_address_in_summary?
-  contract_details                          contract?                 @relation("token_address_contractDetailsTocontract", fields: [contract], references: [address], onDelete: Cascade, onUpdate: NoAction, map: "fk_token_address_contract_details")
 
   @@id([address, contract, blockNumber], map: "pk_token_address")
   @@index([address])
   @@index([blockHash])
   @@index([blockNumber])
+  @@index([contract], map: "idx_token_address_contract")
 }
 
 model transaction {

@@ -425,10 +425,10 @@ CONSTRAINT pk_token_address PRIMARY KEY (address, contract, block_number),
 CONSTRAINT fk_token_address_address FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_contract FOREIGN KEY (contract) REFERENCES address(address) ON DELETE CASCADE,
 CONSTRAINT fk_token_address_block_number FOREIGN KEY (block_number) REFERENCES block(number) ON DELETE CASCADE,
-CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE,
-CONSTRAINT fk_token_address_contract_details FOREIGN KEY (contract) REFERENCES contract(address) ON DELETE CASCADE ON UPDATE NO ACTION
+CONSTRAINT fk_token_address_block_hash FOREIGN KEY (block_hash) REFERENCES block(hash) ON DELETE CASCADE
 );
 CREATE INDEX ON token_address(address);
+CREATE INDEX idx_token_address_contract ON token_address(contract);
 CREATE INDEX ON token_address(block_number);
 CREATE INDEX ON token_address(block_hash);
 
