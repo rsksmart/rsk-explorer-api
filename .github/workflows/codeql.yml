@@ -27,8 +27,20 @@ jobs:
         language: [javascript]
 
     steps:
+      - name: Generate GitHub App Token
+        id: generate_token
+        uses: actions/create-github-app-token@31c86eb3b33c9b601a1f60f98dcbfd1d70f379b4 # v1.10.3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: rsksmart
+          repositories: rsk-explorer-api,explorer-prisma-schema
+
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: recursive
+          token: ${{ steps.generate_token.outputs.token }}
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@aa578102511db1f4524ed59b8cc2bae4f6e88195 #v3.27.6
