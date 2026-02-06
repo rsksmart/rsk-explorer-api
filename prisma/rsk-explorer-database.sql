@@ -1,5 +1,8 @@
--- RSK Explorer Database Schema V1.2.3
+-- RSK Explorer Database Schema V1.2.4
 /*
+
+V1.2.4 Notes:
+- Added new columns and indexes to verification_result table
 
 V1.2.3 Notes:
 - Normalized SQL schema across environments
@@ -623,12 +626,35 @@ CREATE TABLE verification_result (
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
   timestamp INT8,
-  status VARCHAR
+  status VARCHAR,
+  contract_name VARCHAR(255),
+  verification_date TIMESTAMP WITH TIME ZONE,
+  optimization_enabled BOOLEAN,
+  optimization_runs INT,
+  compiler_version VARCHAR(100),
+  evm_version VARCHAR(50),
+  source_files JSONB,
+  constructor_arguments TEXT,
+  deployment_bytecode TEXT,
+  evm_bytecode TEXT,
+  libraries JSONB,
+  method_identifiers JSONB,
+  remappings JSONB,
+  via_ir BOOLEAN,
+  language VARCHAR(50),
+  bytecode_hash VARCHAR(66)
 );
 CREATE INDEX idx_verification_result_address ON verification_result(address);
 CREATE INDEX idx_verification_result_match ON verification_result(match);
 CREATE INDEX idx_verification_result_status ON verification_result(status);
 CREATE INDEX idx_verification_result_timestamp ON verification_result(timestamp);
+CREATE INDEX idx_verification_result_contract_name ON verification_result(contract_name);
+CREATE INDEX idx_verification_result_compiler_version ON verification_result(compiler_version);
+CREATE INDEX idx_verification_result_evm_version ON verification_result(evm_version);
+CREATE INDEX idx_verification_result_optimization_enabled ON verification_result(optimization_enabled);
+CREATE INDEX idx_verification_result_verification_date ON verification_result(verification_date);
+CREATE INDEX idx_verification_result_language ON verification_result(language);
+CREATE INDEX idx_verification_result_bytecode_hash ON verification_result(bytecode_hash);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (
