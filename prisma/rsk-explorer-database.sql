@@ -634,6 +634,7 @@ CREATE TABLE verification_result (
   compiler_version VARCHAR(100),
   evm_version VARCHAR(50),
   source_files JSONB,
+  encoded_constructor_arguments TEXT,
   constructor_arguments TEXT,
   deployment_bytecode TEXT,
   evm_bytecode TEXT,

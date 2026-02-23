@@ -357,31 +357,32 @@ model tx_pool {
 }
 
 model verification_result {
-  id                   String    @id @map("_id") @db.VarChar
-  abi                  String?   @db.VarChar
-  address              String?   @db.VarChar
-  match                Boolean?
-  request              String?   @db.VarChar
-  result               String?   @db.VarChar
-  sources              String?   @db.VarChar
-  timestamp            BigInt?
-  status               String?   @db.VarChar
-  contractName         String?   @map("contract_name") @db.VarChar(255)
-  verificationDate     DateTime? @map("verification_date") @db.Timestamptz(6)
-  optimizationEnabled  Boolean?  @map("optimization_enabled")
-  optimizationRuns     Int?      @map("optimization_runs")
-  compilerVersion      String?   @map("compiler_version") @db.VarChar(100)
-  evmVersion           String?   @map("evm_version") @db.VarChar(50)
-  sourceFiles          Json?     @map("source_files")
-  constructorArguments String?   @map("constructor_arguments")
-  deploymentBytecode   String?   @map("deployment_bytecode")
-  evmBytecode          String?   @map("evm_bytecode")
-  libraries            Json?
-  methodIdentifiers    Json?     @map("method_identifiers")
-  remappings           Json?
-  viaIr                Boolean?  @map("via_ir")
-  language             String?   @db.VarChar(50)
-  bytecodeHash         String?   @map("bytecode_hash") @db.VarChar(66)
+  id                          String    @id @map("_id") @db.VarChar
+  abi                         String?   @db.VarChar
+  address                     String?   @db.VarChar
+  match                       Boolean?
+  request                     String?   @db.VarChar
+  result                      String?   @db.VarChar
+  sources                     String?   @db.VarChar
+  timestamp                   BigInt?
+  status                      String?   @db.VarChar
+  contractName                String?   @map("contract_name") @db.VarChar(255)
+  verificationDate            DateTime? @map("verification_date") @db.Timestamptz(6)
+  optimizationEnabled         Boolean?  @map("optimization_enabled")
+  optimizationRuns            Int?      @map("optimization_runs")
+  compilerVersion             String?   @map("compiler_version") @db.VarChar(100)
+  evmVersion                  String?   @map("evm_version") @db.VarChar(50)
+  sourceFiles                 Json?     @map("source_files")
+  encodedConstructorArguments String?   @map("encoded_constructor_arguments")
+  constructorArguments        String?   @map("constructor_arguments")
+  deploymentBytecode          String?   @map("deployment_bytecode")
+  evmBytecode                 String?   @map("evm_bytecode")
+  libraries                   Json?
+  methodIdentifiers           Json?     @map("method_identifiers")
+  remappings                  Json?
+  viaIr                       Boolean?  @map("via_ir")
+  language                    String?   @db.VarChar(50)
+  bytecodeHash                String?   @map("bytecode_hash") @db.VarChar(66)
 
   @@index([address], map: "idx_verification_result_address")
   @@index([match], map: "idx_verification_result_match")
