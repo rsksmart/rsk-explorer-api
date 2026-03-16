@@ -637,13 +637,16 @@ CREATE TABLE verification_result (
   encoded_constructor_arguments TEXT,
   constructor_arguments TEXT,
   deployment_bytecode TEXT,
-  evm_bytecode TEXT,
+  deployment_bytecode_hash VARCHAR(66),
+  compiled_bytecode TEXT,
+  compiled_bytecode_hash VARCHAR(66),
+  runtime_bytecode TEXT,
+  runtime_bytecode_hash VARCHAR(66),
   libraries JSONB,
   method_identifiers JSONB,
   remappings JSONB,
   via_ir BOOLEAN,
-  language VARCHAR(50),
-  bytecode_hash VARCHAR(66)
+  language VARCHAR(50)
 );
 CREATE INDEX idx_verification_result_address ON verification_result(address);
 CREATE INDEX idx_verification_result_match ON verification_result(match);
@@ -655,7 +658,8 @@ CREATE INDEX idx_verification_result_evm_version ON verification_result(evm_vers
 CREATE INDEX idx_verification_result_optimization_enabled ON verification_result(optimization_enabled);
 CREATE INDEX idx_verification_result_verification_date ON verification_result(verification_date);
 CREATE INDEX idx_verification_result_language ON verification_result(language);
-CREATE INDEX idx_verification_result_bytecode_hash ON verification_result(bytecode_hash);
+CREATE INDEX idx_verification_result_deployment_bytecode_hash ON verification_result(deployment_bytecode_hash);
+CREATE INDEX idx_verification_result_runtime_bytecode_hash ON verification_result(runtime_bytecode_hash);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (

@@ -376,13 +376,16 @@ model verification_result {
   encodedConstructorArguments String?   @map("encoded_constructor_arguments")
   constructorArguments        String?   @map("constructor_arguments")
   deploymentBytecode          String?   @map("deployment_bytecode")
-  evmBytecode                 String?   @map("evm_bytecode")
+  deploymentBytecodeHash      String?   @map("deployment_bytecode_hash") @db.VarChar(66)
+  compiledBytecode            String?   @map("compiled_bytecode")
+  compiledBytecodeHash        String?   @map("compiled_bytecode_hash") @db.VarChar(66)
+  runtimeBytecode             String?   @map("runtime_bytecode")
+  runtimeBytecodeHash         String?   @map("runtime_bytecode_hash") @db.VarChar(66)
   libraries                   Json?
   methodIdentifiers           Json?     @map("method_identifiers")
   remappings                  Json?
   viaIr                       Boolean?  @map("via_ir")
   language                    String?   @db.VarChar(50)
-  bytecodeHash                String?   @map("bytecode_hash") @db.VarChar(66)
 
   @@index([address], map: "idx_verification_result_address")
   @@index([match], map: "idx_verification_result_match")
@@ -393,7 +396,8 @@ model verification_result {
   @@index([evmVersion], map: "idx_verification_result_evm_version")
   @@index([optimizationEnabled], map: "idx_verification_result_optimization_enabled")
   @@index([verificationDate], map: "idx_verification_result_verification_date")
-  @@index([bytecodeHash], map: "idx_verification_result_bytecode_hash")
+  @@index([deploymentBytecodeHash], map: "idx_verification_result_deployment_bytecode_hash")
+  @@index([runtimeBytecodeHash], map: "idx_verification_result_runtime_bytecode_hash")
   @@index([language], map: "idx_verification_result_language")
 }
 
