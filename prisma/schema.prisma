@@ -391,14 +391,9 @@ model verification_result {
   @@index([match], map: "idx_verification_result_match")
   @@index([status], map: "idx_verification_result_status")
   @@index([timestamp], map: "idx_verification_result_timestamp")
-  @@index([compilerVersion], map: "idx_verification_result_compiler_version")
   @@index([contractName], map: "idx_verification_result_contract_name")
-  @@index([evmVersion], map: "idx_verification_result_evm_version")
-  @@index([optimizationEnabled], map: "idx_verification_result_optimization_enabled")
-  @@index([verificationDate], map: "idx_verification_result_verification_date")
   @@index([deploymentBytecodeHash], map: "idx_verification_result_deployment_bytecode_hash")
   @@index([runtimeBytecodeHash], map: "idx_verification_result_runtime_bytecode_hash")
-  @@index([language], map: "idx_verification_result_language")
 }
 
 model stats {
