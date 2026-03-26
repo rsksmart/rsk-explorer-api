@@ -496,7 +496,6 @@ PRIMARY KEY (event_id, address, is_event_emitter_address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
-CREATE INDEX idx_address_in_event_address ON address_in_event(address);
 CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
 CREATE INDEX ON address_in_event(event_signature);
 

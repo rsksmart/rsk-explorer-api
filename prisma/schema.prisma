@@ -546,7 +546,6 @@ model address_in_event {
   event                                     event   @relation(fields: [eventId], references: [eventId], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([eventId, address, isEventEmitterAddress])
-  @@index([address], map: "idx_address_in_event_address")
   @@index([eventId], map: "idx_address_in_event_event_id")
   @@index([eventSignature])
 }
