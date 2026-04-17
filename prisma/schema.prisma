@@ -191,6 +191,9 @@ model event {
   @@index([transactionHash, logIndex], map: "idx_event_transaction_hash_log_index")
   @@index([address, event, eventId(sort: Desc)], map: "idx_event_address_event_event_id")
   @@index([event], map: "idx_event_event")
+  @@index([address, topic0, topic3, blockNumber(sort: Desc), logIndex(sort: Desc)], map: "idx_event_addr_t0_t3")
+  @@index([topic0, topic1], map: "idx_event_t0_t1")
+  @@index([topic0, topic2], map: "idx_event_t0_t2")
 }
 
 model internal_transaction {
