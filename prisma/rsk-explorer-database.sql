@@ -486,13 +486,13 @@ CREATE INDEX idx_event_transaction_hash_log_index ON event(transaction_hash, log
 CREATE INDEX idx_event_address_event_event_id ON event(address, event, event_id DESC);
 CREATE INDEX idx_event_event ON event(event);
 CREATE INDEX idx_event_lowercase_event ON event(lower((event)::text));
-CREATE INDEX idx_event_addr_t0_t3 ON event(address, topic0, topic3, block_number DESC, log_index DESC);
-CREATE INDEX idx_event_addr_t0_block_log_desc ON event(address, topic0, block_number DESC, log_index DESC);
+CREATE INDEX idx_event_addr_t0_t3 ON event(address, topic0, topic3, block_number DESC, transaction_index DESC, log_index DESC);
+CREATE INDEX idx_event_addr_t0_block_log_desc ON event(address, topic0, block_number DESC, transaction_index DESC, log_index DESC);
 CREATE INDEX idx_event_t0_t1 ON event(topic0, topic1);
 CREATE INDEX idx_event_t0_t2 ON event(topic0, topic2);
 CREATE INDEX idx_event_t0_t3 ON event(topic0, topic3);
-CREATE INDEX idx_event_addr_t0_t1_block_log ON event(address, topic0, topic1, block_number DESC, log_index DESC);
-CREATE INDEX idx_event_addr_t0_t2_block_log ON event(address, topic0, topic2, block_number DESC, log_index DESC);
+CREATE INDEX idx_event_addr_t0_t1_block_log ON event(address, topic0, topic1, block_number DESC, transaction_index DESC, log_index DESC);
+CREATE INDEX idx_event_addr_t0_t2_block_log ON event(address, topic0, topic2, block_number DESC, transaction_index DESC, log_index DESC);
 
 CREATE TABLE address_in_event (
 event_id VARCHAR,
