@@ -1,5 +1,8 @@
--- RSK Explorer Database Schema V1.2.3
+-- RSK Explorer Database Schema V1.2.4
 /*
+
+V1.2.4 Notes:
+- Added new columns and indexes to verification_result table
 
 V1.2.3 Notes:
 - Normalized SQL schema across environments
@@ -493,7 +496,6 @@ PRIMARY KEY (event_id, address, is_event_emitter_address),
 FOREIGN KEY (event_id) REFERENCES event(event_id) ON DELETE CASCADE,
 FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
-CREATE INDEX idx_address_in_event_address ON address_in_event(address);
 CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
 CREATE INDEX ON address_in_event(event_signature);
 
@@ -623,12 +625,35 @@ CREATE TABLE verification_result (
   result VARCHAR, -- stringified
   sources VARCHAR, -- stringified
   timestamp INT8,
-  status VARCHAR
+  status VARCHAR,
+  contract_name VARCHAR(255),
+  verification_date TIMESTAMP WITH TIME ZONE,
+  optimization_enabled BOOLEAN,
+  optimization_runs INT,
+  compiler_version VARCHAR(100),
+  evm_version VARCHAR(50),
+  source_files JSONB,
+  encoded_constructor_arguments TEXT,
+  constructor_arguments TEXT,
+  deployment_bytecode TEXT,
+  deployment_bytecode_hash VARCHAR(66),
+  compiled_bytecode TEXT,
+  compiled_bytecode_hash VARCHAR(66),
+  runtime_bytecode TEXT,
+  runtime_bytecode_hash VARCHAR(66),
+  libraries JSONB,
+  method_identifiers JSONB,
+  remappings JSONB,
+  via_ir BOOLEAN,
+  language VARCHAR(50)
 );
 CREATE INDEX idx_verification_result_address ON verification_result(address);
 CREATE INDEX idx_verification_result_match ON verification_result(match);
 CREATE INDEX idx_verification_result_status ON verification_result(status);
 CREATE INDEX idx_verification_result_timestamp ON verification_result(timestamp);
+CREATE INDEX idx_verification_result_contract_name ON verification_result(contract_name);
+CREATE INDEX idx_verification_result_deployment_bytecode_hash ON verification_result(deployment_bytecode_hash);
+CREATE INDEX idx_verification_result_runtime_bytecode_hash ON verification_result(runtime_bytecode_hash);
 
 -- Daily gas fees
 CREATE TABLE bo_gas_fee_daily_aggregated (
