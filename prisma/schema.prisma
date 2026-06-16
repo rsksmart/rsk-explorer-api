@@ -548,6 +548,7 @@ model address_in_event {
   @@id([eventId, address, isEventEmitterAddress])
   @@index([eventId], map: "idx_address_in_event_event_id")
   @@index([eventSignature])
+  @@index([address, eventSignature, eventId(sort: Desc)], map: "idx_address_in_event_address_sig_event_id_desc")
 }
 
 model address_latest_balance {
