@@ -1,5 +1,8 @@
--- RSK Explorer Database Schema V1.2.4
+-- RSK Explorer Database Schema V1.2.5
 /*
+
+V1.2.5 Notes:
+- Added new index in address_in_event table
 
 V1.2.4 Notes:
 - Added new columns and indexes to verification_result table
@@ -498,6 +501,7 @@ FOREIGN KEY (address) REFERENCES address(address) ON DELETE CASCADE
 );
 CREATE INDEX idx_address_in_event_event_id ON address_in_event(event_id);
 CREATE INDEX ON address_in_event(event_signature);
+CREATE INDEX idx_address_in_event_address_sig_event_id_desc ON address_in_event(address, event_signature, event_id DESC);
 
 CREATE TABLE block_trace (
 block_hash VARCHAR(66),
