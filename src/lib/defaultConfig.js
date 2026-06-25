@@ -5,6 +5,9 @@
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
+const BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH = 502501
+const BITCOIN_CONFIRMATIONS_BEFORE_INDEXING = 100
+
 export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
 export const CONTRACT_VERIFIER_SOLC_VERSIONS_ID = 'contractVerifierSolcVersions'
@@ -66,6 +69,18 @@ export default {
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
     services
+  },
+  bitcoin: {
+    startHeight: BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH,
+    confirmations: BITCOIN_CONFIRMATIONS_BEFORE_INDEXING,
+    windowBlocks: 1000,
+    ingestLookbackBlocks: 1500,
+    ingestConcurrency: 8,
+    ingestBatchSize: 500,
+    sustainedRequestsPerSecond: 25,
+    requestTimeoutMs: 15000,
+    maxRetries: 5,
+    retryDelayMs: 1000
   },
   forceSaveBcStats: true,
   enableTxPoolFromApi: true
