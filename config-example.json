@@ -19,5 +19,14 @@
   "blocks": {
     "enableMetrics": true,
     "metricsPort": 4001
+  },
+  "bitcoin": {
+    "mempoolApiUrl": "https://mempool.space/api",
+    "blocksSample": 1000,
+    "hashratePeriod": "1w",
+    "minCoverage": 0.9,
+    "requestDelayMs": 250,
+    "requestTimeoutMs": 15000,
+    "maxRetries": 3
   }
 }
