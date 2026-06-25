@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { isRskMergeMined, RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
 
 // 'RSKBLOCK:' + a 32-byte payload, as embedded by merge-mining pools.
-const taggedScript = `6a24${RSK_TAG_HEX}${'ab'.repeat(32)}`
+const taggedScript = `6a29${RSK_TAG_HEX}${'ab'.repeat(32)}`
 const plainScript = '6a14' + 'cd'.repeat(20)
 
 describe('# rskMergeMiningTag', function () {

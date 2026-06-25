@@ -10,6 +10,8 @@ export async function getMergeMiningStats ({
   log = Logger('[merge-mining-stats]')
 }) {
   if (!client) throw new Error('Missing Bitcoin client')
+  if (!Number.isInteger(sampleSize) || sampleSize < 1) throw new Error(`Invalid sampleSize: ${sampleSize}`)
+  if (!(minCoverage > 0) || minCoverage > 1) throw new Error(`Invalid minCoverage: ${minCoverage}`)
 
   // Fetched first so a bad hashrate fails fast, before the long block walk
   const bitcoinHashrate = new BigNumber(await client.getNetworkHashrate(hashratePeriod))

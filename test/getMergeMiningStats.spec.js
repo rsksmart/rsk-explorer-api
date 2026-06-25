@@ -3,7 +3,7 @@ import { getMergeMiningStats } from '../src/lib/getMergeMiningStats'
 import { RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
 
 const silentLog = { info () {}, warn () {}, error () {} }
-const taggedCoinbase = { vin: [{ scriptsig: '03aa' }], vout: [{ scriptpubkey: `6a24${RSK_TAG_HEX}${'ab'.repeat(32)}` }] }
+const taggedCoinbase = { vin: [{ scriptsig: '03aa' }], vout: [{ scriptpubkey: `6a29${RSK_TAG_HEX}${'ab'.repeat(32)}` }] }
 const plainCoinbase = { vin: [{ scriptsig: '03bb' }], vout: [{ scriptpubkey: '76a90088ac' }] }
 
 // Heights in `taggedHeights` are merge-mined; heights in `failHeights` throw on fetch.
