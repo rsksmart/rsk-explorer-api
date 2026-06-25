@@ -39,6 +39,15 @@ export default {
     rsk: 0, // delegates rsk module to the node that handle subscriptions
     trace: 1 // delegates trace_ module to the second node
   },
+  db: {
+    protocol: 'postgres://',
+    databaseName: 'explorer_db',
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 12345678,
+    connectionLimit: 30
+  },
   api: {
     address: 'localhost',
     port: 3003,
@@ -66,6 +75,16 @@ export default {
     ports: [3010], // list of services ports, if the list runs out, the services will try to take the next  ports starting from the last
     address: '127.0.0.1',
     services
+  },
+  bitcoin: {
+    // Testnet deployments override with 'https://mempool.space/testnet/api'
+    mempoolApiUrl: 'https://mempool.space/api',
+    blocksSample: 1000,
+    hashratePeriod: '1w',
+    minCoverage: 0.9,
+    requestDelayMs: 250,
+    requestTimeoutMs: 15000,
+    maxRetries: 3
   },
   forceSaveBcStats: true,
   enableTxPoolFromApi: true

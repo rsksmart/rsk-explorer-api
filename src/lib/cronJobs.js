@@ -1,6 +1,9 @@
 import { CronJob } from 'cron'
 import { prismaClient } from './prismaClient'
 import Logger from './Logger'
+import config from './config'
+import { createBtcMempoolClient } from './btcMempoolClient'
+import { getMergeMiningStats } from './getMergeMiningStats'
 
 /*
 Supported Ranges
@@ -70,6 +73,10 @@ const cronsConfig = {
     daily3_15AM: {
       value: '15 3 * * *',
       description: 'every day at 3:15 AM'
+    },
+    daily3_20AM: {
+      value: '20 3 * * *',
+      description: 'every day at 3:20 AM'
     }
   }
 }
@@ -265,11 +272,67 @@ function dailyNumberOfTransactionsUpdater () {
   }
 }
 
+// Daily Bitcoin merge-mining stats snapshot
+function dailyMergeMiningStatsUpdater () {
+  const name = 'daily-merge-mining-stats'
+  const log = Logger(`[${name}]`)
+  const schedule = cronsConfig.schedules.daily3_20AM
+  const action = async () => {
+    try {
+      log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
+      log.info(`Updating daily merge-mining stats...`)
+
+      const started = Date.now()
+      const { bitcoin } = config
+      const client = createBtcMempoolClient({
+        baseUrl: bitcoin.mempoolApiUrl,
+        requestDelayMs: bitcoin.requestDelayMs,
+        requestTimeoutMs: bitcoin.requestTimeoutMs,
+        maxRetries: bitcoin.maxRetries,
+        log
+      })
+
+      const stats = await getMergeMiningStats({
+        client,
+        sampleSize: bitcoin.blocksSample,
+        hashratePeriod: bitcoin.hashratePeriod,
+        minCoverage: bitcoin.minCoverage,
+        log
+      })
+
+      const date = new Date()
+      date.setUTCHours(0, 0, 0, 0)
+
+      await prismaClient.btc_merge_mining_stats.upsert({
+        where: { date },
+        update: stats,
+        create: { date, ...stats }
+      })
+
+      log.info(`Daily merge-mining stats updated (${Date.now() - started} ms)`)
+      log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
+    } catch (error) {
+      // Leaves the previous snapshot in place so the API keeps serving last-good data
+      log.error(`Error updating daily merge-mining stats: ${error.message}`)
+      log.error(error.stack)
+    }
+  }
+  const cronJob = createCronJob({ schedule, action })
+
+  return {
+    schedule,
+    name,
+    cronJob,
+    start: () => cronJob.start()
+  }
+}
+
 const cronJobs = {
   dailyGasFeesUpdater: dailyGasFeesUpdater(),
   newAddressesUpdater: newAddressesUpdater(),
   dailyActiveAddressesUpdater: dailyActiveAddressesUpdater(),
-  dailyNumberOfTransactionsUpdater: dailyNumberOfTransactionsUpdater()
+  dailyNumberOfTransactionsUpdater: dailyNumberOfTransactionsUpdater(),
+  dailyMergeMiningStatsUpdater: dailyMergeMiningStatsUpdater()
 }
 
 export function startCronJobs ({ log = Logger('[CronJobs]') } = {}) {
