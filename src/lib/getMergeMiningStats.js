@@ -38,6 +38,9 @@ export async function getMergeMiningStats ({
       failed++
       log.warn(`Skipping BTC block ${height}: ${error.message}`)
     }
+    // Stop early once the remaining blocks can no longer restore minimum coverage
+    // (e.g. a provider outage), instead of walking the whole window for nothing
+    if (bitcoinBlocksSampled + (height - lowestHeight) < requested * minCoverage) break
     await client.throttle()
   }
 

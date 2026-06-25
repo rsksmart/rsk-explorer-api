@@ -11,10 +11,10 @@ const DEFAULTS = {
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
-// Reads-only client for the mempool.space REST API (Esplora-compatible),
-// treating the provider as untrusted: bounded timeout, retries on throttling
-// and server errors only, and a throttle between calls. Uses axios rather than
-// global fetch so it runs on the Node 16 deploy runtime.
+// Read-only client for the mempool.space REST API (Esplora-compatible),
+// treating the provider as untrusted: bounded timeout, retries on network/
+// timeout and 429/5xx errors (not other 4xx), and a throttle between calls.
+// Uses axios rather than a fetch global, which is absent before Node 18.
 export function createBtcMempoolClient (options = {}) {
   const cfg = { ...DEFAULTS, ...options }
   const baseUrl = cfg.baseUrl.replace(/\/+$/, '')
