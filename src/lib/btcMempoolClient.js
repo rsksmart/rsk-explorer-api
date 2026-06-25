@@ -1,3 +1,4 @@
+import axios from 'axios'
 import Logger from './Logger'
 
 const DEFAULTS = {
@@ -12,34 +13,30 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 // Reads-only client for the mempool.space REST API (Esplora-compatible),
 // treating the provider as untrusted: bounded timeout, retries on throttling
-// and server errors only, and a throttle between calls.
+// and server errors only, and a throttle between calls. Uses axios rather than
+// global fetch so it runs on the Node 16 deploy runtime.
 export function createBtcMempoolClient (options = {}) {
   const cfg = { ...DEFAULTS, ...options }
   const baseUrl = cfg.baseUrl.replace(/\/+$/, '')
   const log = cfg.log || Logger('[btc-mempool-client]')
 
-  async function fetchOnce (path, json) {
-    const controller = new global.AbortController()
-    const timer = setTimeout(() => controller.abort(), cfg.requestTimeoutMs)
+  async function fetchOnce (path) {
     try {
-      const res = await global.fetch(`${baseUrl}${path}`, { signal: controller.signal })
-      if (res.ok) return json ? res.json() : res.text()
-      const error = new Error(`HTTP ${res.status} for ${path}`)
-      error.retryable = res.status === 429 || res.status >= 500
-      throw error
+      const { data } = await axios.get(`${baseUrl}${path}`, { timeout: cfg.requestTimeoutMs })
+      return data
     } catch (error) {
-      if (error.retryable === undefined) error.retryable = true
+      const status = error.response && error.response.status
+      // Network/timeout errors and 429/5xx are worth retrying; other 4xx are not
+      error.retryable = !status || status === 429 || status >= 500
       throw error
-    } finally {
-      clearTimeout(timer)
     }
   }
 
-  async function request (path, { json = true } = {}) {
+  async function request (path) {
     let lastError
     for (let attempt = 0; attempt <= cfg.maxRetries; attempt++) {
       try {
-        return await fetchOnce(path, json)
+        return await fetchOnce(path)
       } catch (error) {
         lastError = error
         if (!error.retryable || attempt === cfg.maxRetries) break
@@ -52,9 +49,9 @@ export function createBtcMempoolClient (options = {}) {
   }
 
   return {
-    getTipHeight: async () => Number(await request('/blocks/tip/height', { json: false })),
+    getTipHeight: async () => Number(await request('/blocks/tip/height')),
     getBlockHash: async height => {
-      const hash = (await request(`/block-height/${height}`, { json: false })).trim()
+      const hash = String(await request(`/block-height/${height}`)).trim()
       // Validated before being interpolated into later request paths
       if (!/^[0-9a-f]{64}$/i.test(hash)) throw new Error(`Invalid block hash for height ${height}`)
       return hash
