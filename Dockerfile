@@ -1,4 +1,4 @@
-FROM node:22 as node
+FROM node:24@sha256:392e1e23f34da768d8d1f4e502b64f200d3be3465934d4b7930f57d7e2fc1989 as node
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update -y && \
     apt-get install -y build-essential apt-utils git curl software-properties-common && \
