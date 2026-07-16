@@ -6,7 +6,7 @@
 
 # Requisites
 - postgres
-- node: v16+
+- node: v24+
 - access to JSON/RPC interface of a rskj node >= 2.0.1 with this modules enabled: eth, net, web3, txpool, debug and trace.
 
 # Configuration steps
