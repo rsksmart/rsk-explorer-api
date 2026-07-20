@@ -13,7 +13,7 @@
 
 ## Section 1: Environment setup
 - create a database 'explorer_db'
-- create sql tables using the script prisma/rsk-explorer-database.sql
+- create the sql tables by running: npx prisma migrate deploy
 - Install pm2:
   - npm install -g pm2
   - Enable pm2 log rotation: pm2 install pm2-logrotate

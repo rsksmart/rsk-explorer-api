@@ -7,6 +7,7 @@
   },
   "main": "index.js",
   "scripts": {
+    "postinstall": "git submodule update --init --recursive && npx --no-install prisma generate || echo 'postinstall: skipped prisma submodule init/generate (not a git checkout or prisma CLI unavailable)'",
     "dev": "npx nodemon src/api | ./node_modules/.bin/bunyan -o short",
     "build": "npm run lint && npm run clean && npm run api-docs && ./node_modules/.bin/babel src -d dist --copy-files",
     "clean": "rm -rf dist && rm -f .node-xmlhttprequest-sync*",
