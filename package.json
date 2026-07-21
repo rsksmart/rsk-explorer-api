@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "description": "RSK Explorer API",
   "engines": {
     "node": ">=24.0.0"
