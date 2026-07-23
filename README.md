@@ -11,23 +11,29 @@
 
 # Clone the repository
 
-The Prisma schema and database SQL live in a Git submodule (`prisma/`). You must clone with submodules, otherwise database setup will fail.
+The Prisma schema and database SQL live in a Git submodule (`prisma/`). You must clone with submodules, otherwise database setup and Prisma Client generation will fail.
 
 ```bash
 git clone --recurse-submodules git@github.com:rsksmart/rsk-explorer-api.git
+cd rsk-explorer-api
+npm install
+npx prisma@6.19.3 generate
 ```
 
 If you already cloned without submodules:
 
 ```bash
 git submodule update --init --recursive
+npm install
+npx prisma@6.19.3 generate
 ```
 
+`npx prisma@6.19.3 generate` is required after the submodule is available (Prisma v6; plain `npx prisma generate` may resolve to v7 and fail). If `@prisma/client` was not generated during `npm install` (common when `prisma/schema.prisma` was missing), the app will fail at runtime until you run it.
 # Configuration steps
 
 ## Section 1: Environment setup
 - create a database 'explorer_db'
-- create the sql tables by running: npx prisma migrate deploy
+- create the sql tables by running: npx prisma@6.19.3 migrate deploy
 - Install pm2:
   - npm install -g pm2
   - Enable pm2 log rotation: pm2 install pm2-logrotate
@@ -118,7 +124,7 @@ api:{
 Run commands:
 - npm install
 - npm run build
-- npx prisma generate
+- npx prisma@6.19.3 generate
 
 ## Start
 - Start block service: npm run start-blocks
@@ -162,7 +168,7 @@ Run api in development mode: npm run dev
 Run blocks in development mode:
 
 - npm run build
-- npx prisma generate
+- npx prisma@6.19.3 generate
 - npm run blocks-start
 
 Note Before uploading changes, remember to execute npm run build after upgrading version in package.version, so swagger docs compile the version number too. 
