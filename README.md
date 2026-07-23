@@ -9,6 +9,20 @@
 - node: v24+
 - access to JSON/RPC interface of a rskj node >= 2.0.1 with this modules enabled: eth, net, web3, txpool, debug and trace.
 
+# Clone the repository
+
+The Prisma schema and database SQL live in a Git submodule (`prisma/`). You must clone with submodules, otherwise database setup will fail.
+
+```bash
+git clone --recurse-submodules git@github.com:rsksmart/rsk-explorer-api.git
+```
+
+If you already cloned without submodules:
+
+```bash
+git submodule update --init --recursive
+```
+
 # Configuration steps
 
 ## Section 1: Environment setup
@@ -21,7 +35,19 @@
   - For more options:
     - see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
     - see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
-- Configure database credentials, node urls, etc, in src/lib/defaultConfig.js file:
+- Configure the database connection in a `.env` file at the project root (required by Prisma and the app):
+
+```bash
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DATABASE_NAME
+```
+
+Example:
+
+```bash
+DATABASE_URL=postgres://postgres:12345678@localhost:5432/explorer_db
+```
+
+- Configure node urls and other settings in `src/lib/defaultConfig.js`, or override them with a `config.json` at the project root (see `config-example.json`):
 
 ```javascript
 {
@@ -35,14 +61,6 @@
     subscribe: 0, // delegates subscriptions to the first node
     rsk: 0, // delegates rsk module to the node that handle subscriptions
     trace: 1 // delegates trace_ module to the second node
-  },
-  db: {
-    protocol: 'postgres://',
-    databaseName: 'explorer_db',
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 12345678
   },
   api: {
     address: 'localhost',
