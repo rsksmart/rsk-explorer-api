@@ -4,11 +4,6 @@
     "node": "localhost",
     "port": 4444
   },
-  "db": {
-    "server": "localhost",
-    "port": 27017,
-    "database": "explorer_db"
-  },
   "api": {
     "address": "localhost",
     "port": 3003,

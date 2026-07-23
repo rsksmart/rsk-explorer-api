@@ -1,9 +1,5 @@
 import crypto from 'crypto'
-import DB from '../src/lib/Db'
-import { makeConfig, config as userConfig } from '../src/lib/config'
-import defaultConfig from '../src/lib/defaultConfig'
-import collections from '../src/lib/collections'
-import { getDbBlocksCollections } from '../src/lib/blocksCollections'
+import { makeConfig } from '../src/lib/config'
 import NativeContracts from '../src/lib/NativeContracts'
 import initialConfiguration from '../src/lib/initialConfiguration'
 import { addrTypes } from '../src/lib/types'
@@ -15,36 +11,6 @@ export const initConfig = Object.assign(Object.assign({}, initialConfiguration),
 
 export const config = makeConfig()
 export const nativeContracts = NativeContracts(initConfig)
-const testDatabase = 'dbToTest'
-
-const getDbName = config => config.db.database
-
-const writeOnlyDbs = [getDbName(userConfig), getDbName(defaultConfig)]
-
-export const testDb = ({ dbName } = {}) => {
-  dbName = dbName || testDatabase
-  if (writeOnlyDbs.includes(dbName)) throw new Error(`Don't use production databases to test!!!`)
-  const dbConf = Object.assign(config.db, { database: dbName })
-  const database = new DB(dbConf)
-  database.setLogger(null)
-  let db
-  const getDb = async () => {
-    if (!db) db = await database.db()
-    return db
-  }
-  const dropDb = () => getDb().then(db => db.dropDatabase())
-  return Object.freeze({ getDb, dropDb, db: database, config })
-}
-
-export const testCollections = async (dropDb, database) => {
-  database = database || testDb()
-  if (dropDb) await database.dropDb()
-  const db = await database.getDb()
-  const names = defaultConfig.collectionsNames
-  await database.db.createCollections(collections, { names })
-  const colls = await getDbBlocksCollections(db)
-  return colls
-}
 
 export const fakeBlocks = (count = 10, { max, addTimestamp } = {}) => {
   let blocks = [...new Array(count)].map(i => fakeBlock(max))
