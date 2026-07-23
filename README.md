@@ -9,11 +9,31 @@
 - node: v24+
 - access to JSON/RPC interface of a rskj node >= 2.0.1 with this modules enabled: eth, net, web3, txpool, debug and trace.
 
+# Clone the repository
+
+The Prisma schema and database SQL live in a Git submodule (`prisma/`). You must clone with submodules, otherwise database setup and Prisma Client generation will fail.
+
+```bash
+git clone --recurse-submodules git@github.com:rsksmart/rsk-explorer-api.git
+cd rsk-explorer-api
+npm install
+npx prisma@6.19.3 generate
+```
+
+If you already cloned without submodules:
+
+```bash
+git submodule update --init --recursive
+npm install
+npx prisma@6.19.3 generate
+```
+
+`npx prisma@6.19.3 generate` is required after the submodule is available (Prisma v6; plain `npx prisma generate` may resolve to v7 and fail). If `@prisma/client` was not generated during `npm install` (common when `prisma/schema.prisma` was missing), the app will fail at runtime until you run it.
 # Configuration steps
 
 ## Section 1: Environment setup
 - create a database 'explorer_db'
-- create sql tables using the script prisma/rsk-explorer-database.sql
+- create the sql tables by running: npx prisma@6.19.3 migrate deploy
 - Install pm2:
   - npm install -g pm2
   - Enable pm2 log rotation: pm2 install pm2-logrotate
@@ -21,7 +41,19 @@
   - For more options:
     - see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
     - see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
-- Configure database credentials, node urls, etc, in src/lib/defaultConfig.js file:
+- Configure the database connection in a `.env` file at the project root (required by Prisma and the app):
+
+```bash
+DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DATABASE_NAME
+```
+
+Example:
+
+```bash
+DATABASE_URL=postgres://postgres:12345678@localhost:5432/explorer_db
+```
+
+- Configure node urls and other settings in `src/lib/defaultConfig.js`, or override them with a `config.json` at the project root (see `config-example.json`):
 
 ```javascript
 {
@@ -35,14 +67,6 @@
     subscribe: 0, // delegates subscriptions to the first node
     rsk: 0, // delegates rsk module to the node that handle subscriptions
     trace: 1 // delegates trace_ module to the second node
-  },
-  db: {
-    protocol: 'postgres://',
-    databaseName: 'explorer_db',
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 12345678
   },
   api: {
     address: 'localhost',
@@ -100,7 +124,7 @@ api:{
 Run commands:
 - npm install
 - npm run build
-- npx prisma generate
+- npx prisma@6.19.3 generate
 
 ## Start
 - Start block service: npm run start-blocks
@@ -144,7 +168,7 @@ Run api in development mode: npm run dev
 Run blocks in development mode:
 
 - npm run build
-- npx prisma generate
+- npx prisma@6.19.3 generate
 - npm run blocks-start
 
 Note Before uploading changes, remember to execute npm run build after upgrading version in package.version, so swagger docs compile the version number too. 

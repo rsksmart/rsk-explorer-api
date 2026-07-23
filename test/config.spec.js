@@ -5,7 +5,7 @@ describe('# Config', function () {
   it('should get the default config', () => {
     let config = makeConfig()
     expect(config).to.be.an('object')
-    expect(Object.keys(config)).include.members(['blocks', 'api', 'db', 'source', 'collectionsNames'])
+    expect(Object.keys(config)).include.members(['blocks', 'api', 'source'])
   })
 
   describe(`sources`, function () {
