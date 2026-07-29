@@ -2,8 +2,8 @@ import { expect } from 'chai'
 import sinon from 'sinon'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 
-const TRANSFER_SINGLE_TOPIC0 = 'c3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
-const TRANSFER_BATCH_TOPIC0 = '4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb'
+const TRANSFER_SINGLE_TOPIC0 = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
+const TRANSFER_BATCH_TOPIC0 = '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb'
 
 const checksummedAddress = '0x11b64191106b1Cf66FCd2F8389077c596cDc5646'
 const lowercaseAddress = checksummedAddress.toLowerCase()
