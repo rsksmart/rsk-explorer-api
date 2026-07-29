@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
-import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces, accountBalanceTokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray } from '../../lib/utils'
 import { isNativeContract } from '../../lib/NativeContracts'
@@ -194,12 +194,26 @@ class Contract extends BcThing {
     let tokenAddressesBalances = []
     const data = []
 
+    // Contracts without an account-level balanceOf(address) (pure ERC-1155)
+    // keep their token_address rows with a null balance: per-tokenId balances
+    // are reconstructed from events, and a verified 1155 ABI can't even encode
+    // the call
+    const hasAccountBalance = this.data.contractInterfaces.some(i => accountBalanceTokensInterfaces.includes(i))
+    if (!hasAccountBalance) {
+      for (const tokenAddress of tokenAddresses) {
+        const TokenAddress = addresses[tokenAddress]
+        TokenAddress.setTokenAddressBalance(NULL_BALANCE)
+        data.push(TokenAddress.getData(true))
+      }
+      return data
+    }
+
     // generate all batch requests
     try {
       for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
         const batchRequest = chunk.map(tokenAddress => ([
           'eth.call',
-          { to: address, data: contract.encodeCall('balanceOf', [tokenAddress]) },
+          { to: address, data: contract.encodeCall('balanceOf(address)', [tokenAddress]) },
           // When no blockNumber is specified, latest balances will be fetched by default
           blockNumber
         ]))
@@ -220,7 +234,7 @@ class Contract extends BcThing {
       const address = tokenAddresses[i]
       const balance = tokenAddressesBalances[i]
       const TokenAddress = addresses[address]
-      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf', balance).toHexString()
+      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf(address)', balance).toHexString()
 
       TokenAddress.setTokenAddressBalance(parsedBalance)
       data.push(TokenAddress.getData(true))
