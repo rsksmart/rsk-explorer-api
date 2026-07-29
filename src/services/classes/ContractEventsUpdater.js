@@ -42,6 +42,45 @@ export default class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
+  // Distinct emitters of the given topic0s. Uses groupBy: Prisma 6 findMany
+  // distinct dedupes in memory after shipping every row
+  async findEventEmittersByTopic0 (topic0s = []) {
+    if (!Array.isArray(topic0s) || !topic0s.length) throw new Error('Invalid topic0s provided')
+
+    const groups = await prismaClient.event.groupBy({
+      by: ['address'],
+      where: { topic0: { in: topic0s } },
+      orderBy: { address: 'asc' }
+    })
+
+    return groups.map(group => group.address)
+  }
+
+  // Persists interfaces/methods for contracts whose events predate their
+  // detection: the block pipeline only re-detects on new activity, so dormant
+  // contracts never get their contract_interface rows without this
+  async saveContractDetails (contractAddress, { interfaces = [], methods = [] } = {}) {
+    this.validateContractAddress(contractAddress)
+    contractAddress = contractAddress.toLowerCase()
+
+    const queries = []
+    if (interfaces.length) {
+      queries.push(prismaClient.contract_interface.createMany({
+        data: interfaces.map(inter => ({ interface: inter, contractAddress })),
+        skipDuplicates: true
+      }))
+    }
+    if (methods.length) {
+      queries.push(prismaClient.contract_method.createMany({
+        data: methods.map(method => ({ method, contractAddress })),
+        skipDuplicates: true
+      }))
+    }
+
+    const results = await prismaClient.$transaction(queries)
+    return results.reduce((total, r) => total + (r.count || 0), 0)
+  }
+
   async updateAllContractsEvents (pageSize, sinceBlockNumber = 0) {
     try {
       const contracts = await prismaClient.contract.findMany({ select: { address: true } })
