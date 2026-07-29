@@ -201,9 +201,9 @@ class Contract extends BcThing {
     const hasAccountBalance = this.data.contractInterfaces.some(i => accountBalanceTokensInterfaces.includes(i))
     if (!hasAccountBalance) {
       for (const tokenAddress of tokenAddresses) {
-        const TokenAddress = addresses[tokenAddress]
-        TokenAddress.setTokenAddressBalance(NULL_BALANCE)
-        data.push(TokenAddress.getData(true))
+        const tokenAddressInstance = addresses[tokenAddress]
+        tokenAddressInstance.setTokenAddressBalance(NULL_BALANCE)
+        data.push(tokenAddressInstance.getData(true))
       }
       return data
     }
@@ -233,11 +233,11 @@ class Contract extends BcThing {
     for (let i = 0; i < tokenAddresses.length; i++) {
       const address = tokenAddresses[i]
       const balance = tokenAddressesBalances[i]
-      const TokenAddress = addresses[address]
+      const tokenAddressInstance = addresses[address]
       const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf(address)', balance).toHexString()
 
-      TokenAddress.setTokenAddressBalance(parsedBalance)
-      data.push(TokenAddress.getData(true))
+      tokenAddressInstance.setTokenAddressBalance(parsedBalance)
+      data.push(tokenAddressInstance.getData(true))
     }
     return data
   }
