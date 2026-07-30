@@ -1,4 +1,4 @@
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 RUN apk add --no-cache build-base git python3 openssl
 WORKDIR /app
 COPY package*.json ./
@@ -15,7 +15,7 @@ FROM prisma AS build
 COPY . .
 RUN npm run build
 
-FROM node:24-alpine AS production
+FROM node:26-alpine AS production
 RUN apk add --no-cache openssl && \
     npm install -g pm2 && \
     mkdir -p /var/log/rsk-explorer && \
