@@ -56,6 +56,22 @@ export function safeTipHeight (tipHeight, confirmations) {
   return tipHeight - confirmations
 }
 
+// Range the scheduled ingest works over. Deliberately a bounded lookback rather than
+// everything above the highest stored height: a height that failed earlier sits *below*
+// that maximum and would never be retried, and on an empty database "everything since
+// 2018" would turn one tick into an hours-long job overlapping the next.
+//
+// The lookback always covers the published window, so a gap that would stop the rollup is
+// inside the range the next tick repairs, whatever the configured lookback says. Reaching
+// further back is the backfill tool's job, where the cost is visible and supervised.
+export function ingestWindow ({ safeTip, startHeight, lookbackBlocks, windowBlocks = 0 }) {
+  const span = Math.max(lookbackBlocks || 0, windowBlocks || 0, 1)
+  return {
+    fromHeight: Math.max(startHeight, safeTip - span + 1),
+    toHeight: safeTip
+  }
+}
+
 export async function ingestBtcBlocks ({
   client,
   fromHeight,

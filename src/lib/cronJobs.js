@@ -3,7 +3,7 @@ import { prismaClient } from './prismaClient'
 import Logger from './Logger'
 import config from './config'
 import { createBtcRpcClient } from './btcRpcClient'
-import { ingestBtcBlocks, safeTipHeight } from './btcBlockIngest'
+import { ingestBtcBlocks, safeTipHeight, ingestWindow } from './btcBlockIngest'
 import { btcBlockStore } from './btcBlockStore'
 import { getMergeMiningStats } from './getMergeMiningStats'
 
@@ -302,12 +302,16 @@ function btcBlockIngestUpdater () {
       const { bitcoin } = config
       const client = createBitcoinClient(log)
 
-      const toHeight = safeTipHeight(await client.getBlockCount(), bitcoin.confirmations)
-      const highest = await btcBlockStore.maxHeight()
-      const fromHeight = highest === null ? bitcoin.startHeight : highest + 1
+      const safeTip = safeTipHeight(await client.getBlockCount(), bitcoin.confirmations)
+      const { fromHeight, toHeight } = ingestWindow({
+        safeTip,
+        startHeight: bitcoin.startHeight,
+        lookbackBlocks: bitcoin.ingestLookbackBlocks,
+        windowBlocks: bitcoin.windowBlocks
+      })
 
       if (toHeight < fromHeight) {
-        log.info(`Nothing to ingest: safe tip ${toHeight} is not ahead of stored height ${highest}`)
+        log.info(`Nothing to ingest: safe tip ${safeTip} is below the configured start height ${bitcoin.startHeight}`)
         return
       }
 
@@ -320,7 +324,14 @@ function btcBlockIngestUpdater () {
         log
       })
 
-      log.info(`Ingest finished: ${result.ingested} stored, ${result.failed} failed (${Date.now() - started} ms)`)
+      // Older history is out of this job's reach by design, so its absence is reported
+      // rather than left to be discovered when a chart looks wrong
+      const lowest = await btcBlockStore.minHeight()
+      if (lowest !== null && lowest > bitcoin.startHeight) {
+        log.warn(`History starts at ${lowest}, above the configured floor ${bitcoin.startHeight}. Run: npm run backfill-btc-blocks -- --from ${bitcoin.startHeight} --to ${lowest - 1}`)
+      }
+
+      log.info(`Ingest finished over ${fromHeight}-${toHeight}: ${result.ingested} stored, ${result.failed} failed (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
     } catch (error) {
       // Heights that were not written stay missing, so the next run picks them up

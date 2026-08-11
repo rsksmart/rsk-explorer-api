@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ingestBtcBlocks, missingHeights, readBtcBlock, safeTipHeight } from '../src/lib/btcBlockIngest'
+import { ingestBtcBlocks, ingestWindow, missingHeights, readBtcBlock, safeTipHeight } from '../src/lib/btcBlockIngest'
 import { RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
 
 const silentLog = { info: () => {}, warn: () => {}, error: () => {} }
@@ -62,6 +62,41 @@ describe('btcBlockIngest', function () {
   describe('safeTipHeight()', function () {
     it('holds back the configured number of confirmations', function () {
       expect(safeTipHeight(961919, 100)).to.equal(961819)
+    })
+  })
+
+  describe('ingestWindow()', function () {
+    const startHeight = 501960
+
+    it('looks back over the configured span, not forward from the highest stored height', function () {
+      expect(ingestWindow({ safeTip: 961822, startHeight, lookbackBlocks: 1500, windowBlocks: 1000 }))
+        .to.deep.equal({ fromHeight: 960323, toHeight: 961822 })
+    })
+
+    it('covers a height that failed below the stored maximum, so the next run retries it', function () {
+      // The case that motivated this: 961000 failed, later heights succeeded, so a range
+      // starting above the maximum would never come back for it
+      const storedMax = 961822
+      const failed = 961000
+      const { fromHeight, toHeight } = ingestWindow({ safeTip: storedMax, startHeight, lookbackBlocks: 1500, windowBlocks: 1000 })
+      expect(failed).to.be.at.least(fromHeight)
+      expect(failed).to.be.at.most(toHeight)
+    })
+
+    it('never spans less than the published window, whatever the lookback is set to', function () {
+      const { fromHeight, toHeight } = ingestWindow({ safeTip: 961822, startHeight, lookbackBlocks: 10, windowBlocks: 1000 })
+      expect(toHeight - fromHeight + 1).to.equal(1000)
+    })
+
+    it('stays bounded on an empty database instead of reaching back to the start height', function () {
+      const { fromHeight, toHeight } = ingestWindow({ safeTip: 961822, startHeight, lookbackBlocks: 1500, windowBlocks: 1000 })
+      expect(toHeight - fromHeight + 1).to.equal(1500)
+      expect(fromHeight).to.be.above(startHeight)
+    })
+
+    it('clamps to the start height when the chain is shorter than the lookback', function () {
+      expect(ingestWindow({ safeTip: 502100, startHeight, lookbackBlocks: 1500, windowBlocks: 1000 }))
+        .to.deep.equal({ fromHeight: startHeight, toHeight: 502100 })
     })
   })
 

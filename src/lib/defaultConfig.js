@@ -83,6 +83,10 @@ export default {
     confirmations: 100,
     // Trailing window the published share is computed over, about a week of Bitcoin.
     windowBlocks: 1000,
+    // How far back each scheduled ingest looks. Bounded so a tick cannot become an
+    // hours-long job, and never narrower than windowBlocks, so a gap that would stop the
+    // rollup is always inside the range the next tick repairs.
+    ingestLookbackBlocks: 1500,
     ingestConcurrency: 8,
     ingestBatchSize: 500,
     // Sustained request rate. Concurrency alone is not a rate: a provider absorbs a few

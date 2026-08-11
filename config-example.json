@@ -24,6 +24,7 @@
     "startHeight": 501960,
     "confirmations": 100,
     "windowBlocks": 1000,
+    "ingestLookbackBlocks": 1500,
     "ingestConcurrency": 8,
     "ingestBatchSize": 500,
     "requestsPerSecond": 25,
