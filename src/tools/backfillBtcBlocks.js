@@ -1,29 +1,25 @@
-/**
- * Backfills the btc_block table from a starting height up to the safe tip.
- *
- * Resumable by construction: the table is the progress marker, so a run that is
- * interrupted, killed or restarted picks up exactly the heights still missing, and
- * a rerun after a partial pass costs nothing for work already done.
- *
- * Long runs belong in a detached session with the log written outside the container,
- * because the process lives for hours:
- *
- *   npm run backfill-btc-blocks -- --from 501960 --concurrency 32
- *
- * Options:
- *   --from <height>       lowest height to ingest (default: bitcoin.startHeight)
- *   --to <height>         highest height to ingest (default: tip - confirmations)
- *   --concurrency <n>     parallel block reads (default: bitcoin.ingestConcurrency)
- *   --batch-size <n>      rows per insert and per progress line (default: bitcoin.ingestBatchSize)
- */
 import config from '../lib/config'
 import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
-import { ingestBtcBlocks, safeTipHeight, missingHeights } from '../lib/btcBlockIngest'
+import { ingestBtcBlocks, reorgSafeHeight, missingHeights } from '../lib/btcBlockIngest'
 import { prismaClient } from '../lib/prismaClient'
 import { parseArguments } from './utils'
 
 const log = Logger('[backfill-btc-blocks]')
+const toolName = process.argv[1].split('/').pop()
+
+function printUsageAndExit () {
+  console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
+  console.log(`Fills btc_block over a height range. Only heights that are absent are fetched, so a`)
+  console.log(`run is resumable: rerun the same command after an interruption and it continues.`)
+  console.log(`Options:`)
+  console.log(`  --from <height>       lowest height (default: bitcoin.startHeight)`)
+  console.log(`  --to <height>         highest height (default: tip - bitcoin.confirmations)`)
+  console.log(`  --concurrency <n>     parallel block reads (default: bitcoin.ingestConcurrency)`)
+  console.log(`  --batch-size <n>      rows per insert (default: bitcoin.ingestBatchSize)`)
+  console.log(`A full run from 2018 takes hours: use a detached session with the log outside the container.`)
+  process.exit(1)
+}
 
 const VALID_OPTIONS = {
   '--from': { name: 'from', type: 'number', min: 0 },
@@ -33,20 +29,26 @@ const VALID_OPTIONS = {
 }
 
 async function main () {
-  const options = parseArguments(VALID_OPTIONS)
+  let options
+  try {
+    options = parseArguments(VALID_OPTIONS)
+  } catch (error) {
+    console.log(`Error: ${error.message}`)
+    printUsageAndExit()
+  }
   const { bitcoin } = config
   const client = createBtcRpcClient({
     url: bitcoin.rpcUrl,
     requestTimeoutMs: bitcoin.requestTimeoutMs,
     maxRetries: bitcoin.maxRetries,
     retryDelayMs: bitcoin.retryDelayMs,
-    requestsPerSecond: bitcoin.requestsPerSecond,
+    sustainedRequestsPerSecond: bitcoin.sustainedRequestsPerSecond,
     log
   })
 
   const tipHeight = await client.getBlockCount()
   const fromHeight = options.from !== undefined ? options.from : bitcoin.startHeight
-  const toHeight = options.to !== undefined ? options.to : safeTipHeight(tipHeight, bitcoin.confirmations)
+  const toHeight = options.to !== undefined ? options.to : reorgSafeHeight(tipHeight, bitcoin.confirmations)
   const concurrency = options.concurrency
   const batchSize = options.batchSize
 

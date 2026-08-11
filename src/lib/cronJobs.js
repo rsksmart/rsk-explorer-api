@@ -3,7 +3,7 @@ import { prismaClient } from './prismaClient'
 import Logger from './Logger'
 import config from './config'
 import { createBtcRpcClient } from './btcRpcClient'
-import { ingestBtcBlocks, safeTipHeight, ingestWindow } from './btcBlockIngest'
+import { ingestBtcBlocks, reorgSafeHeight, boundedLookbackWindow } from './btcBlockIngest'
 import { btcBlockStore } from './btcBlockStore'
 import { getMergeMiningStats } from './getMergeMiningStats'
 
@@ -281,15 +281,11 @@ function createBitcoinClient (log) {
     requestTimeoutMs: bitcoin.requestTimeoutMs,
     maxRetries: bitcoin.maxRetries,
     retryDelayMs: bitcoin.retryDelayMs,
-    requestsPerSecond: bitcoin.requestsPerSecond,
+    sustainedRequestsPerSecond: bitcoin.sustainedRequestsPerSecond,
     log
   })
 }
 
-// Incremental Bitcoin block ingest.
-// Hourly rather than every few minutes because blocks are only read `confirmations`
-// deep, which already puts the newest eligible height hours behind the tip; a shorter
-// period would spend requests discovering there is nothing new to fetch.
 function btcBlockIngestUpdater () {
   const name = 'btc-block-ingest'
   const log = Logger(`[${name}]`)
@@ -302,8 +298,8 @@ function btcBlockIngestUpdater () {
       const { bitcoin } = config
       const client = createBitcoinClient(log)
 
-      const safeTip = safeTipHeight(await client.getBlockCount(), bitcoin.confirmations)
-      const { fromHeight, toHeight } = ingestWindow({
+      const safeTip = reorgSafeHeight(await client.getBlockCount(), bitcoin.confirmations)
+      const { fromHeight, toHeight } = boundedLookbackWindow({
         safeTip,
         startHeight: bitcoin.startHeight,
         lookbackBlocks: bitcoin.ingestLookbackBlocks,
@@ -324,8 +320,6 @@ function btcBlockIngestUpdater () {
         log
       })
 
-      // Older history is out of this job's reach by design, so its absence is reported
-      // rather than left to be discovered when a chart looks wrong
       const lowest = await btcBlockStore.minHeight()
       if (lowest !== null && lowest > bitcoin.startHeight) {
         log.warn(`History starts at ${lowest}, above the configured floor ${bitcoin.startHeight}. Run: npm run backfill-btc-blocks -- --from ${bitcoin.startHeight} --to ${lowest - 1}`)
@@ -334,7 +328,6 @@ function btcBlockIngestUpdater () {
       log.info(`Ingest finished over ${fromHeight}-${toHeight}: ${result.ingested} stored, ${result.failed} failed (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
     } catch (error) {
-      // Heights that were not written stay missing, so the next run picks them up
       log.error(`Error ingesting Bitcoin blocks: ${error.message}`)
       log.error(error.stack)
     }
@@ -349,9 +342,6 @@ function btcBlockIngestUpdater () {
   }
 }
 
-// Daily Bitcoin merge-mining stats snapshot.
-// Reads only stored blocks plus one hashrate call, so it costs almost nothing and fails
-// loudly if the ingest has fallen behind rather than publishing a partial window.
 function dailyMergeMiningStatsUpdater () {
   const name = 'daily-merge-mining-stats'
   const log = Logger(`[${name}]`)
@@ -379,7 +369,6 @@ function dailyMergeMiningStatsUpdater () {
       log.info(`Daily merge-mining stats updated (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
     } catch (error) {
-      // Leaves the previous snapshot in place so the API keeps serving last-good data
       log.error(`Error updating daily merge-mining stats: ${error.message}`)
       log.error(error.stack)
     }

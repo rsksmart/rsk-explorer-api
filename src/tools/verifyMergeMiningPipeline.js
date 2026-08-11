@@ -1,25 +1,26 @@
-/**
- * Exercises the merge-mining pipeline end to end against a real Bitcoin endpoint and a
- * real database, over a deliberately small window so the provider quota it spends is
- * negligible. Checks the properties that ordinary unit tests cannot: that a rerun
- * fetches nothing, that a deleted height is refetched and only that height, that the
- * rollup lands, and that an incomplete window is refused rather than published.
- *
- *   npm run verify-merge-mining -- --from 961700 --to 961719
- */
 import config from '../lib/config'
 import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
-import { ingestBtcBlocks, missingHeights, safeTipHeight } from '../lib/btcBlockIngest'
+import { ingestBtcBlocks, missingHeights, reorgSafeHeight } from '../lib/btcBlockIngest'
 import { btcBlockStore } from '../lib/btcBlockStore'
 import { getMergeMiningStats } from '../lib/getMergeMiningStats'
 import { prismaClient } from '../lib/prismaClient'
 import { parseArguments } from './utils'
 
 const log = Logger('[verify-merge-mining]')
+const toolName = process.argv[1].split('/').pop()
 
-// This tool deletes rows to prove the healing and refusal paths, so its range is validated
-// rather than coerced: a flag given without a value must fail, not become NaN.
+function printUsageAndExit () {
+  console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
+  console.log(`Exercises the pipeline end to end against a real endpoint and database over a small`)
+  console.log(`window. Deletes rows to prove the healing and refusal paths, so point it at a scratch`)
+  console.log(`database. Exits non-zero on any failed check.`)
+  console.log(`Options:`)
+  console.log(`  --from <height>       lowest height (default: 20 blocks below the safe tip)`)
+  console.log(`  --to <height>         highest height (default: the safe tip)`)
+  process.exit(1)
+}
+
 const VALID_OPTIONS = {
   '--from': { name: 'from', type: 'number', min: 0 },
   '--to': { name: 'to', type: 'number', min: 0 }
@@ -34,35 +35,36 @@ function check (description, actual, expected) {
 }
 
 async function main () {
-  const options = parseArguments(VALID_OPTIONS)
+  let options
+  try {
+    options = parseArguments(VALID_OPTIONS)
+  } catch (error) {
+    console.log(`Error: ${error.message}`)
+    printUsageAndExit()
+  }
   const { bitcoin } = config
   const client = createBtcRpcClient({
     url: bitcoin.rpcUrl,
     requestTimeoutMs: bitcoin.requestTimeoutMs,
     maxRetries: bitcoin.maxRetries,
     retryDelayMs: bitcoin.retryDelayMs,
-    requestsPerSecond: bitcoin.requestsPerSecond,
+    sustainedRequestsPerSecond: bitcoin.sustainedRequestsPerSecond,
     log: silent
   })
 
   const tip = await client.getBlockCount()
-  const fromHeight = options.from !== undefined ? options.from : safeTipHeight(tip, bitcoin.confirmations) - 19
-  const toHeight = options.to !== undefined ? options.to : safeTipHeight(tip, bitcoin.confirmations)
+  const fromHeight = options.from !== undefined ? options.from : reorgSafeHeight(tip, bitcoin.confirmations) - 19
+  const toHeight = options.to !== undefined ? options.to : reorgSafeHeight(tip, bitcoin.confirmations)
   const windowBlocks = toHeight - fromHeight + 1
 
   log.info(`Endpoint ${client.endpoint}, tip ${tip}`)
   log.info(`Verifying over ${windowBlocks} block(s): ${fromHeight}-${toHeight}`)
-
-  // Asserted as completeness rather than rows written, so the run is meaningful whether the
-  // range was empty beforehand or already backfilled
   const first = await ingestBtcBlocks({ client, fromHeight, toHeight, concurrency: 4, batchSize: 10, log: silent })
   check('ingest leaves the window complete', await missingHeights(fromHeight, toHeight), [])
   check('ingest reports no failures', first.failed, 0)
 
   const second = await ingestBtcBlocks({ client, fromHeight, toHeight, concurrency: 4, batchSize: 10, log: silent })
   check('rerun over a complete range fetches nothing', second, { requested: 0, ingested: 0, failed: 0 })
-
-  // A partial pass leaves gaps; the next run must close exactly those and nothing else
   const holes = [fromHeight + 3, fromHeight + 7, fromHeight + 11]
   await prismaClient.btc_block.deleteMany({ where: { height: { in: holes } } })
   check('gaps are visible before the healing run', await missingHeights(fromHeight, toHeight), holes)
@@ -86,8 +88,6 @@ async function main () {
 
   await btcBlockStore.upsertDailyStats(date, stats)
   check('recomputing the same day rewrites one row rather than adding one', await prismaClient.btc_merge_mining_stats.count(), 1)
-
-  // An incomplete window must fail rather than publish an inflated share
   await prismaClient.btc_block.deleteMany({ where: { height: fromHeight + 5 } })
   let refused = false
   try {

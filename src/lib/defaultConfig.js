@@ -5,6 +5,10 @@
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
+const DEFAULT_BITCOIN_RPC_URL = 'http://localhost:8332'
+const BITCOIN_HEIGHT_AT_ROOTSTOCK_LAUNCH = 501960
+const REORG_CONFIRMATION_DEPTH = 100
+
 export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
 export const CONTRACT_VERIFIER_SOLC_VERSIONS_ID = 'contractVerifierSolcVersions'
@@ -68,30 +72,14 @@ export default {
     services
   },
   bitcoin: {
-    // Any Bitcoin Core compatible endpoint: a self-hosted node or a provider. Set it with
-    // BITCOIN_RPC_URL, which overrides this and wins over config.json — see config.js,
-    // since a provider that authenticates by URL makes the value itself a credential.
-    rpcUrl: 'http://localhost:8332',
-    // First Bitcoin block of 2018, the month Rootstock launched: nothing earlier can
-    // carry a merge-mining tag, so it is the natural floor for the backfill.
-    startHeight: 501960,
-    // Blocks are read this far behind the tip so ordinary reorgs settle before a height
-    // is written, since a stored row is never revisited.
-    confirmations: 100,
-    // Trailing window the published share is computed over, about a week of Bitcoin.
+    rpcUrl: DEFAULT_BITCOIN_RPC_URL,
+    startHeight: BITCOIN_HEIGHT_AT_ROOTSTOCK_LAUNCH,
+    confirmations: REORG_CONFIRMATION_DEPTH,
     windowBlocks: 1000,
-    // How far back each scheduled ingest looks. Bounded so a tick cannot become an
-    // hours-long job, and never narrower than windowBlocks, so a gap that would stop the
-    // rollup is always inside the range the next tick repairs.
     ingestLookbackBlocks: 1500,
     ingestConcurrency: 8,
     ingestBatchSize: 500,
-    // Sustained request rate. Concurrency alone is not a rate: a provider absorbs a few
-    // seconds of excess from burst capacity and then throttles, so this is what keeps a
-    // multi-hour backfill inside the allowance. Every method used here costs the same, so
-    // requests per second maps directly onto the provider's compute-unit budget. Set to 0
-    // for a self-hosted node, which needs no pacing.
-    requestsPerSecond: 25,
+    sustainedRequestsPerSecond: 25,
     requestTimeoutMs: 15000,
     maxRetries: 5,
     retryDelayMs: 1000

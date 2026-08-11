@@ -3,8 +3,6 @@ import { getMergeMiningStats } from '../src/lib/getMergeMiningStats'
 
 const silentLog = { info: () => {}, warn: () => {}, error: () => {} }
 
-// Storage stand-in describing a window directly, so the aggregation rules are tested
-// without a database standing in the way
 function storeWith ({ maxHeight, total, mergeMined }) {
   return {
     maxHeight: async () => maxHeight,

@@ -27,7 +27,7 @@
     "ingestLookbackBlocks": 1500,
     "ingestConcurrency": 8,
     "ingestBatchSize": 500,
-    "requestsPerSecond": 25,
+    "sustainedRequestsPerSecond": 25,
     "requestTimeoutMs": 15000,
     "maxRetries": 5,
     "retryDelayMs": 1000

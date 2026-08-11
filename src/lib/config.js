@@ -23,12 +23,7 @@ export function createConfig (file) {
   return config
 }
 
-// The Bitcoin endpoint is a credential whenever the provider authenticates by URL, so the
-// environment is authoritative and a value in config.json cannot quietly take its place.
-// The precedence runs the opposite way from every other setting here, which is why it is
-// resolved explicitly rather than left to the generic merge, and why an ignored value is
-// announced instead of silently dropped.
-function bitcoinEndpoint (bitcoin = {}) {
+function bitcoinEndpointWithEnvironmentWinning (bitcoin = {}) {
   const fromEnv = process.env.BITCOIN_RPC_URL
 
   if (fromEnv && bitcoin.rpcUrl && bitcoin.rpcUrl !== fromEnv) {
@@ -71,7 +66,7 @@ export function makeConfig (config = {}) {
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
 
-  config.bitcoin = bitcoinEndpoint(config.bitcoin)
+  config.bitcoin = bitcoinEndpointWithEnvironmentWinning(config.bitcoin)
 
   // defaults log files
   // if (config.log.logToFiles === true) {

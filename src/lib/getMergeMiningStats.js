@@ -2,10 +2,6 @@ import { BigNumber } from 'bignumber.js'
 import Logger from './Logger'
 import { btcBlockStore } from './btcBlockStore'
 
-// Computes the published merge-mining share from stored Bitcoin blocks rather than by
-// walking the provider. Because every height in the window is known to be present, the
-// denominator is a complete count over an explicit range instead of a sample, and the
-// range travels with the result so the percentage can be audited afterwards.
 export async function getMergeMiningStats ({
   client,
   windowBlocks = 1000,
@@ -26,8 +22,6 @@ export async function getMergeMiningStats ({
     store.countMergeMinedInRange(fromHeight, toHeight)
   ])
 
-  // A gap in the window would silently shrink the denominator and inflate the share.
-  // The stored range makes this exact rather than a coverage estimate.
   if (bitcoinBlocks !== expected) {
     throw new Error(`Incomplete window ${fromHeight}-${toHeight}: ${bitcoinBlocks}/${expected} blocks stored`)
   }

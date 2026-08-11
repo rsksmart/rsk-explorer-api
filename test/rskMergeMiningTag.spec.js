@@ -1,10 +1,9 @@
 import { expect } from 'chai'
-import { findRskMergeMiningTag, RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
+import { findRskMergeMiningTag, RSKBLOCK_MARKER_HEX } from '../src/lib/rskMergeMiningTag'
 
 const RSK_MERGED_MINING_HASH = '410ac1c4b7fb2330ffa2b6434afb44429b702189371c4158d102fe13008922b6'
 
-// OP_RETURN carrying 'RSKBLOCK:' + the 32-byte merged-mining hash: 0x6a, then a 41-byte push
-const opReturnWithTag = payload => `6a29${RSK_TAG_HEX}${payload}`
+const opReturnWithTag = payload => `6a29${RSKBLOCK_MARKER_HEX}${payload}`
 
 const coinbaseWithOutput = script => ({ vin: [{ coinbase: 'aabbcc' }], vout: [{ scriptPubKey: { hex: script } }] })
 const coinbaseWithInput = script => ({ vin: [{ coinbase: script }], vout: [{ scriptPubKey: { hex: '76a914' } }] })
@@ -18,7 +17,7 @@ describe('rskMergeMiningTag', function () {
     })
 
     it('detects the tag in the coinbase input script', function () {
-      const result = findRskMergeMiningTag(coinbaseWithInput(`03aabbcc${RSK_TAG_HEX}${RSK_MERGED_MINING_HASH}`))
+      const result = findRskMergeMiningTag(coinbaseWithInput(`03aabbcc${RSKBLOCK_MARKER_HEX}${RSK_MERGED_MINING_HASH}`))
       expect(result.isMergeMined).to.equal(true)
       expect(result.rskHashForMergedMining).to.equal(`0x${RSK_MERGED_MINING_HASH}`)
     })
@@ -30,7 +29,7 @@ describe('rskMergeMiningTag', function () {
     })
 
     it('reports merge mining without a hash when the payload is truncated', function () {
-      const result = findRskMergeMiningTag(coinbaseWithOutput(`6a29${RSK_TAG_HEX}410ac1c4`))
+      const result = findRskMergeMiningTag(coinbaseWithOutput(`6a29${RSKBLOCK_MARKER_HEX}410ac1c4`))
       expect(result.isMergeMined).to.equal(true)
       expect(result.rskHashForMergedMining).to.equal(null)
     })

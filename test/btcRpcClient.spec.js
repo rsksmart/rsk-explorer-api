@@ -44,7 +44,6 @@ describe('btcRpcClient', function () {
     })
 
     it('keeps the credential out of a transport failure, however the runtime words it', async function () {
-      // Worst case: the fetch implementation puts the whole URL in the error it throws
       global.fetch = async () => {
         const cause = new Error(`getaddrinfo ENOTFOUND for ${URL_WITH_CREDENTIAL}`)
         const error = new TypeError(`fetch failed: ${URL_WITH_CREDENTIAL}`)
@@ -60,7 +59,6 @@ describe('btcRpcClient', function () {
         expect(error.message).to.not.contain('super-secret-api-key')
         expect(error.stack).to.not.contain('super-secret-api-key')
         expect(error.cause).to.equal(undefined)
-        // Still says what went wrong, and against which host
         expect(error.message).to.contain('could not reach https://bitcoin-mainnet.example.com')
         expect(error.message).to.contain('ENOTFOUND')
       }
@@ -153,8 +151,6 @@ describe('btcRpcClient', function () {
 
   describe('response validation', function () {
     it('rejects a block hash that is not 32 bytes of hex, without retrying it', async function () {
-      // Response validation runs outside the retry loop, so a deterministic bad response
-      // costs exactly one request rather than the whole retry budget
       const calls = stubFetch([jsonResponse({ result: 'nope' })])
       const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, maxRetries: 3, retryDelayMs: 1, log: silentLog })
 
@@ -221,23 +217,63 @@ describe('btcRpcClient', function () {
     })
   })
 
+  describe('portability', function () {
+    it('only ever calls methods Bitcoin Core itself exposes', async function () {
+      const STANDARD = ['getblockcount', 'getblockhash', 'getblock', 'getrawtransaction', 'getnetworkhashps']
+      const calls = stubFetch([
+        jsonResponse({ result: 961919 }),
+        jsonResponse({ result: BLOCK_HASH }),
+        jsonResponse({ result: { height: 1, hash: BLOCK_HASH, time: 1, tx: [BLOCK_HASH] } }),
+        jsonResponse({ result: { vin: [], vout: [] } }),
+        jsonResponse({ result: 8.88e20 })
+      ])
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, log: silentLog })
+
+      await client.getBlockCount()
+      await client.getBlockHash(900000)
+      await client.getBlock(BLOCK_HASH)
+      await client.getCoinbase(BLOCK_HASH, BLOCK_HASH)
+      await client.getNetworkHashps(1008)
+
+      expect(calls.map(c => c.body.method)).to.deep.equal(STANDARD)
+    })
+  })
+
+  describe('transport failure rendering', function () {
+    it('renders no empty parenthetical when the cause carries no message', async function () {
+      global.fetch = async () => {
+        const error = new TypeError('fetch failed')
+        error.cause = new AggregateError([], '')
+        throw error
+      }
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, maxRetries: 0, log: silentLog })
+
+      try {
+        await client.getBlockCount()
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('TypeError: fetch failed')
+        expect(error.message).to.not.contain('()')
+        expect(error.message).to.not.match(/\(\s*\)/)
+      }
+    })
+  })
+
   describe('rate limiting and backpressure', function () {
     it('paces sustained requests at the configured rate', async function () {
-      // Concurrency is not a rate: without pacing these ten calls would all leave at once
       stubFetch(Array.from({ length: 10 }, () => jsonResponse({ result: 1 })))
-      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, requestsPerSecond: 50, log: silentLog })
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, sustainedRequestsPerSecond: 50, log: silentLog })
 
       const started = Date.now()
       await Promise.all(Array.from({ length: 10 }, () => client.getBlockCount()))
       const elapsed = Date.now() - started
 
-      // Ten requests at 50/s cannot complete faster than the nine intervals between them
       expect(elapsed).to.be.at.least(9 * 20 * 0.8)
     })
 
     it('does not pace when the rate limit is disabled, as for a self-hosted node', async function () {
       stubFetch(Array.from({ length: 10 }, () => jsonResponse({ result: 1 })))
-      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, requestsPerSecond: 0, log: silentLog })
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, sustainedRequestsPerSecond: 0, log: silentLog })
 
       const started = Date.now()
       await Promise.all(Array.from({ length: 10 }, () => client.getBlockCount()))
@@ -266,7 +302,7 @@ describe('btcRpcClient', function () {
 
       await client.getBlockCount()
 
-      const stats = client.stats()
+      const stats = client.totals()
       expect(stats.requests).to.equal(3)
       expect(stats.throttled).to.equal(2)
       expect(stats.retries).to.equal(2)
