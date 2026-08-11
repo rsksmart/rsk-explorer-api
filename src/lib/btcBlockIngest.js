@@ -69,7 +69,9 @@ export async function ingestBtcBlocks ({
   if (!client) throw new Error('Missing Bitcoin client')
   if (!Number.isInteger(fromHeight) || fromHeight < 0) throw new Error(`Invalid fromHeight: ${fromHeight}`)
   if (!Number.isInteger(toHeight)) throw new Error(`Invalid toHeight: ${toHeight}`)
+  if (toHeight < fromHeight) throw new Error(`Inverted range: ${fromHeight}-${toHeight}`)
   if (!Number.isInteger(batchSize) || batchSize < 1) throw new Error(`Invalid batchSize: ${batchSize}`)
+  if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error(`Invalid concurrency: ${concurrency}`)
 
   const pending = await missingHeights(fromHeight, toHeight, store)
   if (pending.length === 0) {

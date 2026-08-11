@@ -178,19 +178,29 @@ describe('btcBlockIngest', function () {
       expect(await store.countMergeMinedInRange(1, 5)).to.equal(2)
     })
 
+    it('refuses an inverted range instead of reporting a successful no-op', async function () {
+      try {
+        await ingestBtcBlocks({ client: fakeClient(), fromHeight: 100, toHeight: 10, store: fakeStore(), log: silentLog })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Inverted range: 100-10')
+      }
+    })
+
     it('rejects an invalid range or batch size', async function () {
       const client = fakeClient()
       const cases = [
         { fromHeight: -1, toHeight: 10 },
         { fromHeight: 1.5, toHeight: 10 },
-        { fromHeight: 1, toHeight: 10, batchSize: 0 }
+        { fromHeight: 1, toHeight: 10, batchSize: 0 },
+        { fromHeight: 1, toHeight: 10, concurrency: 0 }
       ]
       for (const options of cases) {
         try {
           await ingestBtcBlocks({ client, store: fakeStore(), log: silentLog, ...options })
           throw new Error('should have thrown')
         } catch (error) {
-          expect(error.message).to.match(/Invalid (fromHeight|toHeight|batchSize)/)
+          expect(error.message).to.match(/Invalid (fromHeight|toHeight|batchSize|concurrency)/)
         }
       }
     })

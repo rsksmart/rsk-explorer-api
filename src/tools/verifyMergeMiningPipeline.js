@@ -56,8 +56,9 @@ async function main () {
   })
 
   const tip = await client.getBlockCount()
-  const fromHeight = options.from !== undefined ? options.from : reorgSafeHeight(tip, bitcoin.confirmations) - 19
-  const toHeight = options.to !== undefined ? options.to : reorgSafeHeight(tip, bitcoin.confirmations)
+  const toHeight = options.to !== undefined ? options.to : Math.max(0, reorgSafeHeight(tip, bitcoin.confirmations))
+  const fromHeight = options.from !== undefined ? options.from : Math.max(0, toHeight - 19)
+  if (toHeight < fromHeight) throw new Error(`Inverted range: ${fromHeight}-${toHeight}. --from must not exceed --to.`)
   const windowBlocks = toHeight - fromHeight + 1
 
   const outsideTheRange = await prismaClient.btc_block.count({
