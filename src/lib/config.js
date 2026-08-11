@@ -1,7 +1,10 @@
 import path from 'path'
 import fs from 'fs'
 import URL from 'url'
+import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
+
+dotenv.config()
 
 const validateConfig = {
   existence: (config) => {
@@ -18,6 +21,21 @@ export function createConfig (file) {
   validateConfig.existence(config)
 
   return config
+}
+
+// The Bitcoin endpoint is a credential whenever the provider authenticates by URL, so the
+// environment is authoritative and a value in config.json cannot quietly take its place.
+// The precedence runs the opposite way from every other setting here, which is why it is
+// resolved explicitly rather than left to the generic merge, and why an ignored value is
+// announced instead of silently dropped.
+function bitcoinEndpoint (bitcoin = {}) {
+  const fromEnv = process.env.BITCOIN_RPC_URL
+
+  if (fromEnv && bitcoin.rpcUrl && bitcoin.rpcUrl !== fromEnv) {
+    console.warn('[config] bitcoin.rpcUrl in config.json is ignored: BITCOIN_RPC_URL takes precedence. Remove it from config.json — that file is not the place for a credential-bearing URL.')
+  }
+
+  return { ...bitcoin, rpcUrl: fromEnv || bitcoin.rpcUrl }
 }
 
 export function makeConfig (config = {}) {
@@ -52,6 +70,8 @@ export function makeConfig (config = {}) {
   // defaults  servers/ports
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
+
+  config.bitcoin = bitcoinEndpoint(config.bitcoin)
 
   // defaults log files
   // if (config.log.logToFiles === true) {

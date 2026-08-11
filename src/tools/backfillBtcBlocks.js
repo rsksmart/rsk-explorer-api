@@ -21,18 +21,19 @@ import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
 import { ingestBtcBlocks, safeTipHeight, missingHeights } from '../lib/btcBlockIngest'
 import { prismaClient } from '../lib/prismaClient'
+import { parseArguments } from './utils'
 
 const log = Logger('[backfill-btc-blocks]')
 
-function readOption (name, fallback) {
-  const index = process.argv.indexOf(`--${name}`)
-  if (index === -1) return fallback
-  const value = Number(process.argv[index + 1])
-  if (!Number.isInteger(value) || value < 0) throw new Error(`Invalid --${name}: ${process.argv[index + 1]}`)
-  return value
+const VALID_OPTIONS = {
+  '--from': { name: 'from', type: 'number', min: 0 },
+  '--to': { name: 'to', type: 'number', min: 0 },
+  '--concurrency': { name: 'concurrency', type: 'number', default: config.bitcoin.ingestConcurrency, min: 1 },
+  '--batch-size': { name: 'batchSize', type: 'number', default: config.bitcoin.ingestBatchSize, min: 1 }
 }
 
 async function main () {
+  const options = parseArguments(VALID_OPTIONS)
   const { bitcoin } = config
   const client = createBtcRpcClient({
     url: bitcoin.rpcUrl,
@@ -44,10 +45,10 @@ async function main () {
   })
 
   const tipHeight = await client.getBlockCount()
-  const fromHeight = readOption('from', bitcoin.startHeight)
-  const toHeight = readOption('to', safeTipHeight(tipHeight, bitcoin.confirmations))
-  const concurrency = readOption('concurrency', bitcoin.ingestConcurrency)
-  const batchSize = readOption('batch-size', bitcoin.ingestBatchSize)
+  const fromHeight = options.from !== undefined ? options.from : bitcoin.startHeight
+  const toHeight = options.to !== undefined ? options.to : safeTipHeight(tipHeight, bitcoin.confirmations)
+  const concurrency = options.concurrency
+  const batchSize = options.batchSize
 
   if (toHeight < fromHeight) throw new Error(`Empty range: ${fromHeight}-${toHeight}`)
 

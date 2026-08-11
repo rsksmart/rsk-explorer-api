@@ -103,9 +103,11 @@ export function createBtcRpcClient (options = {}) {
 
   function transportError (method, cause) {
     const reason = withoutUrl(`${cause.name}: ${cause.message}`)
-    const inner = cause.cause ? ` (${withoutUrl(`${cause.cause.name}: ${cause.cause.message}`)})` : ''
+    // Node wraps a failed connection in an AggregateError whose own message is empty, so an
+    // inner clause is only added when it actually says something
+    const detail = cause.cause && cause.cause.message ? withoutUrl(`${cause.cause.name}: ${cause.cause.message}`) : ''
     // No verdict set, so the retry policy treats it as worth another attempt
-    return new Error(`${method} could not reach ${endpoint} — ${reason}${inner}`)
+    return new Error(`${method} could not reach ${endpoint} — ${reason}${detail ? ` (${detail})` : ''}`)
   }
 
   async function callOnce (method, params) {

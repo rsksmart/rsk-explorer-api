@@ -152,9 +152,11 @@ describe('btcRpcClient', function () {
   })
 
   describe('response validation', function () {
-    it('rejects a block hash that is not 32 bytes of hex', async function () {
-      stubFetch([jsonResponse({ result: 'nope' })])
-      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, log: silentLog })
+    it('rejects a block hash that is not 32 bytes of hex, without retrying it', async function () {
+      // Response validation runs outside the retry loop, so a deterministic bad response
+      // costs exactly one request rather than the whole retry budget
+      const calls = stubFetch([jsonResponse({ result: 'nope' })])
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, maxRetries: 3, retryDelayMs: 1, log: silentLog })
 
       try {
         await client.getBlockHash(900000)
@@ -162,11 +164,12 @@ describe('btcRpcClient', function () {
       } catch (error) {
         expect(error.message).to.contain('expected a 32-byte hash')
       }
+      expect(calls).to.have.lengthOf(1)
     })
 
-    it('rejects a non-integer block count', async function () {
-      stubFetch([jsonResponse({ result: 'many' })])
-      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, log: silentLog })
+    it('rejects a non-integer block count, without retrying it', async function () {
+      const calls = stubFetch([jsonResponse({ result: 'many' })])
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, maxRetries: 3, retryDelayMs: 1, log: silentLog })
 
       try {
         await client.getBlockCount()
@@ -174,6 +177,7 @@ describe('btcRpcClient', function () {
       } catch (error) {
         expect(error.message).to.contain('expected an integer')
       }
+      expect(calls).to.have.lengthOf(1)
     })
 
     it('rejects a block that lists no transactions', async function () {

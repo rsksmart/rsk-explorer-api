@@ -2,11 +2,8 @@
  *  This file provides default values,
  *  use /config.json, to overwrite settings
  */
-import dotenv from 'dotenv'
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
-
-dotenv.config()
 
 export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
@@ -71,10 +68,10 @@ export default {
     services
   },
   bitcoin: {
-    // Any Bitcoin Core compatible endpoint: a self-hosted node or a provider. Providers
-    // that authenticate by URL make this value itself a credential, which is why it reads
-    // from the environment alongside DATABASE_URL rather than living in config.json.
-    rpcUrl: process.env.BITCOIN_RPC_URL || 'http://localhost:8332',
+    // Any Bitcoin Core compatible endpoint: a self-hosted node or a provider. Set it with
+    // BITCOIN_RPC_URL, which overrides this and wins over config.json — see config.js,
+    // since a provider that authenticates by URL makes the value itself a credential.
+    rpcUrl: 'http://localhost:8332',
     // First Bitcoin block of 2018, the month Rootstock launched: nothing earlier can
     // carry a merge-mining tag, so it is the natural floor for the backfill.
     startHeight: 501960,

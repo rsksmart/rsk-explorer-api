@@ -14,8 +14,16 @@ import { ingestBtcBlocks, missingHeights, safeTipHeight } from '../lib/btcBlockI
 import { btcBlockStore } from '../lib/btcBlockStore'
 import { getMergeMiningStats } from '../lib/getMergeMiningStats'
 import { prismaClient } from '../lib/prismaClient'
+import { parseArguments } from './utils'
 
 const log = Logger('[verify-merge-mining]')
+
+// This tool deletes rows to prove the healing and refusal paths, so its range is validated
+// rather than coerced: a flag given without a value must fail, not become NaN.
+const VALID_OPTIONS = {
+  '--from': { name: 'from', type: 'number', min: 0 },
+  '--to': { name: 'to', type: 'number', min: 0 }
+}
 const silent = { info: () => {}, warn: () => {}, error: () => {} }
 
 let failures = 0
@@ -25,13 +33,8 @@ function check (description, actual, expected) {
   log.info(`${ok ? 'PASS' : 'FAIL'}  ${description}${ok ? '' : ` — expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`}`)
 }
 
-function readOption (name, fallback) {
-  const index = process.argv.indexOf(`--${name}`)
-  if (index === -1) return fallback
-  return Number(process.argv[index + 1])
-}
-
 async function main () {
+  const options = parseArguments(VALID_OPTIONS)
   const { bitcoin } = config
   const client = createBtcRpcClient({
     url: bitcoin.rpcUrl,
@@ -43,8 +46,8 @@ async function main () {
   })
 
   const tip = await client.getBlockCount()
-  const fromHeight = readOption('from', safeTipHeight(tip, bitcoin.confirmations) - 19)
-  const toHeight = readOption('to', safeTipHeight(tip, bitcoin.confirmations))
+  const fromHeight = options.from !== undefined ? options.from : safeTipHeight(tip, bitcoin.confirmations) - 19
+  const toHeight = options.to !== undefined ? options.to : safeTipHeight(tip, bitcoin.confirmations)
   const windowBlocks = toHeight - fromHeight + 1
 
   log.info(`Endpoint ${client.endpoint}, tip ${tip}`)
