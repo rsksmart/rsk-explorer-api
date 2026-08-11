@@ -13,6 +13,11 @@ function storeWith ({ maxHeight, total, mergeMined }) {
 
 const clientWith = hashrate => ({ getNetworkHashps: async () => hashrate })
 
+function recordingClient (hashrate) {
+  const calls = []
+  return { calls, getNetworkHashps: async (...args) => { calls.push(args); return hashrate } }
+}
+
 describe('getMergeMiningStats', function () {
   it('computes the share and the secured hashrate over a complete window', async function () {
     const stats = await getMergeMiningStats({
@@ -40,6 +45,34 @@ describe('getMergeMiningStats', function () {
     expect(stats.fromHeight).to.equal(960820)
     expect(stats.toHeight).to.equal(961819)
     expect(stats.toHeight - stats.fromHeight + 1).to.equal(stats.bitcoinBlocks)
+  })
+
+  it('reads the hashrate over the same heights it counted, not over the ones at the node tip', async function () {
+    const client = recordingClient(1e21)
+
+    const stats = await getMergeMiningStats({
+      client,
+      windowBlocks: 1000,
+      store: storeWith({ maxHeight: 961819, total: 1000, mergeMined: 622 }),
+      log: silentLog
+    })
+
+    expect(client.calls).to.deep.equal([[1000, stats.toHeight]])
+  })
+
+  it('asks over the span it actually counted when the chain is shorter than the window', async function () {
+    const client = recordingClient(1e21)
+
+    const stats = await getMergeMiningStats({
+      client,
+      windowBlocks: 1000,
+      store: storeWith({ maxHeight: 400, total: 401, mergeMined: 200 }),
+      log: silentLog
+    })
+
+    expect(stats.fromHeight).to.equal(0)
+    expect(stats.bitcoinBlocks).to.equal(401)
+    expect(client.calls).to.deep.equal([[401, 400]])
   })
 
   it('reports a zero share without failing when no block carries the tag', async function () {

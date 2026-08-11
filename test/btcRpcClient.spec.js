@@ -200,6 +200,26 @@ describe('btcRpcClient', function () {
       }
     })
 
+    it('anchors the hashrate estimate at the height it is given', async function () {
+      const calls = stubFetch([jsonResponse({ result: 8.94e20 })])
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, log: silentLog })
+
+      await client.getNetworkHashps(1000, 961819)
+      expect(calls[0].body.params).to.deep.equal([1000, 961819])
+    })
+
+    it('refuses a height without a block count, because positional params cannot skip one', async function () {
+      stubFetch([])
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, log: silentLog })
+
+      try {
+        await client.getNetworkHashps(undefined, 961819)
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('needs an explicit block count')
+      }
+    })
+
     it('returns the fields the ingest needs from a block', async function () {
       stubFetch([jsonResponse({
         result: { height: 955501, hash: BLOCK_HASH, time: 1782484418, difficulty: 124932866006548.2, tx: [BLOCK_HASH] }

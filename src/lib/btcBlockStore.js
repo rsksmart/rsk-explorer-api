@@ -20,11 +20,6 @@ export const btcBlockStore = {
     return result._max.height
   },
 
-  minHeight: async () => {
-    const result = await prismaClient.btc_block.aggregate({ _min: { height: true } })
-    return result._min.height
-  },
-
   countInRange: (fromHeight, toHeight) =>
     prismaClient.btc_block.count({ where: { height: { gte: fromHeight, lte: toHeight } } }),
 

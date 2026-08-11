@@ -185,8 +185,13 @@ export function createBtcRpcClient (options = {}) {
       return coinbase
     },
 
-    getNetworkHashps: async blocks => {
-      const params = blocks === undefined ? [] : [asInteger(blocks, 'getnetworkhashps blocks')]
+    getNetworkHashps: async (blocks, endingAtHeight) => {
+      if (endingAtHeight !== undefined && blocks === undefined) {
+        throw deterministicFailure('getnetworkhashps: a height needs an explicit block count, positional params cannot skip one')
+      }
+      const params = []
+      if (blocks !== undefined) params.push(asInteger(blocks, 'getnetworkhashps blocks'))
+      if (endingAtHeight !== undefined) params.push(asInteger(endingAtHeight, 'getnetworkhashps height'))
       const hashrate = Number(await call('getnetworkhashps', params))
       if (!Number.isFinite(hashrate) || hashrate <= 0) {
         throw deterministicFailure(`getnetworkhashps: implausible value ${hashrate}`)

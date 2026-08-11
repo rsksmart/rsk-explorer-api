@@ -26,7 +26,7 @@ export async function getMergeMiningStats ({
     throw new Error(`Incomplete window ${fromHeight}-${toHeight}: ${bitcoinBlocks}/${expected} blocks stored`)
   }
 
-  const bitcoinHashrate = new BigNumber(await client.getNetworkHashps(windowBlocks))
+  const bitcoinHashrate = new BigNumber(await client.getNetworkHashps(expected, toHeight))
   if (!bitcoinHashrate.isFinite() || bitcoinHashrate.lte(0)) {
     throw new Error(`Invalid Bitcoin hashrate: ${bitcoinHashrate.toString()}`)
   }

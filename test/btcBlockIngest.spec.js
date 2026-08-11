@@ -22,7 +22,6 @@ function fakeStore (initialHeights = []) {
       return inserted
     },
     maxHeight: async () => (rows.size === 0 ? null : Math.max(...rows.keys())),
-    minHeight: async () => (rows.size === 0 ? null : Math.min(...rows.keys())),
     countInRange: async (from, to) => [...rows.keys()].filter(h => h >= from && h <= to).length,
     countMergeMinedInRange: async (from, to) =>
       [...rows.values()].filter(r => r.height >= from && r.height <= to && r.isMergeMined).length

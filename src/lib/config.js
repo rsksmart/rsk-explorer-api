@@ -23,10 +23,10 @@ export function createConfig (file) {
   return config
 }
 
-function bitcoinEndpointWithEnvironmentWinning (bitcoin = {}) {
+function bitcoinEndpointWithEnvironmentWinning (bitcoin = {}, rpcUrlFromFile) {
   const fromEnv = process.env.BITCOIN_RPC_URL
 
-  if (fromEnv && bitcoin.rpcUrl && bitcoin.rpcUrl !== fromEnv) {
+  if (fromEnv && rpcUrlFromFile && rpcUrlFromFile !== fromEnv) {
     console.warn('[config] bitcoin.rpcUrl in config.json is ignored: BITCOIN_RPC_URL takes precedence. Remove it from config.json — that file is not the place for a credential-bearing URL.')
   }
 
@@ -34,6 +34,7 @@ function bitcoinEndpointWithEnvironmentWinning (bitcoin = {}) {
 }
 
 export function makeConfig (config = {}) {
+  const rpcUrlFromFile = (config.bitcoin || {}).rpcUrl
   // const defaultLogs = (key) => {
   //   const dir = config.log.dir
   //   if (!dir) return
@@ -66,7 +67,7 @@ export function makeConfig (config = {}) {
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
 
-  config.bitcoin = bitcoinEndpointWithEnvironmentWinning(config.bitcoin)
+  config.bitcoin = bitcoinEndpointWithEnvironmentWinning(config.bitcoin, rpcUrlFromFile)
 
   // defaults log files
   // if (config.log.logToFiles === true) {

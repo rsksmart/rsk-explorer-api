@@ -290,6 +290,7 @@ function btcBlockIngestUpdater () {
   const name = 'btc-block-ingest'
   const log = Logger(`[${name}]`)
   const schedule = cronsConfig.schedules.hourly
+  let lastReportedGap = null
   const action = async () => {
     try {
       log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
@@ -320,10 +321,12 @@ function btcBlockIngestUpdater () {
         log
       })
 
-      const lowest = await btcBlockStore.minHeight()
-      if (lowest !== null && lowest > bitcoin.startHeight) {
-        log.warn(`History starts at ${lowest}, above the configured floor ${bitcoin.startHeight}. Run: npm run backfill-btc-blocks -- --from ${bitcoin.startHeight} --to ${lowest - 1}`)
+      const storedInHistory = await btcBlockStore.countInRange(bitcoin.startHeight, toHeight)
+      const missingInHistory = (toHeight - bitcoin.startHeight + 1) - storedInHistory
+      if (missingInHistory > 0 && missingInHistory !== lastReportedGap) {
+        log.warn(`${missingInHistory} height(s) missing in ${bitcoin.startHeight}-${toHeight}; the scheduled ingest only reaches back to ${fromHeight}. Run: npm run backfill-btc-blocks -- --from ${bitcoin.startHeight} --to ${toHeight}`)
       }
+      lastReportedGap = missingInHistory
 
       log.info(`Ingest finished over ${fromHeight}-${toHeight}: ${result.ingested} stored, ${result.failed} failed (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
@@ -383,7 +386,7 @@ function dailyMergeMiningStatsUpdater () {
   }
 }
 
-const cronJobs = {
+export const cronJobs = {
   dailyGasFeesUpdater: dailyGasFeesUpdater(),
   newAddressesUpdater: newAddressesUpdater(),
   dailyActiveAddressesUpdater: dailyActiveAddressesUpdater(),

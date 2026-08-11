@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js'
 import config from '../lib/config'
 import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
@@ -14,7 +15,9 @@ function printUsageAndExit () {
   console.log(`Usage: npx babel-node src/tools/${toolName} [options]`)
   console.log(`Exercises the pipeline end to end against a real endpoint and database over a small`)
   console.log(`window. Deletes rows to prove the healing and refusal paths, so point it at a scratch`)
-  console.log(`database. Exits non-zero on any failed check.`)
+  console.log(`database holding no Bitcoin blocks outside the range it is given — the rollup always`)
+  console.log(`reads the trailing window from the highest stored height, so blocks above the range`)
+  console.log(`would be the ones measured. Exits non-zero on any failed check.`)
   console.log(`Options:`)
   console.log(`  --from <height>       lowest height (default: 20 blocks below the safe tip)`)
   console.log(`  --to <height>         highest height (default: the safe tip)`)
@@ -57,6 +60,15 @@ async function main () {
   const toHeight = options.to !== undefined ? options.to : reorgSafeHeight(tip, bitcoin.confirmations)
   const windowBlocks = toHeight - fromHeight + 1
 
+  const outsideTheRange = await prismaClient.btc_block.count({
+    where: { OR: [{ height: { lt: fromHeight } }, { height: { gt: toHeight } }] }
+  })
+  if (outsideTheRange > 0) {
+    throw new Error(
+      `${outsideTheRange} block(s) stored outside ${fromHeight}-${toHeight}. The rollup measures the trailing window from the highest stored height, so those would be what gets checked. Clear the table first: TRUNCATE btc_block, btc_merge_mining_stats;`
+    )
+  }
+
   log.info(`Endpoint ${client.endpoint}, tip ${tip}`)
   log.info(`Verifying over ${windowBlocks} block(s): ${fromHeight}-${toHeight}`)
   const first = await ingestBtcBlocks({ client, fromHeight, toHeight, concurrency: 4, batchSize: 10, log: silent })
@@ -73,8 +85,15 @@ async function main () {
   check('healing run fetches only the missing heights', healing.requested, holes.length)
   check('healing run leaves no gaps', await missingHeights(fromHeight, toHeight), [])
 
+  const atThisWindow = await client.getNetworkHashps(windowBlocks, toHeight)
+  const atAnEarlierWindow = await client.getNetworkHashps(windowBlocks, toHeight - windowBlocks)
+  check('the endpoint honours the height it is given, rather than always answering for its tip',
+    atThisWindow !== atAnEarlierWindow, true)
+
   const stats = await getMergeMiningStats({ client, windowBlocks, log: silent })
   check('rollup counts the full window', stats.bitcoinBlocks, windowBlocks)
+  check('the published hashrate is the one anchored at the window it reports',
+    stats.bitcoinHashrate, new BigNumber(atThisWindow).toFixed(0))
   check('rollup records the audited range', [stats.fromHeight, stats.toHeight], [fromHeight, toHeight])
   const share = stats.mergeMinedBlocks / stats.bitcoinBlocks
   check('published share matches the stored counts', Number(stats.mergeMiningPercentage).toFixed(6), share.toFixed(6))
