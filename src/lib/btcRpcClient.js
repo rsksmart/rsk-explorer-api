@@ -96,16 +96,33 @@ export function createBtcRpcClient (options = {}) {
   const counters = { requests: 0, throttled: 0, retries: 0 }
   let nextId = 1
 
+  // Transport errors are re-raised as our own, carrying the failure reason but never the
+  // request URL. Node's fetch does not put the URL in the errors it throws today, so this
+  // makes the property an invariant of this module rather than of that implementation.
+  const withoutUrl = text => (typeof text === 'string' ? text.split(url).join(endpoint) : '')
+
+  function transportError (method, cause) {
+    const reason = withoutUrl(`${cause.name}: ${cause.message}`)
+    const inner = cause.cause ? ` (${withoutUrl(`${cause.cause.name}: ${cause.cause.message}`)})` : ''
+    // No verdict set, so the retry policy treats it as worth another attempt
+    return new Error(`${method} could not reach ${endpoint} — ${reason}${inner}`)
+  }
+
   async function callOnce (method, params) {
     await acquireSlot()
     counters.requests++
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ jsonrpc: '2.0', id: nextId++, method, params }),
-      signal: AbortSignal.timeout(cfg.requestTimeoutMs)
-    })
+    let response
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: nextId++, method, params }),
+        signal: AbortSignal.timeout(cfg.requestTimeoutMs)
+      })
+    } catch (cause) {
+      throw transportError(method, cause)
+    }
 
     if (!response.ok) {
       const error = new Error(`${method} failed with HTTP ${response.status}`)

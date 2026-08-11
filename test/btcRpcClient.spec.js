@@ -43,6 +43,42 @@ describe('btcRpcClient', function () {
       expect(client.endpoint).to.not.contain('super-secret-api-key')
     })
 
+    it('keeps the credential out of a transport failure, however the runtime words it', async function () {
+      // Worst case: the fetch implementation puts the whole URL in the error it throws
+      global.fetch = async () => {
+        const cause = new Error(`getaddrinfo ENOTFOUND for ${URL_WITH_CREDENTIAL}`)
+        const error = new TypeError(`fetch failed: ${URL_WITH_CREDENTIAL}`)
+        error.cause = cause
+        throw error
+      }
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, maxRetries: 0, log: silentLog })
+
+      try {
+        await client.getBlockCount()
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.not.contain('super-secret-api-key')
+        expect(error.stack).to.not.contain('super-secret-api-key')
+        expect(error.cause).to.equal(undefined)
+        // Still says what went wrong, and against which host
+        expect(error.message).to.contain('could not reach https://bitcoin-mainnet.example.com')
+        expect(error.message).to.contain('ENOTFOUND')
+      }
+    })
+
+    it('still retries a transport failure after sanitising it', async function () {
+      let calls = 0
+      global.fetch = async () => {
+        calls++
+        if (calls === 1) throw new TypeError(`fetch failed: ${URL_WITH_CREDENTIAL}`)
+        return jsonResponse({ result: 961919 })
+      }
+      const client = createBtcRpcClient({ url: URL_WITH_CREDENTIAL, retryDelayMs: 1, log: silentLog })
+
+      expect(await client.getBlockCount()).to.equal(961919)
+      expect(calls).to.equal(2)
+    })
+
     it('keeps the credential out of retry warnings', async function () {
       const warnings = []
       const log = { ...silentLog, warn: message => warnings.push(message) }
