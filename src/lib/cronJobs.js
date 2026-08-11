@@ -2,7 +2,9 @@ import { CronJob } from 'cron'
 import { prismaClient } from './prismaClient'
 import Logger from './Logger'
 import config from './config'
-import { createBtcMempoolClient } from './btcMempoolClient'
+import { createBtcRpcClient } from './btcRpcClient'
+import { ingestBtcBlocks, safeTipHeight } from './btcBlockIngest'
+import { btcBlockStore } from './btcBlockStore'
 import { getMergeMiningStats } from './getMergeMiningStats'
 
 /*
@@ -272,7 +274,73 @@ function dailyNumberOfTransactionsUpdater () {
   }
 }
 
-// Daily Bitcoin merge-mining stats snapshot
+function createBitcoinClient (log) {
+  const { bitcoin } = config
+  return createBtcRpcClient({
+    url: bitcoin.rpcUrl,
+    requestTimeoutMs: bitcoin.requestTimeoutMs,
+    maxRetries: bitcoin.maxRetries,
+    retryDelayMs: bitcoin.retryDelayMs,
+    requestsPerSecond: bitcoin.requestsPerSecond,
+    log
+  })
+}
+
+// Incremental Bitcoin block ingest.
+// Hourly rather than every few minutes because blocks are only read `confirmations`
+// deep, which already puts the newest eligible height hours behind the tip; a shorter
+// period would spend requests discovering there is nothing new to fetch.
+function btcBlockIngestUpdater () {
+  const name = 'btc-block-ingest'
+  const log = Logger(`[${name}]`)
+  const schedule = cronsConfig.schedules.hourly
+  const action = async () => {
+    try {
+      log.info(`Started at ${new Date().toISOString()} (${cronsConfig.timeZone}). Job Schedule: ${schedule.value} (${schedule.description})`)
+
+      const started = Date.now()
+      const { bitcoin } = config
+      const client = createBitcoinClient(log)
+
+      const toHeight = safeTipHeight(await client.getBlockCount(), bitcoin.confirmations)
+      const highest = await btcBlockStore.maxHeight()
+      const fromHeight = highest === null ? bitcoin.startHeight : highest + 1
+
+      if (toHeight < fromHeight) {
+        log.info(`Nothing to ingest: safe tip ${toHeight} is not ahead of stored height ${highest}`)
+        return
+      }
+
+      const result = await ingestBtcBlocks({
+        client,
+        fromHeight,
+        toHeight,
+        concurrency: bitcoin.ingestConcurrency,
+        batchSize: bitcoin.ingestBatchSize,
+        log
+      })
+
+      log.info(`Ingest finished: ${result.ingested} stored, ${result.failed} failed (${Date.now() - started} ms)`)
+      log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
+    } catch (error) {
+      // Heights that were not written stay missing, so the next run picks them up
+      log.error(`Error ingesting Bitcoin blocks: ${error.message}`)
+      log.error(error.stack)
+    }
+  }
+  const cronJob = createCronJob({ schedule, action })
+
+  return {
+    schedule,
+    name,
+    cronJob,
+    start: () => cronJob.start()
+  }
+}
+
+// Daily Bitcoin merge-mining stats snapshot.
+// Reads only stored blocks plus one hashrate call, so it costs almost nothing and fails
+// loudly if the ingest has fallen behind rather than publishing a partial window.
 function dailyMergeMiningStatsUpdater () {
   const name = 'daily-merge-mining-stats'
   const log = Logger(`[${name}]`)
@@ -284,30 +352,18 @@ function dailyMergeMiningStatsUpdater () {
 
       const started = Date.now()
       const { bitcoin } = config
-      const client = createBtcMempoolClient({
-        baseUrl: bitcoin.mempoolApiUrl,
-        requestDelayMs: bitcoin.requestDelayMs,
-        requestTimeoutMs: bitcoin.requestTimeoutMs,
-        maxRetries: bitcoin.maxRetries,
-        log
-      })
+      const client = createBitcoinClient(log)
 
       const stats = await getMergeMiningStats({
         client,
-        sampleSize: bitcoin.blocksSample,
-        hashratePeriod: bitcoin.hashratePeriod,
-        minCoverage: bitcoin.minCoverage,
+        windowBlocks: bitcoin.windowBlocks,
         log
       })
 
       const date = new Date()
       date.setUTCHours(0, 0, 0, 0)
 
-      await prismaClient.btc_merge_mining_stats.upsert({
-        where: { date },
-        update: stats,
-        create: { date, ...stats }
-      })
+      await btcBlockStore.upsertDailyStats(date, stats)
 
       log.info(`Daily merge-mining stats updated (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)
@@ -332,6 +388,7 @@ const cronJobs = {
   newAddressesUpdater: newAddressesUpdater(),
   dailyActiveAddressesUpdater: dailyActiveAddressesUpdater(),
   dailyNumberOfTransactionsUpdater: dailyNumberOfTransactionsUpdater(),
+  btcBlockIngestUpdater: btcBlockIngestUpdater(),
   dailyMergeMiningStatsUpdater: dailyMergeMiningStatsUpdater()
 }
 

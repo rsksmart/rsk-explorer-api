@@ -1,47 +1,52 @@
 import { expect } from 'chai'
-import { isRskMergeMined, RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
+import { findRskMergeMiningTag, RSK_TAG_HEX } from '../src/lib/rskMergeMiningTag'
 
-// 'RSKBLOCK:' + a 32-byte payload, as embedded by merge-mining pools.
-const taggedScript = `6a29${RSK_TAG_HEX}${'ab'.repeat(32)}`
-const plainScript = '6a14' + 'cd'.repeat(20)
+const RSK_MERGED_MINING_HASH = '410ac1c4b7fb2330ffa2b6434afb44429b702189371c4158d102fe13008922b6'
 
-describe('# rskMergeMiningTag', function () {
-  describe('isRskMergeMined()', function () {
-    it('detects the RSK tag in a coinbase OP_RETURN output (mempool shape)', () => {
-      const coinbase = {
-        vin: [{ scriptsig: '03abcdef' }],
-        vout: [{ scriptpubkey: '76a914' + '00'.repeat(20) + '88ac' }, { scriptpubkey: taggedScript }]
+// OP_RETURN carrying 'RSKBLOCK:' + the 32-byte merged-mining hash: 0x6a, then a 41-byte push
+const opReturnWithTag = payload => `6a29${RSK_TAG_HEX}${payload}`
+
+const coinbaseWithOutput = script => ({ vin: [{ coinbase: 'aabbcc' }], vout: [{ scriptPubKey: { hex: script } }] })
+const coinbaseWithInput = script => ({ vin: [{ coinbase: script }], vout: [{ scriptPubKey: { hex: '76a914' } }] })
+
+describe('rskMergeMiningTag', function () {
+  describe('findRskMergeMiningTag()', function () {
+    it('detects the tag in an OP_RETURN output and recovers the merged-mining hash', function () {
+      const result = findRskMergeMiningTag(coinbaseWithOutput(opReturnWithTag(RSK_MERGED_MINING_HASH)))
+      expect(result.isMergeMined).to.equal(true)
+      expect(result.rskHashForMergedMining).to.equal(`0x${RSK_MERGED_MINING_HASH}`)
+    })
+
+    it('detects the tag in the coinbase input script', function () {
+      const result = findRskMergeMiningTag(coinbaseWithInput(`03aabbcc${RSK_TAG_HEX}${RSK_MERGED_MINING_HASH}`))
+      expect(result.isMergeMined).to.equal(true)
+      expect(result.rskHashForMergedMining).to.equal(`0x${RSK_MERGED_MINING_HASH}`)
+    })
+
+    it('is case insensitive on the script hex', function () {
+      const result = findRskMergeMiningTag(coinbaseWithOutput(opReturnWithTag(RSK_MERGED_MINING_HASH).toUpperCase()))
+      expect(result.isMergeMined).to.equal(true)
+      expect(result.rskHashForMergedMining).to.equal(`0x${RSK_MERGED_MINING_HASH}`)
+    })
+
+    it('reports merge mining without a hash when the payload is truncated', function () {
+      const result = findRskMergeMiningTag(coinbaseWithOutput(`6a29${RSK_TAG_HEX}410ac1c4`))
+      expect(result.isMergeMined).to.equal(true)
+      expect(result.rskHashForMergedMining).to.equal(null)
+    })
+
+    it('does not classify a block whose coinbase carries no tag', function () {
+      const result = findRskMergeMiningTag(coinbaseWithOutput('6a24aa21a9ed1122334455'))
+      expect(result.isMergeMined).to.equal(false)
+      expect(result.rskHashForMergedMining).to.equal(null)
+    })
+
+    it('tolerates missing, empty and malformed coinbases', function () {
+      for (const input of [null, undefined, {}, { vin: [null], vout: [{}] }, { vin: [{ coinbase: 42 }], vout: [] }]) {
+        const result = findRskMergeMiningTag(input)
+        expect(result.isMergeMined).to.equal(false)
+        expect(result.rskHashForMergedMining).to.equal(null)
       }
-      expect(isRskMergeMined(coinbase)).to.equal(true)
-    })
-
-    it('detects the RSK tag in the coinbase input scriptSig', () => {
-      const coinbase = { vin: [{ scriptsig: `03abcd${taggedScript}` }], vout: [{ scriptpubkey: plainScript }] }
-      expect(isRskMergeMined(coinbase)).to.equal(true)
-    })
-
-    it('detects the RSK tag in the Bitcoin Core RPC shape', () => {
-      const coinbase = {
-        vin: [{ scriptSig: { hex: '03abcdef' } }],
-        vout: [{ scriptPubKey: { hex: taggedScript } }]
-      }
-      expect(isRskMergeMined(coinbase)).to.equal(true)
-    })
-
-    it('matches the tag regardless of hex casing', () => {
-      const coinbase = { vin: [], vout: [{ scriptpubkey: taggedScript.toUpperCase() }] }
-      expect(isRskMergeMined(coinbase)).to.equal(true)
-    })
-
-    it('returns false for a coinbase without the RSK tag', () => {
-      const coinbase = { vin: [{ scriptsig: '03abcdef' }], vout: [{ scriptpubkey: plainScript }] }
-      expect(isRskMergeMined(coinbase)).to.equal(false)
-    })
-
-    it('returns false for missing or malformed coinbase data', () => {
-      expect(isRskMergeMined(null)).to.equal(false)
-      expect(isRskMergeMined({})).to.equal(false)
-      expect(isRskMergeMined({ vin: [null], vout: [{}] })).to.equal(false)
     })
   })
 })

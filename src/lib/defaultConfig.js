@@ -2,8 +2,11 @@
  *  This file provides default values,
  *  use /config.json, to overwrite settings
  */
+import dotenv from 'dotenv'
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
+
+dotenv.config()
 
 export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
@@ -39,15 +42,6 @@ export default {
     rsk: 0, // delegates rsk module to the node that handle subscriptions
     trace: 1 // delegates trace_ module to the second node
   },
-  db: {
-    protocol: 'postgres://',
-    databaseName: 'explorer_db',
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 12345678,
-    connectionLimit: 30
-  },
   api: {
     address: 'localhost',
     port: 3003,
@@ -77,14 +71,29 @@ export default {
     services
   },
   bitcoin: {
-    // Testnet deployments override with 'https://mempool.space/testnet/api'
-    mempoolApiUrl: 'https://mempool.space/api',
-    blocksSample: 1000,
-    hashratePeriod: '1w',
-    minCoverage: 0.9,
-    requestDelayMs: 250,
+    // Any Bitcoin Core compatible endpoint: a self-hosted node or a provider. Providers
+    // that authenticate by URL make this value itself a credential, which is why it reads
+    // from the environment alongside DATABASE_URL rather than living in config.json.
+    rpcUrl: process.env.BITCOIN_RPC_URL || 'http://localhost:8332',
+    // First Bitcoin block of 2018, the month Rootstock launched: nothing earlier can
+    // carry a merge-mining tag, so it is the natural floor for the backfill.
+    startHeight: 501960,
+    // Blocks are read this far behind the tip so ordinary reorgs settle before a height
+    // is written, since a stored row is never revisited.
+    confirmations: 100,
+    // Trailing window the published share is computed over, about a week of Bitcoin.
+    windowBlocks: 1000,
+    ingestConcurrency: 8,
+    ingestBatchSize: 500,
+    // Sustained request rate. Concurrency alone is not a rate: a provider absorbs a few
+    // seconds of excess from burst capacity and then throttles, so this is what keeps a
+    // multi-hour backfill inside the allowance. Every method used here costs the same, so
+    // requests per second maps directly onto the provider's compute-unit budget. Set to 0
+    // for a self-hosted node, which needs no pacing.
+    requestsPerSecond: 25,
     requestTimeoutMs: 15000,
-    maxRetries: 3
+    maxRetries: 5,
+    retryDelayMs: 1000
   },
   forceSaveBcStats: true,
   enableTxPoolFromApi: true

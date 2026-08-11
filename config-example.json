@@ -21,12 +21,14 @@
     "metricsPort": 4001
   },
   "bitcoin": {
-    "mempoolApiUrl": "https://mempool.space/api",
-    "blocksSample": 1000,
-    "hashratePeriod": "1w",
-    "minCoverage": 0.9,
-    "requestDelayMs": 250,
+    "startHeight": 501960,
+    "confirmations": 100,
+    "windowBlocks": 1000,
+    "ingestConcurrency": 8,
+    "ingestBatchSize": 500,
+    "requestsPerSecond": 25,
     "requestTimeoutMs": 15000,
-    "maxRetries": 3
+    "maxRetries": 5,
+    "retryDelayMs": 1000
   }
 }

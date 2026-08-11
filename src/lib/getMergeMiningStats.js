@@ -1,64 +1,54 @@
 import { BigNumber } from 'bignumber.js'
-import { isRskMergeMined } from './rskMergeMiningTag'
 import Logger from './Logger'
+import { btcBlockStore } from './btcBlockStore'
 
+// Computes the published merge-mining share from stored Bitcoin blocks rather than by
+// walking the provider. Because every height in the window is known to be present, the
+// denominator is a complete count over an explicit range instead of a sample, and the
+// range travels with the result so the percentage can be audited afterwards.
 export async function getMergeMiningStats ({
   client,
-  sampleSize = 1000,
-  hashratePeriod = '1w',
-  minCoverage = 0.9,
+  windowBlocks = 1000,
+  store = btcBlockStore,
   log = Logger('[merge-mining-stats]')
 }) {
   if (!client) throw new Error('Missing Bitcoin client')
-  if (!Number.isInteger(sampleSize) || sampleSize < 1) throw new Error(`Invalid sampleSize: ${sampleSize}`)
-  if (!(minCoverage > 0) || minCoverage > 1) throw new Error(`Invalid minCoverage: ${minCoverage}`)
+  if (!Number.isInteger(windowBlocks) || windowBlocks < 1) throw new Error(`Invalid windowBlocks: ${windowBlocks}`)
 
-  // Fetched first so a bad hashrate fails fast, before the long block walk
-  const bitcoinHashrate = new BigNumber(await client.getNetworkHashrate(hashratePeriod))
+  const toHeight = await store.maxHeight()
+  if (toHeight === null || toHeight === undefined) throw new Error('No Bitcoin blocks ingested yet')
+
+  const fromHeight = Math.max(0, toHeight - windowBlocks + 1)
+  const expected = toHeight - fromHeight + 1
+
+  const [bitcoinBlocks, mergeMinedBlocks] = await Promise.all([
+    store.countInRange(fromHeight, toHeight),
+    store.countMergeMinedInRange(fromHeight, toHeight)
+  ])
+
+  // A gap in the window would silently shrink the denominator and inflate the share.
+  // The stored range makes this exact rather than a coverage estimate.
+  if (bitcoinBlocks !== expected) {
+    throw new Error(`Incomplete window ${fromHeight}-${toHeight}: ${bitcoinBlocks}/${expected} blocks stored`)
+  }
+
+  const bitcoinHashrate = new BigNumber(await client.getNetworkHashps(windowBlocks))
   if (!bitcoinHashrate.isFinite() || bitcoinHashrate.lte(0)) {
     throw new Error(`Invalid Bitcoin hashrate: ${bitcoinHashrate.toString()}`)
   }
 
-  const tipHeight = await client.getTipHeight()
-  if (!Number.isInteger(tipHeight) || tipHeight < 0) throw new Error(`Invalid tip height: ${tipHeight}`)
-
-  const lowestHeight = Math.max(0, tipHeight - sampleSize + 1)
-  const requested = tipHeight - lowestHeight + 1
-  let mergeMinedBlocks = 0
-  let bitcoinBlocksSampled = 0
-  let failed = 0
-
-  for (let height = tipHeight; height >= lowestHeight; height--) {
-    try {
-      const coinbase = await client.getCoinbase(await client.getBlockHash(height))
-      if (!coinbase) throw new Error(`Missing coinbase for block ${height}`)
-      if (isRskMergeMined(coinbase)) mergeMinedBlocks++
-      bitcoinBlocksSampled++
-    } catch (error) {
-      failed++
-      log.warn(`Skipping BTC block ${height}: ${error.message}`)
-    }
-    // Stop early once the remaining blocks can no longer restore minimum coverage
-    // (e.g. a provider outage), instead of walking the whole window for nothing
-    if (bitcoinBlocksSampled + (height - lowestHeight) < requested * minCoverage) break
-    await client.throttle()
-  }
-
-  // A failing or hostile provider must not skew the ratio by starving us of blocks
-  if (bitcoinBlocksSampled < requested * minCoverage) {
-    throw new Error(`Insufficient block coverage: ${bitcoinBlocksSampled}/${requested} sampled (${failed} failed)`)
-  }
-
-  const mergeMiningPercentage = new BigNumber(mergeMinedBlocks).dividedBy(bitcoinBlocksSampled)
+  const mergeMiningPercentage = new BigNumber(mergeMinedBlocks).dividedBy(bitcoinBlocks)
   const rootstockSecuredHashrate = bitcoinHashrate.times(mergeMiningPercentage)
 
-  log.info(`Sampled ${bitcoinBlocksSampled}/${requested} BTC blocks (${failed} failed); ${mergeMinedBlocks} merge-mined (${mergeMiningPercentage.times(100).toFixed(2)}%)`)
+  log.info(`Window ${fromHeight}-${toHeight}: ${mergeMinedBlocks}/${bitcoinBlocks} merge-mined (${mergeMiningPercentage.times(100).toFixed(2)}%)`)
 
   return {
     bitcoinHashrate: bitcoinHashrate.toFixed(0),
     rootstockSecuredHashrate: rootstockSecuredHashrate.toFixed(0),
     mergeMiningPercentage: mergeMiningPercentage.toFixed(6),
-    bitcoinBlocksSampled,
-    mergeMinedBlocks
+    bitcoinBlocks,
+    mergeMinedBlocks,
+    fromHeight,
+    toHeight
   }
 }
