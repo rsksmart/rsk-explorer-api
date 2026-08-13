@@ -3,8 +3,8 @@ import { prismaClient } from './prismaClient'
 import Logger from './Logger'
 import config from './config'
 import { createBtcRpcClient } from './btcRpcClient'
-import { ingestBtcBlocks, reorgSafeHeight, boundedLookbackWindow } from './btcBlockIngest'
-import { btcBlockStore } from './btcBlockStore'
+import { ingestBtcBlocks, reorgSafeHeight, boundedLookbackWindow, assertStoredChainMatchesEndpoint } from './btcBlockIngest'
+import { btcBlockRepository } from '../repositories'
 import { getMergeMiningStats } from './getMergeMiningStats'
 
 /*
@@ -321,7 +321,7 @@ function btcBlockIngestUpdater () {
         log
       })
 
-      const storedInHistory = await btcBlockStore.countInRange(bitcoin.startHeight, toHeight)
+      const storedInHistory = await btcBlockRepository.countInRange(bitcoin.startHeight, toHeight)
       const missingInHistory = (toHeight - bitcoin.startHeight + 1) - storedInHistory
       if (missingInHistory > 0 && missingInHistory !== lastReportedGap) {
         log.warn(`${missingInHistory} height(s) missing in ${bitcoin.startHeight}-${toHeight}; the scheduled ingest only reaches back to ${fromHeight}. Run: npm run backfill-btc-blocks -- --from ${bitcoin.startHeight} --to ${toHeight}`)
@@ -358,6 +358,8 @@ function dailyMergeMiningStatsUpdater () {
       const { bitcoin } = config
       const client = createBitcoinClient(log)
 
+      await assertStoredChainMatchesEndpoint({ client })
+
       const stats = await getMergeMiningStats({
         client,
         windowBlocks: bitcoin.windowBlocks,
@@ -367,7 +369,7 @@ function dailyMergeMiningStatsUpdater () {
       const date = new Date()
       date.setUTCHours(0, 0, 0, 0)
 
-      await btcBlockStore.upsertDailyStats(date, stats)
+      await btcBlockRepository.upsertDailyStats(date, stats)
 
       log.info(`Daily merge-mining stats updated (${Date.now() - started} ms)`)
       log.info(`Finished at ${new Date().toISOString()} (${cronsConfig.timeZone})`)

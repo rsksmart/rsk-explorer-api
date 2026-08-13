@@ -1,5 +1,5 @@
 import Logger from './Logger'
-import { btcBlockStore } from './btcBlockStore'
+import { btcBlockRepository } from '../repositories'
 import { findRskMergeMiningTag } from './rskMergeMiningTag'
 
 const DEFAULT_CONCURRENCY = 8
@@ -18,7 +18,33 @@ async function mapWithWorkersPullingFromQueue (items, limit, worker) {
   return results
 }
 
-export async function missingHeights (fromHeight, toHeight, store = btcBlockStore) {
+export async function assertStoredChainMatchesEndpoint ({ client, store = btcBlockRepository }) {
+  const anchor = await store.oldestStoredBlock()
+  if (!anchor) return null
+
+  let hashOnChain
+  try {
+    hashOnChain = await client.getBlockHash(anchor.height)
+  } catch (error) {
+    throw new Error(
+      `Chain identity unverifiable: the endpoint has no block at height ${anchor.height}, the oldest one stored. ` +
+      `The table holds a different Bitcoin chain than the endpoint serves. (${error.message})`
+    )
+  }
+
+  if (hashOnChain !== anchor.hash) {
+    throw new Error(
+      `Chain mismatch at height ${anchor.height}: stored ${anchor.hash}, endpoint serves ${hashOnChain}. ` +
+      `The table holds a different Bitcoin chain than the endpoint serves — every new block would be skipped as a ` +
+      `duplicate height and the published stats would stay frozen on the stored chain. Point at the matching ` +
+      `endpoint, or clear the table: TRUNCATE btc_block, btc_merge_mining_stats;`
+    )
+  }
+
+  return anchor.height
+}
+
+export async function missingHeights (fromHeight, toHeight, store = btcBlockRepository) {
   if (toHeight < fromHeight) return []
 
   const stored = new Set(await store.presentHeights(fromHeight, toHeight))
@@ -63,7 +89,7 @@ export async function ingestBtcBlocks ({
   toHeight,
   concurrency = DEFAULT_CONCURRENCY,
   batchSize = DEFAULT_BATCH_SIZE,
-  store = btcBlockStore,
+  store = btcBlockRepository,
   log = Logger('[btc-block-ingest]')
 }) {
   if (!client) throw new Error('Missing Bitcoin client')
@@ -78,6 +104,8 @@ export async function ingestBtcBlocks ({
     log.info(`Nothing to ingest for heights ${fromHeight}-${toHeight}`)
     return { requested: 0, ingested: 0, failed: 0 }
   }
+
+  await assertStoredChainMatchesEndpoint({ client, store })
 
   log.info(`Ingesting ${pending.length} missing block(s) in ${fromHeight}-${toHeight} at concurrency ${concurrency}`)
 

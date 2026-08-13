@@ -1,11 +1,16 @@
 import { BigNumber } from 'bignumber.js'
 import Logger from './Logger'
-import { btcBlockStore } from './btcBlockStore'
+import { btcBlockRepository } from '../repositories'
+
+// The share's standard error over a 1000-block window is already ~1.5 points, so the last 2% of
+// heights cannot move the published figure. The floor is what keeps a persistent provider failure
+// from degrading into a quiet half-window: below it the snapshot refuses instead of narrowing.
+const MINIMUM_WINDOW_COVERAGE = 0.98
 
 export async function getMergeMiningStats ({
   client,
   windowBlocks = 1000,
-  store = btcBlockStore,
+  store = btcBlockRepository,
   log = Logger('[merge-mining-stats]')
 }) {
   if (!client) throw new Error('Missing Bitcoin client')
@@ -15,18 +20,25 @@ export async function getMergeMiningStats ({
   if (toHeight === null || toHeight === undefined) throw new Error('No Bitcoin blocks ingested yet')
 
   const fromHeight = Math.max(0, toHeight - windowBlocks + 1)
-  const expected = toHeight - fromHeight + 1
+  const heightsInWindow = toHeight - fromHeight + 1
 
-  const [bitcoinBlocks, mergeMinedBlocks] = await Promise.all([
-    store.countInRange(fromHeight, toHeight),
-    store.countMergeMinedInRange(fromHeight, toHeight)
-  ])
+  const { total: bitcoinBlocks, mergeMined: mergeMinedBlocks } = await store.countsInRange(fromHeight, toHeight)
 
-  if (bitcoinBlocks !== expected) {
-    throw new Error(`Incomplete window ${fromHeight}-${toHeight}: ${bitcoinBlocks}/${expected} blocks stored`)
+  if (bitcoinBlocks < Math.ceil(heightsInWindow * MINIMUM_WINDOW_COVERAGE)) {
+    throw new Error(
+      `Incomplete window ${fromHeight}-${toHeight}: ${bitcoinBlocks}/${heightsInWindow} blocks stored, ` +
+      `under the ${(MINIMUM_WINDOW_COVERAGE * 100).toFixed(0)}% a snapshot may be published over`
+    )
   }
 
-  const bitcoinHashrate = new BigNumber(await client.getNetworkHashps(expected, toHeight))
+  if (bitcoinBlocks < heightsInWindow) {
+    log.warn(
+      `Window ${fromHeight}-${toHeight} is missing ${heightsInWindow - bitcoinBlocks} height(s); publishing over ` +
+      `the ${bitcoinBlocks} stored. Run: npm run backfill-btc-blocks -- --from ${fromHeight} --to ${toHeight}`
+    )
+  }
+
+  const bitcoinHashrate = new BigNumber(await client.getNetworkHashps(heightsInWindow, toHeight))
   if (!bitcoinHashrate.isFinite() || bitcoinHashrate.lte(0)) {
     throw new Error(`Invalid Bitcoin hashrate: ${bitcoinHashrate.toString()}`)
   }

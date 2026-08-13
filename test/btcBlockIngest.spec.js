@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { ingestBtcBlocks, boundedLookbackWindow, missingHeights, readBtcBlock, reorgSafeHeight } from '../src/lib/btcBlockIngest'
+import { ingestBtcBlocks, assertStoredChainMatchesEndpoint, boundedLookbackWindow, missingHeights, readBtcBlock, reorgSafeHeight } from '../src/lib/btcBlockIngest'
 import { RSKBLOCK_MARKER_HEX } from '../src/lib/rskMergeMiningTag'
 
 const silentLog = { info: () => {}, warn: () => {}, error: () => {} }
@@ -7,10 +7,15 @@ const RSK_MERGED_MINING_HASH = '410ac1c4b7fb2330ffa2b6434afb44429b702189371c4158
 const hashFor = height => String(height).padStart(64, '0')
 
 function fakeStore (initialHeights = []) {
-  const rows = new Map(initialHeights.map(height => [height, { height }]))
+  const rows = new Map(initialHeights.map(height => [height, { height, hash: hashFor(height) }]))
   return {
     rows,
     presentHeights: async (from, to) => [...rows.keys()].filter(height => height >= from && height <= to),
+    oldestStoredBlock: async () => {
+      if (rows.size === 0) return null
+      const oldest = Math.min(...rows.keys())
+      return { height: oldest, hash: rows.get(oldest).hash }
+    },
     insertMany: async incoming => {
       let inserted = 0
       for (const row of incoming) {
@@ -23,8 +28,10 @@ function fakeStore (initialHeights = []) {
     },
     maxHeight: async () => (rows.size === 0 ? null : Math.max(...rows.keys())),
     countInRange: async (from, to) => [...rows.keys()].filter(h => h >= from && h <= to).length,
-    countMergeMinedInRange: async (from, to) =>
-      [...rows.values()].filter(r => r.height >= from && r.height <= to && r.isMergeMined).length
+    countsInRange: async (from, to) => {
+      const inRange = [...rows.values()].filter(r => r.height >= from && r.height <= to)
+      return { total: inRange.length, mergeMined: inRange.filter(r => r.isMergeMined).length }
+    }
   }
 }
 
@@ -96,6 +103,56 @@ describe('btcBlockIngest', function () {
     })
   })
 
+  describe('assertStoredChainMatchesEndpoint()', function () {
+    it('passes when the endpoint serves the same hash at the oldest stored height', async function () {
+      const anchor = await assertStoredChainMatchesEndpoint({ client: fakeClient(), store: fakeStore([40, 41, 42]) })
+      expect(anchor).to.equal(40)
+    })
+
+    it('accepts an empty table, where no chain has been committed to yet', async function () {
+      expect(await assertStoredChainMatchesEndpoint({ client: fakeClient(), store: fakeStore() })).to.equal(null)
+    })
+
+    it('refuses when the endpoint serves a different hash at that height', async function () {
+      const store = fakeStore([40])
+      store.rows.get(40).hash = hashFor(999999)
+
+      try {
+        await assertStoredChainMatchesEndpoint({ client: fakeClient(), store })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Chain mismatch at height 40')
+        expect(error.message).to.contain('frozen on the stored chain')
+      }
+    })
+
+    it('refuses when the endpoint has no block at that height, as a shorter chain would not', async function () {
+      try {
+        await assertStoredChainMatchesEndpoint({
+          client: fakeClient({ failHeights: [40] }),
+          store: fakeStore([40])
+        })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Chain identity unverifiable')
+        expect(error.message).to.contain('height 40')
+      }
+    })
+
+    it('stops an ingest that would silently skip every new block as a duplicate height', async function () {
+      const store = fakeStore([40])
+      store.rows.get(40).hash = hashFor(999999)
+
+      try {
+        await ingestBtcBlocks({ client: fakeClient(), fromHeight: 40, toHeight: 45, store, log: silentLog })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Chain mismatch at height 40')
+      }
+      expect(store.rows.size).to.equal(1)
+    })
+  })
+
   describe('missingHeights()', function () {
     it('returns the whole range when nothing is stored', async function () {
       expect(await missingHeights(10, 13, fakeStore())).to.deep.equal([10, 11, 12, 13])
@@ -129,13 +186,14 @@ describe('btcBlockIngest', function () {
   })
 
   describe('ingestBtcBlocks()', function () {
-    it('fetches only the heights that are missing', async function () {
+    it('fetches only the heights that are missing, after checking the stored chain', async function () {
       const store = fakeStore([10, 11])
       const client = fakeClient()
 
       const result = await ingestBtcBlocks({ client, fromHeight: 10, toHeight: 14, store, log: silentLog })
 
-      expect(client.requested.sort((a, b) => a - b)).to.deep.equal([12, 13, 14])
+      expect(client.requested[0]).to.equal(10)
+      expect(client.requested.slice(1).sort((a, b) => a - b)).to.deep.equal([12, 13, 14])
       expect(result).to.deep.equal({ requested: 3, ingested: 3, failed: 0 })
     })
 
@@ -175,7 +233,7 @@ describe('btcBlockIngest', function () {
       await ingestBtcBlocks({
         client: fakeClient({ taggedHeights: [2, 4] }), fromHeight: 1, toHeight: 5, store, log: silentLog
       })
-      expect(await store.countMergeMinedInRange(1, 5)).to.equal(2)
+      expect(await store.countsInRange(1, 5)).to.deep.equal({ total: 5, mergeMined: 2 })
     })
 
     it('refuses an inverted range instead of reporting a successful no-op', async function () {

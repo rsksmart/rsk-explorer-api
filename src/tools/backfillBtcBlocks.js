@@ -2,7 +2,7 @@ import config from '../lib/config'
 import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
 import { ingestBtcBlocks, reorgSafeHeight } from '../lib/btcBlockIngest'
-import { btcBlockStore } from '../lib/btcBlockStore'
+import { btcBlockRepository } from '../repositories'
 import { prismaClient } from '../lib/prismaClient'
 import { parseArguments } from './utils'
 
@@ -56,7 +56,7 @@ async function main () {
   if (toHeight < fromHeight) throw new Error(`Empty range: ${fromHeight}-${toHeight}`)
 
   const heightsInRange = toHeight - fromHeight + 1
-  const alreadyStored = await btcBlockStore.countInRange(fromHeight, toHeight)
+  const alreadyStored = await btcBlockRepository.countInRange(fromHeight, toHeight)
   log.info(`Endpoint ${client.endpoint}, tip ${tipHeight}`)
   log.info(`Range ${fromHeight}-${toHeight}: ${heightsInRange - alreadyStored} of ${heightsInRange} block(s) missing`)
   log.info(`Concurrency ${concurrency}, batch size ${batchSize}`)

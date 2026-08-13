@@ -2,8 +2,8 @@ import { BigNumber } from 'bignumber.js'
 import config from '../lib/config'
 import Logger from '../lib/Logger'
 import { createBtcRpcClient } from '../lib/btcRpcClient'
-import { ingestBtcBlocks, missingHeights, reorgSafeHeight } from '../lib/btcBlockIngest'
-import { btcBlockStore } from '../lib/btcBlockStore'
+import { ingestBtcBlocks, assertStoredChainMatchesEndpoint, missingHeights, reorgSafeHeight } from '../lib/btcBlockIngest'
+import { btcBlockRepository } from '../repositories'
 import { getMergeMiningStats } from '../lib/getMergeMiningStats'
 import { prismaClient } from '../lib/prismaClient'
 import { parseArguments } from './utils'
@@ -86,6 +86,24 @@ async function main () {
   check('healing run fetches only the missing heights', healing.requested, holes.length)
   check('healing run leaves no gaps', await missingHeights(fromHeight, toHeight), [])
 
+  check('chain identity holds over the range just ingested', await assertStoredChainMatchesEndpoint({ client }), fromHeight)
+
+  const anchorHash = (await prismaClient.btc_block.findUnique({ where: { height: fromHeight } })).hash
+  await prismaClient.btc_block.deleteMany({ where: { height: fromHeight + 2 } })
+  await prismaClient.btc_block.update({ where: { height: fromHeight }, data: { hash: 'f'.repeat(64) } })
+  let chainRefused = false
+  try {
+    await ingestBtcBlocks({ client, fromHeight, toHeight, concurrency: 4, batchSize: 10, log: silent })
+  } catch (error) {
+    chainRefused = /Chain mismatch/.test(error.message)
+  }
+  check('ingest refuses a table holding a different chain than the endpoint serves', chainRefused, true)
+  check('the refused ingest stored nothing', await missingHeights(fromHeight, toHeight), [fromHeight + 2])
+
+  await prismaClient.btc_block.update({ where: { height: fromHeight }, data: { hash: anchorHash } })
+  await ingestBtcBlocks({ client, fromHeight, toHeight, concurrency: 4, batchSize: 10, log: silent })
+  check('the same ingest completes once the chain matches again', await missingHeights(fromHeight, toHeight), [])
+
   const atThisWindow = await client.getNetworkHashps(windowBlocks, toHeight)
   const atAnEarlierWindow = await client.getNetworkHashps(windowBlocks, toHeight - windowBlocks)
   check('the endpoint honours the height it is given, rather than always answering for its tip',
@@ -102,11 +120,11 @@ async function main () {
 
   const date = new Date()
   date.setUTCHours(0, 0, 0, 0)
-  await btcBlockStore.upsertDailyStats(date, stats)
+  await btcBlockRepository.upsertDailyStats(date, stats)
   const stored = await prismaClient.btc_merge_mining_stats.findFirst({ orderBy: { date: 'desc' } })
   check('snapshot is persisted for the day', stored.bitcoinBlocks, windowBlocks)
 
-  await btcBlockStore.upsertDailyStats(date, stats)
+  await btcBlockRepository.upsertDailyStats(date, stats)
   check('recomputing the same day rewrites one row rather than adding one', await prismaClient.btc_merge_mining_stats.count(), 1)
   await prismaClient.btc_block.deleteMany({ where: { height: fromHeight + 5 } })
   let refused = false
@@ -115,7 +133,7 @@ async function main () {
   } catch (error) {
     refused = /Incomplete window/.test(error.message)
   }
-  check('rollup refuses a window with a gap', refused, true)
+  check('rollup refuses a window whose coverage is under the floor', refused, true)
 
   log.info(failures === 0 ? 'All checks passed' : `${failures} check(s) failed`)
   process.exitCode = failures === 0 ? 0 : 1

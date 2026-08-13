@@ -2,6 +2,7 @@ import { prismaClient } from '../lib/prismaClient'
 import { getAddressRepository } from './address.repository'
 import { getBalancesRepository } from './balances.repository'
 import { getBlocksRepository } from './blocks.repository'
+import { getBtcBlockRepository } from './btcBlock.repository'
 import { getBlockTraceRepository } from './blockTrace.repository'
 import { getEventRepository } from './event.repository'
 import { getInternalTxRepository } from './internalTx.repository'
@@ -18,6 +19,7 @@ import { getConfigRepository } from './config.repository'
 
 export const addressRepository = getAddressRepository(prismaClient)
 export const blocksRepository = getBlocksRepository(prismaClient)
+export const btcBlockRepository = getBtcBlockRepository(prismaClient)
 export const balancesRepository = getBalancesRepository(prismaClient)
 export const blockTraceRepository = getBlockTraceRepository(prismaClient)
 export const eventRepository = getEventRepository(prismaClient)

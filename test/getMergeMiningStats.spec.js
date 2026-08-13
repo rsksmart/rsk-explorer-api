@@ -6,9 +6,13 @@ const silentLog = { info: () => {}, warn: () => {}, error: () => {} }
 function storeWith ({ maxHeight, total, mergeMined }) {
   return {
     maxHeight: async () => maxHeight,
-    countInRange: async () => total,
-    countMergeMinedInRange: async () => mergeMined
+    countsInRange: async () => ({ total, mergeMined })
   }
+}
+
+function capturingWarnings () {
+  const warnings = []
+  return { warnings, info: () => {}, warn: message => warnings.push(message), error: () => {} }
 }
 
 const clientWith = hashrate => ({ getNetworkHashps: async () => hashrate })
@@ -88,17 +92,70 @@ describe('getMergeMiningStats', function () {
     expect(stats.bitcoinHashrate).to.equal('4140000000000')
   })
 
-  it('refuses to publish a window with a gap in it', async function () {
+  it('refuses to publish a window missing more heights than the coverage floor allows', async function () {
     try {
       await getMergeMiningStats({
         client: clientWith(1e21),
         windowBlocks: 1000,
-        store: storeWith({ maxHeight: 961819, total: 994, mergeMined: 620 }),
+        store: storeWith({ maxHeight: 961819, total: 979, mergeMined: 610 }),
         log: silentLog
       })
       throw new Error('should have thrown')
     } catch (error) {
-      expect(error.message).to.contain('Incomplete window 960820-961819: 994/1000')
+      expect(error.message).to.contain('Incomplete window 960820-961819: 979/1000')
+      expect(error.message).to.contain('under the 98%')
+    }
+  })
+
+  it('publishes over the heights it has when the window is short but within the floor', async function () {
+    const log = capturingWarnings()
+
+    const stats = await getMergeMiningStats({
+      client: clientWith(1e21),
+      windowBlocks: 1000,
+      store: storeWith({ maxHeight: 961819, total: 994, mergeMined: 621 }),
+      log
+    })
+
+    expect(stats.bitcoinBlocks).to.equal(994)
+    expect(stats.mergeMiningPercentage).to.equal('0.624748')
+    expect(log.warnings).to.have.lengthOf(1)
+    expect(log.warnings[0]).to.contain('missing 6 height(s)')
+    expect(log.warnings[0]).to.contain('--from 960820 --to 961819')
+  })
+
+  it('says nothing about coverage when the window is whole', async function () {
+    const log = capturingWarnings()
+
+    await getMergeMiningStats({
+      client: clientWith(1e21),
+      windowBlocks: 1000,
+      store: storeWith({ maxHeight: 961819, total: 1000, mergeMined: 622 }),
+      log
+    })
+
+    expect(log.warnings).to.deep.equal([])
+  })
+
+  it('holds the floor at the exact boundary, so 98% publishes and a hair under refuses', async function () {
+    const publishable = await getMergeMiningStats({
+      client: clientWith(1e21),
+      windowBlocks: 1000,
+      store: storeWith({ maxHeight: 961819, total: 980, mergeMined: 600 }),
+      log: capturingWarnings()
+    })
+    expect(publishable.bitcoinBlocks).to.equal(980)
+
+    try {
+      await getMergeMiningStats({
+        client: clientWith(1e21),
+        windowBlocks: 1000,
+        store: storeWith({ maxHeight: 961819, total: 979, mergeMined: 600 }),
+        log: silentLog
+      })
+      throw new Error('should have thrown')
+    } catch (error) {
+      expect(error.message).to.contain('Incomplete window')
     }
   })
 
