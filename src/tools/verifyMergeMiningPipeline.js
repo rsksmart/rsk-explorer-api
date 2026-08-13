@@ -126,7 +126,9 @@ async function main () {
 
   await btcBlockRepository.upsertDailyStats(date, stats)
   check('recomputing the same day rewrites one row rather than adding one', await prismaClient.btc_merge_mining_stats.count(), 1)
-  await prismaClient.btc_block.deleteMany({ where: { height: fromHeight + 5 } })
+  const dropsNeededToBreachTheFloor = Math.floor(windowBlocks * 0.03) + 1
+  const breaching = Array.from({ length: dropsNeededToBreachTheFloor }, (unused, offset) => fromHeight + 5 + offset)
+  await prismaClient.btc_block.deleteMany({ where: { height: { in: breaching } } })
   let refused = false
   try {
     await getMergeMiningStats({ client, windowBlocks, log: silent })
