@@ -21,7 +21,7 @@
     "metricsPort": 4001
   },
   "bitcoin": {
-    "startHeight": 501960,
+    "startHeight": 502501,
     "confirmations": 100,
     "windowBlocks": 1000,
     "ingestLookbackBlocks": 1500,
