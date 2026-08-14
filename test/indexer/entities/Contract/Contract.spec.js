@@ -45,11 +45,39 @@ const verifiedAbisDbResponseMock = {
   [USDCe.implementationAddress]: { abi: USDCe.abi, match: true }
 }
 
+const ERC1967_IMPLEMENTATION_SLOT =
+  '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc'
+
+/**
+ * A proxy's implementation is upgraded on chain, so pinning the address a
+ * fixture was recorded against makes the ABI lookup miss the day it changes and
+ * the contract silently falls back to a default ABI. The address is read from
+ * the proxy instead, and the fixture's ABI is answered for whatever it reports.
+ */
+const answerForCurrentImplementation = async (proxy) => {
+  const nod3 = getNod3Instance(proxy.network)
+  const slot = await nod3.eth.getStorageAt(
+    proxy.address,
+    ERC1967_IMPLEMENTATION_SLOT
+  )
+  const implementation = `0x${slot.slice(26)}`.toLowerCase()
+
+  if (implementation !== proxy.implementationAddress) {
+    verifiedAbisDbResponseMock[implementation] = { abi: proxy.abi, match: true }
+  }
+}
+
 describe('Contract entity', () => {
   /**
    * @type {import('sinon').SinonStub}
    */
   let findOneStub
+
+  before(async () => {
+    for (const proxy of [USDRIF, USDCe]) {
+      await answerForCurrentImplementation(proxy)
+    }
+  })
 
   beforeEach(() => {
     // Create the stub before each test
