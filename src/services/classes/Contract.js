@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
-import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces, verificationStatus } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray } from '../../lib/utils'
 import { isNativeContract } from '../../lib/NativeContracts'
@@ -150,7 +150,7 @@ class Contract extends BcThing {
    */
   async getVerifiedAbiFromDatabase (address) {
     try {
-      const data = await verificationResultsRepository.findOne({ address, match: true })
+      const data = await verificationResultsRepository.findOne({ address, status: verificationStatus.SUCCESS })
       if (!data || !data.abi) return null
 
       return data.abi
