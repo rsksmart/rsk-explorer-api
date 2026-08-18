@@ -1,7 +1,10 @@
 import { assert } from 'chai'
 import sinon from 'sinon'
 import { verificationResultsRepository } from '../../src/repositories'
-import { verificationResultsEntityToRaw } from '../../src/converters/verificationResults.converters'
+import {
+  rawVerificationResultsToEntity,
+  verificationResultsEntityToRaw
+} from '../../src/converters/verificationResults.converters'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { verificationStatus } from '../../src/lib/types'
 
@@ -23,6 +26,33 @@ const currentRow = {
 }
 
 describe('Verified ABI lookup', () => {
+  describe('the socket writer still reachable in this repo', () => {
+    // The lookup filters on status, so a writer that only sets match would store rows
+    // this service can no longer find. The converter is the narrow point: it copies a
+    // fixed field list, and anything absent from it is dropped before the insert.
+    it('carries status from the written document into the stored row', () => {
+      const entity = rawVerificationResultsToEntity({
+        id: 'b4e2d3c5-0000-4000-8000-000000000000',
+        address: ADDRESS,
+        match: true,
+        status: verificationStatus.SUCCESS,
+        request: {},
+        result: {},
+        abi: ABI,
+        sources: [],
+        timestamp: 1786489378667
+      })
+
+      assert.equal(entity.status, verificationStatus.SUCCESS)
+    })
+
+    it('reads status back out of a stored row', () => {
+      const raw = verificationResultsEntityToRaw({ ...currentRow })
+
+      assert.equal(raw.status, verificationStatus.SUCCESS)
+    })
+  })
+
   describe('the row shape the API writes today', () => {
     it('yields the ABI with the legacy blobs absent', () => {
       const raw = verificationResultsEntityToRaw(currentRow)
