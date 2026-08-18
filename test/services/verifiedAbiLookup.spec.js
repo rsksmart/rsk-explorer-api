@@ -6,6 +6,7 @@ import {
   verificationResultsEntityToRaw
 } from '../../src/converters/verificationResults.converters'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
+import Contract from '../../src/services/classes/Contract'
 import { verificationStatus } from '../../src/lib/types'
 
 const ADDRESS = '0x0d5de6a7b5e4c0d0dbd1cae1e7b1c8e4f7d9a0b1'
@@ -26,6 +27,29 @@ const currentRow = {
 }
 
 describe('Verified ABI lookup', () => {
+  describe('the predicate both readers query by', () => {
+    // Contract and ContractEventsUpdater resolve the ABI through the same column. A stub
+    // that only reads `address` stays green if the predicate reverts to `match`, so what
+    // is asserted is the argument the repository received.
+    it('asks for a successful status, not a match', async () => {
+      const findOne = sinon.stub(verificationResultsRepository, 'findOne').resolves({
+        ...currentRow,
+        abi: JSON.stringify(ABI)
+      })
+
+      try {
+        await Contract.prototype.getVerifiedAbiFromDatabase.call({}, ADDRESS)
+
+        assert.deepEqual(findOne.firstCall.args[0], {
+          address: ADDRESS,
+          status: verificationStatus.SUCCESS
+        })
+      } finally {
+        findOne.restore()
+      }
+    })
+  })
+
   describe('the socket writer still reachable in this repo', () => {
     // The lookup filters on status, so a writer that only sets match would store rows
     // this service can no longer find. The converter is the narrow point: it copies a
