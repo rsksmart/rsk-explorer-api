@@ -35,14 +35,16 @@ const testContracts = [
   }
 ]
 
+// Keyed by address, holding what findVerifiedAbi answers: an ABI, or null where a
+// proxy carries no usable one of its own and the implementation's is the one that counts.
 const verifiedAbisDbResponseMock = {
-  [Bridge.address]: { abi: Bridge.abi, match: true },
-  [Remasc.address]: { abi: Remasc.abi, match: true },
-  [DollarOnChain.address]: { abi: DollarOnChain.abi, match: true },
-  [USDRIF.address]: { abi: [], match: true },
-  [USDRIF.implementationAddress]: { abi: USDRIF.abi, match: true },
-  [USDCe.address]: { abi: [], match: true },
-  [USDCe.implementationAddress]: { abi: USDCe.abi, match: true }
+  [Bridge.address]: Bridge.abi,
+  [Remasc.address]: Remasc.abi,
+  [DollarOnChain.address]: DollarOnChain.abi,
+  [USDRIF.address]: null,
+  [USDRIF.implementationAddress]: USDRIF.abi,
+  [USDCe.address]: null,
+  [USDCe.implementationAddress]: USDCe.abi
 }
 
 const ERC1967_IMPLEMENTATION_SLOT =
@@ -63,7 +65,7 @@ const answerForCurrentImplementation = async (proxy) => {
   const implementation = `0x${slot.slice(26)}`.toLowerCase()
 
   if (implementation !== proxy.implementationAddress) {
-    verifiedAbisDbResponseMock[implementation] = { abi: proxy.abi, match: true }
+    verifiedAbisDbResponseMock[implementation] = proxy.abi
   }
 }
 
@@ -71,7 +73,7 @@ describe('Contract entity', () => {
   /**
    * @type {import('sinon').SinonStub}
    */
-  let findOneStub
+  let findVerifiedAbiStub
 
   before(async () => {
     for (const proxy of [USDRIF, USDCe]) {
@@ -81,12 +83,12 @@ describe('Contract entity', () => {
 
   beforeEach(() => {
     // Create the stub before each test
-    findOneStub = sinon.stub(verificationResultsRepository, 'findOne')
+    findVerifiedAbiStub = sinon.stub(verificationResultsRepository, 'findVerifiedAbi')
   })
 
   afterEach(() => {
     // Restore the original method after each test
-    findOneStub.restore()
+    findVerifiedAbiStub.restore()
   })
 
   describe('should properly initialize and fetch contract data', () => {
@@ -95,7 +97,7 @@ describe('Contract entity', () => {
         describe(`[${contractData.name} - ${contractData.network}] ${contractData.address} (${type})`, async () => {
           // Configure stub to return null when testing unverified ABIs
           beforeEach(() => {
-            findOneStub.resolves(null)
+            findVerifiedAbiStub.resolves(null)
           })
 
           const {
@@ -148,7 +150,7 @@ describe('Contract entity', () => {
           // Configure stub to return verified ABIs
           beforeEach(() => {
             // Setup the stub to return the appropriate ABI based on the address
-            findOneStub.callsFake(async ({ address }) => {
+            findVerifiedAbiStub.callsFake(async (address) => {
               return verifiedAbisDbResponseMock[address] || null
             })
           })

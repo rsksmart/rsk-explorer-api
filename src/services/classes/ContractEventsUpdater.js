@@ -5,7 +5,6 @@ import { prismaClient } from '../../lib/prismaClient'
 import nod3 from '../../lib/nod3Connect'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
 import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
-import { verificationStatus } from '../../lib/types'
 
 export default class ContractEventsUpdater {
   constructor ({ log = console } = {}) {
@@ -391,14 +390,7 @@ export default class ContractEventsUpdater {
     try {
       this.validateContractAddress(contractAddress)
 
-      const verification = await verificationResultsRepository.findOne({
-        address: contractAddress,
-        status: verificationStatus.SUCCESS
-      })
-
-      if (!verification || !verification.abi) return null
-
-      return verification.abi
+      return await verificationResultsRepository.findVerifiedAbi(contractAddress)
     } catch (error) {
       const msg = isAddress(contractAddress)
         ? `Error fetching ABI from DB for contract ${contractAddress}: ${error.message}`

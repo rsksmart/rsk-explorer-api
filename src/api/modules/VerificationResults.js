@@ -1,4 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
+import { verifiedFilter, verifiedQuery } from '../../repositories/verificationResults.repository'
 
 export class VerificationResults extends DataCollectorItem {
   constructor (name) {
@@ -23,7 +24,7 @@ export class VerificationResults extends DataCollectorItem {
      */
       getResults: (params) => {
         params.fields = { address: 1 }
-        return this.getPageData({}, params)
+        return this.getPageData(verifiedFilter, params)
       },
       /**
        * @swagger
@@ -46,8 +47,7 @@ export class VerificationResults extends DataCollectorItem {
        */
       getVerification: async (params) => {
         const { address, fields } = params
-        const query = { address, match: true }
-        return this.getOne(query, fields)
+        return this.getOne(verifiedQuery(address), fields)
       }
     }
   }
