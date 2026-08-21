@@ -18,9 +18,6 @@ export function getVerificationResultsRepository (prismaClient) {
       return verificationResult ? verificationResultsEntityToRaw(verificationResult) : verificationResult
     },
     async findVerifiedAbi (address) {
-      // Selects only the abi column — the legacy blob columns must have no live
-      // reader here — and orders NULL timestamps last, so one legacy unstamped row
-      // can never become an address's permanent answer.
       const row = await prismaClient.verification_result.findFirst(
         generateFindQuery(verifiedQuery(address), { abi: true }, {}, { timestamp: { sort: 'desc', nulls: 'last' } })
       )
