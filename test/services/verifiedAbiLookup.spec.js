@@ -57,14 +57,15 @@ describe('Verified ABI lookup', () => {
   })
 
   describe('findVerifiedAbi, the one place the rule lives', () => {
-    it('queries by status and takes the newest row', async () => {
+    it('queries by status, reads only the abi column, and never lets a NULL timestamp win', async () => {
       const { repository, findFirst } = repositoryOver(currentRow)
 
       await repository.findVerifiedAbi(ADDRESS)
 
       assert.deepEqual(findFirst.firstCall.args[0], {
         where: { address: ADDRESS, status: verificationStatus.SUCCESS },
-        orderBy: [{ timestamp: 'desc' }]
+        select: { abi: true },
+        orderBy: [{ timestamp: { sort: 'desc', nulls: 'last' } }]
       })
     })
 
