@@ -341,4 +341,111 @@ describe('btcRpcClient', function () {
       expect(calls[0].body.params).to.deep.equal([900000])
     })
   })
+
+  describe('failover across endpoints', function () {
+    const URL_A = 'https://node-a.example.com/v2/secret-key-aaa'
+    const URL_B = 'https://node-b.example.com/v2/secret-key-bbb'
+
+    function stubFetchByUrl (handlers) {
+      const calls = []
+      global.fetch = async (url, options) => {
+        calls.push({ url, body: JSON.parse(options.body) })
+        const handler = handlers[url]
+        if (!handler) throw new Error(`no stub configured for ${url}`)
+        return handler()
+      }
+      return calls
+    }
+
+    const transportThrow = url => () => { throw new TypeError(`fetch failed: ${url}`) }
+
+    it('fails over to the secondary when the primary is down', async function () {
+      const calls = stubFetchByUrl({
+        [URL_A]: transportThrow(URL_A),
+        [URL_B]: () => jsonResponse({ result: 961919 })
+      })
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], retryDelayMs: 1, log: silentLog })
+
+      expect(await client.getBlockCount()).to.equal(961919)
+      expect(calls.map(c => c.url)).to.deep.equal([URL_A, URL_B])
+    })
+
+    it('throws after trying every endpoint when all are down', async function () {
+      const calls = stubFetchByUrl({
+        [URL_A]: transportThrow(URL_A),
+        [URL_B]: transportThrow(URL_B)
+      })
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], maxRetries: 3, retryDelayMs: 1, log: silentLog })
+
+      try {
+        await client.getBlockCount()
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('could not reach')
+      }
+      const tried = new Set(calls.map(c => c.url))
+      expect(tried.has(URL_A)).to.equal(true)
+      expect(tried.has(URL_B)).to.equal(true)
+    })
+
+    it('does not keep failing over once an endpoint returns a JSON-RPC error', async function () {
+      let bCalls = 0
+      const calls = stubFetchByUrl({
+        [URL_A]: transportThrow(URL_A),
+        [URL_B]: () => { bCalls++; return jsonResponse({ error: { code: -32601, message: 'Method not found' } }) }
+      })
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], maxRetries: 5, retryDelayMs: 1, log: silentLog })
+
+      try {
+        await client.getNetworkHashps()
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Method not found')
+      }
+      expect(bCalls).to.equal(1)
+      expect(calls.map(c => c.url)).to.deep.equal([URL_A, URL_B])
+    })
+
+    it('sticks to the endpoint that served, so a dead primary is paid for once, not per call', async function () {
+      const calls = stubFetchByUrl({
+        [URL_A]: transportThrow(URL_A),
+        [URL_B]: () => jsonResponse({ result: 7 })
+      })
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], retryDelayMs: 1, log: silentLog })
+
+      await client.getBlockCount()
+      await client.getBlockCount()
+
+      expect(calls.filter(c => c.url === URL_A)).to.have.lengthOf(1)
+      expect(calls.filter(c => c.url === URL_B)).to.have.lengthOf(2)
+    })
+
+    it('strips every configured URL from a thrown message, not just the primary', async function () {
+      global.fetch = async (url) => {
+        const cause = new Error(`getaddrinfo ENOTFOUND for ${url}`)
+        const error = new TypeError(`fetch failed: ${url}`)
+        error.cause = cause
+        throw error
+      }
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], maxRetries: 1, retryDelayMs: 1, log: silentLog })
+
+      try {
+        await client.getBlockCount()
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.not.contain('secret-key-aaa')
+        expect(error.message).to.not.contain('secret-key-bbb')
+        expect(error.message).to.contain('could not reach https://node-b.example.com')
+      }
+    })
+
+    it('reports the current endpoint through the public label', function () {
+      const client = createBtcRpcClient({ url: [URL_A, URL_B], log: silentLog })
+      expect(client.endpoint).to.equal('https://node-a.example.com')
+    })
+
+    it('requires at least one endpoint', function () {
+      expect(() => createBtcRpcClient({ url: [] })).to.throw(/at least one endpoint/)
+    })
+  })
 })

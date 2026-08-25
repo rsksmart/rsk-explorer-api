@@ -56,7 +56,7 @@ describe('# Config', function () {
 
       const { result, warnings } = capturingWarnings(() => makeConfig({}))
 
-      expect(result.bitcoin.rpcUrl).to.equal(ENV_URL)
+      expect(result.bitcoin.rpcUrl).to.deep.equal([ENV_URL])
       expect(warnings).to.deep.equal([])
     })
 
@@ -65,7 +65,7 @@ describe('# Config', function () {
 
       const { result, warnings } = capturingWarnings(() => makeConfig({ bitcoin: { rpcUrl: FILE_URL } }))
 
-      expect(result.bitcoin.rpcUrl).to.equal(ENV_URL)
+      expect(result.bitcoin.rpcUrl).to.deep.equal([ENV_URL])
       expect(warnings).to.have.lengthOf(1)
       expect(warnings[0]).to.contain('BITCOIN_RPC_URL takes precedence')
     })
@@ -75,7 +75,7 @@ describe('# Config', function () {
 
       const { result, warnings } = capturingWarnings(() => makeConfig({ bitcoin: { rpcUrl: FILE_URL } }))
 
-      expect(result.bitcoin.rpcUrl).to.equal(FILE_URL)
+      expect(result.bitcoin.rpcUrl).to.deep.equal([FILE_URL])
       expect(warnings).to.deep.equal([])
     })
 
@@ -84,7 +84,35 @@ describe('# Config', function () {
 
       const { result } = capturingWarnings(() => makeConfig({}))
 
-      expect(result.bitcoin.rpcUrl).to.equal('http://localhost:8332')
+      expect(result.bitcoin.rpcUrl).to.deep.equal(['http://localhost:8332'])
+    })
+
+    it('reads a comma-separated environment list as ordered endpoints', function () {
+      process.env.BITCOIN_RPC_URL = ` ${ENV_URL} , ${FILE_URL} `
+
+      const { result, warnings } = capturingWarnings(() => makeConfig({}))
+
+      expect(result.bitcoin.rpcUrl).to.deep.equal([ENV_URL, FILE_URL])
+      expect(warnings).to.deep.equal([])
+    })
+
+    it('reads an array of endpoints from config.json when the environment names none', function () {
+      delete process.env.BITCOIN_RPC_URL
+
+      const { result, warnings } = capturingWarnings(() => makeConfig({ bitcoin: { rpcUrl: [FILE_URL, ENV_URL] } }))
+
+      expect(result.bitcoin.rpcUrl).to.deep.equal([FILE_URL, ENV_URL])
+      expect(warnings).to.deep.equal([])
+    })
+
+    it('lets the environment list win over a config.json list and says so', function () {
+      process.env.BITCOIN_RPC_URL = `${ENV_URL},${FILE_URL}`
+
+      const { result, warnings } = capturingWarnings(() => makeConfig({ bitcoin: { rpcUrl: [FILE_URL] } }))
+
+      expect(result.bitcoin.rpcUrl).to.deep.equal([ENV_URL, FILE_URL])
+      expect(warnings).to.have.lengthOf(1)
+      expect(warnings[0]).to.contain('BITCOIN_RPC_URL takes precedence')
     })
   })
 })
