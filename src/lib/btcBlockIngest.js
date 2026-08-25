@@ -26,6 +26,12 @@ export async function assertStoredChainMatchesEndpoint ({ client, store = btcBlo
   try {
     hashOnChain = await client.getBlockHash(anchor.height)
   } catch (error) {
+    if (error.retryable) {
+      throw new Error(
+        `Chain identity unverifiable: no configured Bitcoin endpoint could be reached to read height ${anchor.height}, ` +
+        `the oldest one stored. This is an endpoint outage, not a chain mismatch — the stored data is untouched. (${error.message})`
+      )
+    }
     throw new Error(
       `Chain identity unverifiable: the endpoint has no block at height ${anchor.height}, the oldest one stored. ` +
       `The table holds a different Bitcoin chain than the endpoint serves. (${error.message})`

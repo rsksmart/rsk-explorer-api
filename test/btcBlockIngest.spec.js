@@ -35,14 +35,18 @@ function fakeStore (initialHeights = []) {
   }
 }
 
-function fakeClient ({ taggedHeights = [], failHeights = [] } = {}) {
+function fakeClient ({ taggedHeights = [], failHeights = [], failRetryable = false } = {}) {
   const requested = []
   return {
     requested,
     getBlockCount: async () => 1000,
     getBlockHash: async height => {
       requested.push(height)
-      if (failHeights.includes(height)) throw new Error(`provider failed for ${height}`)
+      if (failHeights.includes(height)) {
+        const error = new Error(`provider failed for ${height}`)
+        error.retryable = failRetryable
+        throw error
+      }
       return hashFor(height)
     },
     getBlock: async hash => ({
@@ -126,16 +130,32 @@ describe('btcBlockIngest', function () {
       }
     })
 
-    it('refuses when the endpoint has no block at that height, as a shorter chain would not', async function () {
+    it('blames the chain when a reachable endpoint has no block at that height, as a shorter chain would not', async function () {
       try {
         await assertStoredChainMatchesEndpoint({
-          client: fakeClient({ failHeights: [40] }),
+          client: fakeClient({ failHeights: [40], failRetryable: false }),
           store: fakeStore([40])
         })
         throw new Error('should have thrown')
       } catch (error) {
         expect(error.message).to.contain('Chain identity unverifiable')
         expect(error.message).to.contain('height 40')
+        expect(error.message).to.contain('different Bitcoin chain')
+        expect(error.message).to.not.contain('outage')
+      }
+    })
+
+    it('blames an outage, not the chain, when every configured endpoint fails to answer', async function () {
+      try {
+        await assertStoredChainMatchesEndpoint({
+          client: fakeClient({ failHeights: [40], failRetryable: true }),
+          store: fakeStore([40])
+        })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('endpoint outage')
+        expect(error.message).to.contain('stored data is untouched')
+        expect(error.message).to.not.contain('different Bitcoin chain')
       }
     })
 
