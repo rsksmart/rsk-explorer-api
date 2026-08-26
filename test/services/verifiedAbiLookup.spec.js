@@ -13,6 +13,7 @@ import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpda
 import Contract from '../../src/services/classes/Contract'
 import { fetchAbiFromDb as fetchAbiFromDbTool } from '../../src/tools/utils'
 import { verificationStatus } from '../../src/lib/types'
+import defaultABI from '@rsksmart/rsk-contract-parser/dist/lib/Abi'
 
 const ADDRESS = '0x0d5de6a7b5e4c0d0dbd1cae1e7b1c8e4f7d9a0b1'
 const ABI = [{ type: 'function', name: 'transfer' }]
@@ -42,6 +43,9 @@ const repositoryOver = (row) => {
   return { repository, findFirst }
 }
 
+// Mainnet holds two rows of this shape, both from 2021.
+const successRowWhoseBytecodeDidNotMatch = { match: false }
+
 describe('Verified ABI lookup', () => {
   describe('the predicate every reader shares', () => {
     it('asks for a successful status and nothing else', () => {
@@ -54,85 +58,115 @@ describe('Verified ABI lookup', () => {
     it('does not fall back to match', () => {
       assert.notProperty(verifiedQuery(ADDRESS), 'match')
     })
+
+    it('asserts that a verification run succeeded, and not that the compiled bytecode reproduced the deployed one', async () => {
+      const { repository } = repositoryOver({ ...currentRow, ...successRowWhoseBytecodeDidNotMatch })
+
+      assert.deepEqual(await repository.findDecodableVerifiedAbi(ADDRESS), ABI)
+    })
   })
 
-  describe('findVerifiedAbi, the one place the rule lives', () => {
-    it('queries by status, reads only the abi column, and never lets a NULL timestamp win', async () => {
+  describe('findDecodableVerifiedAbi, the one place the rule lives', () => {
+    it('queries by status, reads only the abi column, never lets a NULL timestamp win, and breaks a timestamp tie on the guid', async () => {
       const { repository, findFirst } = repositoryOver(currentRow)
 
-      await repository.findVerifiedAbi(ADDRESS)
+      await repository.findDecodableVerifiedAbi(ADDRESS)
 
       assert.deepEqual(findFirst.firstCall.args[0], {
         where: { address: ADDRESS, status: verificationStatus.SUCCESS },
         select: { abi: true },
-        orderBy: [{ timestamp: { sort: 'desc', nulls: 'last' } }]
+        orderBy: [{ timestamp: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }]
       })
     })
 
     it('yields the stored ABI of a successful verification', async () => {
       const { repository } = repositoryOver(currentRow)
 
-      assert.deepEqual(await repository.findVerifiedAbi(ADDRESS), ABI)
+      assert.deepEqual(await repository.findDecodableVerifiedAbi(ADDRESS), ABI)
     })
 
     it('yields nothing when no successful verification exists', async () => {
       const { repository } = repositoryOver(null)
 
-      assert.isNull(await repository.findVerifiedAbi(ADDRESS))
+      assert.isNull(await repository.findDecodableVerifiedAbi(ADDRESS))
     })
 
-    // An empty array is an absent ABI, not an ABI with no entries. Handing it to the
-    // parser replaces the default ABI with one that decodes nothing, so every event on
-    // the contract silently stops resolving.
-    it('treats a stored empty ABI as absent', async () => {
+    it('reports nothing decodable for a stored empty ABI, which would decode no event at all', async () => {
       const { repository } = repositoryOver({ ...currentRow, abi: '[]' })
 
-      assert.isNull(await repository.findVerifiedAbi(ADDRESS))
+      assert.isNull(await repository.findDecodableVerifiedAbi(ADDRESS))
     })
 
-    it('treats a row with no ABI at all as absent', async () => {
+    it('reports nothing decodable for a row with no ABI at all', async () => {
       const { repository } = repositoryOver({ ...currentRow, abi: null })
 
-      assert.isNull(await repository.findVerifiedAbi(ADDRESS))
+      assert.isNull(await repository.findDecodableVerifiedAbi(ADDRESS))
     })
   })
 
   describe('the readers that resolve an ABI', () => {
-    let findVerifiedAbi
+    let findDecodableVerifiedAbi
 
     beforeEach(() => {
-      findVerifiedAbi = sinon.stub(verificationResultsRepository, 'findVerifiedAbi').resolves(ABI)
+      findDecodableVerifiedAbi = sinon.stub(verificationResultsRepository, 'findDecodableVerifiedAbi').resolves(ABI)
     })
 
-    afterEach(() => findVerifiedAbi.restore())
+    afterEach(() => findDecodableVerifiedAbi.restore())
 
     // Three call sites used to carry their own copy of the predicate and their own
     // not-null guard, and two of the three had already drifted apart. What is asserted
     // is that each one delegates, because a reader holding its own query can diverge again.
     it('the indexer entity delegates, passing the address', async () => {
-      assert.deepEqual(await Contract.prototype.getVerifiedAbiFromDatabase.call({}, ADDRESS), ABI)
-      assert.deepEqual(findVerifiedAbi.firstCall.args, [ADDRESS])
+      assert.deepEqual(await Contract.prototype.getAbiToDecodeWith.call({}, ADDRESS), ABI)
+      assert.deepEqual(findDecodableVerifiedAbi.firstCall.args, [ADDRESS])
     })
 
     it('the events updater delegates, passing the address', async () => {
       const updater = new ContractEventsUpdater({ log: silentLog })
 
       assert.deepEqual(await updater.fetchAbiFromDb(ADDRESS), ABI)
-      assert.deepEqual(findVerifiedAbi.firstCall.args, [ADDRESS])
+      assert.deepEqual(findDecodableVerifiedAbi.firstCall.args, [ADDRESS])
     })
 
     it('the contract-data tool delegates, passing the address', async () => {
       assert.deepEqual(await fetchAbiFromDbTool(ADDRESS), ABI)
-      assert.deepEqual(findVerifiedAbi.firstCall.args, [ADDRESS])
+      assert.deepEqual(findDecodableVerifiedAbi.firstCall.args, [ADDRESS])
     })
 
-    it('every reader reports nothing when the lookup finds nothing', async () => {
-      findVerifiedAbi.resolves(null)
+    it('the parser reader answers the default ABI when nothing decodable is stored', async () => {
+      findDecodableVerifiedAbi.resolves(null)
+
+      const abi = await Contract.prototype.getAbiToDecodeWith.call({}, ADDRESS)
+
+      assert.deepEqual(abi, defaultABI)
+      assert.isAbove(abi.length, 0)
+    })
+
+    it('the readers that decide whether a verified ABI exists still report nothing', async () => {
+      findDecodableVerifiedAbi.resolves(null)
       const updater = new ContractEventsUpdater({ log: silentLog })
 
-      assert.isNull(await Contract.prototype.getVerifiedAbiFromDatabase.call({}, ADDRESS))
       assert.isNull(await updater.fetchAbiFromDb(ADDRESS))
       assert.isNull(await fetchAbiFromDbTool(ADDRESS))
+    })
+  })
+
+  describe('findNewestVerified, which the v1 getsourcecode reader asks through', () => {
+    it('asks for a successful row and the newest timestamp, and ends the order on the guid so two rows written in the same millisecond cannot answer differently', async () => {
+      const { repository, findFirst } = repositoryOver(currentRow)
+
+      await repository.findNewestVerified(ADDRESS)
+
+      assert.deepEqual(findFirst.firstCall.args[0], {
+        where: { address: ADDRESS, status: verificationStatus.SUCCESS },
+        orderBy: [{ timestamp: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }]
+      })
+    })
+
+    it('yields nothing when every row for the address failed', async () => {
+      const { repository } = repositoryOver(null)
+
+      assert.isNull(await repository.findNewestVerified(ADDRESS))
     })
   })
 

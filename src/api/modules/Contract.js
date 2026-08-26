@@ -35,7 +35,7 @@ export class Contract extends DataCollectorItem {
           address = address.toLowerCase()
 
           const result = []
-          const verification = await verificationResultsRepository.findOne({ address })
+          const verification = await verificationResultsRepository.findNewestVerified(address)
 
           if (verification) {
             const proxyData = await isERC1967Contract(address)

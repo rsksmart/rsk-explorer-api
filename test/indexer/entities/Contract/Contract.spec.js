@@ -35,8 +35,7 @@ const testContracts = [
   }
 ]
 
-// Keyed by address, holding what findVerifiedAbi answers: an ABI, or null where a
-// proxy carries no usable one of its own and the implementation's is the one that counts.
+// A proxy whose own row carries no usable ABI maps to null: the implementation's is the one that counts.
 const verifiedAbisDbResponseMock = {
   [Bridge.address]: Bridge.abi,
   [Remasc.address]: Remasc.abi,
@@ -73,7 +72,7 @@ describe('Contract entity', () => {
   /**
    * @type {import('sinon').SinonStub}
    */
-  let findVerifiedAbiStub
+  let findDecodableAbiStub
 
   before(async () => {
     for (const proxy of [USDRIF, USDCe]) {
@@ -83,12 +82,12 @@ describe('Contract entity', () => {
 
   beforeEach(() => {
     // Create the stub before each test
-    findVerifiedAbiStub = sinon.stub(verificationResultsRepository, 'findVerifiedAbi')
+    findDecodableAbiStub = sinon.stub(verificationResultsRepository, 'findDecodableVerifiedAbi')
   })
 
   afterEach(() => {
     // Restore the original method after each test
-    findVerifiedAbiStub.restore()
+    findDecodableAbiStub.restore()
   })
 
   describe('should properly initialize and fetch contract data', () => {
@@ -97,7 +96,7 @@ describe('Contract entity', () => {
         describe(`[${contractData.name} - ${contractData.network}] ${contractData.address} (${type})`, async () => {
           // Configure stub to return null when testing unverified ABIs
           beforeEach(() => {
-            findVerifiedAbiStub.resolves(null)
+            findDecodableAbiStub.resolves(null)
           })
 
           const {
@@ -150,7 +149,7 @@ describe('Contract entity', () => {
           // Configure stub to return verified ABIs
           beforeEach(() => {
             // Setup the stub to return the appropriate ABI based on the address
-            findVerifiedAbiStub.callsFake(async (address) => {
+            findDecodableAbiStub.callsFake(async (address) => {
               return verifiedAbisDbResponseMock[address] || null
             })
           })

@@ -13,7 +13,7 @@ export function toHex (value) {
 
 export async function fetchAbiFromDb (contractAddress) {
   try {
-    return await verificationResultsRepository.findVerifiedAbi(contractAddress)
+    return await verificationResultsRepository.findDecodableVerifiedAbi(contractAddress)
   } catch (error) {
     return Promise.reject(error)
   }

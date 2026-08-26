@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
+import defaultABI from '@rsksmart/rsk-contract-parser/dist/lib/Abi'
 import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray } from '../../lib/utils'
@@ -46,10 +47,9 @@ class Contract extends BcThing {
       if (this.isNative) return this.getData()
 
       // Set contract parser
-      const verifiedAbi = await this.getVerifiedAbiFromDatabase(this.address)
       this.setContractParser({
         txBlockNumber: this.block.number,
-        abi: verifiedAbi
+        abi: await this.getAbiToDecodeWith(this.address)
       })
 
       // Set contract instance
@@ -67,13 +67,9 @@ class Contract extends BcThing {
 
       // Proxy contracts: Set the implementation contract methods and interfaces
       if (isProxy) {
-        // Set the implementation abi for contract parser.
-        // If no verified implementation abi is found, parser will use the default abi
-        const verifiedImplementationAbi = await this.getVerifiedAbiFromDatabase(implementationAddress)
-
         this.setContractParser({
           txBlockNumber: this.block.number,
-          abi: verifiedImplementationAbi
+          abi: await this.getAbiToDecodeWith(implementationAddress)
         })
 
         // Refresh interactive contract instance so it uses the proxy contract with the implementation abi
@@ -117,10 +113,9 @@ class Contract extends BcThing {
   }
 
   /**
-   * Set the contract parser instance for a given address and block number. If no abi is provided, a default ABI will be used.
    * @param {Object} options
    * @param {number} options.txBlockNumber The block number of the transaction
-   * @param {any[]} options.abi The ABI of the contract
+   * @param {any[]} options.abi The ABI to decode with
    */
   setContractParser ({ txBlockNumber, abi } = {}) {
     this.parser = new ContractParser({
@@ -144,13 +139,12 @@ class Contract extends BcThing {
   }
 
   /**
-   * Retrieves the verified ABI for a given address
-   * @param {string} address The address of the contract
-   * @returns {Promise<any[] | null>} The verified ABI
+   * @returns {Promise<any[]>}
    */
-  async getVerifiedAbiFromDatabase (address) {
+  async getAbiToDecodeWith (address) {
     try {
-      return await verificationResultsRepository.findVerifiedAbi(address)
+      const verifiedAbi = await verificationResultsRepository.findDecodableVerifiedAbi(address)
+      return verifiedAbi || defaultABI
     } catch (err) {
       return Promise.reject(err)
     }

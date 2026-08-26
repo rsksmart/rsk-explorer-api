@@ -390,7 +390,7 @@ export default class ContractEventsUpdater {
     try {
       this.validateContractAddress(contractAddress)
 
-      return await verificationResultsRepository.findVerifiedAbi(contractAddress)
+      return await verificationResultsRepository.findDecodableVerifiedAbi(contractAddress)
     } catch (error) {
       const msg = isAddress(contractAddress)
         ? `Error fetching ABI from DB for contract ${contractAddress}: ${error.message}`

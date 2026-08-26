@@ -2,24 +2,26 @@ import { verificationResultsEntityToRaw, rawVerificationResultsToEntity } from '
 import { verificationStatus } from '../lib/types'
 import { generateFindQuery } from './utils'
 
-// `success` is the only status asserting the compiled bytecode reproduced the deployed
-// bytecode, which is what makes a stored ABI authoritative rather than merely present.
 export const verifiedFilter = { status: verificationStatus.SUCCESS }
 export const verifiedQuery = (address) => ({ ...verifiedFilter, address })
+const deterministicNewestFirst = { timestamp: { sort: 'desc', nulls: 'last' }, id: 'desc' }
 
 export function getVerificationResultsRepository (prismaClient) {
+  const findFirst = async (query, project = {}, sort = {}) => {
+    const verificationResult = await prismaClient.verification_result.findFirst(generateFindQuery(query, project, {}, sort))
+    return verificationResult ? verificationResultsEntityToRaw(verificationResult) : verificationResult
+  }
+
   return {
     async find (query, project = {}, sort = {}, limit = 0) {
       const verificationResults = await prismaClient.verification_result.findMany(generateFindQuery(query, project, null, sort, limit))
       return Object.keys(project) ? verificationResults : verificationResults.map(verificationResultsEntityToRaw)
     },
-    async findOne (query, project = {}) {
-      const verificationResult = await prismaClient.verification_result.findFirst(generateFindQuery(query, project))
-      return verificationResult ? verificationResultsEntityToRaw(verificationResult) : verificationResult
-    },
-    async findVerifiedAbi (address) {
+    findOne: findFirst,
+    findNewestVerified: (address) => findFirst(verifiedQuery(address), {}, deterministicNewestFirst),
+    async findDecodableVerifiedAbi (address) {
       const row = await prismaClient.verification_result.findFirst(
-        generateFindQuery(verifiedQuery(address), { abi: true }, {}, { timestamp: { sort: 'desc', nulls: 'last' } })
+        generateFindQuery(verifiedQuery(address), { abi: true }, {}, deterministicNewestFirst)
       )
       if (!row) return null
 
