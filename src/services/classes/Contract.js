@@ -115,7 +115,6 @@ class Contract extends BcThing {
   /**
    * @param {Object} options
    * @param {number} options.txBlockNumber The block number of the transaction
-   * @param {any[]} options.abi The ABI to decode with
    */
   setContractParser ({ txBlockNumber, abi } = {}) {
     this.parser = new ContractParser({
@@ -138,9 +137,6 @@ class Contract extends BcThing {
     this.contract = parser.makeContract(address)
   }
 
-  /**
-   * @returns {Promise<any[]>}
-   */
   async getAbiToDecodeWith (address) {
     try {
       const verifiedAbi = await verificationResultsRepository.findDecodableVerifiedAbi(address)
