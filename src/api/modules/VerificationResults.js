@@ -1,5 +1,5 @@
 import { DataCollectorItem } from '../lib/DataCollector'
-import { verifiedFilter, verifiedQuery } from '../../repositories/verificationResults.repository'
+import { verifiedFilter } from '../../repositories/verificationResults.repository'
 
 export class VerificationResults extends DataCollectorItem {
   constructor (name) {
@@ -47,7 +47,8 @@ export class VerificationResults extends DataCollectorItem {
        */
       getVerification: async (params) => {
         const { address, fields } = params
-        return this.getOne(verifiedQuery(address), fields)
+        const data = await this.repository.findNewestVerified(address, fields)
+        return { data }
       }
     }
   }

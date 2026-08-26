@@ -18,7 +18,7 @@ export function getVerificationResultsRepository (prismaClient) {
       return Object.keys(project) ? verificationResults : verificationResults.map(verificationResultsEntityToRaw)
     },
     findOne: findFirst,
-    findNewestVerified: (address) => findFirst(verifiedQuery(address), {}, deterministicNewestFirst),
+    findNewestVerified: (address, project = {}) => findFirst(verifiedQuery(address), project, deterministicNewestFirst),
     async findDecodableVerifiedAbi (address) {
       const row = await prismaClient.verification_result.findFirst(
         generateFindQuery(verifiedQuery(address), { abi: true }, {}, deterministicNewestFirst)

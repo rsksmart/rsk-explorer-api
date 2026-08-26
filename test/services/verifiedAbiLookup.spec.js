@@ -11,6 +11,7 @@ import {
 } from '../../src/converters/verificationResults.converters'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import Contract from '../../src/services/classes/Contract'
+import VerificationResults from '../../src/api/modules/VerificationResults'
 import { fetchAbiFromDb as fetchAbiFromDbTool } from '../../src/tools/utils'
 import { verificationStatus } from '../../src/lib/types'
 import defaultABI from '@rsksmart/rsk-contract-parser/dist/lib/Abi'
@@ -45,6 +46,31 @@ const repositoryOver = (row) => {
 
 // Mainnet holds two rows of this shape, both from 2021.
 const successRowWhoseBytecodeDidNotMatch = { match: false }
+
+// A stand-in for what Postgres does with the orderBy clause: applies each
+// { column: dir } term in turn (nulls last), so a test can prove the reader
+// answers the same row whichever physical order two matches arrive in.
+const applyOrderBy = (rows, orderBy = []) =>
+  [...rows].sort((a, b) => {
+    for (const clause of orderBy) {
+      const [key, dir] = Object.entries(clause)[0]
+      const desc = (typeof dir === 'object' ? dir.sort : dir) === 'desc'
+      const av = a[key]
+      const bv = b[key]
+      if (av === bv) continue
+      if (av === null || av === undefined) return 1
+      if (bv === null || bv === undefined) return -1
+      const cmp = av < bv ? -1 : 1
+      return desc ? -cmp : cmp
+    }
+    return 0
+  })
+
+const verificationModuleOver = (prismaModel) => {
+  const module = new VerificationResults('VerificationResults')
+  module.repository = getVerificationResultsRepository({ verification_result: prismaModel })
+  return module
+}
 
 describe('Verified ABI lookup', () => {
   describe('the predicate every reader shares', () => {
@@ -167,6 +193,36 @@ describe('Verified ABI lookup', () => {
       const { repository } = repositoryOver(null)
 
       assert.isNull(await repository.findNewestVerified(ADDRESS))
+    })
+  })
+
+  describe('getVerification, behind the public isVerified and the address badge', () => {
+    it('reads through the same deterministic newest-first order the sibling readers use', async () => {
+      const findFirst = sinon.stub().resolves(currentRow)
+      const module = verificationModuleOver({ findFirst })
+
+      await module.run('getVerification', { address: ADDRESS })
+
+      assert.deepEqual(findFirst.firstCall.args[0], {
+        where: { address: ADDRESS, status: verificationStatus.SUCCESS },
+        orderBy: [{ timestamp: { sort: 'desc', nulls: 'last' } }, { id: 'desc' }]
+      })
+    })
+
+    it('answers the newest row by the guid tie-break, the same whichever order two same-timestamp rows arrive in', async () => {
+      const older = { ...currentRow, id: '00000000-0000-4000-8000-000000000000' }
+      const newer = { ...currentRow, id: 'ffffffff-0000-4000-8000-000000000000' }
+
+      for (const rows of [[older, newer], [newer, older]]) {
+        const findFirst = sinon.stub().callsFake(async ({ where, orderBy }) => {
+          const matching = rows.filter((r) => r.address === where.address && r.status === where.status)
+          return applyOrderBy(matching, orderBy)[0] ?? null
+        })
+        const module = verificationModuleOver({ findFirst })
+
+        const { data } = await module.run('getVerification', { address: ADDRESS })
+        assert.strictEqual(data._id, newer.id)
+      }
     })
   })
 
