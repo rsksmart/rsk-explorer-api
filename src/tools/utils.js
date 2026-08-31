@@ -13,14 +13,7 @@ export function toHex (value) {
 
 export async function fetchAbiFromDb (contractAddress) {
   try {
-    const verification = await verificationResultsRepository.findOne({
-      address: contractAddress,
-      match: true
-    })
-
-    if (!verification || !verification.abi) return null
-
-    return verification.abi
+    return await verificationResultsRepository.findDecodableVerifiedAbi(contractAddress)
   } catch (error) {
     return Promise.reject(error)
   }
