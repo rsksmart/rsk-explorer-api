@@ -1,3 +1,0 @@
-[submodule "prisma"]
-	path = prisma
-	url = ../explorer-prisma-schema.git
