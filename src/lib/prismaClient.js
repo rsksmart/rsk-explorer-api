@@ -1,16 +1,27 @@
 import { Prisma, PrismaClient } from '@prisma/client'
-import dotenv from 'dotenv'
-
-dotenv.config()
+import { config } from './config'
 
 function getDatabaseUrl () {
-  const databaseUrl = process.env.DATABASE_URL
+  try {
+    const {
+      protocol,
+      host,
+      port,
+      databaseName,
+      user,
+      password,
+      connectionLimit
+    } = config.db
 
-  if (!databaseUrl) {
-    throw new Error('Missing DATABASE_URL in .env')
+    if (!user || !password) throw new Error('Missing database credentials in src/lib/defaultConfig.js')
+
+    const databaseUrl = `${protocol}${user}:${password}@${host}:${port}/${databaseName}?connection_limit=${connectionLimit}`
+
+    return databaseUrl
+  } catch (error) {
+    console.error('Error creating database URL')
+    throw error
   }
-
-  return databaseUrl
 }
 
 function getPrismaExtensions () {

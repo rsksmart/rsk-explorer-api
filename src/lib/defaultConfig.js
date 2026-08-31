@@ -39,6 +39,15 @@ export default {
     rsk: 0, // delegates rsk module to the node that handle subscriptions
     trace: 1 // delegates trace_ module to the second node
   },
+  db: {
+    protocol: 'postgres://',
+    databaseName: 'explorer_db',
+    host: 'localhost',
+    port: 5432,
+    user: 'postgres',
+    password: 12345678,
+    connectionLimit: 30
+  },
   api: {
     address: 'localhost',
     port: 3003,
