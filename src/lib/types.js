@@ -27,12 +27,22 @@ export const contractsInterfaces = {
   ERC20: 'ERC20',
   ERC677: 'ERC677',
   ERC165: 'ERC165',
-  ERC721: 'ERC721'
+  ERC721: 'ERC721',
+  ERC1155: 'ERC1155'
 }
 
 const ci = contractsInterfaces
 
 export const tokensInterfaces = [
+  ci.ERC20,
+  ci.ERC677,
+  ci.ERC721,
+  ci.ERC1155
+]
+
+// Token interfaces exposing an account-level balanceOf(address).
+// ERC-1155 is excluded: its balances are per (holder, tokenId).
+export const accountBalanceTokensInterfaces = [
   ci.ERC20,
   ci.ERC677,
   ci.ERC721
