@@ -1,38 +1,29 @@
-FROM node:24-alpine AS base
-RUN apk add --no-cache build-base git python3 openssl
-WORKDIR /app
-COPY package*.json ./
+FROM node:24@sha256:392e1e23f34da768d8d1f4e502b64f200d3be3465934d4b7930f57d7e2fc1989 as node
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update -y && \
+    apt-get install -y build-essential apt-utils git curl software-properties-common && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove -y && \
+    apt-get clean
 
-FROM base AS dependencies
-RUN npm ci --omit=dev
+RUN npm install pm2 -g
 
-FROM base AS prisma
-RUN npm ci
-COPY prisma ./prisma
-RUN npx prisma generate
 
-FROM prisma AS build
-COPY . .
+
+FROM node as explorer-env
+
+ADD . /rsk-explorer-api
+WORKDIR /rsk-explorer-api
+RUN git checkout -B docker-branch origin/master
+RUN mkdir /var/log/rsk-explorer/ &&\
+    touch /var/log/rsk-explorer/blocks.json &&\
+    touch /var/log/rsk-explorer/api.json
+RUN npm install
 RUN npm run build
+COPY dockerized/explorer-api/config.json /rsk-explorer-api/config.json
 
-FROM node:24-alpine AS production
-RUN apk add --no-cache openssl && \
-    npm install -g pm2 && \
-    mkdir -p /var/log/rsk-explorer && \
-    chown node:node /var/log/rsk-explorer
+FROM explorer-env as services
+CMD ["pm2-runtime", "dist/services/blocks.config.js"]
 
-USER node
-WORKDIR /home/node
-
-RUN pm2 install pm2-logrotate && \
-    pm2 set pm2-logrotate:compress true && \
-    mkdir -p logs/api logs/blocks
-
-COPY --chown=node:node --from=dependencies /app/node_modules ./node_modules
-COPY --chown=node:node --from=prisma /app/node_modules/.prisma ./node_modules/.prisma
-COPY --chown=node:node --from=prisma /app/node_modules/@prisma ./node_modules/@prisma
-COPY --chown=node:node --from=prisma /app/node_modules/prisma ./node_modules/prisma
-COPY --chown=node:node --from=build /app/package*.json ./
-COPY --chown=node:node --from=build /app/dist ./dist
-COPY --chown=node:node --from=build /app/prisma ./prisma
-COPY --chown=node:node --from=build /app/config.json ./config.json
+FROM explorer-env as api
+CMD ["pm2-runtime","dist/api/index.js"]
