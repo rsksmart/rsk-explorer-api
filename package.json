@@ -1,6 +1,6 @@
 {
   "name": "rsk-explorer-api",
-  "version": "2.6.3",
+  "version": "2.6.4",
   "description": "RSK Explorer API",
   "engines": {
     "node": ">=24.0.0"
@@ -42,7 +42,7 @@
   "dependencies": {
     "@prisma/client": "6.19.3",
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "^2.2.0",
+    "@rsksmart/rsk-contract-parser": "2.2.5",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
