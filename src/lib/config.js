@@ -1,7 +1,10 @@
 import path from 'path'
 import fs from 'fs'
 import URL from 'url'
+import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
+
+dotenv.config()
 
 const validateConfig = {
   existence: (config) => {
@@ -20,7 +23,31 @@ export function createConfig (file) {
   return config
 }
 
+function parseEndpointList (value) {
+  const items = Array.isArray(value) ? value : (value === undefined || value === null ? [] : [value])
+  return items
+    .flatMap(item => (typeof item === 'string' ? item.split(',') : [item]))
+    .map(item => (typeof item === 'string' ? item.trim() : item))
+    .filter(item => typeof item === 'string' && item !== '')
+}
+
+function sameEndpoints (a, b) {
+  return a.length === b.length && a.every((value, index) => value === b[index])
+}
+
+function bitcoinEndpointWithEnvironmentWinning (bitcoin = {}, rpcUrlFromFile) {
+  const fromEnv = parseEndpointList(process.env.BITCOIN_RPC_URL)
+  const fromFile = parseEndpointList(rpcUrlFromFile)
+
+  if (fromEnv.length && fromFile.length && !sameEndpoints(fromEnv, fromFile)) {
+    console.warn('[config] bitcoin.rpcUrl in config.json is ignored: BITCOIN_RPC_URL takes precedence. Remove it from config.json — that file is not the place for a credential-bearing URL.')
+  }
+
+  return { ...bitcoin, rpcUrl: fromEnv.length ? fromEnv : parseEndpointList(bitcoin.rpcUrl) }
+}
+
 export function makeConfig (config = {}) {
+  const rpcUrlFromFile = (config.bitcoin || {}).rpcUrl
   // const defaultLogs = (key) => {
   //   const dir = config.log.dir
   //   if (!dir) return
@@ -52,6 +79,8 @@ export function makeConfig (config = {}) {
   // defaults  servers/ports
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
+
+  config.bitcoin = bitcoinEndpointWithEnvironmentWinning(config.bitcoin, rpcUrlFromFile)
 
   // defaults log files
   // if (config.log.logToFiles === true) {

@@ -13,6 +13,8 @@
     "md": "mkdir dist",
     "status": "npx nodemon src/tools/statusClient.js",
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
+    "backfill-btc-blocks": "npx babel-node src/tools/backfillBtcBlocks.js",
+    "verify-merge-mining": "npx babel-node src/tools/verifyMergeMiningPipeline.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha --exit",
     "api-docs": "mkdir -p public && npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
