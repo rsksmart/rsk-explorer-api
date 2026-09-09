@@ -18,7 +18,6 @@ const initConfig = {
   net: { id: '30', name: 'RSK Mainnet' }
 }
 
-// One RBTC-scale balance as a 32-byte eth_call return word
 const rawBalanceWord = '0x0000000000000000000000000000000000000000000000000de0b6b3a7640000'
 const balanceOfAddressSelector = '0x70a08231'
 

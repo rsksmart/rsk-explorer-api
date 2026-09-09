@@ -43,8 +43,6 @@ export default class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
-  // Distinct emitters of the given topic0s. Uses groupBy: Prisma 6 findMany
-  // distinct dedupes in memory after shipping every row
   async findEventEmittersByTopic0 (topic0s = []) {
     if (!Array.isArray(topic0s) || !topic0s.length) throw new Error('Invalid topic0s provided')
 
@@ -57,9 +55,6 @@ export default class ContractEventsUpdater {
     return groups.map(group => group.address)
   }
 
-  // Persists interfaces/methods for contracts whose events predate their
-  // detection: the block pipeline only re-detects on new activity, so dormant
-  // contracts never get their contract_interface rows without this
   async saveContractDetails (contractAddress, { interfaces = [], methods = [] } = {}) {
     this.validateContractAddress(contractAddress)
     contractAddress = contractAddress.toLowerCase()

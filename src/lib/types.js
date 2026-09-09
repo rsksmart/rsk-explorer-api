@@ -40,8 +40,6 @@ export const tokensInterfaces = [
   ci.ERC1155
 ]
 
-// Token interfaces exposing an account-level balanceOf(address).
-// ERC-1155 is excluded: its balances are per (holder, tokenId).
 export const accountBalanceTokensInterfaces = [
   ci.ERC20,
   ci.ERC677,

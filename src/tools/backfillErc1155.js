@@ -5,20 +5,6 @@ import { contractsInterfaces } from '../lib/types'
 import fs from 'fs'
 import path from 'path'
 
-// Backfills ERC-1155 contracts that predate 1155 support in the indexer:
-// their raw topics are already stored, but contract_interface has no ERC1155
-// row and their events sit undecoded (args = null), which keeps them invisible
-// to NFT balance reconstruction.
-//
-// Per candidate (discovered by TransferSingle/TransferBatch topic0):
-//   1. detect interfaces on-chain (parser: bytecode + ERC-165 + proxy resolution)
-//   2. if ERC1155: persist contract_interface/contract_method rows and
-//      re-decode its events via ContractEventsUpdater
-//   3. otherwise: report it for manual review
-//
-// Progress is flushed per candidate and a resume file skips already-processed
-// addresses, so the run can be interrupted and relaunched safely.
-
 const toolName = process.argv[1].split('/').pop()
 
 const TOPIC0S = [

@@ -1,15 +1,3 @@
-/**
- * Read-only ERC-1155: `eth_call` only (works on public nodes). Pass token ids explicitly.
- *
- * ERC-1155 has no standard "enumerate all ids for an owner" view; auto-discovering ids
- * requires indexing `TransferSingle`/`TransferBatch` (e.g. from logs or a DB) — not done here.
- *
- * Usage:
- *   npx babel-node src/tools/erc1155HolderInfo.js <contract> <holder> <mainnet|testnet> <id1,id2,...>
- *
- * Example:
- *   npx babel-node src/tools/erc1155HolderInfo.js 0xContract 0xHolder mainnet 1,2,42
- */
 import { ContractParser } from '@rsksmart/rsk-contract-parser'
 import { getAddress } from '@ethersproject/address'
 import { nod3Instance } from '../lib/nod3Connect'
@@ -109,7 +97,7 @@ async function main () {
   let supports = null
   try {
     supports = await contract.call('supportsInterface', ['0xd9b67a26'])
-  } catch (err) { void err /* optional */ }
+  } catch (err) {}
 
   const tokens = []
   for (let i = 0; i < tokenIds.length; i++) {
@@ -117,7 +105,7 @@ async function main () {
     let uri = null
     try {
       uri = await contract.call('uri', [idStr])
-    } catch (err) { void err /* optional */ }
+    } catch (err) {}
     const b = balances[i]
     tokens.push({
       id: idStr,

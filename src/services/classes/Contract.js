@@ -194,10 +194,6 @@ class Contract extends BcThing {
     let tokenAddressesBalances = []
     const data = []
 
-    // Contracts without an account-level balanceOf(address) (pure ERC-1155)
-    // keep their token_address rows with a null balance: per-tokenId balances
-    // are reconstructed from events, and a verified 1155 ABI can't even encode
-    // the call
     const hasAccountBalance = this.data.contractInterfaces.some(i => accountBalanceTokensInterfaces.includes(i))
     if (!hasAccountBalance) {
       for (const tokenAddress of tokenAddresses) {
