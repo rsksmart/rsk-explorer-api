@@ -23,6 +23,13 @@ export const addrTypes = {
   CONTRACT: 'contract'
 }
 
+export const verificationStatus = {
+  PENDING: 'pending',
+  SUCCESS: 'success',
+  FAILED: 'failed',
+  INTERNAL_ERROR: 'internal_error'
+}
+
 export const contractsInterfaces = {
   ERC20: 'ERC20',
   ERC677: 'ERC677',
