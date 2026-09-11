@@ -34,6 +34,39 @@ function readResumeFile () {
   return new Set(fs.readFileSync(RESUME_FILE, 'utf-8').split('\n').filter(Boolean))
 }
 
+export async function processCandidate ({ updater, address, pageSize, progress = '', markProcessed }) {
+  try {
+    console.log(`${progress} ${address}: detecting interfaces...`)
+    const { contractDetails } = await withTimeout(
+      updater.getContractParser(address), DETECTION_TIMEOUT_MS, `getContractParser(${address})`
+    )
+
+    if (!contractDetails.interfaces.includes(contractsInterfaces.ERC1155)) {
+      console.log(`${progress} ${address}: NOT detected as ERC1155 (interfaces: ${JSON.stringify(contractDetails.interfaces)}). Needs manual review.`)
+      markProcessed(address)
+      return { bucket: 'notDetected', entry: address }
+    }
+
+    const savedRows = await updater.saveContractDetails(address, contractDetails)
+    console.log(`${progress} ${address}: ERC1155 detected. Interface/method rows added: ${savedRows}`)
+
+    const result = await updater.updateContractEvents(address, pageSize)
+    console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
+
+    const failedEvents = result.updatedEvents.events.filter(event => event.error).length
+    if (failedEvents > 0) {
+      console.log(`${progress} ${address}: ${failedEvents} event(s) failed to re-decode. Not marked as processed; a rerun retries it.`)
+      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents } }
+    }
+
+    markProcessed(address)
+    return { bucket: 'tagged', entry: { address, updatedEvents: result.updatedEvents.amount } }
+  } catch (error) {
+    console.log(`${progress} ${address}: FAILED (${error.message}). Not marked as processed; a rerun retries it.`)
+    return { bucket: 'failed', entry: { address, error: error.message } }
+  }
+}
+
 async function main () {
   const pageSize = parseInt(process.argv[2])
   if (isNaN(pageSize) || pageSize <= 0) {
@@ -77,29 +110,14 @@ async function main () {
 
   for (const [index, address] of pending.entries()) {
     const progress = `[${index + 1}/${pending.length}]`
-    try {
-      console.log(`${progress} ${address}: detecting interfaces...`)
-      const { contractDetails } = await withTimeout(
-        updater.getContractParser(address), DETECTION_TIMEOUT_MS, `getContractParser(${address})`
-      )
-
-      if (!contractDetails.interfaces.includes(contractsInterfaces.ERC1155)) {
-        console.log(`${progress} ${address}: NOT detected as ERC1155 (interfaces: ${JSON.stringify(contractDetails.interfaces)}). Needs manual review.`)
-        summary.notDetected.push(address)
-      } else {
-        const savedRows = await updater.saveContractDetails(address, contractDetails)
-        console.log(`${progress} ${address}: ERC1155 detected. Interface/method rows added: ${savedRows}`)
-
-        const result = await updater.updateContractEvents(address, pageSize)
-        console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
-        summary.tagged.push({ address, updatedEvents: result.updatedEvents.amount })
-      }
-
-      fs.appendFileSync(RESUME_FILE, address + '\n')
-    } catch (error) {
-      console.log(`${progress} ${address}: FAILED (${error.message}). Not marked as processed; a rerun retries it.`)
-      summary.failed.push({ address, error: error.message })
-    }
+    const { bucket, entry } = await processCandidate({
+      updater,
+      address,
+      pageSize,
+      progress,
+      markProcessed: addr => fs.appendFileSync(RESUME_FILE, addr + '\n')
+    })
+    summary[bucket].push(entry)
   }
 
   console.log('')
@@ -113,8 +131,10 @@ async function main () {
   process.exit(summary.failed.length ? 1 : 0)
 }
 
-main().catch(error => {
-  console.log(`[Tool ${toolName}]: Error backfilling ERC-1155 contracts`)
-  console.error(error)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch(error => {
+    console.log(`[Tool ${toolName}]: Error backfilling ERC-1155 contracts`)
+    console.error(error)
+    process.exit(1)
+  })
+}
