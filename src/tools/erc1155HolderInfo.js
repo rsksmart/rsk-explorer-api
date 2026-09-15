@@ -96,7 +96,7 @@ async function main () {
 
   let supports = null
   try {
-    supports = await contract.call('supportsInterface', ['0xd9b67a26'])
+    supports = await contract.call('supportsInterface(bytes4)', ['0xd9b67a26'])
   } catch (err) {}
 
   const tokens = []
