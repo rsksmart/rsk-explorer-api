@@ -100,11 +100,24 @@ describe('Contract entity: fetchTokenAddressesBalances', () => {
   })
 
   describe('balanceOf overload safety', () => {
-    it('the default ABI carries both balanceOf overloads: the bare name is ambiguous, the explicit signature is not', () => {
+    const balanceOfAddressUintSelector = '0x00fdd58e'
+
+    it('bare balanceOf resolves by arity: one argument to balanceOf(address), two arguments to balanceOf(address,uint256)', () => {
       const contract = makeContract({ contractInterfaces: ['ERC20'], batchRequest: sinon.stub() })
       const instance = contract.getContractInstance()
 
-      expect(() => instance.encodeCall('balanceOf', [holderA])).to.throw()
+      const bare = instance.encodeCall('balanceOf', [holderA])
+      expect(bare).to.equal(instance.encodeCall('balanceOf(address)', [holderA]))
+      expect(bare).to.equal(`${balanceOfAddressSelector}000000000000000000000000${holderA.slice(2)}`)
+
+      const twoArg = instance.encodeCall('balanceOf', [holderA, 1])
+      expect(twoArg.slice(0, 10)).to.equal(balanceOfAddressUintSelector)
+    })
+
+    it('explicit signature is unchanged: balanceOf(address) encodes the account-balance selector', () => {
+      const contract = makeContract({ contractInterfaces: ['ERC20'], batchRequest: sinon.stub() })
+      const instance = contract.getContractInstance()
+
       const encoded = instance.encodeCall('balanceOf(address)', [holderA])
       expect(encoded).to.equal(`${balanceOfAddressSelector}000000000000000000000000${holderA.slice(2)}`)
     })
