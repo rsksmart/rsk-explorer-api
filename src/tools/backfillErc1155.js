@@ -1,5 +1,6 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { soliditySignature } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
+import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
 import { contractsInterfaces } from '../lib/types'
 import fs from 'fs'
@@ -11,6 +12,21 @@ const TOPIC0S = [
   '0x' + soliditySignature('TransferSingle(address,address,address,uint256,uint256)'),
   '0x' + soliditySignature('TransferBatch(address,address,address,uint256[],uint256[])')
 ]
+
+const ERC1155_EVENT_TOPIC0S = new Set(
+  erc1155Abi
+    .filter(fragment => fragment && fragment.type === 'event')
+    .map(event => `0x${soliditySignature(`${event.name}(${(event.inputs || []).map(input => input.type).join(',')})`)}`)
+)
+
+const failedEventTopic0 = event => {
+  const raw = event.eventDebugData && event.eventDebugData.event
+  return raw && raw.topic0 ? raw.topic0.toLowerCase() : null
+}
+
+const failedErc1155Events = events => events.filter(event =>
+  event.error && ERC1155_EVENT_TOPIC0S.has(failedEventTopic0(event))
+).length
 
 const DETECTION_TIMEOUT_MS = 60000
 const RESUME_FILE = path.join(process.cwd(), 'backfill-erc1155.resume')
@@ -53,14 +69,20 @@ export async function processCandidate ({ updater, address, pageSize, progress =
     const result = await updater.updateContractEvents(address, pageSize)
     console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
 
-    const failedEvents = result.updatedEvents.events.filter(event => event.error).length
+    const failedEvents = failedErc1155Events(result.updatedEvents.events)
+    const otherFailures = result.updatedEvents.events.filter(event => event.error).length - failedEvents
+
+    if (otherFailures > 0) {
+      console.log(`${progress} ${address}: ${otherFailures} non-ERC1155 event(s) could not decode (reported, not blocking).`)
+    }
+
     if (failedEvents > 0) {
-      console.log(`${progress} ${address}: ${failedEvents} event(s) failed to re-decode. Not marked as processed; a rerun retries it.`)
-      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents } }
+      console.log(`${progress} ${address}: ${failedEvents} ERC-1155 event(s) failed to re-decode. Not marked as processed; a rerun retries it.`)
+      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures } }
     }
 
     markProcessed(address)
-    return { bucket: 'tagged', entry: { address, updatedEvents: result.updatedEvents.amount } }
+    return { bucket: 'tagged', entry: { address, updatedEvents: result.updatedEvents.amount, otherFailures } }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). Not marked as processed; a rerun retries it.`)
     return { bucket: 'failed', entry: { address, error: error.message } }
