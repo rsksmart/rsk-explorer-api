@@ -25,7 +25,7 @@ function rawEventToEntity ({
   return {
     eventId,
     abi: JSON.stringify(abi),
-    address,
+    address: address && address.toLowerCase(),
     args: JSON.stringify(args),
     topic0,
     topic1,

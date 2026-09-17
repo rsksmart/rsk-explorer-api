@@ -7,7 +7,9 @@ import {
   Remasc,
   DollarOnChain,
   USDRIF,
-  USDCe
+  USDCe,
+  IOVers,
+  OnchainOlympics
 } from './testContracts'
 import { getNod3Instance } from '../../utils/getNod3Instance'
 import { compareObjects } from '../../utils/compareObjects'
@@ -32,6 +34,14 @@ const testContracts = [
   {
     contractData: USDRIF,
     type: 'ERC1967 Proxy/ERC20 token'
+  },
+  {
+    contractData: IOVers,
+    type: 'ERC1155 token'
+  },
+  {
+    contractData: OnchainOlympics,
+    type: 'ERC1167 Minimal Proxy/ERC1155 token'
   }
 ]
 

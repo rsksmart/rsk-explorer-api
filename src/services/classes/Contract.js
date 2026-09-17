@@ -1,6 +1,6 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
-import { NULL_BALANCE, tokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces, accountBalanceTokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray } from '../../lib/utils'
 import { isNativeContract } from '../../lib/NativeContracts'
@@ -194,12 +194,22 @@ class Contract extends BcThing {
     let tokenAddressesBalances = []
     const data = []
 
+    const hasAccountBalance = this.data.contractInterfaces.some(i => accountBalanceTokensInterfaces.includes(i))
+    if (!hasAccountBalance) {
+      for (const tokenAddress of tokenAddresses) {
+        const tokenAddressInstance = addresses[tokenAddress]
+        tokenAddressInstance.setTokenAddressBalance(NULL_BALANCE)
+        data.push(tokenAddressInstance.getData(true))
+      }
+      return data
+    }
+
     // generate all batch requests
     try {
       for (const chunk of chunkArray(tokenAddresses, config.blocks.batchRequestSize)) {
         const batchRequest = chunk.map(tokenAddress => ([
           'eth.call',
-          { to: address, data: contract.encodeCall('balanceOf', [tokenAddress]) },
+          { to: address, data: contract.encodeCall('balanceOf(address)', [tokenAddress]) },
           // When no blockNumber is specified, latest balances will be fetched by default
           blockNumber
         ]))
@@ -219,11 +229,11 @@ class Contract extends BcThing {
     for (let i = 0; i < tokenAddresses.length; i++) {
       const address = tokenAddresses[i]
       const balance = tokenAddressesBalances[i]
-      const TokenAddress = addresses[address]
-      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf', balance).toHexString()
+      const tokenAddressInstance = addresses[address]
+      const parsedBalance = balance === NULL_BALANCE ? NULL_BALANCE : contract.decodeCall('balanceOf(address)', balance).toHexString()
 
-      TokenAddress.setTokenAddressBalance(parsedBalance)
-      data.push(TokenAddress.getData(true))
+      tokenAddressInstance.setTokenAddressBalance(parsedBalance)
+      data.push(tokenAddressInstance.getData(true))
     }
     return data
   }
