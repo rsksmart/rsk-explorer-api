@@ -6,7 +6,7 @@ const address = '0x11b64191106b1cf66fcd2f8389077c596cdc5646'
 const TRANSFER_SINGLE_TOPIC0 = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
 const NON_ERC1155_TOPIC0 = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 
-const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topic0 } } })
+const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topics: [topic0] } } })
 const decodedEvent = () => ({ error: false })
 
 const makeUpdater = (events) => ({

@@ -21,7 +21,8 @@ const ERC1155_EVENT_TOPIC0S = new Set(
 
 const failedEventTopic0 = event => {
   const raw = event.eventDebugData && event.eventDebugData.event
-  return raw && raw.topic0 ? raw.topic0.toLowerCase() : null
+  const topic0 = raw && raw.topics && raw.topics[0]
+  return topic0 ? topic0.toLowerCase() : null
 }
 
 const failedErc1155Events = events => events.filter(event =>
