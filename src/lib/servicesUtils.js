@@ -7,12 +7,12 @@ import Logger from './Logger.js'
 
 const RETRIES = 3
 
-export async function insertBlock (number, blocksBase, { log, tipBlock = false }, status = undefined) {
+export async function insertBlock (number, blocksBase, { log, tipBlock = false, replace = false }, status = undefined) {
   let remainingAttempts = RETRIES
 
   while (remainingAttempts > 0) {
     try {
-      const block = new Block(number, blocksBase, status, tipBlock)
+      const block = new Block(number, blocksBase, status, tipBlock, replace)
       let fetchingTime = Date.now()
       await block.fetch()
       fetchingTime = Date.now() - fetchingTime

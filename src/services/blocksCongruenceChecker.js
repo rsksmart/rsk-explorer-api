@@ -1,7 +1,10 @@
 import nod3 from '../lib/nod3Connect'
 import { blocksRepository } from '../repositories'
+import { insertBlock } from '../lib/servicesUtils'
+import { getInitConfig } from '../lib/Setup'
+import BlocksBase from '../lib/BlocksBase'
 
-export async function checkBlocksCongruence (blocksToCheck, { log = console } = {}) {
+export async function checkBlocksCongruence (blocksToCheck, { log = console, latestBlock, confirmationsThreshold } = {}) {
   const status = {
     blocksToCheck,
     badBlocks: {
@@ -12,6 +15,10 @@ export async function checkBlocksCongruence (blocksToCheck, { log = console } = 
 
   const [lastSavedBlock] = await blocksRepository.find({}, { number: true, hash: true }, { number: 'desc' }, 1)
   if (!lastSavedBlock || !lastSavedBlock.number) throw new Error(`Database is empty. Skipping blocks congruence check...`)
+
+  const initConfig = await getInitConfig()
+  const blocksBase = new BlocksBase({ initConfig, log })
+  const lastImmutableBlockNumber = latestBlock - confirmationsThreshold
 
   log.info(`Checking last ${blocksToCheck} blocks congruence...`)
 
@@ -29,8 +36,8 @@ export async function checkBlocksCongruence (blocksToCheck, { log = console } = 
       if (!nodeBlock || !nodeBlock.number) throw new Error(`Node returns invalid block data for block ${number}: ${JSON.stringify(nodeBlock, null, 2)}`)
 
       if (dbBlock.hash !== nodeBlock.hash) {
-        await blocksRepository.deleteOne({ number })
-        log.info(`Database block ${number} (hash ${dbBlock.hash}) didn't match node block (hash ${nodeBlock.hash}). Removed`)
+        await insertBlock(number, blocksBase, { log, tipBlock: number > lastImmutableBlockNumber, replace: true })
+        log.info(`Database block ${number} (hash ${dbBlock.hash}) didn't match node block (hash ${nodeBlock.hash}). Replaced`)
 
         status.badBlocks.total++
         status.badBlocks.blocks[number] = {
@@ -46,6 +53,6 @@ export async function checkBlocksCongruence (blocksToCheck, { log = console } = 
     }
   }
 
-  log.info(`Finished checking last ${blocksToCheck} database blocks congruence. ${status.badBlocks.total} bad blocks removed.`)
+  log.info(`Finished checking last ${blocksToCheck} database blocks congruence. ${status.badBlocks.total} bad blocks replaced.`)
   log.info(JSON.stringify({ status }, null, 2))
 }
