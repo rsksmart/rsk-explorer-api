@@ -9,30 +9,31 @@ const RETRIES = 3
 
 export async function insertBlock (number, blocksBase, { log, tipBlock = false, replace = false }, status = undefined) {
   let remainingAttempts = RETRIES
+  let block
 
   while (remainingAttempts > 0) {
     try {
-      const block = new Block(number, blocksBase, status, tipBlock, replace)
+      block = new Block(number, blocksBase, status, tipBlock, replace)
       let fetchingTime = Date.now()
       await block.fetch()
       fetchingTime = Date.now() - fetchingTime
 
-      // insert block
       let savingTime = Date.now()
       await block.save()
       savingTime = Date.now() - savingTime
 
       log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
-      break // Success
+      return true
     } catch (err) {
       log.error(`Error saving block ${number}`)
       log.error(err)
 
-      const storedBlock = await blocksRepository.findOne({ number }, { number: true })
+      const storedBlock = await blocksRepository.findOne({ number })
+      const canonicalHash = block && block.data.block && block.data.block.hash
 
-      if (storedBlock && storedBlock.number) {
+      if (storedBlock && storedBlock.hash === canonicalHash) {
         log.error(`Block ${storedBlock.number} was saved but the blockchain stats saving process may have failed. Check the logs`)
-        break
+        return true
       }
 
       remainingAttempts--
@@ -40,7 +41,8 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
     }
   }
 
-  if (!remainingAttempts) log.error(`Block ${number} could not be saved after ${RETRIES} retries.`)
+  log.error(`Block ${number} could not be saved after ${RETRIES} retries.`)
+  return false
 }
 
 export async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {

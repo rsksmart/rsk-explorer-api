@@ -36,13 +36,16 @@ export async function checkBlocksCongruence (blocksToCheck, { log = console, lat
       if (!nodeBlock || !nodeBlock.number) throw new Error(`Node returns invalid block data for block ${number}: ${JSON.stringify(nodeBlock, null, 2)}`)
 
       if (dbBlock.hash !== nodeBlock.hash) {
-        await insertBlock(number, blocksBase, { log, tipBlock: number > lastImmutableBlockNumber, replace: true })
-        log.info(`Database block ${number} (hash ${dbBlock.hash}) didn't match node block (hash ${nodeBlock.hash}). Replaced`)
+        const replaced = await insertBlock(number, blocksBase, { log, tipBlock: number > lastImmutableBlockNumber, replace: true })
 
-        status.badBlocks.total++
-        status.badBlocks.blocks[number] = {
-          badBlockHash: dbBlock.hash,
-          goodBlockHash: nodeBlock.hash
+        if (replaced) {
+          log.info(`Database block ${number} (hash ${dbBlock.hash}) didn't match node block (hash ${nodeBlock.hash}). Replaced`)
+
+          status.badBlocks.total++
+          status.badBlocks.blocks[number] = {
+            badBlockHash: dbBlock.hash,
+            goodBlockHash: nodeBlock.hash
+          }
         }
       } else {
         log.info(`Block ${number} ok.`)
@@ -55,4 +58,6 @@ export async function checkBlocksCongruence (blocksToCheck, { log = console, lat
 
   log.info(`Finished checking last ${blocksToCheck} database blocks congruence. ${status.badBlocks.total} bad blocks replaced.`)
   log.info(JSON.stringify({ status }, null, 2))
+
+  return status
 }

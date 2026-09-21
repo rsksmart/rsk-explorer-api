@@ -26,8 +26,11 @@ export async function checkDbTipBlocks ({ latestBlock }, confirmationsThreshold)
       const dbBlock = await blocksRepository.findOne({ number })
 
       if (dbBlock && dbBlock.hash !== nodeBlock.hash) {
-        await insertBlock(number, blocksBase, { log, tipBlock: number > lastImmutableBlockNumber, replace: true })
-        log.info(`Database block ${number} didn't match node block. Updated. (Previous hash: ${dbBlock.hash}. New hash: ${nodeBlock.hash})`)
+        const replaced = await insertBlock(number, blocksBase, { log, tipBlock: number > lastImmutableBlockNumber, replace: true })
+
+        if (replaced) {
+          log.info(`Database block ${number} didn't match node block. Replaced. (Previous hash: ${dbBlock.hash}. New hash: ${nodeBlock.hash})`)
+        }
       } else {
         log.info(`Block ${number} ok.`)
       }
