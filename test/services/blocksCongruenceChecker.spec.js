@@ -17,7 +17,7 @@ describe('# blocksCongruenceChecker replace-in-place', function () {
     originalSkipFormatters = nod3.skipFormatters
     nod3.skipFormatters = true
     sinon.stub(Setup, 'getInitConfig').resolves({ net: { id: '31' } })
-    insertBlockStub = sinon.stub(servicesUtils, 'insertBlock').resolves()
+    insertBlockStub = sinon.stub(servicesUtils, 'insertBlock').resolves(true)
     deleteOneSpy = sinon.stub(blocksRepository, 'deleteOne').resolves()
     sinon.stub(nod3.rpc, 'sendMethod')
   })
@@ -57,5 +57,22 @@ describe('# blocksCongruenceChecker replace-in-place', function () {
 
     expect(insertBlockStub.called).to.equal(false)
     expect(deleteOneSpy.called).to.equal(false)
+  })
+
+  it('counts a mismatched block as replaced when the replacement succeeds', async () => {
+    const status = await drive({ number: 500, dbHash: '0xstale', nodeHash: '0xcanonical', latestBlock: 1000, confirmationsThreshold: 120 })
+
+    expect(insertBlockStub.calledOnce).to.equal(true)
+    expect(status.badBlocks.total).to.equal(1)
+    expect(status.badBlocks.blocks[500]).to.deep.equal({ badBlockHash: '0xstale', goodBlockHash: '0xcanonical' })
+  })
+
+  it('does not count nor log a failed replacement as replaced', async () => {
+    insertBlockStub.resolves(false)
+    const status = await drive({ number: 500, dbHash: '0xstale', nodeHash: '0xcanonical', latestBlock: 1000, confirmationsThreshold: 120 })
+
+    expect(insertBlockStub.calledOnce).to.equal(true)
+    expect(status.badBlocks.total).to.equal(0)
+    expect(status.badBlocks.blocks).to.deep.equal({})
   })
 })
