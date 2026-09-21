@@ -35,7 +35,7 @@ export function getBlocksRepository (prismaClient) {
     insertOne (data) {
       return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
-    async saveBlockData (data) {
+    async saveBlockData (data, { replace = false } = {}) {
       const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
       if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
@@ -108,6 +108,10 @@ export function getBlocksRepository (prismaClient) {
           ...getTokensAddressesQueries(), // insert tokenAddresses
           ...summaryRepository.insertOne(data) // save block summary
         ]
+
+        if (replace) {
+          transaction.unshift(this.deleteOne({ number: block.number }))
+        }
 
         if (status) {
           transaction.push(statusRepository.insertOne(status)) // insert status
