@@ -56,6 +56,17 @@ describe('# blocks.repository saveBlockData replace', function () {
     expect(inserts).to.have.lengthOf(1)
   })
 
+  it('propagates a transaction failure so the caller keeps the previous block', async () => {
+    const failing = getBlocksRepository({ $transaction: () => Promise.reject(new Error('tx failed')) })
+    sinon.stub(failing, 'insertOne').returns({ op: 'block.insert' })
+    sinon.stub(failing, 'deleteOne').returns({ op: 'block.delete' })
+
+    let message
+    try { await failing.saveBlockData(data, { replace: true }) } catch (err) { message = err.message }
+
+    expect(message).to.equal('tx failed')
+  })
+
   it('does not delete when not replacing', async () => {
     await repo.saveBlockData(data)
 
