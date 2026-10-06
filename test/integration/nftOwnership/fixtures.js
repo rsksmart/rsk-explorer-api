@@ -5,14 +5,15 @@ import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC, ZERO_ADDRE
 export const ZERO = ZERO_ADDRESS
 export const SENDER = '0x5e0000000000000000000000000000000000005e'
 const MINER = '0x3300000000000000000000000000000000000033'
+const OPERATOR = '0x0e0000000000000000000000000000000000000e'
 
 const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
 const addressTopic = address => word(address.slice(2))
 
 export const erc721 = (contract, from, to, tokenId) => ({ kind: 'nft', contract, topics: [TRANSFER_TOPIC, addressTopic(from), addressTopic(to), word(BigInt(tokenId).toString(16))], data: '0x', args: [from, to, String(tokenId)] })
 export const erc20 = (contract, from, to, value) => ({ kind: 'fungible', contract, from, to, topics: [TRANSFER_TOPIC, addressTopic(from), addressTopic(to)], data: word(BigInt(value).toString(16)), args: [from, to, String(value)] })
-export const erc1155Single = (contract, from, to, id, value) => ({ kind: 'nft', contract, topics: [TRANSFER_SINGLE_TOPIC, addressTopic(from), addressTopic(from), addressTopic(to)], data: defaultAbiCoder.encode(['uint256', 'uint256'], [id, value]), args: [from, from, to, String(id), String(value)] })
-export const erc1155Batch = (contract, from, to, ids, values) => ({ kind: 'nft', contract, topics: [TRANSFER_BATCH_TOPIC, addressTopic(from), addressTopic(from), addressTopic(to)], data: defaultAbiCoder.encode(['uint256[]', 'uint256[]'], [ids, values]), args: [from, from, to, ids.map(String), values.map(String)] })
+export const erc1155Single = (contract, from, to, id, value) => ({ kind: 'nft', contract, topics: [TRANSFER_SINGLE_TOPIC, addressTopic(OPERATOR), addressTopic(from), addressTopic(to)], data: defaultAbiCoder.encode(['uint256', 'uint256'], [id, value]), args: [OPERATOR, from, to, String(id), String(value)] })
+export const erc1155Batch = (contract, from, to, ids, values) => ({ kind: 'nft', contract, topics: [TRANSFER_BATCH_TOPIC, addressTopic(OPERATOR), addressTopic(from), addressTopic(to)], data: defaultAbiCoder.encode(['uint256[]', 'uint256[]'], [ids, values]), args: [OPERATOR, from, to, ids.map(String), values.map(String)] })
 
 export const tokenStateAt = (contract, number) => ({
   contract,
