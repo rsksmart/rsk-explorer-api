@@ -35,6 +35,13 @@ describe('decodeNftTransfers', () => {
     expect(facts.map(f => [f.tokenId, f.value])).to.deep.equal([[word('07'), '5'], [word('08'), '1']])
   })
 
+  it('decodes only the ids that have a value when a TransferBatch carries more ids than values', () => {
+    const data = defaultAbiCoder.encode(['uint256[]', 'uint256[]'], [[7, 8, 9], [2, 1]])
+    const facts = decodeNftTransfers(log([TRANSFER_BATCH_TOPIC, word(operator), word(from), word(to)], data))
+
+    expect(facts.map(f => [f.tokenId, f.value])).to.deep.equal([[word('07'), '2'], [word('08'), '1']])
+  })
+
   it('keeps values beyond 2^53 exact', () => {
     const max = '115792089237316195423570985008687907853269984665640564039457584007913129639935'
     const data = defaultAbiCoder.encode(['uint256[]', 'uint256[]'], [[max], [max]])

@@ -1,12 +1,13 @@
 import { expect } from 'chai'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
-import { blockData, blockHashOf, erc721, erc20, ZERO } from './fixtures'
+import { blockData, blockHashOf, erc721, erc20, erc1155Single, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000e0721'
+const C1155 = '0x000000000000000000000000000000000e001155'
 const C20 = '0x0000000000000000000000000000000000000020'
-const [A, B, C] = ['1', '2', '3'].map(x => `0x${x.repeat(40)}`)
+const [A, B, C, H] = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
 
 const save = (number, tag, logs) => blocksRepository.saveBlockData(blockData(number, tag, logs))
 
@@ -126,6 +127,48 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
 
     expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 0 })
     expect(concurrent).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('keeps a holder that a concurrent older save names only in a self-transfer, once the delete leaves it no other fact', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, ZERO, H, 2), erc721(C721, H, ZERO, 2)])
+    await save(40, 'a', [erc721(C721, ZERO, A, 9)])
+    beforeTheNextBatch(() => save(20, 'a', [erc721(C721, H, H, 5)]))
+
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('keeps a holder that a concurrent older save names only in a zero-value TransferSingle, once the delete leaves it no other fact', async () => {
+    await save(10, 'a', [erc1155Single(C1155, ZERO, A, 1, 1)])
+    await save(30, 'a', [erc1155Single(C1155, ZERO, H, 2, 1), erc1155Single(C1155, H, ZERO, 2, 1)])
+    await save(40, 'a', [erc1155Single(C1155, ZERO, A, 9, 1)])
+    beforeTheNextBatch(() => save(20, 'a', [erc1155Single(C1155, A, H, 1, 0)]))
+
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('never deletes a replacement of a block with no NFT fact', async () => {
+    await save(10, 'a', [])
+    await save(30, 'a', [])
+    beforeTheNextBatch(async () => {
+      await blocksRepository.deleteOne({ number: 30 })
+      await save(30, 'e', [])
+    })
+
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 0 })
+    const stored = await prismaClient.block.findUnique({ where: { number: 30 } })
+    expect(stored.hash).to.equal(blockHashOf(30, 'e'))
+  })
+
+  it('counts only the blocks it deleted when one of a set vanished before its batch', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, ZERO, A, 2)])
+    beforeTheNextBatch(() => blocksRepository.deleteOne({ number: 30 }))
+
+    expect(await blocksRepository.deleteMany({ number: { in: [10, 30] } })).to.deep.equal({ count: 1 })
     expect(await differences()).to.deep.equal([])
   })
 })
