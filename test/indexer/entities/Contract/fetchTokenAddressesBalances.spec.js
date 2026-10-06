@@ -1,7 +1,6 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
 import Contract from '../../../../src/services/classes/Contract'
-import { NULL_BALANCE } from '../../../../src/lib/types'
 
 const contractAddress = '0x11b64191106b1cf66fcd2f8389077c596cdc5646'
 const holderA = '0xc0c9d82b59c4d9d77d749f331735e7ed01e2d0e1'
@@ -46,25 +45,18 @@ describe('Contract entity: fetchTokenAddressesBalances', () => {
     expect(batchRequest.called).to.equal(false)
   })
 
-  describe('contracts without an account-level balanceOf (pure ERC-1155)', () => {
-    it('sets a null balance on every token address without calling the node', async () => {
-      const batchRequest = sinon.stub().rejects(new Error('should not be called'))
-      const contract = makeContract({
-        contractInterfaces: ['ERC165', 'ERC1155', 'ERC1155MetadataURI'],
-        batchRequest
+  describe('NFT-only contracts (their ownership lives in the NFT tables)', () => {
+    for (const contractInterfaces of [['ERC165', 'ERC1155', 'ERC1155MetadataURI'], ['ERC165', 'ERC721', 'ERC721Metadata']]) {
+      it(`writes no token address row and calls no balanceOf for ${contractInterfaces.join(', ')}`, async () => {
+        const batchRequest = sinon.stub().rejects(new Error('should not be called'))
+        const contract = makeContract({ contractInterfaces, batchRequest })
+
+        const rows = await contract.fetchTokenAddressesBalances(blockNumber)
+
+        expect(rows).to.deep.equal([])
+        expect(batchRequest.called).to.equal(false)
       })
-
-      const rows = await contract.fetchTokenAddressesBalances(blockNumber)
-
-      expect(batchRequest.called).to.equal(false)
-      expect(rows).to.have.lengthOf(2)
-      for (const row of rows) {
-        expect(row.balance).to.equal(NULL_BALANCE)
-        expect(row.contract).to.equal(contractAddress)
-        expect(row.block).to.deep.equal({ number: blockNumber, hash: blockHash })
-      }
-      expect(rows.map(r => r.address)).to.deep.equal([holderA, holderB])
-    })
+    }
   })
 
   describe('contracts with an account-level balanceOf', () => {
@@ -88,15 +80,17 @@ describe('Contract entity: fetchTokenAddressesBalances', () => {
       expect(rows.map(r => r.balance)).to.deep.equal(['0x0de0b6b3a7640000', '0x0de0b6b3a7640000'])
     })
 
-    it('takes the balance-fetch path when an account-balance interface coexists with ERC1155', async () => {
-      const batchRequest = sinon.stub().resolves([rawBalanceWord, rawBalanceWord])
-      const contract = makeContract({ contractInterfaces: ['ERC1155', 'ERC20'], batchRequest })
+    for (const nftInterface of ['ERC1155', 'ERC721']) {
+      it(`takes the balance-fetch path when a fungible interface coexists with ${nftInterface}`, async () => {
+        const batchRequest = sinon.stub().resolves([rawBalanceWord, rawBalanceWord])
+        const contract = makeContract({ contractInterfaces: [nftInterface, 'ERC20'], batchRequest })
 
-      const rows = await contract.fetchTokenAddressesBalances(blockNumber)
+        const rows = await contract.fetchTokenAddressesBalances(blockNumber)
 
-      expect(batchRequest.calledOnce).to.equal(true)
-      expect(rows.map(r => r.balance)).to.deep.equal(['0x0de0b6b3a7640000', '0x0de0b6b3a7640000'])
-    })
+        expect(batchRequest.calledOnce).to.equal(true)
+        expect(rows.map(r => r.balance)).to.deep.equal(['0x0de0b6b3a7640000', '0x0de0b6b3a7640000'])
+      })
+    }
   })
 
   describe('balanceOf overload safety', () => {

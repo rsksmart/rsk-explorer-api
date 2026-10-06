@@ -1,5 +1,6 @@
 import { BcThing } from './BcThing'
 import BlockSummary from './BlockSummary'
+import TokenState from './TokenState'
 import { blockQuery } from '../../lib/utils'
 import { getBlockchainStats } from '../../lib/getBlockchainStats'
 import { fetchAddressesBalancesFromNode } from './BlockBalances'
@@ -30,7 +31,9 @@ export class Block extends BcThing {
       let { summary } = this
       let data = await summary.fetch()
       if (!data) throw new Error(`Fetch returns empty data for block #${this.number}`)
-      this.setData(data)
+      const { nod3, initConfig, log } = this
+      const tokenStates = await new TokenState({ nod3, initConfig, log }).fetch(data.block, data.events)
+      this.setData({ ...data, tokenStates })
       this.fetched = true
     } catch (err) {
       this.log.debug('Block fetch error', err)

@@ -12,8 +12,13 @@ import {
   summaryRepository,
   addressRepository,
   balancesRepository,
-  statusRepository
+  statusRepository,
+  nftRepository,
+  tokenStateRepository
 } from '.'
+
+const DELETE_ATTEMPTS = 3
+const RETRYABLE_DELETE_ERRORS = ['P2025', 'P2003', 'P2034']
 
 export function getBlocksRepository (prismaClient) {
   return {
@@ -36,7 +41,7 @@ export function getBlocksRepository (prismaClient) {
       return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
     async saveBlockData (data) {
-      const { block, transactions, internalTransactions, events, tokenAddresses, addresses, balances, latestBalances, status } = data
+      const { block, transactions, internalTransactions, events, tokenAddresses, tokenStates, addresses, balances, latestBalances, status } = data
       if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
       const getAddressesQueries = () => {
@@ -99,6 +104,8 @@ export function getBlocksRepository (prismaClient) {
       const generateTransaction = () => {
         const transaction = [
           this.insertOne(block), // insert block
+          ...nftRepository.insertStatements(block, events),
+          ...tokenStateRepository.insertStatements(block, tokenStates),
           ...getAddressesQueries(), // insert addresses
           ...balancesRepository.insertMany(balances, latestBalances), // insert balances
           ...getTxsAndPendingTxsQueries(), // insert txs and update pending txs
@@ -119,10 +126,37 @@ export function getBlocksRepository (prismaClient) {
       return prismaClient.$transaction(generateTransaction())
     },
     deleteOne (query) {
-      return prismaClient.block.deleteMany({ where: query })
+      return deleteBlocks(query)
     },
     deleteMany (query) {
-      return prismaClient.block.deleteMany({ where: query })
+      return deleteBlocks(query)
     }
+  }
+
+  async function deleteStatements (blocks) {
+    return [
+      ...await nftRepository.undoStatements(blocks),
+      ...await tokenStateRepository.undoStatements(blocks),
+      ...blocks.map(({ number, hash }) => prismaClient.block.delete({ where: { number, hash } }))
+    ]
+  }
+
+  async function deleteBlocks (where) {
+    const select = { number: true, hash: true }
+    const orderBy = { number: 'asc' }
+    const pinned = await prismaClient.block.findMany({ where, select, orderBy })
+    let targets = pinned
+
+    for (let attempt = 1; targets.length; attempt++) {
+      try {
+        await prismaClient.$transaction(await deleteStatements(targets))
+        return { count: targets.length }
+      } catch (error) {
+        if (attempt === DELETE_ATTEMPTS || !RETRYABLE_DELETE_ERRORS.includes(error.code)) throw error
+        targets = await prismaClient.block.findMany({ where: { hash: { in: pinned.map(b => b.hash) } }, select, orderBy })
+      }
+    }
+
+    return { count: 0 }
   }
 }

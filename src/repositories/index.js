@@ -15,6 +15,8 @@ import { getTxPendingRepository } from './txPending.repository'
 import { getVerificationResultsRepository } from './verificationResults.repository'
 import { getContractVerificationRepository } from './contractVerification.repository'
 import { getConfigRepository } from './config.repository'
+import { getNftRepository } from './nft.repository'
+import { getTokenStateRepository } from './tokenState.repository'
 
 export const addressRepository = getAddressRepository(prismaClient)
 export const blocksRepository = getBlocksRepository(prismaClient)
@@ -32,6 +34,8 @@ export const txPendingRepository = getTxPendingRepository(prismaClient)
 export const verificationResultsRepository = getVerificationResultsRepository(prismaClient)
 export const contractVerificationRepository = getContractVerificationRepository(prismaClient)
 export const configRepository = getConfigRepository(prismaClient)
+export const nftRepository = getNftRepository(prismaClient)
+export const tokenStateRepository = getTokenStateRepository(prismaClient)
 
 export const REPOSITORIES = {
   Address: addressRepository,

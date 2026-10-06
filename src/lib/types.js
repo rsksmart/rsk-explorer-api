@@ -40,10 +40,14 @@ export const tokensInterfaces = [
   ci.ERC1155
 ]
 
-export const accountBalanceTokensInterfaces = [
+export const fungibleTokensInterfaces = [
   ci.ERC20,
-  ci.ERC677,
-  ci.ERC721
+  ci.ERC677
+]
+
+export const nftTokensInterfaces = [
+  ci.ERC721,
+  ci.ERC1155
 ]
 
 export const events = {
