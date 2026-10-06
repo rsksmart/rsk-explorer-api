@@ -47,7 +47,10 @@ const twoBlocksForA = async base => {
   await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 2)])
 }
 
-const casesWithAGuaranteedRefusal = ['last block: a delete of N against a save of M < N whose transaction stays open across the delete batch']
+const casesWithAGuaranteedRefusal = [
+  'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch',
+  'two deletes that both repair the token row, one of two blocks and one of the newer of them'
+]
 
 const cases = {
   'two saves of the same block': async base => [
@@ -82,6 +85,14 @@ const cases = {
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
       held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 40, 'a', [erc721(C721, A, B, 1)]))
+    ]
+  },
+  'two deletes that both repair the token row, one of two blocks and one of the newer of them': async base => {
+    await twoBlocksForA(base)
+    await saveLikeInsertBlock(base + 40, 'a', [erc721(C721, ZERO, B, 4)])
+    return [
+      held({ delay: 80 }, () => blocksRepository.deleteMany({ number: { in: [base + 30, base + 40] } })),
+      held({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 }))
     ]
   },
   'last block: two deletes of the holder\'s two newest blocks': async base => {

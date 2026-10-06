@@ -16,10 +16,7 @@ export function getTokenStateRepository (prismaClient) {
             data: { blockNumber: block.number, ...state }
           })
         ]),
-        prismaClient.token_state_at_block.createMany({
-          data: states.map(state => ({ ...state, blockNumber: block.number })),
-          skipDuplicates: true
-        })
+        prismaClient.token_state_at_block.createMany({ data: states.map(state => ({ ...state, blockNumber: block.number })) })
       ]
     },
     async undoStatements (blocks) {
@@ -44,7 +41,7 @@ export function getTokenStateRepository (prismaClient) {
 
         if (latest) {
           const { contract: _, ...state } = latest
-          statements.push(prismaClient.token.update({ where, data: { ...state, version: { increment: 1 } } }))
+          statements.push(prismaClient.token.update({ where, data: state }))
         } else {
           statements.push(prismaClient.token.delete({ where }))
         }

@@ -49,11 +49,13 @@ export function getNftRepository (prismaClient) {
     const { keys, holders } = netDeltas(facts, sign)
     if (!holders.length) return []
 
-    const statements = holders.map(h => prismaClient.nft_holder.upsert({
-      where: { contract_standard_holder: holderId(h) },
-      create: { ...holderId(h), quantity: h.quantityDelta.toFixed(), tokenCount: 0, lastBlockNumber: block ? block.number : -1, lastBlockHash: block ? block.hash : '' },
-      update: { quantity: { increment: h.quantityDelta.toFixed() }, version: { increment: 1 } }
-    }))
+    const statements = holders.map(h => {
+      const where = { contract_standard_holder: holderId(h) }
+      const update = { quantity: { increment: h.quantityDelta.toFixed() }, version: { increment: 1 } }
+      return block
+        ? prismaClient.nft_holder.upsert({ where, update, create: { ...holderId(h), quantity: h.quantityDelta.toFixed(), tokenCount: 0, lastBlockNumber: block.number, lastBlockHash: block.hash } })
+        : prismaClient.nft_holder.update({ where, data: update })
+    })
 
     if (block) {
       statements.push(...underBindLimit(holders).map(part => prismaClient.nft_holder.updateMany({
@@ -126,7 +128,7 @@ export function getNftRepository (prismaClient) {
         const where = { contract_standard_holder: holderId(row), version: row.version }
 
         if (latest) {
-          repairs.push(prismaClient.nft_holder.update({ where, data: { lastBlockNumber: latest.blockNumber, lastBlockHash: latest.blockHash, version: { increment: 1 } } }))
+          repairs.push(prismaClient.nft_holder.update({ where, data: { lastBlockNumber: latest.blockNumber, lastBlockHash: latest.blockHash } }))
         } else {
           repairs.push(prismaClient.nft_holder.update({ where, data: { version: { increment: 1 } } }))
           removals.push(prismaClient.nft_holder.delete({ where: { contract_standard_holder: holderId(row), quantity: 0, tokenCount: 0 } }))
