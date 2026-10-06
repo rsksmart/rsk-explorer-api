@@ -1,11 +1,15 @@
 import { BigNumber } from 'bignumber.js'
 import { decodeBlockNftTransfers, NFT_STANDARDS, ZERO_ADDRESS } from '../lib/nftTransfers'
 import { contractsInterfaces } from '../lib/types'
+import { chunkArray } from '../lib/utils'
+
+const PRISMA_MAX_BIND_VALUES = 32767
+const BALANCE_KEY_BIND_VALUES = 5
+const underBindLimit = list => chunkArray(list, Math.floor(PRISMA_MAX_BIND_VALUES / BALANCE_KEY_BIND_VALUES))
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
 const balanceId = ({ contract, standard, tokenId, holder }) => ({ contract, standard, tokenId, holder })
-const factId = ({ eventId, tokenId }) => ({ eventId, tokenId })
 
 function netDeltas (facts, sign) {
   const balances = new Map()
@@ -52,10 +56,10 @@ export function getNftRepository (prismaClient) {
     }))
 
     if (block) {
-      statements.push(prismaClient.nft_holder.updateMany({
-        where: { OR: holders.map(holderId), lastBlockNumber: { lt: block.number } },
+      statements.push(...underBindLimit(holders).map(part => prismaClient.nft_holder.updateMany({
+        where: { OR: part.map(holderId), lastBlockNumber: { lt: block.number } },
         data: { lastBlockNumber: block.number, lastBlockHash: block.hash }
-      }))
+      })))
     }
 
     for (const k of keys) {
@@ -76,7 +80,7 @@ export function getNftRepository (prismaClient) {
       )
     }
 
-    if (keys.length) statements.push(prismaClient.nft_balance.deleteMany({ where: { OR: keys.map(k => ({ ...balanceId(k), quantity: 0 })) } }))
+    statements.push(...underBindLimit(keys).map(part => prismaClient.nft_balance.deleteMany({ where: { OR: part.map(k => ({ ...balanceId(k), quantity: 0 })) } })))
 
     return statements
   }
@@ -104,14 +108,15 @@ export function getNftRepository (prismaClient) {
     },
     async undoStatements (blocks) {
       const doomedHashes = blocks.map(b => b.hash)
-      const facts = await prismaClient.token_transfer.findMany({ where: { blockHash: { in: doomedHashes }, standard: { in: NFT_STANDARDS } } })
+      const doomedFacts = { blockHash: { in: doomedHashes }, standard: { in: NFT_STANDARDS } }
+      const facts = await prismaClient.token_transfer.findMany({ where: doomedFacts })
       if (!facts.length) return []
 
       const { holders } = netDeltas(facts, -1)
-      const rows = await prismaClient.nft_holder.findMany({
-        where: { OR: holders.map(holderId) },
+      const rows = (await Promise.all(underBindLimit(holders).map(part => prismaClient.nft_holder.findMany({
+        where: { OR: part.map(holderId) },
         select: { contract: true, standard: true, holder: true, version: true, lastBlockHash: true }
-      })
+      })))).flat()
       const doomed = new Set(doomedHashes)
       const repairs = []
       const removals = []
@@ -130,7 +135,7 @@ export function getNftRepository (prismaClient) {
 
       return [
         ...repairs,
-        prismaClient.token_transfer.deleteMany({ where: { OR: facts.map(factId) } }),
+        prismaClient.token_transfer.deleteMany({ where: doomedFacts }),
         ...aggregateStatements(facts, -1),
         ...removals
       ]
