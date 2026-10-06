@@ -122,12 +122,15 @@ const cases = {
   }
 }
 
-integrationDescribe('NFT ownership: concurrent saves and deletes through the repository', function () {
-  this.timeout(600000)
+async function setDefaultIsolation (level) {
+  const [{ name }] = await prismaClient.$queryRaw`SELECT current_database() AS name`
+  await prismaClient.$executeRawUnsafe(`ALTER DATABASE "${name}" ${level ? `SET default_transaction_isolation = '${level}'` : 'RESET default_transaction_isolation'}`)
+  await prismaClient.$disconnect()
+  const [{ default_transaction_isolation: current }] = await prismaClient.$queryRaw`SHOW default_transaction_isolation`
+  return current
+}
 
-  before(() => { prismaClient.$transaction = heldBatch })
-  after(() => { prismaClient.$transaction = runBatch })
-
+function raceEveryCase () {
   for (const [name, setup] of Object.entries(cases)) {
     it(`${name}: every trial equals a replay, and no delete error reaches the caller`, async () => {
       refusals.length = 0
@@ -143,4 +146,28 @@ integrationDescribe('NFT ownership: concurrent saves and deletes through the rep
       if (casesWithAGuaranteedRefusal.includes(name)) expect(refusals.filter(code => code === 'P2025')).to.have.lengthOf(TRIALS)
     })
   }
+}
+
+integrationDescribe('NFT ownership: concurrent saves and deletes through the repository', function () {
+  this.timeout(600000)
+
+  before(() => { prismaClient.$transaction = heldBatch })
+  after(() => { prismaClient.$transaction = runBatch })
+
+  raceEveryCase()
+})
+
+integrationDescribe('NFT ownership: concurrent saves and deletes on a database whose default isolation is repeatable read', function () {
+  this.timeout(600000)
+
+  before(async () => {
+    expect(await setDefaultIsolation('repeatable read')).to.equal('repeatable read')
+    prismaClient.$transaction = heldBatch
+  })
+  after(async () => {
+    prismaClient.$transaction = runBatch
+    await setDefaultIsolation(null)
+  })
+
+  raceEveryCase()
 })

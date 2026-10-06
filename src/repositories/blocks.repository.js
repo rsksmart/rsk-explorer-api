@@ -18,6 +18,7 @@ import {
 } from '.'
 
 const DELETE_ATTEMPTS = 3
+const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
 const RETRYABLE_DELETE_ERRORS = ['P2025', 'P2003']
 
 export function getBlocksRepository (prismaClient) {
@@ -129,7 +130,7 @@ export function getBlocksRepository (prismaClient) {
         return transaction
       }
 
-      return prismaClient.$transaction(generateTransaction())
+      return prismaClient.$transaction(generateTransaction(), READ_COMMITTED)
     },
     deleteOne (query) {
       return deleteBlocks(query)
@@ -157,7 +158,7 @@ export function getBlocksRepository (prismaClient) {
 
     for (let attempt = 1; targets.length; attempt++) {
       try {
-        await prismaClient.$transaction(await deleteStatements(targets))
+        await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
         return { count: targets.length }
       } catch (error) {
         if (attempt === DELETE_ATTEMPTS || !RETRYABLE_DELETE_ERRORS.includes(error.code)) throw error
