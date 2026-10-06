@@ -68,6 +68,31 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('repairs the holder row when it is the only row a concurrent older save touched', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, ZERO, A, 2)])
+    await save(40, 'a', [erc721(C721, ZERO, B, 5)])
+    beforeTheNextBatch(() => save(20, 'a', [erc721(C721, A, B, 1)]))
+
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+
+    const holder = await prismaClient.nft_holder.findFirst({ where: { holder: A } })
+    expect(holder.lastBlockNumber).to.equal(20)
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('repairs the token row when it is the only row a concurrent older save touched', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, ZERO, A, 2)])
+    beforeTheNextBatch(() => save(20, 'a', [erc721(C721, ZERO, B, 3)]))
+
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+
+    const token = await prismaClient.token.findUnique({ where: { contract: C721 } })
+    expect(token.blockNumber).to.equal(20)
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('never deletes a block replaced between the delete read and its batch', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, ZERO, A, 2)])
