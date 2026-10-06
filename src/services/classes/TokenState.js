@@ -9,7 +9,6 @@ import { sanitizeContractNameOrSymbol } from '../../lib/utils'
 const NAME_MAX_LENGTH = 128
 const SYMBOL_MAX_LENGTH = 32
 const MAX_UINT8 = 255
-const MAX_UINT256_DIGITS = 78
 
 const toText = (value, maxLength) => typeof value === 'string'
   ? Array.from(sanitizeContractNameOrSymbol(value)).slice(0, maxLength).join('')
@@ -22,7 +21,7 @@ const toDecimals = value => {
 
 const toUint256 = value => {
   const digits = value === null || value === undefined ? '' : value.toString()
-  return /^\d+$/.test(digits) && digits.length <= MAX_UINT256_DIGITS ? new BigNumber(digits).toFixed() : null
+  return /^\d+$/.test(digits) ? new BigNumber(digits).toFixed() : null
 }
 
 export function toTokenState (contract, { interfaces, proxyType, implementationAddress }, { name, symbol, decimals, totalSupply }) {
