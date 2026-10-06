@@ -18,7 +18,7 @@ import {
 } from '.'
 
 const DELETE_ATTEMPTS = 3
-const RETRYABLE_DELETE_ERRORS = ['P2025', 'P2003', 'P2034']
+const RETRYABLE_DELETE_ERRORS = ['P2025', 'P2003']
 
 export function getBlocksRepository (prismaClient) {
   return {
