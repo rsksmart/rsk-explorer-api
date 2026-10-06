@@ -5,6 +5,7 @@ import { decodeNftTransfers, TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BAT
 const contract = '0xB50069B248D0B9C268032EF16F1A6E019EB9807F'
 const from = '0x1111111111111111111111111111111111111111'
 const to = '0x2222222222222222222222222222222222222222'
+const operator = '0x3333333333333333333333333333333333333333'
 const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
 const log = (topics, data = '0x') => ({ eventId: '0597d6700000064cbabababababababab', address: contract, blockNumber: 5928199, blockHash: word('ab'), transactionHash: word('cd'), timestamp: 1640000000, topics, data })
 
@@ -19,9 +20,9 @@ describe('decodeNftTransfers', () => {
     expect(decodeNftTransfers(log([TRANSFER_TOPIC, word(from), word(to)], word('05')))).to.deep.equal([])
   })
 
-  it('decodes a TransferSingle id and value from data, with from and to in topics 2 and 3', () => {
+  it('decodes a TransferSingle id and value from data, with from and to in topics 2 and 3 and the operator ignored', () => {
     const data = defaultAbiCoder.encode(['uint256', 'uint256'], [7, 3])
-    const facts = decodeNftTransfers(log([TRANSFER_SINGLE_TOPIC, word(from), word(from), word(to)], data))
+    const facts = decodeNftTransfers(log([TRANSFER_SINGLE_TOPIC, word(operator), word(from), word(to)], data))
 
     expect(facts).to.have.lengthOf(1)
     expect(facts[0]).to.include({ standard: 'ERC1155', from, to, tokenId: word('07'), value: '3' })
