@@ -32,4 +32,12 @@ integrationDescribe('NFT ownership: blocks whose statements would pass Prisma\'s
     expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
     expect(await differences()).to.deep.equal([])
   })
+
+  it('deletes a block of 16,500 TransferBatch facts, more than an OR of their ids can bind', async () => {
+    const minted = ids(16500)
+    await save(10, [erc1155Batch(C1155, ZERO, A, minted, minted.map(() => 1))])
+
+    expect(await blocksRepository.deleteOne({ number: 10 })).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
 })

@@ -81,6 +81,16 @@ describe('# blocks.repository saveBlockData replace', function () {
     expect(message).to.equal('tx failed')
   })
 
+  it('runs a refused replace batch once, at read committed, and leaves the retry to the caller', async () => {
+    const refused = Object.assign(new Error('refused'), { code: 'P2025' })
+    const $transaction = sinon.stub().rejects(refused)
+    const refusing = getBlocksRepository({ $transaction, block: storedBlock() })
+    sinon.stub(refusing, 'insertOne').returns({ op: 'block.insert' })
+
+    expect(await refusing.saveBlockData(data, { replace: true }).catch(e => e)).to.equal(refused)
+    expect($transaction.calledOnceWithExactly(sinon.match.array, { isolationLevel: 'ReadCommitted' })).to.equal(true)
+  })
+
   it('does not delete when not replacing', async () => {
     await repo.saveBlockData(data)
 
