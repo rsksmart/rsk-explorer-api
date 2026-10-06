@@ -8,7 +8,7 @@ import { REPOSITORIES } from '../../repositories'
 import { bitcoinRskNetWorks } from '../../lib/types'
 import defaultConfig from '../../lib/defaultConfig'
 export class Block extends BcThing {
-  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false) {
+  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false, replace = false) {
     super({ nod3, initConfig, log, name: 'Blocks' })
     this.fetched = false
     this.log = log || console
@@ -17,6 +17,7 @@ export class Block extends BcThing {
     this.data = { block: null }
     this.status = status
     this.isTipBlock = tipBlock
+    this.replace = replace
     this.txRepository = REPOSITORIES.Tx
     this.eventRepository = REPOSITORIES.Event
     this.statsRepository = REPOSITORIES.Stats
@@ -41,12 +42,12 @@ export class Block extends BcThing {
   }
 
   async save () {
-    const { number, forceSaveBcStats } = this
+    const { number, forceSaveBcStats, replace } = this
     let data
     try {
       if (number < 0) throw new Error(`Invalid block number: ${number}`)
 
-      const exists = await this.repository.findOne({ number })
+      const exists = replace ? null : await this.repository.findOne({ number })
       if (exists) {
         this.log.warn(`Block ${number} already in db. Skipped`)
       } else {
@@ -57,7 +58,7 @@ export class Block extends BcThing {
         data.status = this.status
 
         // save block and all related data
-        await this.repository.saveBlockData(data)
+        await this.repository.saveBlockData(data, { replace })
 
         // save blockchain stats. Only for tip blocks (requires block and addresses inserted)
         if (this.isTipBlock || forceSaveBcStats) {

@@ -2,7 +2,7 @@ import { AsyncLocalStorage } from 'async_hooks'
 import { expect } from 'chai'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
-import { blockData, erc721, erc1155Single, ZERO } from './fixtures'
+import { blockData, blockHashOf, erc721, erc1155Single, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000e0721'
@@ -42,6 +42,18 @@ async function saveLikeInsertBlock (number, tag, logs) {
   }
 }
 
+async function replaceLikeInsertBlock (number, tag, logs) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await blocksRepository.saveBlockData(blockData(number, tag, logs), { replace: true })
+    } catch (error) {
+      const stored = await prismaClient.block.findUnique({ where: { number } })
+      if (stored && stored.hash === blockHashOf(number, tag)) return
+      if (attempt === 3) throw error
+    }
+  }
+}
+
 const twoBlocksForA = async base => {
   await saveLikeInsertBlock(base + 10, 'a', [erc721(C721, ZERO, A, 1)])
   await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 2)])
@@ -49,7 +61,8 @@ const twoBlocksForA = async base => {
 
 const casesWithAGuaranteedRefusal = [
   'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch',
-  'two deletes that both repair the token row, one of two blocks and one of the newer of them'
+  'two deletes that both repair the token row, one of two blocks and one of the newer of them',
+  'last block: a replace of N against a save of M < N whose transaction stays open across the replace batch'
 ]
 
 const cases = {
@@ -77,6 +90,13 @@ const cases = {
     await twoBlocksForA(base)
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
+      held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
+    ]
+  },
+  'last block: a replace of N against a save of M < N whose transaction stays open across the replace batch': async base => {
+    await twoBlocksForA(base)
+    return [
+      async () => { await sleep(60); return replaceLikeInsertBlock(base + 30, 'e', [erc721(C721, ZERO, C, 2)]) },
       held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
     ]
   },

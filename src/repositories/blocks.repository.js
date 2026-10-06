@@ -40,7 +40,7 @@ export function getBlocksRepository (prismaClient) {
     insertOne (data) {
       return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
-    async saveBlockData (data) {
+    async saveBlockData (data, { replace = false } = {}) {
       const { block, transactions, internalTransactions, events, tokenAddresses, tokenStates, addresses, balances, latestBalances, status } = data
       if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
@@ -101,6 +101,8 @@ export function getBlocksRepository (prismaClient) {
         return queries
       }
 
+      const replacedBlock = replace ? await deleteStatements(await findTargets({ number: block.number })) : []
+
       const generateTransaction = () => {
         const transaction = [
           this.insertOne(block), // insert block
@@ -115,6 +117,10 @@ export function getBlocksRepository (prismaClient) {
           ...getTokensAddressesQueries(), // insert tokenAddresses
           ...summaryRepository.insertOne(data) // save block summary
         ]
+
+        if (replace) {
+          transaction.unshift(...replacedBlock)
+        }
 
         if (status) {
           transaction.push(statusRepository.insertOne(status)) // insert status
@@ -141,10 +147,12 @@ export function getBlocksRepository (prismaClient) {
     ]
   }
 
+  function findTargets (where) {
+    return prismaClient.block.findMany({ where, select: { number: true, hash: true }, orderBy: { number: 'asc' } })
+  }
+
   async function deleteBlocks (where) {
-    const select = { number: true, hash: true }
-    const orderBy = { number: 'asc' }
-    const pinned = await prismaClient.block.findMany({ where, select, orderBy })
+    const pinned = await findTargets(where)
     let targets = pinned
 
     for (let attempt = 1; targets.length; attempt++) {
@@ -153,7 +161,7 @@ export function getBlocksRepository (prismaClient) {
         return { count: targets.length }
       } catch (error) {
         if (attempt === DELETE_ATTEMPTS || !RETRYABLE_DELETE_ERRORS.includes(error.code)) throw error
-        targets = await prismaClient.block.findMany({ where: { hash: { in: pinned.map(b => b.hash) } }, select, orderBy })
+        targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
       }
     }
 

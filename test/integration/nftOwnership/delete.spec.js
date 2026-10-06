@@ -171,4 +171,16 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await blocksRepository.deleteMany({ number: { in: [10, 30] } })).to.deep.equal({ count: 1 })
     expect(await differences()).to.deep.equal([])
   })
+
+  it('replaces a block with NFT facts in place, every new table equal to a replay', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, A, B, 1), erc721(C721, ZERO, C, 2), erc1155Single(C1155, ZERO, H, 7, 3)])
+    await save(40, 'a', [erc721(C721, ZERO, A, 9)])
+
+    await blocksRepository.saveBlockData(blockData(30, 'e', [erc721(C721, A, C, 1), erc1155Single(C1155, ZERO, B, 8, 2)]), { replace: true })
+
+    const stored = await prismaClient.block.findUnique({ where: { number: 30 } })
+    expect(stored.hash).to.equal(blockHashOf(30, 'e'))
+    expect(await differences()).to.deep.equal([])
+  })
 })
