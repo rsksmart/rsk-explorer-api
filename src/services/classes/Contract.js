@@ -187,8 +187,8 @@ class Contract extends BcThing {
 
   async fetchTokenAddressesBalances (blockNumber) {
     if (!this.fetched) await this.fetch()
-    const isFungible = this.data.contractInterfaces.some(i => fungibleTokensInterfaces.includes(i))
-    if (!this.isToken || !isFungible) return []
+    if (!this.isToken) return []
+    if (!this.data.contractInterfaces.some(i => fungibleTokensInterfaces.includes(i))) return []
     const { addresses, address, contract, nod3 } = this
 
     const tokenAddresses = Object.keys(addresses)
