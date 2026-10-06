@@ -15,8 +15,10 @@ export async function staticSyncer (syncStatus, confirmationsThreshold, blocksCo
   syncStatus.staticSyncerRunning = true
 
   try {
+    const { number: latestBlock } = syncStatus.latestBlock
+
     // congruence validation
-    await checkBlocksCongruence(blocksCongruenceCheckThreshold, { log })
+    await checkBlocksCongruence(blocksCongruenceCheckThreshold, { log, latestBlock, confirmationsThreshold })
 
     // missing blocks
     const initConfig = await getInitConfig()
@@ -24,8 +26,6 @@ export async function staticSyncer (syncStatus, confirmationsThreshold, blocksCo
     const blocksInDb = await blocksRepository.find({}, { number: true }, { number: 'desc' })
     const blocksNumbers = blocksInDb.map(b => b.number)
     syncStatus.connected = await nod3.isConnected()
-
-    const { number: latestBlock } = syncStatus.latestBlock
 
     const missingSegments = getMissingSegments(latestBlock - confirmationsThreshold, blocksNumbers)
     const requestingBlocks = latestBlock - blocksNumbers.length
