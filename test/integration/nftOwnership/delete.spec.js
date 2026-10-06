@@ -93,6 +93,16 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('saves and deletes an NFT transfer at log index 4096, whose event id is 33 characters long', async () => {
+    const data = blockData(10, 'a', [erc721(C721, ZERO, A, 1)], { firstLogIndex: 4096 })
+    expect(data.events[0].eventId).to.have.lengthOf(33)
+
+    await blocksRepository.saveBlockData(data)
+    expect(await differences()).to.deep.equal([])
+    expect(await blocksRepository.deleteOne({ number: 10 })).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('never deletes a block replaced between the delete read and its batch', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, ZERO, A, 2)])

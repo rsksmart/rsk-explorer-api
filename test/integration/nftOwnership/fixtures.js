@@ -29,7 +29,7 @@ export const tokenStateAt = (contract, number) => ({
 
 export const blockHashOf = (number, tag) => word(`${number.toString(16)}${tag}`.padStart(8, '0') + 'b')
 
-export function blockData (number, tag, logs) {
+export function blockData (number, tag, logs, { firstLogIndex = 0 } = {}) {
   const hash = blockHashOf(number, tag)
   const txHash = word(`${number.toString(16)}${tag}7`)
   const timestamp = 1700000000 + number
@@ -48,7 +48,7 @@ export function blockData (number, tag, logs) {
     value: '0x0', input: '0x', type: '0x0', timestamp, status: '0x1', isSuccessful: true, receipt, txType: 'normal',
     txId: getEventId({ blockNumber: number, transactionIndex: 0, blockHash: hash }), gasUsed: 21000
   }
-  const events = logs.map((log, logIndex) => ({
+  const events = logs.map((log, i) => ({ log, logIndex: firstLogIndex + i })).map(({ log, logIndex }) => ({
     eventId: getEventId({ blockNumber: number, transactionIndex: 0, blockHash: hash, logIndex }),
     address: log.contract, topics: log.topics, data: log.data, args: log.args, abi: null, event: null, signature: null,
     blockHash: hash, blockNumber: number, logIndex, transactionHash: txHash, transactionIndex: 0, timestamp, txStatus: '0x1', _addresses: []
