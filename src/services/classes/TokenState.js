@@ -44,13 +44,17 @@ export class TokenState extends BcThing {
     const states = []
 
     for (const contract of nftContractsOf(decodeBlockNftTransfers(events))) {
-      const parser = new ContractParser({ nod3: this.nod3, initConfig: this.initConfig, log: this.log, txBlockNumber: block.number })
-      const details = await parser.getContractDetails(contract, block.number)
-      const tokenData = await parser.getDefaultTokenData(parser.makeContract(contract), block.number)
-      states.push(toTokenState(contract, details, tokenData))
+      states.push(await this.fetchOne(contract, block.number))
     }
 
     return states
+  }
+
+  async fetchOne (contract, blockNumber) {
+    const parser = new ContractParser({ nod3: this.nod3, initConfig: this.initConfig, log: this.log, txBlockNumber: blockNumber })
+    const details = await parser.getContractDetails(contract, blockNumber)
+    const tokenData = await parser.getDefaultTokenData(parser.makeContract(contract), blockNumber)
+    return toTokenState(contract, details, tokenData)
   }
 }
 
