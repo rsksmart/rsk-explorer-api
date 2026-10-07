@@ -161,7 +161,10 @@ function raceEveryCase () {
 integrationDescribe('NFT ownership: concurrent saves and deletes through the repository', function () {
   this.timeout(600000)
 
-  before(() => { prismaClient.$transaction = heldBatch })
+  before(async () => {
+    expect(await setDefaultIsolation(null)).to.equal('read committed')
+    prismaClient.$transaction = heldBatch
+  })
   after(() => { prismaClient.$transaction = runBatch })
 
   raceEveryCase()
