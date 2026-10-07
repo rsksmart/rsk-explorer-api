@@ -35,30 +35,59 @@ const testContracts = [
   }
 ]
 
+// A proxy whose own row carries no usable ABI maps to null: the implementation's is the one that counts.
 const verifiedAbisDbResponseMock = {
-  [Bridge.address]: { abi: Bridge.abi, match: true },
-  [Remasc.address]: { abi: Remasc.abi, match: true },
-  [DollarOnChain.address]: { abi: DollarOnChain.abi, match: true },
-  [USDRIF.address]: { abi: [], match: true },
-  [USDRIF.implementationAddress]: { abi: USDRIF.abi, match: true },
-  [USDCe.address]: { abi: [], match: true },
-  [USDCe.implementationAddress]: { abi: USDCe.abi, match: true }
+  [Bridge.address]: Bridge.abi,
+  [Remasc.address]: Remasc.abi,
+  [DollarOnChain.address]: DollarOnChain.abi,
+  [USDRIF.address]: null,
+  [USDRIF.implementationAddress]: USDRIF.abi,
+  [USDCe.address]: null,
+  [USDCe.implementationAddress]: USDCe.abi
+}
+
+const ERC1967_IMPLEMENTATION_SLOT =
+  '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc'
+
+/**
+ * A proxy's implementation is upgraded on chain, so pinning the address a
+ * fixture was recorded against makes the ABI lookup miss the day it changes and
+ * the contract silently falls back to a default ABI. The address is read from
+ * the proxy instead, and the fixture's ABI is answered for whatever it reports.
+ */
+const answerForCurrentImplementation = async (proxy) => {
+  const nod3 = getNod3Instance(proxy.network)
+  const slot = await nod3.eth.getStorageAt(
+    proxy.address,
+    ERC1967_IMPLEMENTATION_SLOT
+  )
+  const implementation = `0x${slot.slice(26)}`.toLowerCase()
+
+  if (implementation !== proxy.implementationAddress) {
+    verifiedAbisDbResponseMock[implementation] = proxy.abi
+  }
 }
 
 describe('Contract entity', () => {
   /**
    * @type {import('sinon').SinonStub}
    */
-  let findOneStub
+  let findDecodableAbiStub
+
+  before(async () => {
+    for (const proxy of [USDRIF, USDCe]) {
+      await answerForCurrentImplementation(proxy)
+    }
+  })
 
   beforeEach(() => {
     // Create the stub before each test
-    findOneStub = sinon.stub(verificationResultsRepository, 'findOne')
+    findDecodableAbiStub = sinon.stub(verificationResultsRepository, 'findDecodableVerifiedAbi')
   })
 
   afterEach(() => {
     // Restore the original method after each test
-    findOneStub.restore()
+    findDecodableAbiStub.restore()
   })
 
   describe('should properly initialize and fetch contract data', () => {
@@ -67,7 +96,7 @@ describe('Contract entity', () => {
         describe(`[${contractData.name} - ${contractData.network}] ${contractData.address} (${type})`, async () => {
           // Configure stub to return null when testing unverified ABIs
           beforeEach(() => {
-            findOneStub.resolves(null)
+            findDecodableAbiStub.resolves(null)
           })
 
           const {
@@ -120,7 +149,7 @@ describe('Contract entity', () => {
           // Configure stub to return verified ABIs
           beforeEach(() => {
             // Setup the stub to return the appropriate ABI based on the address
-            findOneStub.callsFake(async ({ address }) => {
+            findDecodableAbiStub.callsFake(async (address) => {
               return verifiedAbisDbResponseMock[address] || null
             })
           })

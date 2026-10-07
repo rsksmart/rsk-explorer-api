@@ -2,6 +2,7 @@ import io from 'socket.io-client'
 import { isAddress, keccak256, add0x } from '@rsksmart/rsk-utils'
 import { REPOSITORIES } from '../../repositories'
 import { CONTRACT_VERIFIER_SOLC_VERSIONS_ID } from '../../lib/defaultConfig'
+import { verificationStatus } from '../../lib/types'
 
 const {
   Config: configRepository,
@@ -54,7 +55,17 @@ export function ContractVerifierModule ({ url } = {}, { log } = {}) {
             log.debug(`Saving verification result ${address}`)
             const sources = extractUsedSourcesFromRequest(request, result)
             const { abi } = result
-            const doc = { id, address, match, request, result, abi, sources, timestamp: Date.now() }
+            const doc = {
+              id,
+              address,
+              match,
+              status: verificationStatus.SUCCESS,
+              request,
+              result,
+              abi,
+              sources,
+              timestamp: Date.now()
+            }
             const inserted = await verificationResultsRepository.insertOne(doc)
             if (!inserted) throw new Error('Error inserting verification result')
             log.debug(`Verification result inserted. Contract address: ${address}, verification result ID: ${inserted.id}`)
