@@ -59,7 +59,10 @@ export async function backfillTransfers ({ prismaClient = defaultPrismaClient, f
     if (!events.length) return true
 
     const eventsByBlock = new Map()
-    for (const event of events) eventsByBlock.set(event.blockHash, [...(eventsByBlock.get(event.blockHash) || []), toRawEvent(event)])
+    for (const event of events) {
+      if (!eventsByBlock.has(event.blockHash)) eventsByBlock.set(event.blockHash, [])
+      eventsByBlock.get(event.blockHash).push(toRawEvent(event))
+    }
 
     const stored = await prismaClient.token_transfer.groupBy({
       by: ['blockHash'],
