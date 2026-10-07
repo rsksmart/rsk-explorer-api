@@ -30,8 +30,8 @@ function legsOf (event) {
   return ids.flatMap((id, i) => values[i] === undefined ? [] : [{ standard: 'ERC1155', tokenId: word(BigInt(id).toString(16)), value: BigInt(values[i]), from, to }])
 }
 
-export async function replay ({ tokenState = tokenStateAt } = {}) {
-  const events = await prismaClient.event.findMany()
+export async function replay ({ tokenState = tokenStateAt, eventWhere = {} } = {}) {
+  const events = await prismaClient.event.findMany({ where: eventWhere })
   const facts = new Map()
   const amounts = new Map()
   const holders = new Map()
