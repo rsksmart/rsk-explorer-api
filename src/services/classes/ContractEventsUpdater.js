@@ -5,12 +5,14 @@ import { prismaClient } from '../../lib/prismaClient'
 import nod3 from '../../lib/nod3Connect'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
 import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
+import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC } from '../../lib/nftTransfers'
 
 export default class ContractEventsUpdater {
-  constructor ({ log = console, prismaClient: prismaClientInstance = prismaClient } = {}) {
+  constructor ({ log = console, prismaClient: prismaClientInstance = prismaClient, nod3: nod3Connection = nod3 } = {}) {
     this.log = log
     this.initConfig = null
     this.prismaClient = prismaClientInstance
+    this.nod3 = nod3Connection
   }
 
   async getInitConfig () {
@@ -43,12 +45,15 @@ export default class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
-  async findEventEmittersByTopic0 (topic0s = []) {
-    if (!Array.isArray(topic0s) || !topic0s.length) throw new Error('Invalid topic0s provided')
-
+  async findNftTransferEmitters () {
     const groups = await this.prismaClient.event.groupBy({
       by: ['address'],
-      where: { topic0: { in: topic0s } },
+      where: {
+        OR: [
+          { topic0: TRANSFER_TOPIC, topic3: { not: null } },
+          { topic0: { in: [TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC] } }
+        ]
+      },
       orderBy: { address: 'asc' }
     })
 
@@ -334,7 +339,7 @@ export default class ContractEventsUpdater {
       this.validateContractAddress(contractAddress)
 
       const initConfig = await this.getInitConfig()
-      const parser = new ContractParser({ nod3, initConfig })
+      const parser = new ContractParser({ nod3: this.nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.getContractABI(contractAddress, contractDetails)
 
@@ -363,7 +368,7 @@ export default class ContractEventsUpdater {
       this.validateContractAddress(contractAddress)
 
       const initConfig = await this.getInitConfig()
-      const parser = new ContractParser({ nod3, initConfig })
+      const parser = new ContractParser({ nod3: this.nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.fetchAbiFromDb(contractAddress)
 
@@ -392,7 +397,7 @@ export default class ContractEventsUpdater {
 
     const bridgeAddress = getBridgeAddress()
     const initConfig = await this.getInitConfig()
-    const parser = new ContractParser({ nod3, initConfig, txBlockNumber: blockNumber })
+    const parser = new ContractParser({ nod3: this.nod3, initConfig, txBlockNumber: blockNumber })
     const contractDetails = await parser.getContractDetails(bridgeAddress)
 
     return {
