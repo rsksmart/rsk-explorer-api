@@ -219,7 +219,10 @@ async function main () {
   let watermark = true
   const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {
     watermark = watermark && complete
-    if (watermark) fs.writeFileSync(resumeFile(phase), `${nextBlock}\n`)
+    if (watermark) {
+      fs.writeFileSync(`${resumeFile(phase)}.next`, `${nextBlock}\n`)
+      fs.renameSync(`${resumeFile(phase)}.next`, resumeFile(phase))
+    }
     console.log(`chunk ${firstBlock}..${lastBlock} ${complete ? 'done' : 'INCOMPLETE'} · ${Math.round((Date.now() - started) / 1000)} s`)
   }
 
