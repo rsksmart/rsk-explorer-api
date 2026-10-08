@@ -26,7 +26,7 @@ const fetcher = ({ failing = () => false } = {}) => {
   let last = clean()
   return {
     async fetchOne (contract, blockNumber) {
-      last = failing(contract, blockNumber) ? { ...clean(), nodeErrors: 1, tokenReadErrors: 1, lastNodeError: 'socket hang up' } : clean()
+      last = failing(contract, blockNumber) ? { ...clean(), nodeErrors: 1, tokenReadErrors: 1, lastNodeError: 'injected internal error' } : clean()
       return tokenStateAt(contract, blockNumber)
     },
     takeStats: () => last

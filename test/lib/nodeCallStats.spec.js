@@ -19,9 +19,9 @@ describe('countNodeCalls', () => {
     expect(takeStats()).to.deep.include({ calls: 1, reverts: 1, nodeErrors: 0, tokenReadErrors: 0 })
   })
 
-  it('counts a dropped connection and a non-revert JSON-RPC error as node errors, and a token read among them', async () => {
+  it('counts a request the provider rejects and a non-revert JSON-RPC error as node errors, and a token read among them', async () => {
     const answers = [
-      () => { throw Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' }) },
+      () => { throw new Error('injected provider rejection') },
       () => { throw new JsonRpcError({ code: -32602, message: 'Invalid block number 125000000' }) },
       () => '0x01'
     ]

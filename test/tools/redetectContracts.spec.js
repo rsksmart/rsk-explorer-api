@@ -15,7 +15,7 @@ const OWNERSHIP_TRANSFERRED_TOPIC0 = '0x8be0079c531659141344cd1fd0a4f28419497f97
 const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topics: [topic0] } } })
 const decodedEvent = () => ({ error: false })
 const clean = () => ({ calls: 5, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, lastNodeError: null })
-const rejected = () => ({ calls: 5, reverts: 0, nodeErrors: 1, tokenReadErrors: 0, lastNodeError: 'socket hang up' })
+const rejected = () => ({ calls: 5, reverts: 0, nodeErrors: 1, tokenReadErrors: 0, lastNodeError: 'injected internal error' })
 
 const makeUpdater = (events, interfaces = ['ERC1155']) => ({
   getContractParser: sinon.stub().resolves({ contractDetails: { interfaces } }),
@@ -98,13 +98,14 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
     expect(entry.decodeNodeErrors).to.equal(1)
   })
 
-  describe('through the real contract parser, against a node that drops the ERC-721 probe once', () => {
+  describe('through the real contract parser, against a node that fails the ERC-721 probe once', () => {
     const SELECTOR_LESS_CODE = '0x6001600155'
-    const answers = probeDropped => ({ method, params }) => {
+    const answers = probeFaults => ({ method, params }) => {
       if (method === 'eth_getCode') return SELECTOR_LESS_CODE
       if (method === 'eth_getStorageAt') return `0x${'0'.repeat(64)}`
       const interfaceId = `0x${params[0].data.slice(10, 18)}`
-      if (interfaceId === '0x80ac58cd' && probeDropped.shift()) throw Object.assign(new Error('socket hang up'), { code: 'ECONNRESET' })
+      const fault = interfaceId === '0x80ac58cd' && probeFaults.shift()
+      if (fault === 'reject') throw new Error('injected internal error')
       return `0x${'0'.repeat(63)}${['0x01ffc9a7', '0x80ac58cd'].includes(interfaceId) ? 1 : 0}`
     }
     const fakeNode = answer => {
@@ -112,8 +113,8 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       return new Nod3({ url: 'fake', rpc })
     }
 
-    it('never stores the probe failure as "not an NFT"', async () => {
-      const { nod3, takeStats } = countNodeCalls(fakeNode(answers([true])))
+    it('never stores a rejected probe as "not an NFT"', async () => {
+      const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['reject'])))
       const updater = new ContractEventsUpdater({ nod3, log: { info () {}, error () {} } })
       sinon.stub(updater, 'getInitConfig').resolves({ net: { id: '30' } })
       sinon.stub(updater, 'getContractABI').resolves(null)
