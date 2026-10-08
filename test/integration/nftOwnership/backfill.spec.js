@@ -242,6 +242,34 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect([...firstLines, ...secondLines].filter(line => line.includes(PHASE_A_NOTICE))).to.deep.equal([])
   })
 
+  it('phase B over an explicit range reads phase A\'s marker once, before its pairs: phase A finishing while B is between its pair read and its write leaves no pair behind', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const transfersMarkerFile = markerIn('A')
+    const markerFile = markerIn('B')
+    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
+    const aMarkerBeforeB = readResume(transfersMarkerFile)
+    let phaseARan = false
+    const fetcherRunningPhaseA = {
+      async fetchOne (contract, blockNumber) {
+        if (!phaseARan) {
+          phaseARan = true
+          await runPhase({ phase: 'A', chunkBlocks: 3, markerFile: transfersMarkerFile })
+        }
+        return tokenStateAt(contract, blockNumber)
+      },
+      takeStats: clean
+    }
+
+    await runPhase({ phase: 'B', fromArg: 0, toArg: 16, chunkBlocks: 100, markerFile, transfersMarkerFile, fetchers: [fetcherRunningPhaseA] })
+    const bMarkerAfterConcurrentB = readResume(markerFile)
+    const aMarkerAfterConcurrentB = readResume(transfersMarkerFile)
+    await runPhase({ phase: 'B', chunkBlocks: 100, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+
+    expect([aMarkerBeforeB, aMarkerAfterConcurrentB, bMarkerAfterConcurrentB]).to.deep.equal([13, 17, 13])
+    expect(await differences()).to.deep.equal([])
+    expect(readResume(markerFile)).to.equal(17)
+  })
+
   it('phase B never moves its marker past phase A\'s, so a B run before A has finished leaves no pair behind: A 14, B, A, B', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const transfersMarkerFile = markerIn('A')
