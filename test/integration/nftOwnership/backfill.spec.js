@@ -283,12 +283,15 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     const markerAfterFromZero = readResume(markerFile)
     const aboveTheMarker = (await loggedLines(() => phaseB(14))).filter(line => line.includes(PHASE_A_NOTICE))
     const belowPhaseAMarker = (await loggedLines(() => phaseB(0, 12))).filter(line => line.includes(PHASE_A_NOTICE))
+    const atPhaseAMarker = (await loggedLines(() => phaseB(0, 13))).filter(line => line.includes(PHASE_A_NOTICE))
 
     expect(fromZero).to.have.length(1)
     expect(fromZero[0]).to.include("Phase A's resume marker is at 13")
     expect(markerAfterFromZero).to.equal(13)
     expect(aboveTheMarker).to.deep.equal([])
     expect(belowPhaseAMarker).to.deep.equal([])
+    expect(atPhaseAMarker).to.have.length(1)
+    expect(atPhaseAMarker[0]).to.include("Phase A's resume marker is at 13")
     expect(readResume(markerFile)).to.equal(13)
   })
 
