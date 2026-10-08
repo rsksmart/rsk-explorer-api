@@ -3,7 +3,7 @@ import { soliditySignature } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
 import erc721Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC721.json'
 import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
-import { createCountedNod3 } from '../lib/nodeCallStats'
+import { createCountedNod3, REQUEST_TIMEOUT_MS } from '../lib/nodeCallStats'
 import { nftTokensInterfaces } from '../lib/types'
 import config from '../lib/config'
 import fs from 'fs'
@@ -36,7 +36,7 @@ const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
   event.error && candidateSet.blockingEventTopic0s.has(failedEventTopic0(event))
 ).length
 
-const DETECTION_TIMEOUT_MS = 60000
+const DETECTION_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS
 const DETECTION_ATTEMPTS = 3
 const resumeFile = setName => path.join(process.cwd(), `redetect-contracts-${setName}.resume`)
 

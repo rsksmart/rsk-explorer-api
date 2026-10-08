@@ -2,6 +2,7 @@ import { nod3Instance } from './nod3Connect'
 
 export const REVERT_ERROR_CODE = -32015
 export const TOKEN_READ_SELECTORS = ['0x06fdde03', '0x95d89b41', '0x313ce567', '0x18160ddd']
+export const REQUEST_TIMEOUT_MS = 60000
 
 const emptyStats = () => ({ calls: 0, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, lastNodeError: null })
 
@@ -16,7 +17,7 @@ function withTimeout (promise, ms) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-export function countNodeCalls (nod3, { requestTimeoutMs = 60000 } = {}) {
+export function countNodeCalls (nod3, { requestTimeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   const { rpc } = nod3
   const send = rpc.send.bind(rpc)
   let stats = emptyStats()

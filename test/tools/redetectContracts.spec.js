@@ -4,7 +4,7 @@ import { Nod3 } from '@rsksmart/nod3'
 import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
 import { processCandidate, CANDIDATE_SETS } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
-import { countNodeCalls } from '../../src/lib/nodeCallStats'
+import { countNodeCalls, REQUEST_TIMEOUT_MS } from '../../src/lib/nodeCallStats'
 
 const address = '0x11b64191106b1cf66fcd2f8389077c596cdc5646'
 const candidateSet = CANDIDATE_SETS['nft-transfer-emitters']
@@ -106,10 +106,16 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       const interfaceId = `0x${params[0].data.slice(10, 18)}`
       const fault = interfaceId === '0x80ac58cd' && probeFaults.shift()
       if (fault === 'reject') throw new Error('injected internal error')
+      if (fault === 'hang') return new Promise(() => {})
       return `0x${'0'.repeat(63)}${['0x01ffc9a7', '0x80ac58cd'].includes(interfaceId) ? 1 : 0}`
     }
-    const fakeNode = answer => {
-      const rpc = new JsonRpc({ send: async payload => ({ jsonrpc: '2.0', id: payload.id, result: answer(payload) }) })
+    const fakeNode = (answer, { latencyMs = 0 } = {}) => {
+      const rpc = new JsonRpc({
+        send: async payload => {
+          if (latencyMs) await new Promise(resolve => setTimeout(resolve, latencyMs))
+          return { jsonrpc: '2.0', id: payload.id, result: await answer(payload) }
+        }
+      })
       return new Nod3({ url: 'fake', rpc })
     }
     const realUpdater = nod3 => {
@@ -142,6 +148,25 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
 
       expect(bucket).to.equal('tagged')
       expect(updater.getContractParser.callCount).to.equal(1)
+    })
+
+    describe('with the timeouts the tool runs with', () => {
+      let clock
+      beforeEach(() => { clock = sinon.useFakeTimers() })
+      afterEach(() => clock.restore())
+
+      it('spends one detection attempt on one request the node never answers', async () => {
+        const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['hang']), { latencyMs: 10 }))
+        const updater = realUpdater(nod3)
+
+        const processing = processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
+        await clock.tickAsync(3 * REQUEST_TIMEOUT_MS)
+        const { bucket, entry } = await processing
+
+        expect(bucket).to.equal('tagged')
+        expect(entry.retries).to.equal(1)
+        expect(updater.saveContractDetails.firstCall.args[1].interfaces).to.include('ERC721')
+      })
     })
   })
 })
