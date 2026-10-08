@@ -230,7 +230,8 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     const markerFile = markerIn('B')
     await runPhase({ phase: 'A', chunkBlocks: 3, markerFile: transfersMarkerFile })
     for (const [number, logs] of HISTORY.filter(([number]) => number > 13)) await blocksRepository.saveBlockData(blockData(number, 'a', logs))
-    const phaseB = () => runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+    const reports = []
+    const phaseB = async () => reports.push(await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] }))
 
     const firstLines = await loggedLines(phaseB)
     const markerAfterFirst = readResume(markerFile)
@@ -239,6 +240,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
     expect(readResume(transfersMarkerFile)).to.equal(14)
     expect([markerAfterFirst, readResume(markerFile)]).to.deep.equal([14, 14])
+    expect(reports.map(report => report.blocksRead)).to.deep.equal([4, 0])
     expect([...firstLines, ...secondLines].filter(line => line.includes(PHASE_A_NOTICE))).to.deep.equal([])
   })
 
