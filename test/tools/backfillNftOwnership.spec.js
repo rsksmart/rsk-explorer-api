@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
-import { readResume, writeResume } from '../../src/tools/backfillNftOwnership'
+import { readResume, writeResume, exitCodeOf } from '../../src/tools/backfillNftOwnership'
 
 describe('backfillNftOwnership resume marker', () => {
   let file
@@ -31,5 +31,19 @@ describe('backfillNftOwnership resume marker', () => {
     sinon.restore()
 
     expect(readResume(file)).to.equal(13)
+  })
+})
+
+describe('backfillNftOwnership exit code', () => {
+  it('exits 1 on a refused phase B run and on a pair left unstored, and 0 on a clean phase A or phase B run', () => {
+    const cleanB = { pairs: 9, pairsWritten: 9, pairsFailed: [] }
+    const cleanA = { blocksRead: 7, blocksWritten: 6, facts: 13 }
+
+    expect([
+      exitCodeOf({ refusedWithoutPhaseAMarker: true }),
+      exitCodeOf({ ...cleanB, pairsWritten: 8, pairsFailed: [{ contract: '0x00000000000000000000000000000000000e0721', blockNumber: 12 }] }),
+      exitCodeOf(cleanB),
+      exitCodeOf(cleanA)
+    ]).to.deep.equal([1, 1, 0, 0])
   })
 })

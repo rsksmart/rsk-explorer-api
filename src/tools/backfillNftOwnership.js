@@ -235,6 +235,8 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   return report
 }
 
+export const exitCodeOf = report => report.refusedWithoutPhaseAMarker || (report.pairsFailed && report.pairsFailed.length) ? 1 : 0
+
 function printUsageAndExit () {
   console.log(`Usage: node dist/tools/${toolName} phase(A: transfers and ownership from event | B: token state at each transfer block, reads the node) fromBlock(optional; default: the resume marker, else 0) toBlock(optional; default: the highest stored block, and for phase B the block below phase A's resume marker) chunkBlocks(optional, default 1000) concurrency(optional, phase B node readers, default 4)`)
   console.log(`Resume markers: ${resumeFile('A')}, ${resumeFile('B')} (the next block to process; only a run that starts at or below it moves it, and phase B's never passes phase A's; delete to start over)`)
@@ -262,7 +264,7 @@ async function main () {
   }
 
   const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers })
-  process.exit(report.refusedWithoutPhaseAMarker || (report.pairsFailed && report.pairsFailed.length) ? 1 : 0)
+  process.exit(exitCodeOf(report))
 }
 
 if (require.main === module) {
