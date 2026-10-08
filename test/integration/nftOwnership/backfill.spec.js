@@ -56,13 +56,22 @@ const loggedLines = async run => {
     log.restore()
   }
 }
-const markerIn = phase => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-marker-')), `backfill-nft-ownership-${phase}.resume`)
+const tempDirs = []
+const tempDir = prefix => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix))
+  tempDirs.push(dir)
+  return dir
+}
+const markerIn = phase => path.join(tempDir('backfill-marker-'), `backfill-nft-ownership-${phase}.resume`)
 
 integrationDescribe('NFT ownership: the two-phase backfill', function () {
   this.timeout(120000)
 
   beforeEach(resetDatabase)
-  afterEach(() => { prismaClient.$transaction = runBatch })
+  afterEach(() => {
+    prismaClient.$transaction = runBatch
+    for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
+  })
 
   it('phase A and phase B over blocks stored before the NFT tables existed equal a replay of their events', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
@@ -312,13 +321,13 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
   it('phase B with no end block, with or without a start block, refuses a working directory whose phase A marker is missing, empty or garbled: it names the directory and stores nothing', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const cwd = process.cwd()
-    const phaseADir = fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-a-'))
+    const phaseADir = tempDir('backfill-cwd-a-')
     const outcomes = []
     try {
       process.chdir(phaseADir)
       await runPhase({ phase: 'A', chunkBlocks: 3 })
       for (const [phaseAMarker, fromArg] of [null, '', 'garbled\n'].flatMap(marker => [[marker, undefined], [marker, 0]])) {
-        const phaseBDir = fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-b-'))
+        const phaseBDir = tempDir('backfill-cwd-b-')
         process.chdir(phaseBDir)
         if (phaseAMarker !== null) fs.writeFileSync('backfill-nft-ownership-A.resume', phaseAMarker)
         let report
@@ -341,7 +350,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
   it('the command line\'s default marker paths: phase B with no marker arguments reads phase A\'s marker from the working directory', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const cwd = process.cwd()
-    process.chdir(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-')))
+    process.chdir(tempDir('backfill-cwd-'))
     try {
       await runPhase({ phase: 'A', chunkBlocks: 3 })
       await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })

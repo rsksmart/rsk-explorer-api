@@ -9,7 +9,10 @@ describe('backfillNftOwnership resume marker', () => {
   let file
 
   beforeEach(() => { file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-marker-')), 'backfill-nft-ownership-B.resume') })
-  afterEach(() => sinon.restore())
+  afterEach(() => {
+    sinon.restore()
+    fs.rmSync(path.dirname(file), { recursive: true, force: true })
+  })
 
   it('reads back the next block it wrote, and nothing from a missing or unreadable marker', () => {
     expect(readResume(file)).to.equal(null)
