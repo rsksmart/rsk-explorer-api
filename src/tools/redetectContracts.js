@@ -74,29 +74,30 @@ async function detectWithoutNodeErrors ({ updater, address, takeStats, progress 
     const { nodeErrors, lastNodeError } = takeStats()
     nodeErrorsPerAttempt.push(nodeErrors)
 
-    if (!failure && !nodeErrors) return { contractDetails: detected.contractDetails, nodeErrorsPerAttempt }
+    if (!failure && !nodeErrors) return { detection: detected, nodeErrorsPerAttempt }
     console.log(`${progress} ${address}: detection attempt ${attempt} saw ${nodeErrors} rejected node call(s)${failure ? ` and failed (${failure.message})` : ''}${lastNodeError ? `, last: ${lastNodeError}` : ''}. Nothing stored from it.`)
   }
 
-  return { contractDetails: null, nodeErrorsPerAttempt }
+  return { detection: null, nodeErrorsPerAttempt }
 }
 
 export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '', markProcessed, takeStats }) {
   try {
     console.log(`${progress} ${address}: detecting interfaces...`)
-    const { contractDetails, nodeErrorsPerAttempt } = await detectWithoutNodeErrors({ updater, address, takeStats, progress })
+    const { detection, nodeErrorsPerAttempt } = await detectWithoutNodeErrors({ updater, address, takeStats, progress })
     const retries = nodeErrorsPerAttempt.length - 1
 
-    if (!contractDetails) {
+    if (!detection) {
       console.log(`${progress} ${address}: every detection attempt saw a node error. Not stored and not marked as processed; a rerun retries it.`)
       return { bucket: 'failed', entry: { address, nodeErrorsPerAttempt } }
     }
 
+    const { contractDetails } = detection
     const savedRows = await updater.saveContractDetails(address, contractDetails)
     const isTagged = contractDetails.interfaces.some(i => candidateSet.interfaces.includes(i))
     console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isTagged ? '' : ` (none of ${candidateSet.interfaces.join(', ')})`}. Interface/method rows added: ${savedRows}`)
 
-    const result = await updater.updateContractEvents(address, pageSize)
+    const result = await updater.updateContractEvents(address, pageSize, 0, detection)
     const decodeNodeErrors = takeStats().nodeErrors
     console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
 

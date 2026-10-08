@@ -104,7 +104,7 @@ export default class ContractEventsUpdater {
     }
   }
 
-  async updateContractEvents (contractAddress, pageSize, sinceBlockNumber = 0) {
+  async updateContractEvents (contractAddress, pageSize, sinceBlockNumber = 0, detection = null) {
     try {
       const result = {
         contractDetails: null,
@@ -123,7 +123,7 @@ export default class ContractEventsUpdater {
       contractAddress = contractAddress.toLowerCase()
 
       const isBridge = this.isBridgeAddress(contractAddress)
-      const { parser, contractDetails, verifiedAbi } = await this.getContractParser(contractAddress)
+      const { parser, contractDetails, verifiedAbi } = detection || await this.getContractParser(contractAddress)
       result.contractDetails = contractDetails
       result.verifiedAbi = isBridge ? true : verifiedAbi
 

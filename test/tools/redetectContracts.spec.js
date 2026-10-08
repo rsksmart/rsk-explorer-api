@@ -112,22 +112,36 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       const rpc = new JsonRpc({ send: async payload => ({ jsonrpc: '2.0', id: payload.id, result: answer(payload) }) })
       return new Nod3({ url: 'fake', rpc })
     }
-
-    it('never stores a rejected probe as "not an NFT"', async () => {
-      const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['reject'])))
+    const realUpdater = nod3 => {
       const updater = new ContractEventsUpdater({ nod3, log: { info () {}, error () {} } })
       sinon.stub(updater, 'getInitConfig').resolves({ net: { id: '30' } })
       sinon.stub(updater, 'getContractABI').resolves(null)
       sinon.stub(updater, 'saveContractDetails').resolves(2)
-      sinon.stub(updater, 'updateContractEvents').resolves({ updatedEvents: { amount: 0, events: [] } })
-      const markProcessed = sinon.spy()
+      sinon.stub(updater, 'fetchPaginatedEvents').resolves({ events: [], next: null })
+      sinon.spy(updater, 'getContractParser')
+      return updater
+    }
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats })
+    it('never stores a rejected probe as "not an NFT"', async () => {
+      const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['reject'])))
+      const updater = realUpdater(nod3)
+
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
 
       expect(updater.saveContractDetails.callCount).to.equal(1)
       expect(updater.saveContractDetails.firstCall.args[1].interfaces).to.include('ERC721')
       expect(bucket).to.equal('tagged')
       expect(entry.retries).to.equal(1)
+    })
+
+    it('detects each candidate once: its events are re-decoded with the clean detection', async () => {
+      const { nod3, takeStats } = countNodeCalls(fakeNode(answers([])))
+      const updater = realUpdater(nod3)
+
+      const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
+
+      expect(bucket).to.equal('tagged')
+      expect(updater.getContractParser.callCount).to.equal(1)
     })
   })
 })
