@@ -1,7 +1,10 @@
 import { expect } from 'chai'
+import fs from 'fs'
+import os from 'os'
+import path from 'path'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
-import { backfillTransfers, backfillTokenStates } from '../../../src/tools/backfillNftOwnership'
+import { backfillTransfers, backfillTokenStates, runPhase, readResume, writeResume } from '../../../src/tools/backfillNftOwnership'
 import { blockData, erc721, erc20, erc1155Single, erc1155Batch, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences, tableState } from './replay'
 
@@ -42,6 +45,7 @@ const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100,
 const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
 
 const runBatch = prismaClient.$transaction
+const markerIn = phase => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-marker-')), `backfill-nft-ownership-${phase}.resume`)
 
 integrationDescribe('NFT ownership: the two-phase backfill', function () {
   this.timeout(120000)
@@ -161,6 +165,24 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
 
     const rerun = await phaseB()
     expect(rerun).to.include({ pairsWritten: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('a phase B run holds its marker before a chunk with an unstored pair, and the next default run reads it back and fills the pair', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await phaseA()
+    const markerFile = markerIn('B')
+    writeResume(markerFile, 10)
+    const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
+
+    const first = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, fetchers: [fetcher({ failing })] })
+    const markerAfterFirst = readResume(markerFile)
+    const second = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, fetchers: [fetcher()] })
+
+    expect(first.pairsFailed).to.have.length(1)
+    expect(markerAfterFirst).to.equal(10)
+    expect(second).to.include({ pairsWritten: 1 })
+    expect(readResume(markerFile)).to.equal(17)
     expect(await differences()).to.deep.equal([])
   })
 })

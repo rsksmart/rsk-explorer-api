@@ -191,11 +191,39 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
   return report
 }
 
-function readResume (phase) {
-  const file = resumeFile(phase)
+export function readResume (file) {
   if (!fs.existsSync(file)) return null
   const value = parseInt(fs.readFileSync(file, 'utf-8').trim())
   return isNaN(value) ? null : value
+}
+
+export function writeResume (file, nextBlock) {
+  fs.writeFileSync(`${file}.next`, `${nextBlock}\n`)
+  fs.renameSync(`${file}.next`, file)
+}
+
+export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fromArg, toArg, chunkBlocks = 1000, markerFile = resumeFile(phase), fetchers }) {
+  const resumed = readResume(markerFile)
+  const fromBlock = fromArg !== undefined ? fromArg : (resumed || 0)
+  const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
+  const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
+  const started = Date.now()
+
+  console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk${resumed !== null && fromArg === undefined ? ' (from the resume marker)' : ''}`)
+
+  let watermark = true
+  const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {
+    watermark = watermark && complete
+    if (watermark) writeResume(markerFile, nextBlock)
+    console.log(`chunk ${firstBlock}..${lastBlock} ${complete ? 'done' : 'INCOMPLETE'} · ${Math.round((Date.now() - started) / 1000)} s`)
+  }
+
+  const report = phase === 'A'
+    ? await backfillTransfers({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone })
+    : await backfillTokenStates({ prismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone })
+
+  console.log(`Done in ${Date.now() - started} ms: ${JSON.stringify(report)}`)
+  return report
 }
 
 function printUsageAndExit () {
@@ -210,39 +238,17 @@ async function main () {
   const [fromArg, toArg, chunkArg, concurrencyArg] = process.argv.slice(3).map(v => (v === undefined ? undefined : parseInt(v)))
   if ([fromArg, toArg, chunkArg, concurrencyArg].some(v => v !== undefined && (isNaN(v) || v < 0))) printUsageAndExit()
 
-  const resumed = readResume(phase)
-  const fromBlock = fromArg !== undefined ? fromArg : (resumed || 0)
-  const highest = await defaultPrismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
-  const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
-  const chunkBlocks = chunkArg || 1000
-  const started = Date.now()
-
-  console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk${resumed !== null && fromArg === undefined ? ' (from the resume marker)' : ''}`)
-
-  let watermark = true
-  const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {
-    watermark = watermark && complete
-    if (watermark) {
-      fs.writeFileSync(`${resumeFile(phase)}.next`, `${nextBlock}\n`)
-      fs.renameSync(`${resumeFile(phase)}.next`, resumeFile(phase))
-    }
-    console.log(`chunk ${firstBlock}..${lastBlock} ${complete ? 'done' : 'INCOMPLETE'} · ${Math.round((Date.now() - started) / 1000)} s`)
-  }
-
-  let report
-  if (phase === 'A') {
-    report = await backfillTransfers({ fromBlock, toBlock, chunkBlocks, onChunkDone })
-  } else {
+  let fetchers
+  if (phase === 'B') {
     const initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-    const fetchers = Array.from({ length: concurrencyArg || 4 }, () => {
+    fetchers = Array.from({ length: concurrencyArg || 4 }, () => {
       const { nod3, takeStats } = createCountedNod3(config.source)
       const tokenState = new TokenState({ nod3, initConfig, log: console })
       return { fetchOne: (contract, blockNumber) => tokenState.fetchOne(contract, blockNumber), takeStats }
     })
-    report = await backfillTokenStates({ fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone })
   }
 
-  console.log(`Done in ${Date.now() - started} ms: ${JSON.stringify(report)}`)
+  const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg || 1000, fetchers })
   process.exit(report.pairsFailed && report.pairsFailed.length ? 1 : 0)
 }
 
