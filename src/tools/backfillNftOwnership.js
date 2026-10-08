@@ -239,18 +239,22 @@ async function main () {
   if (!['A', 'B'].includes(phase)) printUsageAndExit()
   const [fromArg, toArg, chunkArg, concurrencyArg] = process.argv.slice(3).map(v => (v === undefined ? undefined : parseInt(v)))
   if ([fromArg, toArg, chunkArg, concurrencyArg].some(v => v !== undefined && (isNaN(v) || v < 0))) printUsageAndExit()
+  if (chunkArg === 0 || concurrencyArg === 0) {
+    console.log('chunkBlocks and concurrency must be at least 1')
+    printUsageAndExit()
+  }
 
   let fetchers
   if (phase === 'B') {
     const initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-    fetchers = Array.from({ length: concurrencyArg || 4 }, () => {
+    fetchers = Array.from({ length: concurrencyArg === undefined ? 4 : concurrencyArg }, () => {
       const { nod3, takeStats } = createCountedNod3(config.source)
       const tokenState = new TokenState({ nod3, initConfig, log: console })
       return { fetchOne: (contract, blockNumber) => tokenState.fetchOne(contract, blockNumber), takeStats }
     })
   }
 
-  const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg || 1000, fetchers })
+  const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers })
   process.exit(report.pairsFailed && report.pairsFailed.length ? 1 : 0)
 }
 
