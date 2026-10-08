@@ -32,6 +32,8 @@ export const CANDIDATE_SETS = {
   }
 }
 
+export const candidateSetNamed = name => Object.prototype.hasOwnProperty.call(CANDIDATE_SETS, name) ? CANDIDATE_SETS[name] : null
+
 const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
   event.error && candidateSet.blockingEventTopic0s.has(failedEventTopic0(event))
 ).length
@@ -124,7 +126,7 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
 
 async function main () {
   const setName = process.argv[2]
-  const candidateSet = CANDIDATE_SETS[setName]
+  const candidateSet = candidateSetNamed(setName)
   if (!candidateSet) {
     console.log(`Unknown candidate set: ${setName}`)
     printUsageAndExit()

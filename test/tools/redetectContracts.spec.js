@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import sinon from 'sinon'
 import { Nod3 } from '@rsksmart/nod3'
 import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
-import { processCandidate, CANDIDATE_SETS } from '../../src/tools/redetectContracts.js'
+import { processCandidate, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { countNodeCalls, REQUEST_TIMEOUT_MS } from '../../src/lib/nodeCallStats'
 
@@ -23,6 +23,13 @@ const makeUpdater = (events, interfaces = ['ERC1155']) => ({
   updateContractEvents: sinon.stub().resolves({ updatedEvents: { amount: events.length, events } })
 })
 const statsSequence = (...sequence) => sinon.stub().callsFake(() => (sequence.shift() || clean)())
+
+describe('redetectContracts candidate sets', () => {
+  it('names the NFT transfer emitters and nothing an object inherits', () => {
+    expect(candidateSetNamed('nft-transfer-emitters')).to.equal(candidateSet)
+    for (const name of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'fungible-transfer-emitters', undefined]) expect(candidateSetNamed(name)).to.equal(null)
+  })
+})
 
 describe('redetectContracts processCandidate over the NFT transfer emitters', () => {
   it('tags and processes a contract whose NFT events all decoded, even if an unrelated event could not', async () => {
