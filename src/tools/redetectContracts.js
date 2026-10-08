@@ -23,17 +23,27 @@ const failedEventTopic0 = event => {
   return topic0 ? topic0.toLowerCase() : null
 }
 
-const failedNftEvents = events => events.filter(event =>
-  event.error && NFT_EVENT_TOPIC0S.has(failedEventTopic0(event))
+export const CANDIDATE_SETS = {
+  'nft-transfer-emitters': {
+    description: 'emitters of four-topic Transfer, TransferSingle and TransferBatch logs',
+    find: updater => updater.findNftTransferEmitters(),
+    interfaces: nftTokensInterfaces,
+    blockingEventTopic0s: NFT_EVENT_TOPIC0S
+  }
+}
+
+const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
+  event.error && candidateSet.blockingEventTopic0s.has(failedEventTopic0(event))
 ).length
 
 const DETECTION_TIMEOUT_MS = 60000
 const DETECTION_ATTEMPTS = 3
-const RESUME_FILE = path.join(process.cwd(), 'redetect-nft-contracts.resume')
+const resumeFile = setName => path.join(process.cwd(), `redetect-contracts-${setName}.resume`)
 
 function printUsageAndExit () {
-  console.log(`Usage: node dist/tools/${toolName} pageSize(number: required) targetAddress(address: optional, processes a single candidate)`)
-  console.log(`Resume marker: ${RESUME_FILE} (one processed address per line; delete it to reprocess from scratch)`)
+  console.log(`Usage: node dist/tools/${toolName} candidateSet(${Object.keys(CANDIDATE_SETS).join(' | ')}) pageSize(number: required) targetAddress(address: optional, processes a single candidate)`)
+  Object.entries(CANDIDATE_SETS).forEach(([name, { description }]) => console.log(`  ${name}: ${description}`))
+  console.log(`Resume marker: ${resumeFile('<candidateSet>')} (one processed address per line; delete it to reprocess from scratch)`)
   process.exit(1)
 }
 
@@ -45,9 +55,9 @@ function withTimeout (promise, ms, label) {
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
-function readResumeFile () {
-  if (!fs.existsSync(RESUME_FILE)) return new Set()
-  return new Set(fs.readFileSync(RESUME_FILE, 'utf-8').split('\n').filter(Boolean))
+function readResumeFile (file) {
+  if (!fs.existsSync(file)) return new Set()
+  return new Set(fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean))
 }
 
 async function detectWithoutNodeErrors ({ updater, address, takeStats, progress }) {
@@ -71,7 +81,7 @@ async function detectWithoutNodeErrors ({ updater, address, takeStats, progress 
   return { contractDetails: null, nodeErrorsPerAttempt }
 }
 
-export async function processCandidate ({ updater, address, pageSize, progress = '', markProcessed, takeStats }) {
+export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '', markProcessed, takeStats }) {
   try {
     console.log(`${progress} ${address}: detecting interfaces...`)
     const { contractDetails, nodeErrorsPerAttempt } = await detectWithoutNodeErrors({ updater, address, takeStats, progress })
@@ -83,28 +93,28 @@ export async function processCandidate ({ updater, address, pageSize, progress =
     }
 
     const savedRows = await updater.saveContractDetails(address, contractDetails)
-    const isNft = contractDetails.interfaces.some(i => nftTokensInterfaces.includes(i))
-    console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isNft ? '' : ' (no NFT interface)'}. Interface/method rows added: ${savedRows}`)
+    const isTagged = contractDetails.interfaces.some(i => candidateSet.interfaces.includes(i))
+    console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isTagged ? '' : ` (none of ${candidateSet.interfaces.join(', ')})`}. Interface/method rows added: ${savedRows}`)
 
     const result = await updater.updateContractEvents(address, pageSize)
     const decodeNodeErrors = takeStats().nodeErrors
     console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
 
-    const failedEvents = failedNftEvents(result.updatedEvents.events)
+    const failedEvents = failedBlockingEvents(result.updatedEvents.events, candidateSet)
     const otherFailures = result.updatedEvents.events.filter(event => event.error).length - failedEvents
 
     if (otherFailures > 0) {
-      console.log(`${progress} ${address}: ${otherFailures} non-NFT event(s) could not decode (reported, not blocking).`)
+      console.log(`${progress} ${address}: ${otherFailures} other event(s) could not decode (reported, not blocking).`)
     }
 
     if (failedEvents > 0 || decodeNodeErrors > 0) {
-      console.log(`${progress} ${address}: ${failedEvents} NFT event(s) failed to re-decode, ${decodeNodeErrors} rejected node call(s) while re-decoding. Not marked as processed; a rerun retries it.`)
+      console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode, ${decodeNodeErrors} rejected node call(s) while re-decoding. Not marked as processed; a rerun retries it.`)
       return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures, nodeErrorsPerAttempt, decodeNodeErrors } }
     }
 
     markProcessed(address)
     const entry = { address, interfaces: contractDetails.interfaces, updatedEvents: result.updatedEvents.amount, otherFailures, retries }
-    return { bucket: isNft ? 'tagged' : 'notNft', entry }
+    return { bucket: isTagged ? 'tagged' : 'notTagged', entry }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). Not marked as processed; a rerun retries it.`)
     return { bucket: 'failed', entry: { address, error: error.message } }
@@ -112,13 +122,20 @@ export async function processCandidate ({ updater, address, pageSize, progress =
 }
 
 async function main () {
-  const pageSize = parseInt(process.argv[2])
+  const setName = process.argv[2]
+  const candidateSet = CANDIDATE_SETS[setName]
+  if (!candidateSet) {
+    console.log(`Unknown candidate set: ${setName}`)
+    printUsageAndExit()
+  }
+
+  const pageSize = parseInt(process.argv[3])
   if (isNaN(pageSize) || pageSize <= 0) {
     console.log('Invalid pageSize provided. Must be a positive number')
     printUsageAndExit()
   }
 
-  let targetAddress = process.argv[3]
+  let targetAddress = process.argv[4]
   if (targetAddress) {
     if (!isAddress(targetAddress)) {
       console.log('Invalid target address provided. Must be a valid address')
@@ -131,28 +148,29 @@ async function main () {
   const updater = new ContractEventsUpdater({ nod3 })
   const started = Date.now()
 
-  console.log(`${toolName}`)
-  console.log('Discovering candidates: emitters of four-topic Transfer, TransferSingle and TransferBatch logs')
+  console.log(`${toolName} ${setName}`)
+  console.log(`Discovering candidates: ${candidateSet.description}`)
 
-  let candidates = await updater.findNftTransferEmitters()
+  let candidates = await candidateSet.find(updater)
   console.log(`Candidates found: ${candidates.length}`)
 
   if (targetAddress) {
     candidates = candidates.filter(address => address === targetAddress)
     if (!candidates.length) {
-      console.log(`Target address ${targetAddress} emits no NFT transfer events. Nothing to do.`)
+      console.log(`Target address ${targetAddress} is not in the candidate set ${setName}. Nothing to do.`)
       process.exit(0)
     }
     console.log(`Restricted to target address ${targetAddress}`)
   }
 
-  const processed = readResumeFile()
+  const resume = resumeFile(setName)
+  const processed = readResumeFile(resume)
   const pending = candidates.filter(address => !processed.has(address))
   if (processed.size) {
     console.log(`Resume file: ${processed.size} addresses already processed, ${pending.length} pending`)
   }
 
-  const summary = { tagged: [], notNft: [], failed: [] }
+  const summary = { tagged: [], notTagged: [], failed: [] }
   const totals = { calls: 0, reverts: 0, nodeErrors: 0, tokenReadErrors: 0 }
   const countingTakeStats = () => {
     const stats = takeStats()
@@ -164,21 +182,22 @@ async function main () {
     const progress = `[${index + 1}/${pending.length}]`
     const { bucket, entry } = await processCandidate({
       updater,
+      candidateSet,
       address,
       pageSize,
       progress,
       takeStats: countingTakeStats,
-      markProcessed: addr => fs.appendFileSync(RESUME_FILE, addr + '\n')
+      markProcessed: addr => fs.appendFileSync(resume, addr + '\n')
     })
     summary[bucket].push(entry)
   }
 
-  const retried = [...summary.tagged, ...summary.notNft].filter(entry => entry.retries > 0).length
+  const retried = [...summary.tagged, ...summary.notTagged].filter(entry => entry.retries > 0).length
   console.log('')
-  console.log(`Done in ${Date.now() - started} ms. NFT interface: ${summary.tagged.length}, no NFT interface: ${summary.notNft.length}, failed: ${summary.failed.length}, stored after a retry: ${retried}`)
+  console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}, stored after a retry: ${retried}`)
   console.log(`Node calls: ${totals.calls}, reverts: ${totals.reverts}, rejected: ${totals.nodeErrors}, of them token reads: ${totals.tokenReadErrors}`)
 
-  const fileName = `redetect-nft-contracts-${Date.now()}.json`
+  const fileName = `redetect-contracts-${setName}-${Date.now()}.json`
   const resultFilePath = path.join(__dirname, fileName)
   fs.writeFileSync(resultFilePath, JSON.stringify({ ...summary, totals }, null, 2))
   console.log(`Result file saved to ${resultFilePath}`)
@@ -188,7 +207,7 @@ async function main () {
 
 if (require.main === module) {
   main().catch(error => {
-    console.log(`[Tool ${toolName}]: Error re-detecting NFT contracts`)
+    console.log(`[Tool ${toolName}]: Error re-detecting contracts`)
     console.error(error)
     process.exit(1)
   })
