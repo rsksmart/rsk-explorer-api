@@ -272,21 +272,23 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(readResume(markerFile)).to.equal(17)
   })
 
-  it('phase B over an explicit range past phase A\'s marker says so and stops its marker there, and says it only when the run would move the marker', async () => {
+  it('phase B over an explicit range past phase A\'s marker says so and stops its marker there, and says it only when the run would move the marker and its range reaches phase A\'s marker', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const transfersMarkerFile = markerIn('A')
     const markerFile = markerIn('B')
     await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
-    const phaseB = fromArg => runPhase({ phase: 'B', fromArg, toArg: 16, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+    const phaseB = (fromArg, toArg = 16) => runPhase({ phase: 'B', fromArg, toArg, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
 
     const fromZero = (await loggedLines(() => phaseB(0))).filter(line => line.includes(PHASE_A_NOTICE))
     const markerAfterFromZero = readResume(markerFile)
     const aboveTheMarker = (await loggedLines(() => phaseB(14))).filter(line => line.includes(PHASE_A_NOTICE))
+    const belowPhaseAMarker = (await loggedLines(() => phaseB(0, 12))).filter(line => line.includes(PHASE_A_NOTICE))
 
     expect(fromZero).to.have.length(1)
     expect(fromZero[0]).to.include("Phase A's resume marker is at 13")
     expect(markerAfterFromZero).to.equal(13)
     expect(aboveTheMarker).to.deep.equal([])
+    expect(belowPhaseAMarker).to.deep.equal([])
     expect(readResume(markerFile)).to.equal(13)
   })
 
