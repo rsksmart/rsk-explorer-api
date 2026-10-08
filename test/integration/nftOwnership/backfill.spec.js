@@ -1,4 +1,5 @@
 import { expect } from 'chai'
+import sinon from 'sinon'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -45,6 +46,16 @@ const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100,
 const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
 
 const runBatch = prismaClient.$transaction
+const PHASE_A_NOTICE = "Phase A's resume marker"
+const loggedLines = async run => {
+  const log = sinon.spy(console, 'log')
+  try {
+    await run()
+    return log.getCalls().map(call => String(call.args[0]))
+  } finally {
+    log.restore()
+  }
+}
 const markerIn = phase => path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-marker-')), `backfill-nft-ownership-${phase}.resume`)
 
 integrationDescribe('NFT ownership: the two-phase backfill', function () {
@@ -213,6 +224,24 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('phase B with no end block stops below phase A\'s marker: after blocks the live indexer stored, two default runs print no notice and hold the marker there', async () => {
+    await storeAsTheIndexerBeforeTheBackfill(HISTORY.filter(([number]) => number <= 13))
+    const transfersMarkerFile = markerIn('A')
+    const markerFile = markerIn('B')
+    await runPhase({ phase: 'A', chunkBlocks: 3, markerFile: transfersMarkerFile })
+    for (const [number, logs] of HISTORY.filter(([number]) => number > 13)) await blocksRepository.saveBlockData(blockData(number, 'a', logs))
+    const phaseB = () => runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+
+    const firstLines = await loggedLines(phaseB)
+    const markerAfterFirst = readResume(markerFile)
+    const secondLines = await loggedLines(phaseB)
+
+    expect(await differences()).to.deep.equal([])
+    expect(readResume(transfersMarkerFile)).to.equal(14)
+    expect([markerAfterFirst, readResume(markerFile)]).to.deep.equal([14, 14])
+    expect([...firstLines, ...secondLines].filter(line => line.includes(PHASE_A_NOTICE))).to.deep.equal([])
+  })
+
   it('phase B never moves its marker past phase A\'s, so a B run before A has finished leaves no pair behind: A 14, B, A, B', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const transfersMarkerFile = markerIn('A')
@@ -226,7 +255,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     await phase('B')
 
     expect(await differences()).to.deep.equal([])
-    expect(markerBAfterFirstB).to.equal(0)
+    expect(markerBAfterFirstB).to.equal(null)
     expect(readResume(markerFile)).to.equal(17)
   })
 

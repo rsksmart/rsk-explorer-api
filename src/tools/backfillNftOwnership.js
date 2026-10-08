@@ -205,16 +205,16 @@ export function writeResume (file, nextBlock) {
 export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fromArg, toArg, chunkBlocks = 1000, markerFile = resumeFile(phase), transfersMarkerFile = resumeFile('A'), fetchers }) {
   const resumed = readResume(markerFile)
   const fromBlock = fromArg !== undefined ? fromArg : (resumed || 0)
-  const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
-  const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
-  const startsAtOrBelowMarker = fromBlock <= (resumed || 0)
   const transfersMarker = phase === 'B' ? readResume(transfersMarkerFile) : null
   const transfersDoneBelow = phase === 'B' ? (transfersMarker || 0) : Infinity
+  const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
+  const toBlock = toArg !== undefined ? toArg : Math.min(highest ? highest.number : -1, transfersDoneBelow - 1)
+  const startsAtOrBelowMarker = fromBlock <= (resumed || 0)
   const started = Date.now()
 
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk${resumed !== null && fromArg === undefined ? ' (from the resume marker)' : ''}`)
   if (!startsAtOrBelowMarker) console.log(`This run starts above ${resumed === null ? 'block 0 and no resume marker' : `the resume marker ${resumed}`}: it does not move the marker, because blocks below ${fromBlock} may still lack facts`)
-  if (toBlock >= transfersDoneBelow) console.log(`Phase A's resume marker is ${transfersMarker === null ? 'missing' : `at ${transfersMarker}`}: blocks from ${transfersDoneBelow} on may still lack transfers, so this run does not move phase B's marker past ${transfersDoneBelow}`)
+  if (toArg !== undefined && toBlock >= transfersDoneBelow) console.log(`Phase A's resume marker is ${transfersMarker === null ? 'missing' : `at ${transfersMarker}`}: blocks from ${transfersDoneBelow} on may still lack transfers, so this run does not move phase B's marker past ${transfersDoneBelow}`)
 
   let watermark = startsAtOrBelowMarker
   const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {
@@ -232,7 +232,7 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
 }
 
 function printUsageAndExit () {
-  console.log(`Usage: node dist/tools/${toolName} phase(A: transfers and ownership from event | B: token state at each transfer block, reads the node) fromBlock(optional; default: the resume marker, else 0) toBlock(optional; default: the highest stored block) chunkBlocks(optional, default 1000) concurrency(optional, phase B node readers, default 4)`)
+  console.log(`Usage: node dist/tools/${toolName} phase(A: transfers and ownership from event | B: token state at each transfer block, reads the node) fromBlock(optional; default: the resume marker, else 0) toBlock(optional; default: the highest stored block, and for phase B the block below phase A's resume marker) chunkBlocks(optional, default 1000) concurrency(optional, phase B node readers, default 4)`)
   console.log(`Resume markers: ${resumeFile('A')}, ${resumeFile('B')} (the next block to process; only a run that starts at or below it moves it, and phase B's never passes phase A's; delete to start over)`)
   process.exit(1)
 }
