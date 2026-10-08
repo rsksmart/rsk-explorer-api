@@ -207,11 +207,13 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   const fromBlock = fromArg !== undefined ? fromArg : (resumed || 0)
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
+  const startsAtOrBelowMarker = fromBlock <= (resumed || 0)
   const started = Date.now()
 
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk${resumed !== null && fromArg === undefined ? ' (from the resume marker)' : ''}`)
+  if (!startsAtOrBelowMarker) console.log(`This run starts above ${resumed === null ? 'block 0 and no resume marker' : `the resume marker ${resumed}`}: it does not move the marker, because blocks below ${fromBlock} may still lack facts`)
 
-  let watermark = true
+  let watermark = startsAtOrBelowMarker
   const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {
     watermark = watermark && complete
     if (watermark) writeResume(markerFile, nextBlock)
@@ -228,7 +230,7 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
 
 function printUsageAndExit () {
   console.log(`Usage: node dist/tools/${toolName} phase(A: transfers and ownership from event | B: token state at each transfer block, reads the node) fromBlock(optional; default: the resume marker, else 0) toBlock(optional; default: the highest stored block) chunkBlocks(optional, default 1000) concurrency(optional, phase B node readers, default 4)`)
-  console.log(`Resume markers: ${resumeFile('A')}, ${resumeFile('B')} (the next block to process; delete to start over)`)
+  console.log(`Resume markers: ${resumeFile('A')}, ${resumeFile('B')} (the next block to process; only a run that starts at or below it moves it; delete to start over)`)
   process.exit(1)
 }
 

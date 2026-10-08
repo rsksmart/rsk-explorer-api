@@ -185,4 +185,19 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(readResume(markerFile)).to.equal(17)
     expect(await differences()).to.deep.equal([])
   })
+
+  it('a run started above the marker leaves it, so the next default run fills every block below: A 14, then A', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const markerFile = markerIn('A')
+
+    const above = await runPhase({ phase: 'A', fromArg: 14, chunkBlocks: 3, markerFile })
+    const markerAfterAbove = readResume(markerFile)
+    const byDefault = await runPhase({ phase: 'A', chunkBlocks: 3, markerFile })
+    await phaseB()
+
+    expect(await differences()).to.deep.equal([])
+    expect(above).to.include({ blocksWritten: 3 })
+    expect(markerAfterAbove).to.equal(null)
+    expect(byDefault).to.include({ blocksWritten: 3, blocksAlreadyStored: 3 })
+  })
 })
