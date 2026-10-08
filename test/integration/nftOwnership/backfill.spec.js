@@ -304,6 +304,34 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(readResume(markerFile)).to.equal(0)
   })
 
+  it('phase B with no end block refuses a working directory whose phase A marker is missing, empty or garbled: it names the directory and stores nothing', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const cwd = process.cwd()
+    const phaseADir = fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-a-'))
+    const outcomes = []
+    try {
+      process.chdir(phaseADir)
+      await runPhase({ phase: 'A', chunkBlocks: 3 })
+      for (const phaseAMarker of [null, '', 'garbled\n']) {
+        const phaseBDir = fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-b-'))
+        process.chdir(phaseBDir)
+        if (phaseAMarker !== null) fs.writeFileSync('backfill-nft-ownership-A.resume', phaseAMarker)
+        let report
+        const notices = (await loggedLines(async () => { report = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] }) })).filter(line => line.includes(PHASE_A_NOTICE))
+        outcomes.push({ refused: report.refusedWithoutPhaseAMarker === true, notices, markerB: readResume(path.resolve('backfill-nft-ownership-B.resume')), phaseBDir: fs.realpathSync(phaseBDir) })
+      }
+    } finally {
+      process.chdir(cwd)
+    }
+
+    expect(await prismaClient.token_state_at_block.count()).to.equal(0)
+    for (const { refused, notices, markerB, phaseBDir } of outcomes) {
+      expect(refused).to.equal(true)
+      expect(notices).to.deep.equal([`Phase A's resume marker is missing or unreadable in ${phaseBDir}: run phase A from this working directory first`])
+      expect(markerB).to.equal(null)
+    }
+  })
+
   it('the command line\'s default marker paths: phase B with no marker arguments reads phase A\'s marker from the working directory', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const cwd = process.cwd()

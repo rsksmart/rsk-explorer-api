@@ -207,6 +207,10 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   const fromBlock = fromArg !== undefined ? fromArg : (resumed || 0)
   const transfersMarker = phase === 'B' ? readResume(transfersMarkerFile) : null
   const transfersDoneBelow = phase === 'B' ? (transfersMarker || 0) : Infinity
+  if (phase === 'B' && toArg === undefined && transfersMarker === null) {
+    console.log(`Phase A's resume marker is missing or unreadable in ${path.dirname(transfersMarkerFile)}: run phase A from this working directory first`)
+    return { refusedWithoutPhaseAMarker: true }
+  }
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : Math.min(highest ? highest.number : -1, transfersDoneBelow - 1)
   const startsAtOrBelowMarker = fromBlock <= (resumed || 0)
@@ -258,7 +262,7 @@ async function main () {
   }
 
   const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers })
-  process.exit(report.pairsFailed && report.pairsFailed.length ? 1 : 0)
+  process.exit(report.refusedWithoutPhaseAMarker || (report.pairsFailed && report.pairsFailed.length) ? 1 : 0)
 }
 
 if (require.main === module) {
