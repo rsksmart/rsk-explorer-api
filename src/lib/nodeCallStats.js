@@ -6,6 +6,8 @@ export const REQUEST_TIMEOUT_MS = 60000
 
 const emptyStats = () => ({ calls: 0, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, lastNodeError: null })
 
+const describeRejection = error => typeof error === 'string' ? error : String(error && error.message)
+
 const isTokenRead = ({ method, params = [] }) => method === 'eth_call' && !!params[0] &&
   typeof params[0].data === 'string' && TOKEN_READ_SELECTORS.includes(params[0].data.slice(0, 10).toLowerCase())
 
@@ -33,7 +35,7 @@ export function countNodeCalls (nod3, { requestTimeoutMs = REQUEST_TIMEOUT_MS } 
       } else {
         stats.nodeErrors += payloads.length
         stats.tokenReadErrors += payloads.filter(isTokenRead).length
-        stats.lastNodeError = String(error && error.message)
+        stats.lastNodeError = describeRejection(error)
       }
       throw error
     }

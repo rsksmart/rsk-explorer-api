@@ -35,6 +35,14 @@ describe('countNodeCalls', () => {
     expect(takeStats()).to.deep.include({ calls: 0, nodeErrors: 0 })
   })
 
+  it('keeps the text of a rejection nod3 gives as a bare string, as for an HTTP error status', async () => {
+    const { nod3, takeStats } = countNodeCalls(fakeNod3(() => Promise.reject('Bad Gateway')))
+
+    await settle(nod3.rpc.send(call(SUPPORTS_INTERFACE)))
+
+    expect(takeStats()).to.deep.include({ calls: 1, nodeErrors: 1, lastNodeError: 'Bad Gateway' })
+  })
+
   it('rejects and counts a request the node never answers', async () => {
     const { nod3, takeStats } = countNodeCalls(fakeNod3(() => new Promise(() => {})), { requestTimeoutMs: 20 })
 
