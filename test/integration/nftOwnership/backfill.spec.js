@@ -197,18 +197,37 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
     const markerFile = markerIn('B')
+    const transfersMarkerFile = markerIn('A')
+    writeResume(transfersMarkerFile, 17)
     writeResume(markerFile, 10)
     const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
 
-    const first = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, fetchers: [fetcher({ failing })] })
+    const first = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher({ failing })] })
     const markerAfterFirst = readResume(markerFile)
-    const second = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, fetchers: [fetcher()] })
+    const second = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
 
     expect(first.pairsFailed).to.have.length(1)
     expect(markerAfterFirst).to.equal(10)
     expect(second).to.include({ pairsWritten: 1 })
     expect(readResume(markerFile)).to.equal(17)
     expect(await differences()).to.deep.equal([])
+  })
+
+  it('phase B never moves its marker past phase A\'s, so a B run before A has finished leaves no pair behind: A 14, B, A, B', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const transfersMarkerFile = markerIn('A')
+    const markerFile = markerIn('B')
+    const phase = (name, fromArg) => runPhase({ phase: name, fromArg, chunkBlocks: 3, markerFile: name === 'A' ? transfersMarkerFile : markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+
+    await phase('A', 14)
+    await phase('B')
+    const markerBAfterFirstB = readResume(markerFile)
+    await phase('A')
+    await phase('B')
+
+    expect(await differences()).to.deep.equal([])
+    expect(markerBAfterFirstB).to.equal(0)
+    expect(readResume(markerFile)).to.equal(17)
   })
 
   it('a run started above the marker leaves it, so the next default run fills every block below: A 14, then A', async () => {
