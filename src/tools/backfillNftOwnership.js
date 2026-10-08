@@ -11,7 +11,7 @@ import config from '../lib/config'
 const toolName = process.argv[1].split('/').pop()
 
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
-const RACED_WRITE_ERRORS = ['P2002', 'P2003', 'P2025']
+const RACED_WRITE_ERRORS = ['P2002', 'P2003']
 const WRITE_ATTEMPTS = 3
 const FETCH_ATTEMPTS = 3
 const NFT_TRANSFER_EVENTS = {

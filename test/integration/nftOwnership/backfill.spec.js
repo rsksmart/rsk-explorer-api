@@ -129,6 +129,31 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('phase B skips the pairs a second phase B stored between its pair read and its write (P2002), and the tables equal a replay', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await phaseA()
+    const codes = []
+    let raced = false
+    prismaClient.$transaction = async function racing (...args) {
+      if (!raced) {
+        raced = true
+        prismaClient.$transaction = runBatch
+        await phaseB()
+        prismaClient.$transaction = racing
+      }
+      return runBatch.apply(prismaClient, args).catch(error => {
+        codes.push(error.code)
+        throw error
+      })
+    }
+
+    const b = await phaseB({ chunkBlocks: 10 })
+
+    expect(codes).to.deep.equal(Array(6).fill('P2002'))
+    expect(b).to.include({ pairs: 9, pairsRaced: 6, pairsWritten: 0 })
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('phase A skips a block deleted between its event read and its write', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     let deleted = false
