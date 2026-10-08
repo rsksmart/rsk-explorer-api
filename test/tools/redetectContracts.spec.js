@@ -4,6 +4,7 @@ import { Nod3 } from '@rsksmart/nod3'
 import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
 import { processCandidate, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
+import { eventRepository } from '../../src/repositories'
 import { countNodeCalls, REQUEST_TIMEOUT_MS } from '../../src/lib/nodeCallStats'
 
 const address = '0x11b64191106b1cf66fcd2f8389077c596cdc5646'
@@ -147,14 +148,30 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       expect(entry.retries).to.equal(1)
     })
 
-    it('detects each candidate once: its events are re-decoded with the clean detection', async () => {
+    it('detects each candidate once: its stored events are re-decoded with the clean detection', async () => {
+      const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
+      const storedTransfer = {
+        eventId: '0222dee200800b6b87e4ec24d4947c0b',
+        address,
+        blockNumber: 2285282,
+        transactionHash: `0x${'ab'.repeat(32)}`,
+        logIndex: 0,
+        timestamp: 1700000000,
+        topics: [TRANSFER_TOPIC0, word('0x0'), word('0x1111111111111111111111111111111111111111'), word('0x7')],
+        data: '0x'
+      }
       const { nod3, takeStats } = countNodeCalls(fakeNode(answers([])))
       const updater = realUpdater(nod3)
+      updater.fetchPaginatedEvents.resolves({ events: [storedTransfer], next: null })
+      const upsertOne = sinon.stub(eventRepository, 'upsertOne').resolves({})
 
-      const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats }).finally(() => upsertOne.restore())
 
       expect(bucket).to.equal('tagged')
       expect(updater.getContractParser.callCount).to.equal(1)
+      expect(entry.updatedEvents).to.equal(1)
+      expect(upsertOne.callCount).to.equal(1)
+      expect(upsertOne.firstCall.args[0]).to.include({ eventId: storedTransfer.eventId, event: 'Transfer' })
     })
 
     describe('with the timeouts the tool runs with', () => {
