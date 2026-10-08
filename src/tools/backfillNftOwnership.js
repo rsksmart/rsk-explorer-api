@@ -214,7 +214,7 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
 
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk${resumed !== null && fromArg === undefined ? ' (from the resume marker)' : ''}`)
   if (!startsAtOrBelowMarker) console.log(`This run starts above ${resumed === null ? 'block 0 and no resume marker' : `the resume marker ${resumed}`}: it does not move the marker, because blocks below ${fromBlock} may still lack facts`)
-  if (toArg !== undefined && toBlock >= transfersDoneBelow) console.log(`Phase A's resume marker is ${transfersMarker === null ? 'missing' : `at ${transfersMarker}`}: blocks from ${transfersDoneBelow} on may still lack transfers, so this run does not move phase B's marker past ${transfersDoneBelow}`)
+  if (startsAtOrBelowMarker && toArg !== undefined && toBlock >= transfersDoneBelow) console.log(`Phase A's resume marker is ${transfersMarker === null ? 'missing or unreadable' : `at ${transfersMarker}`}: blocks from ${transfersDoneBelow} on may still lack transfers, so this run does not move phase B's marker past ${transfersDoneBelow}`)
 
   let watermark = startsAtOrBelowMarker
   const onChunkDone = ({ firstBlock, lastBlock, nextBlock, complete }) => {

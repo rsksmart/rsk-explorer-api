@@ -270,6 +270,53 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(readResume(markerFile)).to.equal(17)
   })
 
+  it('phase B over an explicit range past phase A\'s marker says so and stops its marker there, and says it only when the run would move the marker', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const transfersMarkerFile = markerIn('A')
+    const markerFile = markerIn('B')
+    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
+    const phaseB = fromArg => runPhase({ phase: 'B', fromArg, toArg: 16, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+
+    const fromZero = (await loggedLines(() => phaseB(0))).filter(line => line.includes(PHASE_A_NOTICE))
+    const markerAfterFromZero = readResume(markerFile)
+    const aboveTheMarker = (await loggedLines(() => phaseB(14))).filter(line => line.includes(PHASE_A_NOTICE))
+
+    expect(fromZero).to.have.length(1)
+    expect(fromZero[0]).to.include("Phase A's resume marker is at 13")
+    expect(markerAfterFromZero).to.equal(13)
+    expect(aboveTheMarker).to.deep.equal([])
+    expect(readResume(markerFile)).to.equal(13)
+  })
+
+  it('phase B names a phase A marker it cannot read as missing or unreadable, and moves its own marker no further than 0', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const transfersMarkerFile = markerIn('A')
+    const markerFile = markerIn('B')
+    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
+    fs.writeFileSync(transfersMarkerFile, 'garbled\n')
+
+    const notices = (await loggedLines(() => runPhase({ phase: 'B', fromArg: 0, toArg: 16, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] }))).filter(line => line.includes(PHASE_A_NOTICE))
+
+    expect(notices).to.have.length(1)
+    expect(notices[0]).to.include("Phase A's resume marker is missing or unreadable")
+    expect(readResume(markerFile)).to.equal(0)
+  })
+
+  it('the command line\'s default marker paths: phase B with no marker arguments reads phase A\'s marker from the working directory', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    const cwd = process.cwd()
+    process.chdir(fs.mkdtempSync(path.join(os.tmpdir(), 'backfill-cwd-')))
+    try {
+      await runPhase({ phase: 'A', chunkBlocks: 3 })
+      await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
+
+      expect([readResume(path.resolve('backfill-nft-ownership-A.resume')), readResume(path.resolve('backfill-nft-ownership-B.resume'))]).to.deep.equal([17, 17])
+    } finally {
+      process.chdir(cwd)
+    }
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('phase B never moves its marker past phase A\'s, so a B run before A has finished leaves no pair behind: A 14, B, A, B', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const transfersMarkerFile = markerIn('A')
