@@ -9,7 +9,7 @@ import config from '../lib/config'
 const toolName = process.argv[1].split('/').pop()
 
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
-const RACED_WRITE_ERRORS = ['P2002', 'P2003']
+const RACED_WRITE_ERRORS = ['P2002', 'P2003', 'P2025']
 const WRITE_ATTEMPTS = 3
 const FETCH_ATTEMPTS = 3
 const NFT_TRANSFER_EVENTS = {
@@ -22,6 +22,7 @@ const EVENT_FIELDS = { eventId: true, address: true, blockNumber: true, blockHas
 
 const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({ ...event, topics: [topic0, topic1, topic2, topic3].filter(topic => topic !== null) })
 const isRacedWrite = error => !!error && RACED_WRITE_ERRORS.includes(error.code)
+const pinUnreplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
 
 async function nextBlocks (prismaClient, cursor, toBlock, chunkBlocks) {
   return prismaClient.block.findMany({
@@ -154,7 +155,7 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
       const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
       if (!fetched.length) return
       try {
-        await prismaClient.$transaction(tokenStateRepository.insertStatements(block, fetched), READ_COMMITTED)
+        await prismaClient.$transaction([pinUnreplaced(prismaClient, block), ...tokenStateRepository.insertStatements(block, fetched)], READ_COMMITTED)
         report.pairsWritten += fetched.length
         return
       } catch (error) {

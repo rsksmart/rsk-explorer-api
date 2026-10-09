@@ -149,6 +149,29 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('phase B stores no state for a block replaced while it reads that block\'s pairs, and the tables equal a replay', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await phaseA()
+    let replaced = false
+    const replacingBlock11 = {
+      async fetchOne (contract, blockNumber) {
+        if (!replaced && contract === C721 && blockNumber === 11) {
+          replaced = true
+          await blocksRepository.saveBlockData(blockData(11, 'b', []), { replace: true })
+        }
+        return tokenStateAt(contract, blockNumber)
+      },
+      takeStats: clean
+    }
+
+    const b = await phaseB({ chunkBlocks: 10, fetchers: [replacingBlock11] })
+
+    expect(replaced).to.equal(true)
+    expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: 11 } })).to.equal(0)
+    expect(b).to.include({ pairsRaced: 1, pairsWritten: 8 })
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('phase B re-reads its block after a second phase B stored part of its pairs (P2002), stores the rest, and the tables equal a replay', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
