@@ -24,6 +24,14 @@ const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({ ...event
 const isRacedWrite = error => !!error && RACED_WRITE_ERRORS.includes(error.code)
 const pinUnreplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
 
+async function writtenOrDeletedMeanwhile (prismaClient, { hash }) {
+  const [stored, facts] = await Promise.all([
+    prismaClient.block.findUnique({ where: { hash }, select: { number: true } }),
+    prismaClient.token_transfer.findFirst({ where: { blockHash: hash, standard: { in: NFT_STANDARDS } }, select: { eventId: true } })
+  ])
+  return !stored || !!facts
+}
+
 async function nextBlocks (prismaClient, cursor, toBlock, chunkBlocks) {
   return prismaClient.block.findMany({
     where: { number: { gte: cursor, lte: toBlock } },
@@ -46,6 +54,28 @@ async function eachChunk ({ prismaClient, fromBlock, toBlock, chunkBlocks, onChu
 
 export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {} }) {
   const report = { blocksRead: 0, blocksWritten: 0, blocksAlreadyStored: 0, blocksRaced: 0, facts: 0 }
+
+  const writeTransfers = async (block, events) => {
+    for (let attempt = 1; ; attempt++) {
+      const statements = await nftRepository.insertStatements(block, events)
+      if (!statements.length) return
+      try {
+        const [{ count }] = await prismaClient.$transaction(statements, READ_COMMITTED)
+        report.blocksWritten++
+        report.facts += count
+        return
+      } catch (error) {
+        if (!isRacedWrite(error)) throw error
+        if (await writtenOrDeletedMeanwhile(prismaClient, block)) {
+          report.blocksRaced++
+          console.log(`block ${block.number} ${block.hash}: ${error.code}, deleted or written by another writer meanwhile. Skipped.`)
+          return
+        }
+        if (attempt === WRITE_ATTEMPTS) throw error
+        console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, a holder changed since it was read. Reading again`)
+      }
+    }
+  }
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
     report.blocksRead += blocks.length
@@ -73,17 +103,7 @@ export async function backfillTransfers ({ prismaClient = defaultPrismaClient, f
         report.blocksAlreadyStored++
         continue
       }
-      const statements = nftRepository.insertStatements(block, eventsByBlock.get(block.hash))
-      if (!statements.length) continue
-      try {
-        const [{ count }] = await prismaClient.$transaction(statements, READ_COMMITTED)
-        report.blocksWritten++
-        report.facts += count
-      } catch (error) {
-        if (!isRacedWrite(error)) throw error
-        report.blocksRaced++
-        console.log(`block ${block.number} ${block.hash}: ${error.code}, deleted or written by another writer meanwhile. Skipped.`)
-      }
+      await writeTransfers(block, eventsByBlock.get(block.hash))
     }
   })
 
