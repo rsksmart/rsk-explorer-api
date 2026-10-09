@@ -20,6 +20,9 @@ import {
 const DELETE_ATTEMPTS = 3
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
 const RETRYABLE_DELETE_ERRORS = ['P2025', 'P2003']
+const DEADLOCK_IN_AN_UNCODED_PRISMA_ERROR = 'code: "40P01"'
+const isRetryableDeleteError = error => RETRYABLE_DELETE_ERRORS.includes(error.code) ||
+  (!error.code && String(error.message).includes(DEADLOCK_IN_AN_UNCODED_PRISMA_ERROR))
 
 export function getBlocksRepository (prismaClient) {
   return {
@@ -161,7 +164,7 @@ export function getBlocksRepository (prismaClient) {
         await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
         return { count: targets.length }
       } catch (error) {
-        if (attempt === DELETE_ATTEMPTS || !RETRYABLE_DELETE_ERRORS.includes(error.code)) throw error
+        if (attempt === DELETE_ATTEMPTS || !isRetryableDeleteError(error)) throw error
         targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
       }
     }
