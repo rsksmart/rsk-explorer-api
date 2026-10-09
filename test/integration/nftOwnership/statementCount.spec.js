@@ -69,7 +69,9 @@ async function distinctHolders (n) {
   await save(10, all.map(i => erc721(C721, ZERO, holderAt('3', i), i)))
   const moved = await save(20, all.map(i => erc721(C721, holderAt('3', i), holderAt('4', i), i)))
   expect(await differences()).to.deep.equal([])
-  return { moved, holders: 2 * n }
+  const deleted = await remove(20)
+  expect(await differences()).to.deep.equal([])
+  return { moved, deleted, holders: 2 * n }
 }
 
 integrationDescribe('NFT ownership: the statements of a block\'s save and delete grow with holders and bind chunks, not with token ids', function () {
@@ -97,5 +99,12 @@ integrationDescribe('NFT ownership: the statements of a block\'s save and delete
     const many = await distinctHolders(500)
 
     expect(many.moved - few.moved, `50 transfers: ${few.moved} · 500 transfers: ${many.moved}`).to.be.at.most(many.holders - few.holders)
+  })
+
+  it('deleting ERC-721 transfers between distinct holders: each added holder adds at most two operations, its update and, when no fact is left, its removal', async () => {
+    const few = await distinctHolders(50)
+    const many = await distinctHolders(500)
+
+    expect(many.deleted - few.deleted, `50 transfers: ${few.deleted} · 500 transfers: ${many.deleted}`).to.be.at.most(2 * (many.holders - few.holders))
   })
 })

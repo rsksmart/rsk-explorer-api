@@ -1,6 +1,7 @@
 import { BigNumber } from 'bignumber.js'
 import { decodeBlockNftTransfers, NFT_STANDARDS, ZERO_ADDRESS } from '../lib/nftTransfers'
 import { contractsInterfaces } from '../lib/types'
+import { chunkArray } from '../lib/utils'
 
 const PRISMA_MAX_BIND_VALUES = 32767
 const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES - 1
@@ -9,7 +10,7 @@ const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
 const balanceId = ({ contract, standard, tokenId, holder }) => ({ contract, standard, tokenId, holder })
 
-function inListsUnderBindLimit (sortedRows, prefix, listed) {
+function inListsUnderBindLimit (sortedRows, prefix, listed, bindsTakenByTheRestOfTheWhere = 0) {
   const parts = []
   let part = []
   let binds = 0
@@ -17,7 +18,7 @@ function inListsUnderBindLimit (sortedRows, prefix, listed) {
   const sharesPrefix = row => !!group && prefix.every(field => group[field] === row[field])
 
   for (const row of sortedRows) {
-    if (binds + (sharesPrefix(row) ? 1 : prefix.length + 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE) {
+    if (bindsTakenByTheRestOfTheWhere + binds + (sharesPrefix(row) ? 1 : prefix.length + 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE) {
       parts.push(part)
       part = []
       binds = 0
@@ -84,25 +85,25 @@ export function getNftRepository (prismaClient) {
     }
   }
 
-  async function latestOtherFact (holderRow, doomedHashes) {
-    const probe = side => prismaClient.token_transfer.findFirst({
-      where: { contract: holderRow.contract, standard: holderRow.standard, [side]: holderRow.holder, blockHash: { notIn: doomedHashes } },
-      orderBy: { eventId: 'desc' },
-      select: { blockNumber: true, blockHash: true }
-    })
-    const found = (await Promise.all([probe('to'), probe('from')])).filter(Boolean)
-    const latest = found.sort((a, b) => b.blockNumber - a.blockNumber)[0]
+  async function latestOtherFacts (sortedHolderRows, doomedHashes) {
+    const maxima = await Promise.all(['to', 'from'].flatMap(side => inListsUnderBindLimit(sortedHolderRows, ['contract', 'standard'], 'holder', doomedHashes.length).map(async part => {
+      const groups = await prismaClient.token_transfer.groupBy({
+        by: ['contract', 'standard', side],
+        where: { OR: part.map(({ holder, ...contractAndStandard }) => ({ ...contractAndStandard, [side]: holder })), blockHash: { notIn: doomedHashes } },
+        _max: { blockNumber: true }
+      })
+      return groups.map(row => [holderKey({ contract: row.contract, standard: row.standard, holder: row[side] }), row._max.blockNumber])
+    })))
 
-    return latest ? { lastBlockNumber: latest.blockNumber, lastBlockHash: latest.blockHash } : null
-  }
-
-  async function latestOtherFacts (holderRows, doomedHashes) {
-    const latest = new Map()
-    for (const row of holderRows) {
-      const found = await latestOtherFact(row, doomedHashes)
-      if (found) latest.set(holderKey(row), found)
+    const latestNumber = new Map()
+    for (const [key, number] of maxima.flat()) {
+      if (!latestNumber.has(key) || number > latestNumber.get(key)) latestNumber.set(key, number)
     }
-    return latest
+    const numbers = [...new Set(latestNumber.values())]
+    const blocks = (await Promise.all(chunkArray(numbers, BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE).map(part => prismaClient.block.findMany({ where: { number: { in: part } }, select: { number: true, hash: true } })))).flat()
+    const hashAt = new Map(blocks.map(({ number, hash }) => [number, hash]))
+
+    return new Map([...latestNumber].filter(([, number]) => hashAt.has(number)).map(([key, number]) => [key, { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }]))
   }
 
   async function ownershipStatements ({ added, undone, block, doomedHashes }) {
