@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import sinon from 'sinon'
 import { Nod3 } from '@rsksmart/nod3'
 import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
-import { processCandidate, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
+import { processCandidate, redetectCandidates, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { eventRepository } from '../../src/repositories'
 
@@ -25,6 +25,21 @@ describe('redetectContracts candidate sets', () => {
   it('names the NFT transfer emitters and nothing an object inherits', () => {
     expect(candidateSetNamed('nft-transfer-emitters')).to.equal(candidateSet)
     for (const name of ['constructor', '__proto__', 'toString', 'hasOwnProperty', 'fungible-transfer-emitters', undefined]) expect(candidateSetNamed(name)).to.equal(null)
+  })
+})
+
+describe('redetectContracts over a list of candidates', () => {
+  it('detects and re-decodes every candidate on every run: a second run skips none of them', async () => {
+    const candidates = ['0x1', '0x2', '0x3'].map(prefix => `${prefix}${'0'.repeat(39)}`)
+    const updater = makeUpdater([decodedEvent()])
+
+    const first = await redetectCandidates({ updater, candidateSet, candidates, pageSize: 50 })
+    const second = await redetectCandidates({ updater, candidateSet, candidates, pageSize: 50 })
+
+    expect(second).to.deep.equal(first)
+    expect(first.tagged.map(entry => entry.address)).to.deep.equal(candidates)
+    expect(updater.getContractParser.args.map(([address]) => address)).to.deep.equal([...candidates, ...candidates])
+    expect(updater.updateContractEvents.callCount).to.equal(6)
   })
 })
 

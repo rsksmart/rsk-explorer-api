@@ -75,6 +75,18 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
   }
 }
 
+export async function redetectCandidates ({ updater, candidateSet, candidates, pageSize }) {
+  const summary = { tagged: [], notTagged: [], failed: [] }
+
+  for (const [index, address] of candidates.entries()) {
+    const progress = `[${index + 1}/${candidates.length}]`
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize, progress })
+    summary[bucket].push(entry)
+  }
+
+  return summary
+}
+
 async function main () {
   const setName = process.argv[2]
   const candidateSet = candidateSetNamed(setName)
@@ -116,19 +128,7 @@ async function main () {
     console.log(`Restricted to target address ${targetAddress}`)
   }
 
-  const summary = { tagged: [], notTagged: [], failed: [] }
-
-  for (const [index, address] of candidates.entries()) {
-    const progress = `[${index + 1}/${candidates.length}]`
-    const { bucket, entry } = await processCandidate({
-      updater,
-      candidateSet,
-      address,
-      pageSize,
-      progress
-    })
-    summary[bucket].push(entry)
-  }
+  const summary = await redetectCandidates({ updater, candidateSet, candidates, pageSize })
 
   console.log('')
   console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`)
