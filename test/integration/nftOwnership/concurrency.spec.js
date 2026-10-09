@@ -15,7 +15,7 @@ const holds = new AsyncLocalStorage()
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const refusals = []
 const recordRefusal = error => {
-  refusals.push(error.code)
+  refusals.push(error.code || (String(error.message).includes('code: "40P01"') ? '40P01' : 'no code'))
   throw error
 }
 
@@ -162,6 +162,7 @@ function raceEveryCase () {
         expect(results.filter(r => r.status === 'rejected').map(r => r.reason.code || r.reason.message), `${name} trial ${trial}`).to.deep.equal([])
         expect(await differences(), `${name} trial ${trial}`).to.deep.equal([])
       }
+      expect(refusals.filter(code => code === '40P01'), `${name}: deadlocks, including any a retry absorbed`).to.deep.equal([])
       if (casesWithAGuaranteedRefusal.includes(name)) expect(refusals.filter(code => code === 'P2025')).to.have.lengthOf(TRIALS)
     })
   }
