@@ -63,7 +63,8 @@ const casesWithAGuaranteedRefusal = [
   'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch',
   'two deletes that both repair the token row, one of two blocks and one of the newer of them',
   'last block: a replace of N against a save of M < N whose transaction stays open across the replace batch',
-  'no fact left: a delete of N against a save of M < N whose only leg for the holder is a self-transfer, held open across the delete batch'
+  'no fact left: a delete of N against a save of M < N whose only leg for the holder is a self-transfer, held open across the delete batch',
+  'lock order: a delete of N that repairs the higher-key holder against a save of M between N and the lower holder\'s last block, which holds the lower holder and then takes the higher one'
 ]
 
 const cases = {
@@ -108,6 +109,14 @@ const cases = {
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
       held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, H, H, 5)]))
+    ]
+  },
+  'lock order: a delete of N that repairs the higher-key holder against a save of M between N and the lower holder\'s last block, which holds the lower holder and then takes the higher one': async base => {
+    await saveLikeInsertBlock(base + 20, 'a', [erc721(C721, ZERO, A, 1), erc721(C721, ZERO, H, 2)])
+    await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 3)])
+    return [
+      async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 20 }) },
+      held({ seconds: 0.4, at: 3 }, () => saveLikeInsertBlock(base + 25, 'a', [erc721(C721, ZERO, A, 4), erc721(C721, ZERO, H, 5)]))
     ]
   },
   'last block: a delete of N against a save of M > N sharing the holder': async base => {

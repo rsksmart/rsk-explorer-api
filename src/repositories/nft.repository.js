@@ -45,15 +45,17 @@ function netDeltas (facts, sign) {
 }
 
 export function getNftRepository (prismaClient) {
-  function aggregateStatements (facts, sign, block = null) {
+  function aggregateStatements (facts, sign, { block = null, repairs = new Map() } = {}) {
     const { keys, holders } = netDeltas(facts, sign)
     if (!holders.length) return []
 
     const statements = holders.map(h => {
       const where = { contract_standard_holder: holderId(h) }
       const update = { quantity: { increment: h.quantityDelta.toFixed() }, version: { increment: 1 } }
-      return block
-        ? prismaClient.nft_holder.upsert({ where, update, create: { ...holderId(h), quantity: h.quantityDelta.toFixed(), tokenCount: 0, lastBlockNumber: block.number, lastBlockHash: block.hash } })
+      if (block) return prismaClient.nft_holder.upsert({ where, update, create: { ...holderId(h), quantity: h.quantityDelta.toFixed(), tokenCount: 0, lastBlockNumber: block.number, lastBlockHash: block.hash } })
+      const repair = repairs.get(h.key)
+      return repair
+        ? prismaClient.nft_holder.update({ where: { ...where, version: repair.version }, data: { ...update, ...repair.lastBlock } })
         : prismaClient.nft_holder.update({ where, data: update })
     })
 
@@ -105,7 +107,7 @@ export function getNftRepository (prismaClient) {
 
       return [
         prismaClient.token_transfer.createMany({ data: facts }),
-        ...aggregateStatements(facts, 1, block)
+        ...aggregateStatements(facts, 1, { block })
       ]
     },
     async undoStatements (blocks) {
@@ -120,25 +122,18 @@ export function getNftRepository (prismaClient) {
         select: { contract: true, standard: true, holder: true, version: true, lastBlockHash: true }
       })))).flat()
       const doomed = new Set(doomedHashes)
-      const repairs = []
+      const repairs = new Map()
       const removals = []
 
       for (const row of rows.filter(r => doomed.has(r.lastBlockHash)).map(r => ({ ...r, key: `${r.contract}|${r.standard}|${r.holder}` })).sort(byKey)) {
         const latest = await latestOtherFact(row, doomedHashes)
-        const where = { contract_standard_holder: holderId(row), version: row.version }
-
-        if (latest) {
-          repairs.push(prismaClient.nft_holder.update({ where, data: { lastBlockNumber: latest.blockNumber, lastBlockHash: latest.blockHash } }))
-        } else {
-          repairs.push(prismaClient.nft_holder.update({ where, data: { version: { increment: 1 } } }))
-          removals.push(prismaClient.nft_holder.delete({ where: { contract_standard_holder: holderId(row), quantity: 0, tokenCount: 0 } }))
-        }
+        repairs.set(row.key, { version: row.version, lastBlock: latest ? { lastBlockNumber: latest.blockNumber, lastBlockHash: latest.blockHash } : {} })
+        if (!latest) removals.push(prismaClient.nft_holder.delete({ where: { contract_standard_holder: holderId(row), quantity: 0, tokenCount: 0 } }))
       }
 
       return [
-        ...repairs,
         prismaClient.token_transfer.deleteMany({ where: doomedFacts }),
-        ...aggregateStatements(facts, -1),
+        ...aggregateStatements(facts, -1, { repairs }),
         ...removals
       ]
     }
