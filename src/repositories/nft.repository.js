@@ -1,15 +1,42 @@
 import { BigNumber } from 'bignumber.js'
 import { decodeBlockNftTransfers, NFT_STANDARDS, ZERO_ADDRESS } from '../lib/nftTransfers'
 import { contractsInterfaces } from '../lib/types'
-import { chunkArray } from '../lib/utils'
 
 const PRISMA_MAX_BIND_VALUES = 32767
-const BALANCE_KEY_BIND_VALUES = 5
-const underBindLimit = list => chunkArray(list, Math.floor(PRISMA_MAX_BIND_VALUES / BALANCE_KEY_BIND_VALUES))
+const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES - 1
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
 const balanceId = ({ contract, standard, tokenId, holder }) => ({ contract, standard, tokenId, holder })
+
+function inListsUnderBindLimit (sortedRows, prefix, listed) {
+  const parts = []
+  let part = []
+  let binds = 0
+  let group = null
+  const sharesPrefix = row => !!group && prefix.every(field => group[field] === row[field])
+
+  for (const row of sortedRows) {
+    if (binds + (sharesPrefix(row) ? 1 : prefix.length + 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE) {
+      parts.push(part)
+      part = []
+      binds = 0
+      group = null
+    }
+    if (!sharesPrefix(row)) {
+      group = { ...Object.fromEntries(prefix.map(field => [field, row[field]])), [listed]: { in: [] } }
+      part.push(group)
+      binds += prefix.length
+    }
+    group[listed].in.push(row[listed])
+    binds++
+  }
+
+  return part.length ? [...parts, part] : parts
+}
+
+const holdersUnderBindLimit = sortedHolders => inListsUnderBindLimit(sortedHolders, ['contract', 'standard'], 'holder')
+const balancesUnderBindLimit = sortedKeys => inListsUnderBindLimit(sortedKeys, ['contract', 'standard', 'holder'], 'tokenId')
 const holderKey = ({ contract, standard, holder }) => `${contract}|${standard}|${holder}`
 const balanceKey = ({ contract, standard, tokenId, holder }) => `${contract}|${standard}|${holder}|${tokenId}`
 const isPositive = quantity => quantity.gt(0) ? 1 : 0
@@ -48,8 +75,8 @@ function netDeltas (signedFacts) {
 
 export function getNftRepository (prismaClient) {
   async function readHoldersThenBalances (holders, keys) {
-    const holderRows = (await Promise.all(underBindLimit(holders).map(part => prismaClient.nft_holder.findMany({ where: { OR: part.map(holderId) } })))).flat()
-    const balanceRows = (await Promise.all(underBindLimit(keys).map(part => prismaClient.nft_balance.findMany({ where: { OR: part.map(balanceId) } })))).flat()
+    const holderRows = (await Promise.all(holdersUnderBindLimit(holders).map(part => prismaClient.nft_holder.findMany({ where: { OR: part } })))).flat()
+    const balanceRows = (await Promise.all(balancesUnderBindLimit(keys).map(part => prismaClient.nft_balance.findMany({ where: { OR: part } })))).flat()
 
     return {
       holders: new Map(holderRows.map(row => [holderKey(row), row])),
@@ -140,8 +167,8 @@ export function getNftRepository (prismaClient) {
       ...(created.length ? [prismaClient.nft_holder.createMany({ data: created })] : []),
       ...updates,
       ...(appearing.length ? [prismaClient.nft_balance.createMany({ data: appearing })] : []),
-      ...underBindLimit(vanishing).map(part => prismaClient.nft_balance.deleteMany({ where: { OR: part.map(balanceId) } })),
-      ...[...changing].flatMap(([quantity, part]) => underBindLimit(part).map(chunk => prismaClient.nft_balance.updateMany({ where: { OR: chunk.map(balanceId) }, data: { quantity } }))),
+      ...balancesUnderBindLimit(vanishing).map(part => prismaClient.nft_balance.deleteMany({ where: { OR: part } })),
+      ...[...changing].flatMap(([quantity, keys]) => balancesUnderBindLimit(keys).map(part => prismaClient.nft_balance.updateMany({ where: { OR: part }, data: { quantity } }))),
       ...removals
     ]
   }
