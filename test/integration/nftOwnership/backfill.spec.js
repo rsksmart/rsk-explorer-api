@@ -25,12 +25,12 @@ const HISTORY = [
 ]
 const NFT_TABLES = 'nft_balance, nft_holder, token_transfer, token_state_at_block, token'
 
-const clean = () => ({ calls: 13, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, lastNodeError: null })
+const clean = () => ({ calls: 13, reverts: 0, nodeErrors: 0, lastNodeError: null })
 const fetcher = ({ failing = () => false } = {}) => {
   let last = clean()
   return {
     async fetchOne (contract, blockNumber) {
-      last = failing(contract, blockNumber) ? { ...clean(), nodeErrors: 1, tokenReadErrors: 1, lastNodeError: 'injected internal error' } : clean()
+      last = failing(contract, blockNumber) ? { ...clean(), nodeErrors: 1, lastNodeError: 'injected internal error' } : clean()
       return tokenStateAt(contract, blockNumber)
     },
     takeStats: () => last
@@ -204,7 +204,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     const b = await phaseB({ fetchers: [fetcher({ failing })], onChunkDone: ({ complete }) => completeness.push(complete) })
 
     expect(b.pairsFailed.map(p => [p.contract, p.blockNumber, p.nodeErrorsPerAttempt])).to.deep.equal([[C721, 12, [1, 1, 1]]])
-    expect(b).to.include({ pairsWritten: 8, nodeErrors: 3, tokenReadErrors: 3, firstAttemptTokenReadErrors: 1 })
+    expect(b).to.include({ pairsWritten: 8, nodeErrors: 3 })
     expect(completeness).to.deep.equal([false, true, true])
     expect(await prismaClient.token_state_at_block.count({ where: { contract: C721, blockNumber: 12 } })).to.equal(0)
 

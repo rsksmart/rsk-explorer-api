@@ -15,8 +15,8 @@ const OWNERSHIP_TRANSFERRED_TOPIC0 = '0x8be0079c531659141344cd1fd0a4f28419497f97
 
 const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topics: [topic0] } } })
 const decodedEvent = () => ({ error: false })
-const clean = () => ({ calls: 5, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, lastNodeError: null })
-const rejected = () => ({ calls: 5, reverts: 0, nodeErrors: 1, tokenReadErrors: 0, lastNodeError: 'injected internal error' })
+const clean = () => ({ calls: 5, reverts: 0, nodeErrors: 0, lastNodeError: null })
+const rejected = () => ({ calls: 5, reverts: 0, nodeErrors: 1, lastNodeError: 'injected internal error' })
 
 const makeUpdater = (events, interfaces = ['ERC1155']) => ({
   getContractParser: sinon.stub().resolves({ contractDetails: { interfaces } }),

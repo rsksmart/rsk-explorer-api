@@ -174,7 +174,7 @@ async function main () {
   }
 
   const summary = { tagged: [], notTagged: [], failed: [] }
-  const totals = { calls: 0, reverts: 0, nodeErrors: 0, tokenReadErrors: 0 }
+  const totals = { calls: 0, reverts: 0, nodeErrors: 0 }
   const countingTakeStats = () => {
     const stats = takeStats()
     Object.keys(totals).forEach(key => { totals[key] += stats[key] })
@@ -198,7 +198,7 @@ async function main () {
   const retried = [...summary.tagged, ...summary.notTagged].filter(entry => entry.retries > 0).length
   console.log('')
   console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}, stored after a retry: ${retried}`)
-  console.log(`Node calls: ${totals.calls}, reverts: ${totals.reverts}, rejected: ${totals.nodeErrors}, of them token reads: ${totals.tokenReadErrors}`)
+  console.log(`Node calls: ${totals.calls}, reverts: ${totals.reverts}, rejected: ${totals.nodeErrors}`)
 
   const fileName = `redetect-contracts-${setName}-${Date.now()}.json`
   const resultFilePath = path.join(__dirname, fileName)

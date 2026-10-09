@@ -16,10 +16,10 @@ describe('countNodeCalls', () => {
     const error = await settle(nod3.rpc.send(call(SUPPORTS_INTERFACE)))
 
     expect(error.errorCode).to.equal(REVERT_ERROR_CODE)
-    expect(takeStats()).to.deep.include({ calls: 1, reverts: 1, nodeErrors: 0, tokenReadErrors: 0 })
+    expect(takeStats()).to.deep.include({ calls: 1, reverts: 1, nodeErrors: 0 })
   })
 
-  it('counts a request the provider rejects and a non-revert JSON-RPC error as node errors, and a token read among them', async () => {
+  it('counts a request the provider rejects and a non-revert JSON-RPC error as node errors', async () => {
     const answers = [
       () => { throw new Error('injected provider rejection') },
       () => { throw new JsonRpcError({ code: -32602, message: 'Invalid block number 125000000' }) },
@@ -31,7 +31,7 @@ describe('countNodeCalls', () => {
     await settle(nod3.rpc.send(call(SUPPORTS_INTERFACE)))
     await settle(nod3.rpc.send(call(SUPPORTS_INTERFACE)))
 
-    expect(takeStats()).to.deep.include({ calls: 3, reverts: 0, nodeErrors: 2, tokenReadErrors: 1, lastNodeError: 'Invalid block number 125000000' })
+    expect(takeStats()).to.deep.include({ calls: 3, reverts: 0, nodeErrors: 2, lastNodeError: 'Invalid block number 125000000' })
     expect(takeStats()).to.deep.include({ calls: 0, nodeErrors: 0 })
   })
 
@@ -49,6 +49,6 @@ describe('countNodeCalls', () => {
     const error = await settle(nod3.rpc.send(call(NAME)))
 
     expect(error.message).to.equal('node request timed out after 20ms')
-    expect(takeStats()).to.deep.include({ calls: 1, nodeErrors: 1, tokenReadErrors: 1 })
+    expect(takeStats()).to.deep.include({ calls: 1, nodeErrors: 1 })
   })
 })

@@ -121,7 +121,7 @@ async function fetchPairs (fetchers, pairs, onFetched) {
 }
 
 export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {} }) {
-  const report = { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsRetried: 0, pairsFailed: [], pairsRaced: 0, calls: 0, reverts: 0, nodeErrors: 0, tokenReadErrors: 0, firstAttemptTokenReadErrors: 0 }
+  const report = { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsRetried: 0, pairsFailed: [], pairsRaced: 0, calls: 0, reverts: 0, nodeErrors: 0 }
   const states = new Map()
   const pairKey = ({ contract, blockNumber, blockHash }) => `${contract}|${blockNumber}|${blockHash}`
 
@@ -141,8 +141,7 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
   }
 
   const recordFetch = (pair, { state, attempts }) => {
-    for (const stats of attempts) ['calls', 'reverts', 'nodeErrors', 'tokenReadErrors'].forEach(key => { report[key] += stats[key] })
-    report.firstAttemptTokenReadErrors += attempts[0].tokenReadErrors
+    for (const stats of attempts) ['calls', 'reverts', 'nodeErrors'].forEach(key => { report[key] += stats[key] })
     if (attempts.length > 1) report.pairsRetried++
     if (state) {
       states.set(pairKey(pair), state)
