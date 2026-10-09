@@ -40,12 +40,11 @@ const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
 
 const DETECTION_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS
 const DETECTION_ATTEMPTS = 3
-const resumeFile = setName => path.join(process.cwd(), `redetect-contracts-${setName}.resume`)
 
 function printUsageAndExit () {
   console.log(`Usage: node dist/tools/${toolName} candidateSet(${Object.keys(CANDIDATE_SETS).join(' | ')}) pageSize(number: required) targetAddress(address: optional, processes a single candidate)`)
   Object.entries(CANDIDATE_SETS).forEach(([name, { description }]) => console.log(`  ${name}: ${description}`))
-  console.log(`Resume marker: ${resumeFile('<candidateSet>')} (one processed address per line; delete it to reprocess from scratch)`)
+  console.log('An interrupted run is run again: it detects every candidate again and stores nothing twice')
   process.exit(1)
 }
 
@@ -55,11 +54,6 @@ function withTimeout (promise, ms, label) {
     timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
   })
   return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
-
-function readResumeFile (file) {
-  if (!fs.existsSync(file)) return new Set()
-  return new Set(fs.readFileSync(file, 'utf-8').split('\n').filter(Boolean))
 }
 
 async function detectWithoutNodeErrors ({ updater, address, takeStats, progress }) {
@@ -83,14 +77,14 @@ async function detectWithoutNodeErrors ({ updater, address, takeStats, progress 
   return { detection: null, nodeErrorsPerAttempt }
 }
 
-export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '', markProcessed, takeStats }) {
+export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '', takeStats }) {
   try {
     console.log(`${progress} ${address}: detecting interfaces...`)
     const { detection, nodeErrorsPerAttempt } = await detectWithoutNodeErrors({ updater, address, takeStats, progress })
     const retries = nodeErrorsPerAttempt.length - 1
 
     if (!detection) {
-      console.log(`${progress} ${address}: every detection attempt saw a node error. Not stored and not marked as processed; a rerun retries it.`)
+      console.log(`${progress} ${address}: every detection attempt saw a node error. Not stored; a rerun retries it.`)
       return { bucket: 'failed', entry: { address, nodeErrorsPerAttempt } }
     }
 
@@ -111,15 +105,14 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
     }
 
     if (failedEvents > 0 || decodeNodeErrors > 0) {
-      console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode, ${decodeNodeErrors} rejected node call(s) while re-decoding. Not marked as processed; a rerun retries it.`)
+      console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode, ${decodeNodeErrors} rejected node call(s) while re-decoding. A rerun retries it.`)
       return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures, nodeErrorsPerAttempt, decodeNodeErrors } }
     }
 
-    markProcessed(address)
     const entry = { address, interfaces: contractDetails.interfaces, updatedEvents: result.updatedEvents.amount, otherFailures, retries }
     return { bucket: isTagged ? 'tagged' : 'notTagged', entry }
   } catch (error) {
-    console.log(`${progress} ${address}: FAILED (${error.message}). Not marked as processed; a rerun retries it.`)
+    console.log(`${progress} ${address}: FAILED (${error.message}). A rerun retries it.`)
     return { bucket: 'failed', entry: { address, error: error.message } }
   }
 }
@@ -166,13 +159,6 @@ async function main () {
     console.log(`Restricted to target address ${targetAddress}`)
   }
 
-  const resume = resumeFile(setName)
-  const processed = readResumeFile(resume)
-  const pending = candidates.filter(address => !processed.has(address))
-  if (processed.size) {
-    console.log(`Resume file: ${processed.size} addresses already processed, ${pending.length} pending`)
-  }
-
   const summary = { tagged: [], notTagged: [], failed: [] }
   const totals = { calls: 0, reverts: 0, nodeErrors: 0 }
   const countingTakeStats = () => {
@@ -181,16 +167,15 @@ async function main () {
     return stats
   }
 
-  for (const [index, address] of pending.entries()) {
-    const progress = `[${index + 1}/${pending.length}]`
+  for (const [index, address] of candidates.entries()) {
+    const progress = `[${index + 1}/${candidates.length}]`
     const { bucket, entry } = await processCandidate({
       updater,
       candidateSet,
       address,
       pageSize,
       progress,
-      takeStats: countingTakeStats,
-      markProcessed: addr => fs.appendFileSync(resume, addr + '\n')
+      takeStats: countingTakeStats
     })
     summary[bucket].push(entry)
   }

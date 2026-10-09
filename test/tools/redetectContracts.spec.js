@@ -33,47 +33,40 @@ describe('redetectContracts candidate sets', () => {
 })
 
 describe('redetectContracts processCandidate over the NFT transfer emitters', () => {
-  it('tags and processes a contract whose NFT events all decoded, even if an unrelated event could not', async () => {
+  it('tags a contract whose NFT events all decoded, even if an unrelated event could not', async () => {
     const updater = makeUpdater([failedEvent(OWNERSHIP_TRANSFERRED_TOPIC0), decodedEvent()])
-    const markProcessed = sinon.spy()
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence() })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
 
-    expect(markProcessed.calledOnceWithExactly(address)).to.equal(true)
     expect(bucket).to.equal('tagged')
     expect(entry).to.deep.equal({ address, interfaces: ['ERC1155'], updatedEvents: 2, otherFailures: 1, retries: 0 })
   })
 
   for (const [standard, topic0] of [['ERC-1155', TRANSFER_SINGLE_TOPIC0], ['ERC-721', TRANSFER_TOPIC0]]) {
-    it(`does not process a contract when an ${standard} event failed to re-decode`, async () => {
+    it(`reports a contract as failed when an ${standard} event failed to re-decode`, async () => {
       const updater = makeUpdater([failedEvent(topic0)])
-      const markProcessed = sinon.spy()
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence() })
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
 
-      expect(markProcessed.called).to.equal(false)
       expect(bucket).to.equal('failed')
       expect(entry).to.include({ address, updatedEvents: 1, failedEvents: 1, otherFailures: 0 })
     })
   }
 
-  it('stores the interfaces of a contract with no NFT interface and marks it processed', async () => {
+  it('stores the interfaces of a contract with no NFT interface and reports it as not tagged', async () => {
     const updater = makeUpdater([decodedEvent()], ['ERC20'])
-    const markProcessed = sinon.spy()
 
-    const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence() })
+    const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
 
     expect(updater.saveContractDetails.calledOnceWithExactly(address, { interfaces: ['ERC20'] })).to.equal(true)
-    expect(markProcessed.calledOnce).to.equal(true)
     expect(bucket).to.equal('notTagged')
   })
 
   it('detects again after a rejected node call and stores only the clean detection', async () => {
     const updater = makeUpdater([decodedEvent()])
     updater.getContractParser.onFirstCall().resolves({ contractDetails: { interfaces: [] } })
-    const markProcessed = sinon.spy()
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence(rejected) })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(rejected) })
 
     expect(updater.getContractParser.callCount).to.equal(2)
     expect(updater.saveContractDetails.calledOnceWithExactly(address, { interfaces: ['ERC1155'] })).to.equal(true)
@@ -81,27 +74,23 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
     expect(entry.retries).to.equal(1)
   })
 
-  it('stores nothing and keeps the contract pending when every detection attempt saw a rejected node call', async () => {
+  it('stores nothing and reports the contract as failed when every detection attempt saw a rejected node call', async () => {
     const updater = makeUpdater([decodedEvent()], [])
-    const markProcessed = sinon.spy()
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence(rejected, rejected, rejected) })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(rejected, rejected, rejected) })
 
     expect(updater.getContractParser.callCount).to.equal(3)
     expect(updater.saveContractDetails.called).to.equal(false)
     expect(updater.updateContractEvents.called).to.equal(false)
-    expect(markProcessed.called).to.equal(false)
     expect(bucket).to.equal('failed')
     expect(entry).to.deep.equal({ address, nodeErrorsPerAttempt: [1, 1, 1] })
   })
 
-  it('keeps the contract pending when the node rejects a call while its events are re-decoded', async () => {
+  it('reports the contract as failed when the node rejects a call while its events are re-decoded', async () => {
     const updater = makeUpdater([decodedEvent()])
-    const markProcessed = sinon.spy()
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed, takeStats: statsSequence(clean, rejected) })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(clean, rejected) })
 
-    expect(markProcessed.called).to.equal(false)
     expect(bucket).to.equal('failed')
     expect(entry.decodeNodeErrors).to.equal(1)
   })
@@ -140,7 +129,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['reject'])))
       const updater = realUpdater(nod3)
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats })
 
       expect(updater.saveContractDetails.callCount).to.equal(1)
       expect(updater.saveContractDetails.firstCall.args[1].interfaces).to.include('ERC721')
@@ -165,7 +154,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       updater.fetchPaginatedEvents.resolves({ events: [storedTransfer], next: null })
       const upsertOne = sinon.stub(eventRepository, 'upsertOne').resolves({})
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats }).finally(() => upsertOne.restore())
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats }).finally(() => upsertOne.restore())
 
       expect(bucket).to.equal('tagged')
       expect(updater.getContractParser.callCount).to.equal(1)
@@ -183,7 +172,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
         const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['hang']), { latencyMs: 10 }))
         const updater = realUpdater(nod3)
 
-        const processing = processCandidate({ updater, candidateSet, address, pageSize: 50, markProcessed: sinon.spy(), takeStats })
+        const processing = processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats })
         await clock.tickAsync(3 * REQUEST_TIMEOUT_MS)
         const { bucket, entry } = await processing
 
