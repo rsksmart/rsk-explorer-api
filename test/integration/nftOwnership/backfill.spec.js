@@ -1,11 +1,7 @@
 import { expect } from 'chai'
-import sinon from 'sinon'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
-import { backfillTransfers, backfillTokenStates, runPhase, readResume, writeResume } from '../../../src/tools/backfillNftOwnership'
+import { backfillTransfers, backfillTokenStates, runPhase } from '../../../src/tools/backfillNftOwnership'
 import { blockData, erc721, erc20, erc1155Single, erc1155Batch, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences, tableState } from './replay'
 
@@ -46,32 +42,19 @@ const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100,
 const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
 
 const runBatch = prismaClient.$transaction
-const PHASE_A_NOTICE = "Phase A's resume marker"
-const loggedLines = async run => {
-  const log = sinon.spy(console, 'log')
-  try {
-    await run()
-    return log.getCalls().map(call => String(call.args[0]))
-  } finally {
-    log.restore()
+const killedAtBatch = n => {
+  let batches = 0
+  prismaClient.$transaction = async (...args) => {
+    if (++batches === n) throw new Error('process killed')
+    return runBatch.apply(prismaClient, args)
   }
 }
-const tempDirs = []
-const tempDir = prefix => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix))
-  tempDirs.push(dir)
-  return dir
-}
-const markerIn = phase => path.join(tempDir('backfill-marker-'), `backfill-nft-ownership-${phase}.resume`)
 
 integrationDescribe('NFT ownership: the two-phase backfill', function () {
   this.timeout(120000)
 
   beforeEach(resetDatabase)
-  afterEach(() => {
-    prismaClient.$transaction = runBatch
-    for (const dir of tempDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true })
-  })
+  afterEach(() => { prismaClient.$transaction = runBatch })
 
   it('phase A and phase B over blocks stored before the NFT tables existed equal a replay of their events', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
@@ -108,23 +91,40 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
-  it('phase B killed after a block of a chunk committed resumes from its marker with no duplicate and no gap', async () => {
+  it('phase A and phase B each killed after a block committed, then run again with no arguments, equal a replay', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
-    await phaseA()
-    const markers = []
-    let writes = 0
-    prismaClient.$transaction = async (...args) => {
-      if (++writes === 5) throw new Error('process killed')
-      return runBatch.apply(prismaClient, args)
-    }
 
-    const killed = await phaseB({ onChunkDone: ({ nextBlock }) => markers.push(nextBlock) }).catch(error => error)
+    killedAtBatch(3)
+    const killedA = await runPhase({ phase: 'A', chunkBlocks: 3 }).catch(error => error)
+    const factsAfterKilledA = await prismaClient.token_transfer.count()
     prismaClient.$transaction = runBatch
-    const resumed = await phaseB({ fromBlock: markers[markers.length - 1] })
+    const rerunA = await runPhase({ phase: 'A', chunkBlocks: 3 })
 
-    expect(killed.message).to.equal('process killed')
-    expect(markers).to.deep.equal([13])
-    expect(resumed).to.include({ pairsAlreadyStored: 2, pairsWritten: 2 })
+    killedAtBatch(5)
+    const killedB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] }).catch(error => error)
+    const statesAfterKilledB = await prismaClient.token_state_at_block.count()
+    prismaClient.$transaction = runBatch
+    const rerunB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
+
+    expect([killedA.message, killedB.message]).to.deep.equal(['process killed', 'process killed'])
+    expect([factsAfterKilledA, statesAfterKilledB]).to.deep.equal([4, 7])
+    expect(rerunA).to.include({ blocksAlreadyStored: 2, blocksWritten: 4 })
+    expect(rerunB).to.include({ pairsAlreadyStored: 7, pairsWritten: 2 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('a run against a database it has not seen writes every block and pair, whatever ran before from the same working directory', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await runPhase({ phase: 'A', chunkBlocks: 3 })
+    await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
+    await resetDatabase()
+    await storeAsTheIndexerBeforeTheBackfill()
+
+    const a = await runPhase({ phase: 'A', chunkBlocks: 3 })
+    const b = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
+
+    expect(a).to.include({ blocksWritten: 6, blocksAlreadyStored: 0 })
+    expect(b).to.deep.include({ pairs: 9, pairsWritten: 9, pairsFailed: [] })
     expect(await differences()).to.deep.equal([])
   })
 
@@ -198,14 +198,12 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
   it('phase B never stores a pair whose reads saw a node error, retries it, and a later run fills it', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
-    const completeness = []
     const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
 
-    const b = await phaseB({ fetchers: [fetcher({ failing })], onChunkDone: ({ complete }) => completeness.push(complete) })
+    const b = await phaseB({ fetchers: [fetcher({ failing })] })
 
     expect(b.pairsFailed.map(p => [p.contract, p.blockNumber, p.nodeErrorsPerAttempt])).to.deep.equal([[C721, 12, [1, 1, 1]]])
     expect(b).to.include({ pairsWritten: 8, nodeErrors: 3 })
-    expect(completeness).to.deep.equal([false, true, true])
     expect(await prismaClient.token_state_at_block.count({ where: { contract: C721, blockNumber: 12 } })).to.equal(0)
 
     const rerun = await phaseB()
@@ -213,184 +211,17 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
-  it('a phase B run holds its marker before a chunk with an unstored pair, and the next default run reads it back and fills the pair', async () => {
+  it('a phase B run before phase A has finished, then both phases run again, equal a replay: A from 14, B, A, B', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
-    await phaseA()
-    const markerFile = markerIn('B')
-    const transfersMarkerFile = markerIn('A')
-    writeResume(transfersMarkerFile, 17)
-    writeResume(markerFile, 10)
-    const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
-
-    const first = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher({ failing })] })
-    const markerAfterFirst = readResume(markerFile)
-    const second = await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
-
-    expect(first.pairsFailed).to.have.length(1)
-    expect(markerAfterFirst).to.equal(10)
-    expect(second).to.include({ pairsWritten: 1 })
-    expect(readResume(markerFile)).to.equal(17)
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('phase B with no end block stops below phase A\'s marker: after blocks the live indexer stored, two default runs print no notice and hold the marker there', async () => {
-    await storeAsTheIndexerBeforeTheBackfill(HISTORY.filter(([number]) => number <= 13))
-    const transfersMarkerFile = markerIn('A')
-    const markerFile = markerIn('B')
-    await runPhase({ phase: 'A', chunkBlocks: 3, markerFile: transfersMarkerFile })
-    for (const [number, logs] of HISTORY.filter(([number]) => number > 13)) await blocksRepository.saveBlockData(blockData(number, 'a', logs))
-    const reports = []
-    const phaseB = async () => reports.push(await runPhase({ phase: 'B', chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] }))
-
-    const firstLines = await loggedLines(phaseB)
-    const markerAfterFirst = readResume(markerFile)
-    const secondLines = await loggedLines(phaseB)
-
-    expect(await differences()).to.deep.equal([])
-    expect(readResume(transfersMarkerFile)).to.equal(14)
-    expect([markerAfterFirst, readResume(markerFile)]).to.deep.equal([14, 14])
-    expect(reports.map(report => report.blocksRead)).to.deep.equal([4, 0])
-    expect([...firstLines, ...secondLines].filter(line => line.includes(PHASE_A_NOTICE))).to.deep.equal([])
-  })
-
-  it('phase B over an explicit range reads phase A\'s marker once, before its pairs: phase A finishing while B is between its pair read and its write leaves no pair behind', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const transfersMarkerFile = markerIn('A')
-    const markerFile = markerIn('B')
-    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
-    const aMarkerBeforeB = readResume(transfersMarkerFile)
-    let phaseARan = false
-    const fetcherRunningPhaseA = {
-      async fetchOne (contract, blockNumber) {
-        if (!phaseARan) {
-          phaseARan = true
-          await runPhase({ phase: 'A', chunkBlocks: 3, markerFile: transfersMarkerFile })
-        }
-        return tokenStateAt(contract, blockNumber)
-      },
-      takeStats: clean
-    }
-
-    await runPhase({ phase: 'B', fromArg: 0, toArg: 16, chunkBlocks: 100, markerFile, transfersMarkerFile, fetchers: [fetcherRunningPhaseA] })
-    const bMarkerAfterConcurrentB = readResume(markerFile)
-    const aMarkerAfterConcurrentB = readResume(transfersMarkerFile)
-    await runPhase({ phase: 'B', chunkBlocks: 100, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
-
-    expect([aMarkerBeforeB, aMarkerAfterConcurrentB, bMarkerAfterConcurrentB]).to.deep.equal([13, 17, 13])
-    expect(await differences()).to.deep.equal([])
-    expect(readResume(markerFile)).to.equal(17)
-  })
-
-  it('phase B over an explicit range past phase A\'s marker says so and stops its marker there, and says it only when the run would move the marker and its range reaches phase A\'s marker', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const transfersMarkerFile = markerIn('A')
-    const markerFile = markerIn('B')
-    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
-    const phaseB = (fromArg, toArg = 16) => runPhase({ phase: 'B', fromArg, toArg, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] })
-
-    const fromZero = (await loggedLines(() => phaseB(0))).filter(line => line.includes(PHASE_A_NOTICE))
-    const markerAfterFromZero = readResume(markerFile)
-    const aboveTheMarker = (await loggedLines(() => phaseB(14))).filter(line => line.includes(PHASE_A_NOTICE))
-    const belowPhaseAMarker = (await loggedLines(() => phaseB(0, 12))).filter(line => line.includes(PHASE_A_NOTICE))
-    const atPhaseAMarker = (await loggedLines(() => phaseB(0, 13))).filter(line => line.includes(PHASE_A_NOTICE))
-
-    expect(fromZero).to.have.length(1)
-    expect(fromZero[0]).to.include("Phase A's resume marker is at 13")
-    expect(markerAfterFromZero).to.equal(13)
-    expect(aboveTheMarker).to.deep.equal([])
-    expect(belowPhaseAMarker).to.deep.equal([])
-    expect(atPhaseAMarker).to.have.length(1)
-    expect(atPhaseAMarker[0]).to.include("Phase A's resume marker is at 13")
-    expect(readResume(markerFile)).to.equal(13)
-  })
-
-  it('phase B names a phase A marker it cannot read as missing or unreadable, and moves its own marker no further than 0', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const transfersMarkerFile = markerIn('A')
-    const markerFile = markerIn('B')
-    await runPhase({ phase: 'A', fromArg: 0, toArg: 12, chunkBlocks: 3, markerFile: transfersMarkerFile })
-    fs.writeFileSync(transfersMarkerFile, 'garbled\n')
-
-    const notices = (await loggedLines(() => runPhase({ phase: 'B', fromArg: 0, toArg: 16, chunkBlocks: 3, markerFile, transfersMarkerFile, fetchers: [fetcher()] }))).filter(line => line.includes(PHASE_A_NOTICE))
-
-    expect(notices).to.have.length(1)
-    expect(notices[0]).to.include("Phase A's resume marker is missing or unreadable")
-    expect(readResume(markerFile)).to.equal(0)
-  })
-
-  it('phase B with no end block, with or without a start block, refuses a working directory whose phase A marker is missing, empty or garbled: it names the directory and stores nothing', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const cwd = process.cwd()
-    const phaseADir = tempDir('backfill-cwd-a-')
-    const outcomes = []
-    try {
-      process.chdir(phaseADir)
-      await runPhase({ phase: 'A', chunkBlocks: 3 })
-      for (const [phaseAMarker, fromArg] of [null, '', 'garbled\n'].flatMap(marker => [[marker, undefined], [marker, 0]])) {
-        const phaseBDir = tempDir('backfill-cwd-b-')
-        process.chdir(phaseBDir)
-        if (phaseAMarker !== null) fs.writeFileSync('backfill-nft-ownership-A.resume', phaseAMarker)
-        let report
-        const notices = (await loggedLines(async () => { report = await runPhase({ phase: 'B', fromArg, chunkBlocks: 3, fetchers: [fetcher()] }) })).filter(line => line.includes(PHASE_A_NOTICE))
-        outcomes.push({ refused: report.refusedWithoutPhaseAMarker === true, notices, markerB: readResume(path.resolve('backfill-nft-ownership-B.resume')), phaseBDir: fs.realpathSync(phaseBDir) })
-      }
-    } finally {
-      process.chdir(cwd)
-    }
-
-    expect(await prismaClient.token_state_at_block.count()).to.equal(0)
-    expect(outcomes).to.have.length(6)
-    for (const { refused, notices, markerB, phaseBDir } of outcomes) {
-      expect(refused).to.equal(true)
-      expect(notices).to.deep.equal([`Phase A's resume marker is missing or unreadable in ${phaseBDir}: run phase A from this working directory first`])
-      expect(markerB).to.equal(null)
-    }
-  })
-
-  it('the command line\'s default marker paths: phase B with no marker arguments reads phase A\'s marker from the working directory', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const cwd = process.cwd()
-    process.chdir(tempDir('backfill-cwd-'))
-    try {
-      await runPhase({ phase: 'A', chunkBlocks: 3 })
-      await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
-
-      expect([readResume(path.resolve('backfill-nft-ownership-A.resume')), readResume(path.resolve('backfill-nft-ownership-B.resume'))]).to.deep.equal([17, 17])
-    } finally {
-      process.chdir(cwd)
-    }
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('phase B never moves its marker past phase A\'s, so a B run before A has finished leaves no pair behind: A 14, B, A, B', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const transfersMarkerFile = markerIn('A')
-    const markerFile = markerIn('B')
-    const phase = (name, fromArg) => runPhase({ phase: name, fromArg, chunkBlocks: 3, markerFile: name === 'A' ? transfersMarkerFile : markerFile, transfersMarkerFile, fetchers: [fetcher()] })
+    const phase = (name, fromArg) => runPhase({ phase: name, fromArg, chunkBlocks: 3, fetchers: [fetcher()] })
 
     await phase('A', 14)
-    await phase('B')
-    const markerBAfterFirstB = readResume(markerFile)
+    const early = await phase('B')
     await phase('A')
-    await phase('B')
+    const late = await phase('B')
 
+    expect(early).to.include({ pairs: 4, pairsWritten: 4 })
+    expect(late).to.include({ pairsAlreadyStored: 4, pairsWritten: 5 })
     expect(await differences()).to.deep.equal([])
-    expect(markerBAfterFirstB).to.equal(null)
-    expect(readResume(markerFile)).to.equal(17)
-  })
-
-  it('a run started above the marker leaves it, so the next default run fills every block below: A 14, then A', async () => {
-    await storeAsTheIndexerBeforeTheBackfill()
-    const markerFile = markerIn('A')
-
-    const above = await runPhase({ phase: 'A', fromArg: 14, chunkBlocks: 3, markerFile })
-    const markerAfterAbove = readResume(markerFile)
-    const byDefault = await runPhase({ phase: 'A', chunkBlocks: 3, markerFile })
-    await phaseB()
-
-    expect(await differences()).to.deep.equal([])
-    expect(above).to.include({ blocksWritten: 3 })
-    expect(markerAfterAbove).to.equal(null)
-    expect(byDefault).to.include({ blocksWritten: 3, blocksAlreadyStored: 3 })
   })
 })
