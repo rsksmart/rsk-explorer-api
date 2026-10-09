@@ -5,7 +5,6 @@ import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
 import { processCandidate, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { eventRepository } from '../../src/repositories'
-import { countNodeCalls, REQUEST_TIMEOUT_MS } from '../../src/lib/nodeCallStats'
 
 const address = '0x11b64191106b1cf66fcd2f8389077c596cdc5646'
 const candidateSet = CANDIDATE_SETS['nft-transfer-emitters']
@@ -15,15 +14,12 @@ const OWNERSHIP_TRANSFERRED_TOPIC0 = '0x8be0079c531659141344cd1fd0a4f28419497f97
 
 const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topics: [topic0] } } })
 const decodedEvent = () => ({ error: false })
-const clean = () => ({ calls: 5, reverts: 0, nodeErrors: 0, lastNodeError: null })
-const rejected = () => ({ calls: 5, reverts: 0, nodeErrors: 1, lastNodeError: 'injected internal error' })
 
 const makeUpdater = (events, interfaces = ['ERC1155']) => ({
   getContractParser: sinon.stub().resolves({ contractDetails: { interfaces } }),
   saveContractDetails: sinon.stub().resolves(3),
   updateContractEvents: sinon.stub().resolves({ updatedEvents: { amount: events.length, events } })
 })
-const statsSequence = (...sequence) => sinon.stub().callsFake(() => (sequence.shift() || clean)())
 
 describe('redetectContracts candidate sets', () => {
   it('names the NFT transfer emitters and nothing an object inherits', () => {
@@ -36,17 +32,17 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
   it('tags a contract whose NFT events all decoded, even if an unrelated event could not', async () => {
     const updater = makeUpdater([failedEvent(OWNERSHIP_TRANSFERRED_TOPIC0), decodedEvent()])
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
     expect(bucket).to.equal('tagged')
-    expect(entry).to.deep.equal({ address, interfaces: ['ERC1155'], updatedEvents: 2, otherFailures: 1, retries: 0 })
+    expect(entry).to.deep.equal({ address, interfaces: ['ERC1155'], updatedEvents: 2, otherFailures: 1 })
   })
 
   for (const [standard, topic0] of [['ERC-1155', TRANSFER_SINGLE_TOPIC0], ['ERC-721', TRANSFER_TOPIC0]]) {
     it(`reports a contract as failed when an ${standard} event failed to re-decode`, async () => {
       const updater = makeUpdater([failedEvent(topic0)])
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
       expect(bucket).to.equal('failed')
       expect(entry).to.include({ address, updatedEvents: 1, failedEvents: 1, otherFailures: 0 })
@@ -56,63 +52,34 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
   it('stores the interfaces of a contract with no NFT interface and reports it as not tagged', async () => {
     const updater = makeUpdater([decodedEvent()], ['ERC20'])
 
-    const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence() })
+    const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
     expect(updater.saveContractDetails.calledOnceWithExactly(address, { interfaces: ['ERC20'] })).to.equal(true)
     expect(bucket).to.equal('notTagged')
   })
 
-  it('detects again after a rejected node call and stores only the clean detection', async () => {
+  it('stores nothing and reports the contract as failed when its detection throws, so a rerun detects it again', async () => {
     const updater = makeUpdater([decodedEvent()])
-    updater.getContractParser.onFirstCall().resolves({ contractDetails: { interfaces: [] } })
+    updater.getContractParser.rejects(new Error('injected node error'))
 
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(rejected) })
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
-    expect(updater.getContractParser.callCount).to.equal(2)
-    expect(updater.saveContractDetails.calledOnceWithExactly(address, { interfaces: ['ERC1155'] })).to.equal(true)
-    expect(bucket).to.equal('tagged')
-    expect(entry.retries).to.equal(1)
-  })
-
-  it('stores nothing and reports the contract as failed when every detection attempt saw a rejected node call', async () => {
-    const updater = makeUpdater([decodedEvent()], [])
-
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(rejected, rejected, rejected) })
-
-    expect(updater.getContractParser.callCount).to.equal(3)
     expect(updater.saveContractDetails.called).to.equal(false)
     expect(updater.updateContractEvents.called).to.equal(false)
     expect(bucket).to.equal('failed')
-    expect(entry).to.deep.equal({ address, nodeErrorsPerAttempt: [1, 1, 1] })
+    expect(entry).to.deep.equal({ address, error: 'injected node error' })
   })
 
-  it('reports the contract as failed when the node rejects a call while its events are re-decoded', async () => {
-    const updater = makeUpdater([decodedEvent()])
-
-    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats: statsSequence(clean, rejected) })
-
-    expect(bucket).to.equal('failed')
-    expect(entry.decodeNodeErrors).to.equal(1)
-  })
-
-  describe('through the real contract parser, against a node that fails the ERC-721 probe once', () => {
+  describe('through the real contract parser, against a node that answers every probe', () => {
     const SELECTOR_LESS_CODE = '0x6001600155'
-    const answers = probeFaults => ({ method, params }) => {
+    const answer = ({ method, params }) => {
       if (method === 'eth_getCode') return SELECTOR_LESS_CODE
       if (method === 'eth_getStorageAt') return `0x${'0'.repeat(64)}`
       const interfaceId = `0x${params[0].data.slice(10, 18)}`
-      const fault = interfaceId === '0x80ac58cd' && probeFaults.shift()
-      if (fault === 'reject') throw new Error('injected internal error')
-      if (fault === 'hang') return new Promise(() => {})
       return `0x${'0'.repeat(63)}${['0x01ffc9a7', '0x80ac58cd'].includes(interfaceId) ? 1 : 0}`
     }
-    const fakeNode = (answer, { latencyMs = 0 } = {}) => {
-      const rpc = new JsonRpc({
-        send: async payload => {
-          if (latencyMs) await new Promise(resolve => setTimeout(resolve, latencyMs))
-          return { jsonrpc: '2.0', id: payload.id, result: await answer(payload) }
-        }
-      })
+    const fakeNode = () => {
+      const rpc = new JsonRpc({ send: async payload => ({ jsonrpc: '2.0', id: payload.id, result: await answer(payload) }) })
       return new Nod3({ url: 'fake', rpc })
     }
     const realUpdater = nod3 => {
@@ -125,19 +92,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       return updater
     }
 
-    it('never stores a rejected probe as "not an NFT"', async () => {
-      const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['reject'])))
-      const updater = realUpdater(nod3)
-
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats })
-
-      expect(updater.saveContractDetails.callCount).to.equal(1)
-      expect(updater.saveContractDetails.firstCall.args[1].interfaces).to.include('ERC721')
-      expect(bucket).to.equal('tagged')
-      expect(entry.retries).to.equal(1)
-    })
-
-    it('detects each candidate once: its stored events are re-decoded with the clean detection', async () => {
+    it('detects each candidate once and re-decodes its stored events with that detection', async () => {
       const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
       const storedTransfer = {
         eventId: '0222dee200800b6b87e4ec24d4947c0b',
@@ -149,37 +104,17 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
         topics: [TRANSFER_TOPIC0, word('0x0'), word('0x1111111111111111111111111111111111111111'), word('0x7')],
         data: '0x'
       }
-      const { nod3, takeStats } = countNodeCalls(fakeNode(answers([])))
-      const updater = realUpdater(nod3)
+      const updater = realUpdater(fakeNode())
       updater.fetchPaginatedEvents.resolves({ events: [storedTransfer], next: null })
       const upsertOne = sinon.stub(eventRepository, 'upsertOne').resolves({})
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats }).finally(() => upsertOne.restore())
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 }).finally(() => upsertOne.restore())
 
       expect(bucket).to.equal('tagged')
       expect(updater.getContractParser.callCount).to.equal(1)
       expect(entry.updatedEvents).to.equal(1)
       expect(upsertOne.callCount).to.equal(1)
       expect(upsertOne.firstCall.args[0]).to.include({ eventId: storedTransfer.eventId, event: 'Transfer' })
-    })
-
-    describe('with the timeouts the tool runs with', () => {
-      let clock
-      beforeEach(() => { clock = sinon.useFakeTimers() })
-      afterEach(() => clock.restore())
-
-      it('spends one detection attempt on one request the node never answers', async () => {
-        const { nod3, takeStats } = countNodeCalls(fakeNode(answers(['hang']), { latencyMs: 10 }))
-        const updater = realUpdater(nod3)
-
-        const processing = processCandidate({ updater, candidateSet, address, pageSize: 50, takeStats })
-        await clock.tickAsync(3 * REQUEST_TIMEOUT_MS)
-        const { bucket, entry } = await processing
-
-        expect(bucket).to.equal('tagged')
-        expect(entry.retries).to.equal(1)
-        expect(updater.saveContractDetails.firstCall.args[1].interfaces).to.include('ERC721')
-      })
     })
   })
 })

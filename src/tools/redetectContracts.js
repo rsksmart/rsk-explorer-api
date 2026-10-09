@@ -3,9 +3,7 @@ import { soliditySignature } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
 import erc721Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC721.json'
 import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
-import { createCountedNod3, REQUEST_TIMEOUT_MS } from '../lib/nodeCallStats'
 import { nftTokensInterfaces } from '../lib/types'
-import config from '../lib/config'
 import fs from 'fs'
 import path from 'path'
 
@@ -38,9 +36,6 @@ const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
   event.error && candidateSet.blockingEventTopic0s.has(failedEventTopic0(event))
 ).length
 
-const DETECTION_TIMEOUT_MS = 2 * REQUEST_TIMEOUT_MS
-const DETECTION_ATTEMPTS = 3
-
 function printUsageAndExit () {
   console.log(`Usage: node dist/tools/${toolName} candidateSet(${Object.keys(CANDIDATE_SETS).join(' | ')}) pageSize(number: required) targetAddress(address: optional, processes a single candidate)`)
   Object.entries(CANDIDATE_SETS).forEach(([name, { description }]) => console.log(`  ${name}: ${description}`))
@@ -48,53 +43,16 @@ function printUsageAndExit () {
   process.exit(1)
 }
 
-function withTimeout (promise, ms, label) {
-  let timer
-  const timeout = new Promise((resolve, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
-  })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
-}
-
-async function detectWithoutNodeErrors ({ updater, address, takeStats, progress }) {
-  const nodeErrorsPerAttempt = []
-
-  for (let attempt = 1; attempt <= DETECTION_ATTEMPTS; attempt++) {
-    let detected = null
-    let failure = null
-    try {
-      detected = await withTimeout(updater.getContractParser(address), DETECTION_TIMEOUT_MS, `getContractParser(${address})`)
-    } catch (error) {
-      failure = error
-    }
-    const { nodeErrors, lastNodeError } = takeStats()
-    nodeErrorsPerAttempt.push(nodeErrors)
-
-    if (!failure && !nodeErrors) return { detection: detected, nodeErrorsPerAttempt }
-    console.log(`${progress} ${address}: detection attempt ${attempt} saw ${nodeErrors} rejected node call(s)${failure ? ` and failed (${failure.message})` : ''}${lastNodeError ? `, last: ${lastNodeError}` : ''}. Nothing stored from it.`)
-  }
-
-  return { detection: null, nodeErrorsPerAttempt }
-}
-
-export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '', takeStats }) {
+export async function processCandidate ({ updater, candidateSet, address, pageSize, progress = '' }) {
   try {
     console.log(`${progress} ${address}: detecting interfaces...`)
-    const { detection, nodeErrorsPerAttempt } = await detectWithoutNodeErrors({ updater, address, takeStats, progress })
-    const retries = nodeErrorsPerAttempt.length - 1
-
-    if (!detection) {
-      console.log(`${progress} ${address}: every detection attempt saw a node error. Not stored; a rerun retries it.`)
-      return { bucket: 'failed', entry: { address, nodeErrorsPerAttempt } }
-    }
-
+    const detection = await updater.getContractParser(address)
     const { contractDetails } = detection
     const savedRows = await updater.saveContractDetails(address, contractDetails)
     const isTagged = contractDetails.interfaces.some(i => candidateSet.interfaces.includes(i))
     console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isTagged ? '' : ` (none of ${candidateSet.interfaces.join(', ')})`}. Interface/method rows added: ${savedRows}`)
 
     const result = await updater.updateContractEvents(address, pageSize, 0, detection)
-    const decodeNodeErrors = takeStats().nodeErrors
     console.log(`${progress} ${address}: re-decoded events: ${result.updatedEvents.amount}`)
 
     const failedEvents = failedBlockingEvents(result.updatedEvents.events, candidateSet)
@@ -104,12 +62,12 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
       console.log(`${progress} ${address}: ${otherFailures} other event(s) could not decode (reported, not blocking).`)
     }
 
-    if (failedEvents > 0 || decodeNodeErrors > 0) {
-      console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode, ${decodeNodeErrors} rejected node call(s) while re-decoding. A rerun retries it.`)
-      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures, nodeErrorsPerAttempt, decodeNodeErrors } }
+    if (failedEvents > 0) {
+      console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode. A rerun retries it.`)
+      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures } }
     }
 
-    const entry = { address, interfaces: contractDetails.interfaces, updatedEvents: result.updatedEvents.amount, otherFailures, retries }
+    const entry = { address, interfaces: contractDetails.interfaces, updatedEvents: result.updatedEvents.amount, otherFailures }
     return { bucket: isTagged ? 'tagged' : 'notTagged', entry }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). A rerun retries it.`)
@@ -140,8 +98,7 @@ async function main () {
     targetAddress = targetAddress.toLowerCase()
   }
 
-  const { nod3, takeStats } = createCountedNod3(config.source)
-  const updater = new ContractEventsUpdater({ nod3 })
+  const updater = new ContractEventsUpdater()
   const started = Date.now()
 
   console.log(`${toolName} ${setName}`)
@@ -160,12 +117,6 @@ async function main () {
   }
 
   const summary = { tagged: [], notTagged: [], failed: [] }
-  const totals = { calls: 0, reverts: 0, nodeErrors: 0 }
-  const countingTakeStats = () => {
-    const stats = takeStats()
-    Object.keys(totals).forEach(key => { totals[key] += stats[key] })
-    return stats
-  }
 
   for (const [index, address] of candidates.entries()) {
     const progress = `[${index + 1}/${candidates.length}]`
@@ -174,20 +125,17 @@ async function main () {
       candidateSet,
       address,
       pageSize,
-      progress,
-      takeStats: countingTakeStats
+      progress
     })
     summary[bucket].push(entry)
   }
 
-  const retried = [...summary.tagged, ...summary.notTagged].filter(entry => entry.retries > 0).length
   console.log('')
-  console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}, stored after a retry: ${retried}`)
-  console.log(`Node calls: ${totals.calls}, reverts: ${totals.reverts}, rejected: ${totals.nodeErrors}`)
+  console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`)
 
   const fileName = `redetect-contracts-${setName}-${Date.now()}.json`
   const resultFilePath = path.join(__dirname, fileName)
-  fs.writeFileSync(resultFilePath, JSON.stringify({ ...summary, totals }, null, 2))
+  fs.writeFileSync(resultFilePath, JSON.stringify(summary, null, 2))
   console.log(`Result file saved to ${resultFilePath}`)
 
   process.exit(summary.failed.length ? 1 : 0)

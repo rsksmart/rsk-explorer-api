@@ -21,17 +21,12 @@ const HISTORY = [
 ]
 const NFT_TABLES = 'nft_balance, nft_holder, token_transfer, token_state_at_block, token'
 
-const clean = () => ({ calls: 13, reverts: 0, nodeErrors: 0, lastNodeError: null })
-const fetcher = ({ failing = () => false } = {}) => {
-  let last = clean()
-  return {
-    async fetchOne (contract, blockNumber) {
-      last = failing(contract, blockNumber) ? { ...clean(), nodeErrors: 1, lastNodeError: 'injected internal error' } : clean()
-      return tokenStateAt(contract, blockNumber)
-    },
-    takeStats: () => last
+const fetcher = ({ failing = () => false } = {}) => ({
+  async fetchOne (contract, blockNumber) {
+    if (failing(contract, blockNumber)) throw new Error('injected node error')
+    return tokenStateAt(contract, blockNumber)
   }
-}
+})
 
 async function replaceLikeInsertBlock (number, tag, logs) {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -173,8 +168,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
           await blocksRepository.saveBlockData(blockData(11, 'b', []), { replace: true })
         }
         return tokenStateAt(contract, blockNumber)
-      },
-      takeStats: clean
+      }
     }
 
     const b = await phaseB({ chunkBlocks: 10, fetchers: [replacingBlock11] })
@@ -254,15 +248,15 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
-  it('phase B never stores a pair whose reads saw a node error, retries it, and a later run fills it', async () => {
+  it('phase B stores no pair whose read failed, reports it, and a later run fills it', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
     const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
 
     const b = await phaseB({ fetchers: [fetcher({ failing })] })
 
-    expect(b.pairsFailed.map(p => [p.contract, p.blockNumber, p.nodeErrorsPerAttempt])).to.deep.equal([[C721, 12, [1, 1, 1]]])
-    expect(b).to.include({ pairsWritten: 8, nodeErrors: 3 })
+    expect(b.pairsFailed.map(p => [p.contract, p.blockNumber, p.failure])).to.deep.equal([[C721, 12, 'injected node error']])
+    expect(b).to.include({ pairsWritten: 8 })
     expect(await prismaClient.token_state_at_block.count({ where: { contract: C721, blockNumber: 12 } })).to.equal(0)
 
     const rerun = await phaseB()

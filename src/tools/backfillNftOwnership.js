@@ -1,17 +1,15 @@
 import { prismaClient as defaultPrismaClient } from '../lib/prismaClient'
 import { nftRepository, tokenStateRepository, configRepository } from '../repositories'
 import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC, NFT_STANDARDS } from '../lib/nftTransfers'
-import { createCountedNod3 } from '../lib/nodeCallStats'
+import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
-import config from '../lib/config'
 
 const toolName = process.argv[1].split('/').pop()
 
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
 const RACED_WRITE_ERRORS = ['P2002', 'P2003', 'P2025']
 const WRITE_ATTEMPTS = 3
-const FETCH_ATTEMPTS = 3
 const NFT_TRANSFER_EVENTS = {
   OR: [
     { topic0: TRANSFER_TOPIC, topic3: { not: null } },
@@ -110,35 +108,22 @@ export async function backfillTransfers ({ prismaClient = defaultPrismaClient, f
   return report
 }
 
-export async function fetchWithoutNodeErrors (fetcher, { contract, blockNumber }) {
-  const attempts = []
-  for (let attempt = 1; attempt <= FETCH_ATTEMPTS; attempt++) {
-    let state = null
-    let failure = null
-    try {
-      state = await fetcher.fetchOne(contract, blockNumber)
-    } catch (error) {
-      failure = error
-    }
-    const stats = fetcher.takeStats()
-    attempts.push({ ...stats, failure: failure ? failure.message : null })
-    if (!failure && !stats.nodeErrors) return { state, attempts }
-  }
-  return { state: null, attempts }
-}
-
 async function fetchPairs (fetchers, pairs, onFetched) {
   const queue = [...pairs]
   await Promise.all(fetchers.map(async fetcher => {
     while (queue.length) {
       const pair = queue.shift()
-      onFetched(pair, await fetchWithoutNodeErrors(fetcher, pair))
+      try {
+        onFetched(pair, { state: await fetcher.fetchOne(pair.contract, pair.blockNumber) })
+      } catch (failure) {
+        onFetched(pair, { failure })
+      }
     }
   }))
 }
 
 export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {} }) {
-  const report = { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsRetried: 0, pairsFailed: [], pairsRaced: 0, calls: 0, reverts: 0, nodeErrors: 0 }
+  const report = { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsFailed: [], pairsRaced: 0 }
   const states = new Map()
   const pairKey = ({ contract, blockNumber, blockHash }) => `${contract}|${blockNumber}|${blockHash}`
 
@@ -157,15 +142,13 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
     return { pairs, todo: pairs.filter(p => !storedKeys.has(`${p.contract}|${p.blockNumber}`)) }
   }
 
-  const recordFetch = (pair, { state, attempts }) => {
-    for (const stats of attempts) ['calls', 'reverts', 'nodeErrors'].forEach(key => { report[key] += stats[key] })
-    if (attempts.length > 1) report.pairsRetried++
-    if (state) {
-      states.set(pairKey(pair), state)
+  const recordFetch = (pair, { state, failure }) => {
+    if (failure) {
+      report.pairsFailed.push({ ...pair, failure: failure.message })
+      console.log(`pair ${pair.contract} at ${pair.blockNumber}: ${failure.message}. Not stored; a rerun retries it.`)
       return
     }
-    report.pairsFailed.push({ ...pair, nodeErrorsPerAttempt: attempts.map(a => a.nodeErrors), lastFailure: attempts[attempts.length - 1].failure })
-    console.log(`pair ${pair.contract} at ${pair.blockNumber}: every attempt saw a node error. Not stored; a rerun retries it.`)
+    states.set(pairKey(pair), state)
   }
 
   const writeBlock = async (block, planned) => {
@@ -243,11 +226,7 @@ async function main () {
   let fetchers
   if (phase === 'B') {
     const initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-    fetchers = Array.from({ length: concurrencyArg === undefined ? 4 : concurrencyArg }, () => {
-      const { nod3, takeStats } = createCountedNod3(config.source)
-      const tokenState = new TokenState({ nod3, initConfig, log: console })
-      return { fetchOne: (contract, blockNumber) => tokenState.fetchOne(contract, blockNumber), takeStats }
-    })
+    fetchers = Array.from({ length: concurrencyArg === undefined ? 4 : concurrencyArg }, () => new TokenState({ nod3, initConfig, log: console }))
   }
 
   const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers })

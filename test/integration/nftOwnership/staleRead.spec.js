@@ -95,7 +95,7 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
 
     const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     prismaClient.$transaction = runBatch
-    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number), takeStats: () => ({ calls: 0, reverts: 0, nodeErrors: 0 }) }] })
+    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number) }] })
 
     expect(codes).to.deep.equal(['P2002'])
     expect(a).to.include({ blocksWritten: 0, blocksRaced: 1 })
@@ -109,7 +109,7 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
 
     const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     prismaClient.$transaction = runBatch
-    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number), takeStats: () => ({ calls: 0, reverts: 0, nodeErrors: 0 }) }] })
+    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number) }] })
 
     expect(codes).to.deep.equal(['P2002'])
     expect(a).to.include({ blocksWritten: 1, blocksRaced: 0, blocksAlreadyStored: 1 })
