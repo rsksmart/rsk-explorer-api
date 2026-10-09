@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
 import { backfillTransfers, backfillTokenStates, runPhase } from '../../../src/tools/backfillNftOwnership'
-import { blockData, erc721, erc20, erc1155Single, erc1155Batch, tokenStateAt, ZERO } from './fixtures'
+import { blockData, blockHashOf, erc721, erc20, erc1155Single, erc1155Batch, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences, tableState } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000e0721'
@@ -33,6 +33,18 @@ const fetcher = ({ failing = () => false } = {}) => {
   }
 }
 
+async function replaceLikeInsertBlock (number, tag, logs) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await blocksRepository.saveBlockData(blockData(number, tag, logs), { replace: true })
+    } catch (error) {
+      const stored = await prismaClient.block.findUnique({ where: { number } })
+      if (stored && stored.hash === blockHashOf(number, tag)) return
+      if (attempt === 3) throw error
+    }
+  }
+}
+
 async function storeAsTheIndexerBeforeTheBackfill (history = HISTORY) {
   for (const [number, logs] of history) await blocksRepository.saveBlockData(blockData(number, 'a', logs))
   await prismaClient.$executeRawUnsafe(`TRUNCATE ${NFT_TABLES}`)
@@ -42,6 +54,7 @@ const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100,
 const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
 
 const runBatch = prismaClient.$transaction
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const killedAtBatch = n => {
   let batches = 0
   prismaClient.$transaction = async (...args) => {
@@ -169,6 +182,29 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(replaced).to.equal(true)
     expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: 11 } })).to.equal(0)
     expect(b).to.include({ pairsRaced: 1, pairsWritten: 8 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('phase B holds its block\'s row from the pin to the commit: a replace that starts inside that batch waits for it, and the tables equal a replay', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await phaseA()
+    let replacing = null
+    let batches = 0
+    prismaClient.$transaction = async (statements, ...rest) => {
+      if (Array.isArray(statements) && ++batches === 2) {
+        replacing = sleep(150).then(() => {
+          prismaClient.$transaction = runBatch
+          return replaceLikeInsertBlock(11, 'b', [])
+        })
+        return runBatch.call(prismaClient, [statements[0], prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'), ...statements.slice(1)], ...rest)
+      }
+      return runBatch.call(prismaClient, statements, ...rest)
+    }
+
+    await phaseB({ chunkBlocks: 10, fetchers: [fetcher()] })
+    await replacing
+
+    expect((await prismaClient.block.findUnique({ where: { number: 11 } })).hash).to.equal(blockHashOf(11, 'b'))
     expect(await differences()).to.deep.equal([])
   })
 
