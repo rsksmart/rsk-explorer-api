@@ -12,6 +12,7 @@ const holderAt = (prefix, i) => `0x${prefix}${i.toString(16).padStart(39, '0')}`
 const ids = n => Array.from({ length: n }, (_, i) => i + 1)
 
 let operations = 0
+let widestOr = 0
 const originals = []
 
 function countModelOperations () {
@@ -22,6 +23,7 @@ function countModelOperations () {
       originals.push([delegate, name, original])
       delegate[name] = function (...args) {
         operations++
+        if (model === 'nft_balance' && args[0] && args[0].where && args[0].where.OR) widestOr = Math.max(widestOr, args[0].where.OR.length)
         return original.apply(this, args)
       }
     }
@@ -99,6 +101,13 @@ integrationDescribe('NFT ownership: the statements of a block\'s save and delete
     const many = await distinctHolders(500)
 
     expect(many.moved - few.moved, `50 transfers: ${few.moved} · 500 transfers: ${many.moved}`).to.be.at.most(many.holders - few.holders)
+  })
+
+  it('ERC-721 transfers between 1,000 distinct holders: no balance statement sends more than 400 OR arms, past which Postgres plans it in superlinear time', async () => {
+    widestOr = 0
+    await distinctHolders(500)
+
+    expect(widestOr).to.be.within(1, 400)
   })
 
   it('deleting ERC-721 transfers between distinct holders: each added holder adds at most two operations, its update and, when no fact is left, its removal', async () => {

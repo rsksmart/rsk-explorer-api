@@ -5,6 +5,7 @@ import { chunkArray } from '../lib/utils'
 
 const PRISMA_MAX_BIND_VALUES = 32767
 const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES - 1
+const OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME = 400
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
@@ -18,7 +19,9 @@ function inListsUnderBindLimit (sortedRows, prefix, listed, bindsTakenByTheRestO
   const sharesPrefix = row => !!group && prefix.every(field => group[field] === row[field])
 
   for (const row of sortedRows) {
-    if (bindsTakenByTheRestOfTheWhere + binds + (sharesPrefix(row) ? 1 : prefix.length + 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE) {
+    const opensAnArm = !sharesPrefix(row)
+    const overBindLimit = bindsTakenByTheRestOfTheWhere + binds + (opensAnArm ? prefix.length + 1 : 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE
+    if (overBindLimit || (opensAnArm && part.length === OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME)) {
       parts.push(part)
       part = []
       binds = 0
