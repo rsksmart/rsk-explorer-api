@@ -75,4 +75,14 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     expect(failed.stdout).to.include('"failure":"injected internal error"')
     expect([failed.status, rerun.status]).to.deep.equal([1, 0])
   })
+
+  it('refuses a block argument that is not a whole number, and a fromBlock above toBlock, with exit 1 and the reason', async () => {
+    const nodeUrl = `http://127.0.0.1:${node.address().port}`
+    const [exponent, suffix, reversed] = await Promise.all([['A', '3400000', '3.49e6'], ['A', '10abc'], ['A', '20', '10']].map(args => runTool(nodeUrl, ...args)))
+
+    expect([exponent.status, suffix.status, reversed.status]).to.deep.equal([1, 1, 1])
+    expect(exponent.stdout).to.include('must be whole numbers, such as 3490000: got 3.49e6')
+    expect(suffix.stdout).to.include('got 10abc')
+    expect(reversed.stdout).to.include('fromBlock 20 is above toBlock 10')
+  })
 })

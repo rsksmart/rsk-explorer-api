@@ -10,6 +10,7 @@ const toolName = process.argv[1].split('/').pop()
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
 const RACED_WRITE_ERRORS = ['P2002', 'P2003', 'P2025']
 const WRITE_ATTEMPTS = 3
+const WHOLE_NUMBER = /^\d+$/
 const NFT_TRANSFER_EVENTS = {
   OR: [
     { topic0: TRANSFER_TOPIC, topic3: { not: null } },
@@ -216,8 +217,17 @@ function printUsageAndExit () {
 async function main () {
   const phase = process.argv[2]
   if (!['A', 'B'].includes(phase)) printUsageAndExit()
-  const [fromArg, toArg, chunkArg, concurrencyArg] = process.argv.slice(3).map(v => (v === undefined ? undefined : parseInt(v)))
-  if ([fromArg, toArg, chunkArg, concurrencyArg].some(v => v !== undefined && (isNaN(v) || v < 0))) printUsageAndExit()
+  const numbers = process.argv.slice(3)
+  const notWhole = numbers.find(v => !WHOLE_NUMBER.test(v))
+  if (notWhole !== undefined) {
+    console.log(`fromBlock, toBlock, chunkBlocks and concurrency must be whole numbers, such as 3490000: got ${notWhole}`)
+    printUsageAndExit()
+  }
+  const [fromArg, toArg, chunkArg, concurrencyArg] = numbers.map(Number)
+  if (fromArg > toArg) {
+    console.log(`fromBlock ${fromArg} is above toBlock ${toArg}: the range is empty`)
+    printUsageAndExit()
+  }
   if (chunkArg === 0 || concurrencyArg === 0) {
     console.log('chunkBlocks and concurrency must be at least 1')
     printUsageAndExit()
