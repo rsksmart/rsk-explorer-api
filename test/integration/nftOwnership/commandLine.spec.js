@@ -5,6 +5,7 @@ import path from 'path'
 import { spawn } from 'child_process'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository, configRepository, tokenStateRepository } from '../../../src/repositories'
+import { backfillTransfers } from '../../../src/tools/backfillNftOwnership'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../../src/lib/defaultConfig'
 import { blockData, erc721, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase } from './replay'
@@ -100,6 +101,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
   })
 
   it('phase B and the contract re-detection print their run report and exit 1, with no stack trace, when the node refuses the connection', async () => {
+    await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     await prismaClient.token_state_at_block.deleteMany({})
     const nodeUrl = `http://127.0.0.1:${await closedPort()}`
     const [phaseB, redetect] = await Promise.all([runTool(nodeUrl, 'B'), runScript(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])])
