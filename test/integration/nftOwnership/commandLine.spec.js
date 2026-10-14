@@ -53,7 +53,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     await prismaClient.explorer_initial_config.deleteMany({})
     await configRepository[EXPLORER_INITIAL_CONFIG_ID].save({ nativeContracts: { bridge: '0x0000000000000000000000000000000001000006' }, net: { id: '31' } })
     await blocksRepository.saveBlockData(blockData(10, 'a', [erc721(C721, ZERO, A, 1)]))
-    await prismaClient.$executeRawUnsafe('TRUNCATE nft_balance, nft_holder, token_transfer, token_state_at_block, token')
+    await resetDatabase({ keepBlocksAndEvents: true })
   })
   after(async () => {
     node.close()

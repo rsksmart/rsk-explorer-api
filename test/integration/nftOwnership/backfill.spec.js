@@ -19,7 +19,6 @@ const HISTORY = [
   [15, [erc721(C721, C, ZERO, 3), erc721(C721, A, C, 2)]],
   [16, [erc1155Single(C1155, A, ZERO, 7, 3)]]
 ]
-const NFT_TABLES = 'nft_balance, nft_holder, token_transfer, token_state_at_block, token'
 
 const fetcher = ({ failing = () => false } = {}) => ({
   async fetchOne (contract, blockNumber) {
@@ -42,7 +41,7 @@ async function replaceLikeInsertBlock (number, tag, logs) {
 
 async function storeAsTheIndexerBeforeTheBackfill (history = HISTORY) {
   for (const [number, logs] of history) await blocksRepository.saveBlockData(blockData(number, 'a', logs))
-  await prismaClient.$executeRawUnsafe(`TRUNCATE ${NFT_TABLES}`)
+  await resetDatabase({ keepBlocksAndEvents: true })
 }
 
 const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, ...options })

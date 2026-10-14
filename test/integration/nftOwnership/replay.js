@@ -2,14 +2,15 @@ import { prismaClient } from '../../../src/lib/prismaClient'
 import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC, ZERO_ADDRESS } from '../../../src/lib/nftTransfers'
 import { tokenStateAt } from './fixtures'
 
-const TABLES = ['nft_balance', 'nft_holder', 'token_transfer', 'token_state_at_block', 'token', 'token_address_in_summary', 'token_address',
+const NFT_TABLES = ['nft_balance', 'nft_holder', 'token_transfer', 'token_state_at_block', 'token']
+const TABLES_CHILDREN_FIRST = [...NFT_TABLES, 'token_address_in_summary', 'token_address',
   'address_in_summary', 'event_in_summary', 'transaction_in_summary', 'block_summary', 'address_latest_balance', 'address_in_event', 'event',
   'receipt', 'transaction', 'block_trace', 'balance', 'miner_address', 'block', 'address']
 
 export const integrationDescribe = /_test$/.test(new URL(process.env.DATABASE_URL || 'postgresql://x/none').pathname) ? describe : describe.skip
 
-export async function resetDatabase () {
-  await prismaClient.$executeRawUnsafe(`TRUNCATE ${TABLES.join(', ')} CASCADE`)
+export async function resetDatabase ({ keepBlocksAndEvents = false } = {}) {
+  for (const table of keepBlocksAndEvents ? NFT_TABLES : TABLES_CHILDREN_FIRST) await prismaClient[table].deleteMany({})
 }
 
 const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`

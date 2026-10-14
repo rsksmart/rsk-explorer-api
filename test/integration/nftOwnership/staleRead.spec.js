@@ -90,7 +90,7 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
 
   it('phase A skips, as raced, a block whose facts another phase A run stored after the first one read it', async () => {
     await save(10, [erc1155Single(C1155, ZERO, A, 7, 5), erc721(C721, ZERO, A, 1)])
-    await prismaClient.$executeRawUnsafe('TRUNCATE nft_balance, nft_holder, token_transfer, token_state_at_block, token')
+    await resetDatabase({ keepBlocksAndEvents: true })
     beforeTheFirstBatch(() => backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 }))
 
     const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
@@ -104,7 +104,7 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
 
   it('phase A writes a block whose holder the live path created after phase A read it, instead of skipping it as raced', async () => {
     await save(10, [erc1155Single(C1155, ZERO, A, 7, 5), erc721(C721, ZERO, A, 1)])
-    await prismaClient.$executeRawUnsafe('TRUNCATE nft_balance, nft_holder, token_transfer, token_state_at_block, token')
+    await resetDatabase({ keepBlocksAndEvents: true })
     beforeTheFirstBatch(() => save(20, [erc1155Single(C1155, ZERO, A, 7, 3)]))
 
     const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
