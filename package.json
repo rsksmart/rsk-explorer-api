@@ -14,6 +14,8 @@
     "status": "npx nodemon src/tools/statusClient.js",
     "abi": "npx nodemon src/lib/ContractParser/compileJsonAbis.js",
     "backfill-btc-blocks": "npx babel-node src/tools/backfillBtcBlocks.js",
+    "compute-merge-mining": "npx babel-node src/tools/computeMergeMiningStats.js",
+    "backfill-merge-mining-stats": "npx babel-node src/tools/backfillMergeMiningStats.js",
     "verify-merge-mining": "npx babel-node src/tools/verifyMergeMiningPipeline.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha --exit",

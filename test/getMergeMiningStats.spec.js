@@ -10,6 +10,15 @@ function storeWith ({ maxHeight, total, mergeMined }) {
   }
 }
 
+function storeRecordingRange ({ maxHeight, total, mergeMined }) {
+  const rangeCalls = []
+  return {
+    rangeCalls,
+    maxHeight: async () => maxHeight,
+    countsInRange: async (from, to) => { rangeCalls.push([from, to]); return { total, mergeMined } }
+  }
+}
+
 function capturingWarnings () {
   const warnings = []
   return { warnings, info: () => {}, warn: message => warnings.push(message), error: () => {} }
@@ -184,6 +193,41 @@ describe('getMergeMiningStats', function () {
         throw new Error('should have thrown')
       } catch (error) {
         expect(error.message).to.contain('Invalid windowBlocks')
+      }
+    }
+  })
+
+  it('measures the window ending at endingHeight, not at the stored tip', async function () {
+    const client = recordingClient(1e21)
+    const store = storeRecordingRange({ maxHeight: 961819, total: 1000, mergeMined: 500 })
+
+    const stats = await getMergeMiningStats({
+      client,
+      windowBlocks: 1000,
+      endingHeight: 900000,
+      store,
+      log: silentLog
+    })
+
+    expect(stats.toHeight).to.equal(900000)
+    expect(stats.fromHeight).to.equal(899001)
+    expect(store.rangeCalls).to.deep.equal([[899001, 900000]])
+    expect(client.calls).to.deep.equal([[1000, 900000]])
+  })
+
+  it('rejects an invalid endingHeight', async function () {
+    for (const endingHeight of [-1, 1.5]) {
+      try {
+        await getMergeMiningStats({
+          client: clientWith(1e21),
+          windowBlocks: 1000,
+          endingHeight,
+          store: storeWith({ maxHeight: 100, total: 100, mergeMined: 1 }),
+          log: silentLog
+        })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Invalid endingHeight')
       }
     }
   })

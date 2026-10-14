@@ -10,13 +10,19 @@ const MINIMUM_WINDOW_COVERAGE = 0.98
 export async function getMergeMiningStats ({
   client,
   windowBlocks = 1000,
+  endingHeight,
   store = btcBlockRepository,
   log = Logger('[merge-mining-stats]')
 }) {
   if (!client) throw new Error('Missing Bitcoin client')
   if (!Number.isInteger(windowBlocks) || windowBlocks < 1) throw new Error(`Invalid windowBlocks: ${windowBlocks}`)
+  if (endingHeight !== undefined && (!Number.isInteger(endingHeight) || endingHeight < 0)) {
+    throw new Error(`Invalid endingHeight: ${endingHeight}`)
+  }
 
-  const toHeight = await store.maxHeight()
+  // By default the window ends at the highest stored height (today's snapshot). A backfill passes
+  // endingHeight to measure the trailing window as it stood at the end of a past day.
+  const toHeight = endingHeight !== undefined ? endingHeight : await store.maxHeight()
   if (toHeight === null || toHeight === undefined) throw new Error('No Bitcoin blocks ingested yet')
 
   const fromHeight = Math.max(0, toHeight - windowBlocks + 1)

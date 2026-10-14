@@ -19,6 +19,16 @@ export function getBtcBlockRepository (prismaClient) {
       return result._max.height
     },
 
+    // Highest stored height mined at or before the given instant — the chain tip as it stood then.
+    maxHeightAtOrBefore: async instant => {
+      const row = await prismaClient.btc_block.findFirst({
+        where: { minedAt: { lte: instant } },
+        orderBy: { height: 'desc' },
+        select: { height: true }
+      })
+      return row ? row.height : null
+    },
+
     oldestStoredBlock: () =>
       prismaClient.btc_block.findFirst({
         orderBy: { height: 'asc' },
@@ -47,6 +57,9 @@ export function getBtcBlockRepository (prismaClient) {
         where: { date },
         update: stats,
         create: { date, ...stats }
-      })
+      }),
+
+    findDailyStats: date =>
+      prismaClient.btc_merge_mining_stats.findUnique({ where: { date } })
   }
 }
