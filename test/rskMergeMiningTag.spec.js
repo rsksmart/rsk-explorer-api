@@ -41,7 +41,7 @@ describe('rskMergeMiningTag', function () {
     })
 
     it('tolerates missing, empty and malformed coinbases', function () {
-      for (const input of [null, undefined, {}, { vin: [null], vout: [{}] }, { vin: [{ coinbase: 42 }], vout: [] }]) {
+      for (const input of [null, undefined, {}, { vin: {}, vout: {} }, { vin: [null], vout: [{}] }, { vin: [{ coinbase: 42 }], vout: [] }]) {
         const result = findRskMergeMiningTag(input)
         expect(result.isMergeMined).to.equal(false)
         expect(result.rskHashForMergedMining).to.equal(null)

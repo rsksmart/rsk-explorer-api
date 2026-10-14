@@ -3,8 +3,10 @@ export const RSKBLOCK_MARKER_HEX = Buffer.from('RSKBLOCK:').toString('hex')
 const MERGED_MINING_HASH_HEX_LENGTH = 64
 
 function coinbaseScriptsFromRpc (coinbase) {
-  const inputs = (coinbase.vin || []).map(input => input && input.coinbase)
-  const outputs = (coinbase.vout || []).map(output => output && output.scriptPubKey && output.scriptPubKey.hex)
+  const vin = Array.isArray(coinbase.vin) ? coinbase.vin : []
+  const vout = Array.isArray(coinbase.vout) ? coinbase.vout : []
+  const inputs = vin.map(input => input && input.coinbase)
+  const outputs = vout.map(output => output && output.scriptPubKey && output.scriptPubKey.hex)
   return [...inputs, ...outputs].filter(script => typeof script === 'string')
 }
 
