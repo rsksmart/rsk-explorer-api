@@ -5,14 +5,8 @@
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
-// Bitcoin height at Rootstock mainnet block 1. A testnet deployment sets its own: the same height
-// on Bitcoin testnet is three years earlier than Rootstock testnet's own first block.
 const BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH = 502501
-
-// 100 rather than the conventional 6: nothing ever re-reads a stored height, so a block that
-// reorganises after being ingested stays wrong forever. The margin stands in for reorg handling,
-// and spends only freshness that a ~7-day moving average does not use.
-const CONFIRMATIONS_BEFORE_INDEXING = 100
+const BITCOIN_CONFIRMATIONS_BEFORE_INDEXING = 100
 
 export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
@@ -78,7 +72,7 @@ export default {
   },
   bitcoin: {
     startHeight: BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH,
-    confirmations: CONFIRMATIONS_BEFORE_INDEXING,
+    confirmations: BITCOIN_CONFIRMATIONS_BEFORE_INDEXING,
     windowBlocks: 1000,
     ingestLookbackBlocks: 1500,
     ingestConcurrency: 8,
