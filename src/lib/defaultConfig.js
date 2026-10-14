@@ -5,8 +5,6 @@
 import { MODULES } from './types'
 import delayedFields from './delayedFields'
 
-const DEFAULT_BITCOIN_RPC_URL = 'http://localhost:8332'
-
 // Bitcoin height at Rootstock mainnet block 1. A testnet deployment sets its own: the same height
 // on Bitcoin testnet is three years earlier than Rootstock testnet's own first block.
 const BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH = 502501
@@ -79,7 +77,6 @@ export default {
     services
   },
   bitcoin: {
-    rpcUrl: DEFAULT_BITCOIN_RPC_URL,
     startHeight: BITCOIN_HEIGHT_AT_ROOTSTOCK_MAINNET_LAUNCH,
     confirmations: CONFIRMATIONS_BEFORE_INDEXING,
     windowBlocks: 1000,
