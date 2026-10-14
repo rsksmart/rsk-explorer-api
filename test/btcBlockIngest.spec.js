@@ -217,12 +217,23 @@ describe('btcBlockIngest', function () {
       expect(result).to.deep.equal({ requested: 3, ingested: 3, failed: 0 })
     })
 
-    it('does nothing when the range is already complete', async function () {
+    it('stores nothing when the range is already complete, but still validates chain identity', async function () {
       const client = fakeClient()
       const result = await ingestBtcBlocks({ client, fromHeight: 10, toHeight: 12, store: fakeStore([10, 11, 12]), log: silentLog })
 
-      expect(client.requested).to.deep.equal([])
+      // Only the anchor (oldest stored height) is read, to verify the chain; no blocks are fetched.
+      expect(client.requested).to.deep.equal([10])
       expect(result).to.deep.equal({ requested: 0, ingested: 0, failed: 0 })
+    })
+
+    it('refuses a complete-range no-op when the endpoint serves a different chain', async function () {
+      const client = fakeClient({ failHeights: [10] })
+      try {
+        await ingestBtcBlocks({ client, fromHeight: 10, toHeight: 12, store: fakeStore([10, 11, 12]), log: silentLog })
+        throw new Error('should have thrown')
+      } catch (error) {
+        expect(error.message).to.contain('Chain identity unverifiable')
+      }
     })
 
     it('keeps going when a single height fails, and leaves it missing for the next run', async function () {

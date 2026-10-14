@@ -105,13 +105,15 @@ export async function ingestBtcBlocks ({
   if (!Number.isInteger(batchSize) || batchSize < 1) throw new Error(`Invalid batchSize: ${batchSize}`)
   if (!Number.isInteger(concurrency) || concurrency < 1) throw new Error(`Invalid concurrency: ${concurrency}`)
 
+  // Validate chain identity before anything else, so even a no-op ingest over an already-complete
+  // range still refuses when the endpoint has switched to a different chain.
+  await assertStoredChainMatchesEndpoint({ client, store })
+
   const pending = await missingHeights(fromHeight, toHeight, store)
   if (pending.length === 0) {
     log.info(`Nothing to ingest for heights ${fromHeight}-${toHeight}`)
     return { requested: 0, ingested: 0, failed: 0 }
   }
-
-  await assertStoredChainMatchesEndpoint({ client, store })
 
   log.info(`Ingesting ${pending.length} missing block(s) in ${fromHeight}-${toHeight} at concurrency ${concurrency}`)
 
