@@ -114,6 +114,7 @@ export function getNftRepository (prismaClient) {
     if (!holders.length) return []
 
     const current = await readHoldersThenBalances(holders, keys)
+    const removedSinceTheFactsWereRead = new Set(holders.filter(h => !h.added && !current.holders.has(h.key)).map(h => h.key))
     const doomed = new Set(doomedHashes)
     const latest = await latestOtherFacts(holders.map(h => current.holders.get(h.key)).filter(row => row && doomed.has(row.lastBlockHash)), doomedHashes)
 
@@ -122,7 +123,7 @@ export function getNftRepository (prismaClient) {
     const vanishing = []
     const changing = new Map()
 
-    for (const k of keys) {
+    for (const k of keys.filter(k => !removedSinceTheFactsWereRead.has(holderKey(k)))) {
       const before = current.balances.get(k.key)
       const after = (before || new BigNumber(0)).plus(k.delta)
       const crossed = isPositive(after) - (before ? isPositive(before) : 0)
@@ -143,7 +144,7 @@ export function getNftRepository (prismaClient) {
     const updates = []
     const removals = []
 
-    for (const h of holders) {
+    for (const h of holders.filter(h => !removedSinceTheFactsWereRead.has(h.key))) {
       const row = current.holders.get(h.key)
       const delta = holderDeltas.get(h.key)
       const own = h.added ? { lastBlockNumber: block.number, lastBlockHash: block.hash } : null
