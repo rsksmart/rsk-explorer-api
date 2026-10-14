@@ -48,6 +48,18 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await prismaClient.block.deleteMany({ where: { number: 20 } })).to.deep.equal({ count: 1 })
   })
 
+  it('fails the batch instead of deleting a holder whose last fact goes while its stored sum is not zero, and changes nothing', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1)])
+    const key = { contract_standard_holder: { contract: C721, standard: 'ERC721', holder: A } }
+    await prismaClient.nft_holder.update({ where: key, data: { quantity: 5 } })
+
+    const error = await blocksRepository.deleteOne({ number: 10 }).catch(e => e)
+
+    expect(error.code).to.equal('P2025')
+    expect(await prismaClient.block.count({ where: { number: 10 } })).to.equal(1)
+    expect(await prismaClient.nft_holder.findUnique({ where: key })).to.include({ tokenCount: 1n }).and.satisfy(holder => holder.quantity.toFixed() === '5')
+  })
+
   it('keeps the newest last block when an older block is saved after a newer one', async () => {
     await save(30, 'a', [erc721(C721, ZERO, A, 1)])
     await save(10, 'a', [erc721(C721, ZERO, A, 2)])
