@@ -106,7 +106,7 @@ export function getNftRepository (prismaClient) {
     const blocks = (await Promise.all(chunkArray(numbers, BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE).map(part => prismaClient.block.findMany({ where: { number: { in: part } }, select: { number: true, hash: true } })))).flat()
     const hashAt = new Map(blocks.map(({ number, hash }) => [number, hash]))
 
-    return new Map([...latestNumber].filter(([, number]) => hashAt.has(number)).map(([key, number]) => [key, { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }]))
+    return new Map([...latestNumber].map(([key, number]) => [key, { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }]))
   }
 
   async function ownershipStatements ({ added, undone, block, doomedHashes }) {
