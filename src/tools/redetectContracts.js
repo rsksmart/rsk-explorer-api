@@ -75,9 +75,7 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
   }
 }
 
-export async function redetectCandidates ({ updater, candidateSet, candidates, pageSize }) {
-  const summary = { tagged: [], notTagged: [], failed: [] }
-
+export async function redetectCandidates ({ updater, candidateSet, candidates, pageSize, summary = { tagged: [], notTagged: [], failed: [] } }) {
   for (const [index, address] of candidates.entries()) {
     const progress = `[${index + 1}/${candidates.length}]`
     const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize, progress })
@@ -112,6 +110,13 @@ async function main () {
 
   const updater = new ContractEventsUpdater()
   const started = Date.now()
+  const summary = { tagged: [], notTagged: [], failed: [] }
+  const counts = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
+  process.on('uncaughtException', error => {
+    console.log(`[Tool ${toolName}]: Error re-detecting contracts: ${error.message || error}`)
+    console.log(`Stopped after ${Date.now() - started} ms. ${counts()}`)
+    process.exit(1)
+  })
 
   console.log(`${toolName} ${setName}`)
   console.log(`Discovering candidates: ${candidateSet.description}`)
@@ -128,10 +133,10 @@ async function main () {
     console.log(`Restricted to target address ${targetAddress}`)
   }
 
-  const summary = await redetectCandidates({ updater, candidateSet, candidates, pageSize })
+  await redetectCandidates({ updater, candidateSet, candidates, pageSize, summary })
 
   console.log('')
-  console.log(`Done in ${Date.now() - started} ms. tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`)
+  console.log(`Done in ${Date.now() - started} ms. ${counts()}`)
 
   const fileName = `redetect-contracts-${setName}-${Date.now()}.json`
   const resultFilePath = path.join(__dirname, fileName)

@@ -1,5 +1,6 @@
 import { expect } from 'chai'
 import http from 'http'
+import net from 'net'
 import path from 'path'
 import { spawn } from 'child_process'
 import { prismaClient } from '../../../src/lib/prismaClient'
@@ -9,24 +10,36 @@ import { blockData, erc721, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase } from './replay'
 
 const ROOT = path.resolve(__dirname, '../../..')
-const TOOL = path.join(ROOT, 'src/tools/backfillNftOwnership.js')
+const BACKFILL = path.join(ROOT, 'src/tools/backfillNftOwnership.js')
+const REDETECT = path.join(ROOT, 'src/tools/redetectContracts.js')
 const C721 = '0x00000000000000000000000000000000000e0721'
 const A = `0x${'1'.repeat(40)}`
 
-function runTool (nodeUrl, ...args) {
+function runScript (tool, nodeUrl, args) {
   const entry = `require('@babel/register')
 const { config, nodeSources } = require('./src/lib/config')
 config.source = nodeSources({ url: ${JSON.stringify(nodeUrl)} })
 config.blocks.source = config.source
-process.argv = [process.argv[0], ${JSON.stringify(TOOL)}, ...${JSON.stringify(args)}]
+process.argv = [process.argv[0], ${JSON.stringify(tool)}, ...${JSON.stringify(args)}]
 require('module').runMain()`
   return new Promise(resolve => {
     const child = spawn(process.execPath, ['-e', entry], { cwd: ROOT })
     let stdout = ''
+    let stderr = ''
     child.stdout.on('data', chunk => { stdout += chunk })
-    child.stderr.resume()
-    child.on('exit', status => resolve({ status, stdout }))
+    child.stderr.on('data', chunk => { stderr += chunk })
+    child.on('exit', status => resolve({ status, stdout, stderr }))
   })
+}
+
+const runTool = (nodeUrl, ...args) => runScript(BACKFILL, nodeUrl, args)
+
+function closedPort () {
+  const server = net.createServer()
+  return new Promise(resolve => server.listen(0, '127.0.0.1', () => {
+    const { port } = server.address()
+    server.close(() => resolve(port))
+  }))
 }
 
 function nodeAnsweringEveryCallWithAnError () {
@@ -84,5 +97,16 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     expect(exponent.stdout).to.include('must be whole numbers, such as 3490000: got 3.49e6')
     expect(suffix.stdout).to.include('got 10abc')
     expect(reversed.stdout).to.include('fromBlock 20 is above toBlock 10')
+  })
+
+  it('phase B and the contract re-detection print their run report and exit 1, with no stack trace, when the node refuses the connection', async () => {
+    await prismaClient.token_state_at_block.deleteMany({})
+    const nodeUrl = `http://127.0.0.1:${await closedPort()}`
+    const [phaseB, redetect] = await Promise.all([runTool(nodeUrl, 'B'), runScript(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])])
+
+    expect([phaseB.status, redetect.status]).to.deep.equal([1, 1])
+    expect(phaseB.stdout).to.include('Error backfilling NFT ownership: connect ECONNREFUSED').and.include('Stopped: {"blocksRead":1,"pairs":1,')
+    expect(redetect.stdout).to.include('Error re-detecting contracts: connect ECONNREFUSED').and.match(/Stopped after \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 0/)
+    expect(phaseB.stderr + redetect.stderr).not.to.match(/^\s+at /m)
   })
 })

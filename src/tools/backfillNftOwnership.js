@@ -19,6 +19,10 @@ const NFT_TRANSFER_EVENTS = {
 }
 const EVENT_FIELDS = { eventId: true, address: true, blockNumber: true, blockHash: true, transactionHash: true, timestamp: true, topic0: true, topic1: true, topic2: true, topic3: true, data: true }
 
+const newReport = phase => phase === 'A'
+  ? { blocksRead: 0, blocksWritten: 0, blocksAlreadyStored: 0, blocksRaced: 0, facts: 0 }
+  : { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsFailed: [], pairsRaced: 0 }
+
 const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({ ...event, topics: [topic0, topic1, topic2, topic3].filter(topic => topic !== null) })
 const isRacedWrite = error => !!error && RACED_WRITE_ERRORS.includes(error.code)
 const pinUnreplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
@@ -51,9 +55,7 @@ async function eachChunk ({ prismaClient, fromBlock, toBlock, chunkBlocks, onChu
   }
 }
 
-export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {} }) {
-  const report = { blocksRead: 0, blocksWritten: 0, blocksAlreadyStored: 0, blocksRaced: 0, facts: 0 }
-
+export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {}, report = newReport('A') }) {
   const writeTransfers = async (block, events) => {
     for (let attempt = 1; ; attempt++) {
       const statements = await nftRepository.insertStatements(block, events)
@@ -123,8 +125,7 @@ async function fetchPairs (fetchers, pairs, onFetched) {
   }))
 }
 
-export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {} }) {
-  const report = { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsFailed: [], pairsRaced: 0 }
+export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {}, report = newReport('B') }) {
   const states = new Map()
   const pairKey = ({ contract, blockNumber, blockHash }) => `${contract}|${blockNumber}|${blockHash}`
 
@@ -189,7 +190,7 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
   return report
 }
 
-export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fromArg, toArg, chunkBlocks = 1000, fetchers }) {
+export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fromArg, toArg, chunkBlocks = 1000, fetchers, report = newReport(phase) }) {
   const fromBlock = fromArg !== undefined ? fromArg : 0
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
@@ -198,9 +199,9 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk`)
   const onChunkDone = ({ firstBlock, lastBlock }) => console.log(`chunk ${firstBlock}..${lastBlock} done · ${Math.round((Date.now() - started) / 1000)} s`)
 
-  const report = phase === 'A'
-    ? await backfillTransfers({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone })
-    : await backfillTokenStates({ prismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone })
+  await (phase === 'A'
+    ? backfillTransfers({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone, report })
+    : backfillTokenStates({ prismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone, report }))
 
   console.log(`Done in ${Date.now() - started} ms: ${JSON.stringify(report)}`)
   return report
@@ -239,7 +240,13 @@ async function main () {
     fetchers = Array.from({ length: concurrencyArg === undefined ? 4 : concurrencyArg }, () => new TokenState({ nod3, initConfig, log: console }))
   }
 
-  const report = await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers })
+  const report = newReport(phase)
+  process.on('uncaughtException', error => {
+    console.log(`[Tool ${toolName}]: Error backfilling NFT ownership: ${error.message || error}`)
+    console.log(`Stopped: ${JSON.stringify(report)}`)
+    process.exit(1)
+  })
+  await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers, report })
   process.exit(exitCodeOf(report))
 }
 
