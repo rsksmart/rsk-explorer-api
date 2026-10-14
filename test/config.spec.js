@@ -66,4 +66,33 @@ describe('# Config', function () {
       expect(makeConfig({}).bitcoin.rpcUrl).to.deep.equal([])
     })
   })
+
+  describe('bitcoin.enabled', function () {
+    const originalEnv = process.env.BITCOIN_STATS_ENABLED
+
+    afterEach(function () {
+      if (originalEnv === undefined) delete process.env.BITCOIN_STATS_ENABLED
+      else process.env.BITCOIN_STATS_ENABLED = originalEnv
+    })
+
+    it('is disabled by default when the flag is unset', function () {
+      delete process.env.BITCOIN_STATS_ENABLED
+
+      expect(makeConfig({}).bitcoin.enabled).to.equal(false)
+    })
+
+    it('is enabled only for an explicit opt-in value', function () {
+      for (const value of ['true', 'TRUE', '1', 'yes', 'on', ' true ']) {
+        process.env.BITCOIN_STATS_ENABLED = value
+        expect(makeConfig({}).bitcoin.enabled, value).to.equal(true)
+      }
+    })
+
+    it('stays disabled for any other value', function () {
+      for (const value of ['false', '0', 'no', 'off', '', 'enabled']) {
+        process.env.BITCOIN_STATS_ENABLED = value
+        expect(makeConfig({}).bitcoin.enabled, value).to.equal(false)
+      }
+    })
+  })
 })

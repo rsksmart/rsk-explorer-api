@@ -341,6 +341,7 @@ function btcBlockIngestUpdater () {
     schedule,
     name,
     cronJob,
+    bitcoinFeature: true,
     start: () => cronJob.start()
   }
 }
@@ -384,6 +385,7 @@ function dailyMergeMiningStatsUpdater () {
     schedule,
     name,
     cronJob,
+    bitcoinFeature: true,
     start: () => cronJob.start()
   }
 }
@@ -401,6 +403,10 @@ export function startCronJobs ({ log = Logger('[CronJobs]') } = {}) {
   log.info(`Executing cron jobs using default timezone ${cronsConfig.timeZone}`)
 
   for (const cronJob of Object.values(cronJobs)) {
+    if (cronJob.bitcoinFeature && !config.bitcoin.enabled) {
+      log.info(`Skipping cronjob "${cronJob.name}": Bitcoin merge-mining stats are disabled (set BITCOIN_STATS_ENABLED=true to enable)`)
+      continue
+    }
     try {
       log.info(`Starting cronjob "${cronJob.name}" with schedule ${cronJob.schedule.value} (${cronJob.schedule.description})`)
       cronJob.start()

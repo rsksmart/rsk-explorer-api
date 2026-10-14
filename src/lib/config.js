@@ -32,6 +32,14 @@ export function createConfig (file) {
 const parseEndpointList = value =>
   (value || '').split(',').map(s => s.trim()).filter(Boolean)
 
+/**
+ * Reads an opt-in boolean environment flag: the feature is off unless explicitly enabled.
+ * @param {string} [value] - The raw environment value (e.g. 'true', '1', 'yes', 'on').
+ * @returns {boolean} true only when value is one of 'true'/'1'/'yes'/'on' (case-insensitive); false otherwise, including when unset.
+ */
+const parseBooleanFlag = value =>
+  ['true', '1', 'yes', 'on'].includes(String(value).trim().toLowerCase())
+
 export function makeConfig (config = {}) {
   // const defaultLogs = (key) => {
   //   const dir = config.log.dir
@@ -66,6 +74,7 @@ export function makeConfig (config = {}) {
   config.blocks.source = config.source
 
   config.bitcoin.rpcUrl = parseEndpointList(process.env.BITCOIN_RPC_URL)
+  config.bitcoin.enabled = parseBooleanFlag(process.env.BITCOIN_STATS_ENABLED)
 
   // defaults log files
   // if (config.log.logToFiles === true) {
