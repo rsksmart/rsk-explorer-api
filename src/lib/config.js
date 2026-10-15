@@ -1,7 +1,10 @@
 import path from 'path'
 import fs from 'fs'
 import URL from 'url'
+import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
+
+dotenv.config()
 
 const validateConfig = {
   existence: (config) => {
@@ -19,6 +22,23 @@ export function createConfig (file) {
 
   return config
 }
+
+/**
+ * Splits a comma-separated BITCOIN_RPC_URL into a trimmed list of endpoints,
+ * supporting multiple endpoints for failover.
+ * @param {string} [value] - The raw BITCOIN_RPC_URL value (e.g. 'http://a:8332, http://b:8332').
+ * @returns {string[]} The trimmed, non-empty endpoints in order (e.g. ['http://a:8332', 'http://b:8332']); [] when unset.
+ */
+const parseEndpointList = value =>
+  (value || '').split(',').map(s => s.trim()).filter(Boolean)
+
+/**
+ * Reads an opt-in boolean environment flag: the feature is off unless explicitly enabled.
+ * @param {string} [value] - The raw environment value (e.g. 'true', '1', 'yes', 'on').
+ * @returns {boolean} true only when value is one of 'true'/'1'/'yes'/'on' (case-insensitive); false otherwise, including when unset.
+ */
+const parseBooleanFlag = value =>
+  ['true', '1', 'yes', 'on'].includes(String(value).trim().toLowerCase())
 
 export function makeConfig (config = {}) {
   // const defaultLogs = (key) => {
@@ -52,6 +72,9 @@ export function makeConfig (config = {}) {
   // defaults  servers/ports
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
+
+  config.bitcoin.rpcUrl = parseEndpointList(process.env.BITCOIN_RPC_URL)
+  config.bitcoin.enabled = parseBooleanFlag(process.env.BITCOIN_STATS_ENABLED)
 
   // defaults log files
   // if (config.log.logToFiles === true) {
