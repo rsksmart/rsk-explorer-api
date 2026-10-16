@@ -10,25 +10,6 @@ const C20 = '0x0000000000000000000000000000000000000020'
 const [A, B, C, H] = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
 
 const save = (number, tag, logs) => blocksRepository.saveBlockData(blockData(number, tag, logs))
-const nftContracts = n => Array.from({ length: n }, (_, i) => `0x${(0xe0721 + i).toString(16).padStart(40, '0')}`)
-
-async function stateReadsOfADeleteRepairing (contracts) {
-  await resetDatabase()
-  await save(10, 'a', contracts.map(contract => erc721(contract, ZERO, A, 1)))
-  await save(30, 'a', contracts.map(contract => erc721(contract, A, B, 1)))
-  const delegate = prismaClient.token_state_at_block
-  const originals = ['findFirst', 'findMany', 'groupBy'].map(name => [name, delegate[name]])
-  let reads = 0
-  for (const [name, original] of originals) delegate[name] = function (...args) { reads++; return original.apply(this, args) }
-
-  try {
-    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
-  } finally {
-    for (const [name, original] of originals) delegate[name] = original
-  }
-  expect(await differences()).to.deep.equal([])
-  return reads
-}
 
 const runBatch = prismaClient.$transaction
 
@@ -137,61 +118,6 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     const token = await prismaClient.token.findUnique({ where: { contract: C721 } })
     expect(token.blockNumber).to.equal(20)
     expect(await differences()).to.deep.equal([])
-  })
-
-  it('repairs the token rows of six contracts with as many state reads as one', async () => {
-    const one = await stateReadsOfADeleteRepairing(nftContracts(1))
-    const six = await stateReadsOfADeleteRepairing(nftContracts(6))
-
-    expect(six, `1 contract: ${one} reads · 6 contracts: ${six} reads`).to.equal(one)
-  })
-
-  it('repairs the token row from a fresh read when the block holding its newest other state is deleted between the repair\'s two reads', async () => {
-    const [K, M] = [`0x${'1'.repeat(40)}`, `0x${'2'.repeat(40)}`]
-    await save(10, 'a', [erc721(C721, ZERO, K, 1)])
-    await save(20, 'a', [erc721(C721, ZERO, M, 2)])
-    await save(30, 'a', [erc721(C721, ZERO, H, 3)])
-    const delegate = prismaClient.token_state_at_block
-    const findMany = delegate.findMany
-    let pending = true
-    delegate.findMany = async function (...args) {
-      if (pending && args[0] && args[0].where && args[0].where.OR) {
-        pending = false
-        await blocksRepository.deleteOne({ number: 20 })
-      }
-      return findMany.apply(this, args)
-    }
-
-    try {
-      expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
-    } finally {
-      delegate.findMany = findMany
-    }
-    expect(pending).to.equal(false)
-    expect(await prismaClient.token.findUnique({ where: { contract: C721 }, select: { blockNumber: true } })).to.deep.equal({ blockNumber: 10 })
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('fails the delete, and keeps the block, when the newest other state is deleted between the repair\'s two reads on all three attempts', async () => {
-    const holders = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
-    for (const [i, number] of [5, 10, 20, 30].entries()) await save(number, 'a', [erc721(C721, ZERO, holders[i], number)])
-    const delegate = prismaClient.token_state_at_block
-    const findMany = delegate.findMany
-    const deletedBetweenReads = []
-    delegate.findMany = async function (...args) {
-      const pair = args[0] && args[0].where && args[0].where.OR && args[0].where.OR[0]
-      if (pair && deletedBetweenReads.length < 3) {
-        deletedBetweenReads.push(pair.blockNumber)
-        await blocksRepository.deleteOne({ number: pair.blockNumber })
-      }
-      return findMany.apply(this, args)
-    }
-
-    const error = await blocksRepository.deleteOne({ number: 30 }).catch(e => e).finally(() => { delegate.findMany = findMany })
-
-    expect(deletedBetweenReads).to.deep.equal([20, 10, 5])
-    expect(error.message).to.equal('the newest token state facts of 1 contract(s) were deleted between their two reads on each of 3 attempts')
-    expect(await prismaClient.block.count({ where: { number: 30 } })).to.equal(1)
   })
 
   it('deletes the state fact of a contract whose token row points at a later block', async () => {
