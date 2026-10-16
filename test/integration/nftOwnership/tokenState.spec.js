@@ -46,6 +46,18 @@ integrationDescribe('NFT ownership: the token state writers store the parser\'s 
     expect((await stored()).token).to.deep.include({ blockNumber: 10, interfaces: PROXY_LIST })
   })
 
+  it('both writers store a collection the parser does not tag as an NFT with an empty list', async () => {
+    parserAnswers(() => [])
+    await saveWithTheIndexersTokenState(10, [erc721(C721, ZERO, A, 1)])
+    const data = blockData(20, 'a', [erc721(C721, ZERO, A, 2)])
+    await blocksRepository.saveBlockData({ ...data, tokenStates: [] })
+
+    await backfillTokenStates({ fromBlock: 20, toBlock: 20, chunkBlocks: 10, fetchers: [tokenState()] })
+
+    const untagged = { interfaces: [], isNft: true }
+    expect(await stored()).to.deep.equal({ token: { blockNumber: 20, ...untagged }, states: [{ blockNumber: 10, ...untagged }, { blockNumber: 20, ...untagged }] })
+  })
+
   it('backfill phase B stores the same list through the same TokenState', async () => {
     parserAnswers(() => PROXY_LIST)
     const data = blockData(10, 'a', [erc721(C721, ZERO, A, 1)])

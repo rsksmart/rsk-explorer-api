@@ -69,6 +69,10 @@ describe('toTokenState', () => {
     expect(toTokenState(nft, details, { name: 42, symbol: ['x'] })).to.include({ name: null, symbol: null })
   })
 
+  it('marks a contract the parser does not tag as an NFT, since only NFT-shaped emitters get a state', () => {
+    expect(toTokenState(nft, { ...details, interfaces: [] }, {})).to.include({ isNft: true, isFungible: false }).and.deep.include({ interfaces: [] })
+  })
+
   it('records the proxy type, keeps a valid implementation address lowercased and drops anything else', () => {
     const proxied = toTokenState(nft, { interfaces: ['ERC1967', 'ERC20', 'ERC721'], proxyType: 'ERC1967 Normal Proxy', implementationAddress: '0xABCDEF0000000000000000000000000000000001' }, {})
     expect(proxied).to.include({ proxyType: 'ERC1967 Normal Proxy', implementation: '0xabcdef0000000000000000000000000000000001', isFungible: true, isNft: true })

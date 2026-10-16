@@ -3,7 +3,7 @@ import { BigNumber } from 'bignumber.js'
 import { isAddress } from '@rsksmart/rsk-utils'
 import { BcThing } from './BcThing'
 import { decodeBlockNftTransfers, nftContractsOf } from '../../lib/nftTransfers'
-import { fungibleTokensInterfaces, nftTokensInterfaces } from '../../lib/types'
+import { fungibleTokensInterfaces } from '../../lib/types'
 import { sanitizeContractNameOrSymbol } from '../../lib/utils'
 
 const NAME_MAX_LENGTH = 128
@@ -29,7 +29,7 @@ export function toTokenState (contract, { interfaces, proxyType, implementationA
     contract,
     interfaces,
     isFungible: interfaces.some(i => fungibleTokensInterfaces.includes(i)),
-    isNft: interfaces.some(i => nftTokensInterfaces.includes(i)),
+    isNft: true,
     proxyType: proxyType || null,
     implementation: isAddress(implementationAddress) ? implementationAddress.toLowerCase() : null,
     name: toText(name, NAME_MAX_LENGTH),
