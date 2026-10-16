@@ -1,7 +1,12 @@
 import path from 'path'
 import fs from 'fs'
-import URL from 'url'
+import URL, { URL as WhatwgURL } from 'url'
+import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
+
+dotenv.config()
+
+const NODE_URL_PROTOCOLS = ['http:', 'https:']
 
 const validateConfig = {
   existence: (config) => {
@@ -12,7 +17,7 @@ const validateConfig = {
 }
 
 export function createConfig (file) {
-  const config = makeConfig(loadConfig(file))
+  const config = makeConfig(withNodeUrlFromTheEnvironment(loadConfig(file)))
 
   // validations
   validateConfig.existence(config)
@@ -60,6 +65,20 @@ export function makeConfig (config = {}) {
   // }
 
   return config
+}
+
+export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
+  const nodeUrl = env.NODE_URL
+  if (!nodeUrl) return fileConfig
+  let protocol
+  try {
+    protocol = new WhatwgURL(nodeUrl).protocol
+  } catch (error) {
+    throw new Error('NODE_URL is not a URL')
+  }
+  if (!NODE_URL_PROTOCOLS.includes(protocol)) throw new Error(`NODE_URL must be an http or https URL: got ${protocol}`)
+  if (fileConfig.source) console.log('NODE_URL from the environment replaces the source in config.json')
+  return { ...fileConfig, source: { url: nodeUrl } }
 }
 
 function loadConfig (file) {
