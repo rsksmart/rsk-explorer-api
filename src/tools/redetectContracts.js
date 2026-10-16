@@ -31,7 +31,7 @@ export const CANDIDATE_SETS = {
   }
 }
 
-export const candidateSetNamed = name => Object.prototype.hasOwnProperty.call(CANDIDATE_SETS, name) ? CANDIDATE_SETS[name] : null
+export const candidateSetNamed = name => Object.hasOwn(CANDIDATE_SETS, name) ? CANDIDATE_SETS[name] : null
 
 const failedBlockingEvents = (events, candidateSet) => events.filter(event =>
   event.error && candidateSet.blockingEventTopic0s.has(failedEventTopic0(event))
