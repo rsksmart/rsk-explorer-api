@@ -1,7 +1,6 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { Nod3 } from '@rsksmart/nod3'
-import { JsonRpc } from '@rsksmart/nod3/dist/classes/JsonRpc'
 import { processCandidate, redetectCandidates, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { eventRepository } from '../../src/repositories'
@@ -94,7 +93,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       return `0x${'0'.repeat(63)}${['0x01ffc9a7', '0x80ac58cd'].includes(interfaceId) ? 1 : 0}`
     }
     const fakeNode = () => {
-      const rpc = new JsonRpc({ send: async payload => ({ jsonrpc: '2.0', id: payload.id, result: await answer(payload) }) })
+      const rpc = { sendMethod: async (method, params = []) => answer({ method, params }) }
       return new Nod3({ url: 'fake', rpc })
     }
     const realUpdater = nod3 => {
