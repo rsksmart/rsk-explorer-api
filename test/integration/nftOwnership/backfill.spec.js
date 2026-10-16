@@ -263,6 +263,12 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('both phases run without arguments on a database with no block read nothing and finish, instead of refusing the range 0..-1', async () => {
+    const [a, b] = [await runPhase({ phase: 'A' }), await runPhase({ phase: 'B', fetchers: [fetcher()] })]
+
+    expect([a.blocksRead, a.blocksWritten, b.blocksRead, b.pairsWritten]).to.deep.equal([0, 0, 0, 0])
+  })
+
   it('a phase B run before phase A has finished, then both phases run again, equal a replay: A from 14, B, A, B', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     const phase = (name, fromArg) => runPhase({ phase: name, fromArg, chunkBlocks: 3, fetchers: [fetcher()] })
