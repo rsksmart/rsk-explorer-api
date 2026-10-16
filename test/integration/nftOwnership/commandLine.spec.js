@@ -17,15 +17,9 @@ const REDETECT = path.join(ROOT, 'src/tools/redetectContracts.js')
 const C721 = '0x00000000000000000000000000000000000e0721'
 const A = `0x${'1'.repeat(40)}`
 
-function runScript (tool, nodeUrl, args) {
-  const entry = `require('@babel/register')
-const { config, nodeSources } = require('./src/lib/config')
-config.source = nodeSources({ url: ${JSON.stringify(nodeUrl)} })
-config.blocks.source = config.source
-process.argv = [process.argv[0], ${JSON.stringify(tool)}, ...${JSON.stringify(args)}]
-require('module').runMain()`
+function runTool (tool, nodeUrl, args) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, ['-e', entry], { cwd: ROOT })
+    const child = spawn(process.execPath, ['--require', '@babel/register', tool, ...args], { cwd: ROOT, env: { ...process.env, NODE_URL: nodeUrl } })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', chunk => { stdout += chunk })
@@ -34,7 +28,7 @@ require('module').runMain()`
   })
 }
 
-const runTool = (nodeUrl, ...args) => runScript(BACKFILL, nodeUrl, args)
+const runBackfill = (nodeUrl, ...args) => runTool(BACKFILL, nodeUrl, args)
 
 function closedPort () {
   const server = net.createServer()
@@ -76,16 +70,16 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
   })
 
   it('phase A exits 0 after writing every block', async () => {
-    const { status, stdout } = await runTool(`http://127.0.0.1:${node.address().port}`, 'A')
+    const { status, stdout } = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'A')
 
     expect(stdout).to.include('"blocksWritten":1')
     expect(status).to.equal(0)
   })
 
   it('phase B exits 1 while the node fails a pair\'s reads, and 0 once a rerun finds nothing left to store', async () => {
-    const failed = await runTool(`http://127.0.0.1:${node.address().port}`, 'B')
+    const failed = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'B')
     await prismaClient.$transaction(tokenStateRepository.insertStatements({ number: 10 }, [tokenStateAt(C721, 10)]))
-    const rerun = await runTool(`http://127.0.0.1:${node.address().port}`, 'B')
+    const rerun = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'B')
 
     expect(failed.stdout).to.include('"failure":"injected internal error"')
     expect([failed.status, rerun.status]).to.deep.equal([1, 0])
@@ -94,7 +88,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
   it('refuses a block argument that is not a whole number, and a fromBlock above toBlock or above the highest stored block, with exit 1 and the reason', async () => {
     const nodeUrl = `http://127.0.0.1:${node.address().port}`
     const runs = [['A', '3400000', '3.49e6'], ['A', '10abc'], ['A', '20', '10'], ['A', '1000'], ['B', '1000'], ['A', '10', '10']]
-    const [exponent, suffix, reversed, aboveTipA, aboveTipB, oneBlock] = await Promise.all(runs.map(args => runTool(nodeUrl, ...args)))
+    const [exponent, suffix, reversed, aboveTipA, aboveTipB, oneBlock] = await Promise.all(runs.map(args => runBackfill(nodeUrl, ...args)))
     const output = run => run.stdout + run.stderr
 
     expect([exponent, suffix, reversed, aboveTipA, aboveTipB, oneBlock].map(run => run.status)).to.deep.equal([1, 1, 1, 1, 1, 0])
@@ -107,7 +101,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
   })
 
   it('the contract re-detection reports the candidate the node fails as failed in its summary, and exits 1', async () => {
-    const { status, stdout } = await runScript(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', '50'])
+    const { status, stdout } = await runTool(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', '50'])
     const resultFile = (stdout.match(/Result file saved to (\S+)/) || [])[1]
     if (resultFile) fs.unlinkSync(resultFile)
 
@@ -116,7 +110,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
   })
 
   it('the contract re-detection refuses a pageSize that is not a whole number above 0, with exit 1 and the reason', async () => {
-    const runs = await Promise.all(['5e2', '0', '50.5'].map(pageSize => runScript(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', pageSize])))
+    const runs = await Promise.all(['5e2', '0', '50.5'].map(pageSize => runTool(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', pageSize])))
     for (const run of runs) {
       const leftResultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
       if (leftResultFile) fs.unlinkSync(leftResultFile)
@@ -130,7 +124,7 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     await prismaClient.token_state_at_block.deleteMany({})
     const nodeUrl = `http://127.0.0.1:${await closedPort()}`
-    const [phaseB, redetect] = await Promise.all([runTool(nodeUrl, 'B'), runScript(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])])
+    const [phaseB, redetect] = await Promise.all([runBackfill(nodeUrl, 'B'), runTool(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])])
 
     expect([phaseB.status, redetect.status]).to.deep.equal([1, 1])
     expect(phaseB.stdout).to.include('Error backfilling NFT ownership: connect ECONNREFUSED').and.include('Stopped: {"blocksRead":1,"pairs":1,')
