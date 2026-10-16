@@ -4,6 +4,7 @@ import erc721Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC721.js
 import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
 import { nftTokensInterfaces } from '../lib/types'
+import { exitOnUncaughtException } from './utils'
 import fs from 'fs'
 import path from 'path'
 
@@ -112,11 +113,7 @@ async function main () {
   const started = Date.now()
   const summary = { tagged: [], notTagged: [], failed: [] }
   const counts = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
-  process.on('uncaughtException', error => {
-    console.log(`[Tool ${toolName}]: Error re-detecting contracts: ${error.message || error}`)
-    console.log(`Stopped after ${Date.now() - started} ms. ${counts()}`)
-    process.exit(1)
-  })
+  exitOnUncaughtException(`[Tool ${toolName}]: Error re-detecting contracts`, () => `Stopped after ${Date.now() - started} ms. ${counts()}`)
 
   console.log(`${toolName} ${setName}`)
   console.log(`Discovering candidates: ${candidateSet.description}`)

@@ -4,6 +4,7 @@ import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC, NFT_STANDA
 import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
+import { exitOnUncaughtException } from './utils'
 
 const toolName = process.argv[1].split('/').pop()
 
@@ -240,11 +241,7 @@ async function main () {
   }
 
   const report = newReport(phase)
-  process.on('uncaughtException', error => {
-    console.log(`[Tool ${toolName}]: Error backfilling NFT ownership: ${error.message || error}`)
-    console.log(`Stopped: ${JSON.stringify(report)}`)
-    process.exit(1)
-  })
+  exitOnUncaughtException(`[Tool ${toolName}]: Error backfilling NFT ownership`, () => `Stopped: ${JSON.stringify(report)}`)
   await runPhase({ phase, fromArg, toArg, chunkBlocks: chunkArg, fetchers, report })
   process.exit(exitCodeOf(report))
 }
