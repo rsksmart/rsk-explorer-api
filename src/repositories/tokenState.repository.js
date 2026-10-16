@@ -22,8 +22,8 @@ export function getTokenStateRepository (prismaClient) {
     async undoStatements (blocks) {
       const numbers = blocks.map(b => b.number)
       const facts = await prismaClient.token_state_at_block.findMany({ where: { blockNumber: { in: numbers } }, select: { contract: true } })
+      if (!facts.length) return []
       const contracts = [...new Set(facts.map(f => f.contract))].sort()
-      if (!contracts.length) return []
 
       const rows = await prismaClient.token.findMany({
         where: { contract: { in: contracts }, blockNumber: { in: numbers } },
@@ -47,7 +47,7 @@ export function getTokenStateRepository (prismaClient) {
         }
       }
 
-      return statements
+      return [...statements, prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: numbers } } })]
     }
   }
 }

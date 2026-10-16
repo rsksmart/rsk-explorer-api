@@ -106,6 +106,39 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('deletes the state fact of a contract whose token row points at a later block', async () => {
+    await save(20, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(30, 'a', [erc721(C721, A, B, 1)])
+
+    expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
+
+    expect(await prismaClient.token_state_at_block.findMany({ select: { blockNumber: true } })).to.deep.equal([{ blockNumber: 30 }])
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('deletes the state facts of every block of a multi-block delete, whichever block each contract\'s token row points at', async () => {
+    await save(10, 'a', [erc721(C721, ZERO, A, 1), erc1155Single(C1155, ZERO, A, 7, 2)])
+    await save(20, 'a', [erc721(C721, A, B, 1), erc1155Single(C1155, A, B, 7, 1)])
+    await save(30, 'a', [erc721(C721, ZERO, C, 2)])
+    await save(40, 'a', [erc721(C721, ZERO, H, 3)])
+
+    expect(await blocksRepository.deleteMany({ number: { in: [20, 30] } })).to.deep.equal({ count: 2 })
+
+    expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: { in: [20, 30] } } })).to.equal(0)
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('replaces a block whose state fact belongs to a contract with a later token row, writing the new fact at the same number', async () => {
+    await save(30, 'a', [erc721(C721, ZERO, A, 1)])
+    await save(40, 'a', [erc721(C721, ZERO, B, 2)])
+
+    await blocksRepository.saveBlockData(blockData(30, 'e', [erc721(C721, ZERO, C, 1)]), { replace: true })
+
+    expect((await prismaClient.block.findUnique({ where: { number: 30 } })).hash).to.equal(blockHashOf(30, 'e'))
+    expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: 30 } })).to.equal(1)
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('saves and deletes an NFT transfer at log index 4096, whose event id is 33 characters long', async () => {
     const data = blockData(10, 'a', [erc721(C721, ZERO, A, 1)], { firstLogIndex: 4096 })
     expect(data.events[0].eventId).to.have.lengthOf(33)
