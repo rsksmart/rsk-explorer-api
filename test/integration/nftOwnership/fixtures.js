@@ -17,7 +17,7 @@ export const erc1155Batch = (contract, from, to, ids, values) => ({ kind: 'nft',
 
 export const tokenStateAt = (contract, number) => ({
   contract,
-  interfaces: 'ERC165,ERC721',
+  interfaces: ['ERC165', 'ERC721'],
   isFungible: false,
   isNft: true,
   proxyType: number % 3 === 0 ? 'ERC1967' : null,

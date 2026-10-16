@@ -31,7 +31,7 @@ describe('TokenState', () => {
     expect(getContractDetails.args).to.deep.equal([[nft, 5928199]])
     expect(getDefaultTokenData.callCount).to.equal(1)
     expect(getDefaultTokenData.firstCall.args[1]).to.equal(5928199)
-    expect(states).to.deep.equal([{ contract: nft, interfaces: 'ERC165,ERC721', isFungible: false, isNft: true, proxyType: null, implementation: null, name: 'Name', symbol: 'SYM', decimals: 0, totalSupply: '12' }])
+    expect(states).to.deep.equal([{ contract: nft, interfaces: ['ERC165', 'ERC721'], isFungible: false, isNft: true, proxyType: null, implementation: null, name: 'Name', symbol: 'SYM', decimals: 0, totalSupply: '12' }])
   })
 
   it('makes no node call for a block without NFT transfers', async () => {

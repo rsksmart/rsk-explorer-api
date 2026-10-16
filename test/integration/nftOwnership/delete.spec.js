@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { prismaClient } from '../../../src/lib/prismaClient'
-import { blocksRepository } from '../../../src/repositories'
-import { blockData, blockHashOf, erc721, erc20, erc1155Single, ZERO } from './fixtures'
+import { blocksRepository, tokenStateRepository } from '../../../src/repositories'
+import { blockData, blockHashOf, erc721, erc20, erc1155Single, tokenStateAt, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000e0721'
@@ -58,12 +58,14 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await prismaClient.block.count()).to.equal(0)
   })
 
-  it('a delete that bypasses the repository fails on the Restrict key of a block with NFT facts', async () => {
+  it('a delete that bypasses the repository fails on the Restrict key of a block with NFT facts or token state facts', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(20, 'a', [erc20(C20, ZERO, A, 5)])
+    await save(30, 'a', [])
+    await prismaClient.$transaction(tokenStateRepository.insertStatements({ number: 30 }, [tokenStateAt(C721, 30)]))
 
-    const error = await prismaClient.block.deleteMany({ where: { number: 10 } }).catch(e => e)
-    expect(error.code).to.equal('P2003')
+    const errors = await Promise.all([10, 30].map(number => prismaClient.block.deleteMany({ where: { number } }).catch(e => e)))
+    expect(errors.map(e => e.code)).to.deep.equal(['P2003', 'P2003'])
     expect(await prismaClient.block.deleteMany({ where: { number: 20 } })).to.deep.equal({ count: 1 })
   })
 

@@ -27,7 +27,7 @@ const toUint256 = value => {
 export function toTokenState (contract, { interfaces, proxyType, implementationAddress }, { name, symbol, decimals, totalSupply }) {
   return {
     contract,
-    interfaces: interfaces.join(','),
+    interfaces,
     isFungible: interfaces.some(i => fungibleTokensInterfaces.includes(i)),
     isNft: interfaces.some(i => nftTokensInterfaces.includes(i)),
     proxyType: proxyType || null,
