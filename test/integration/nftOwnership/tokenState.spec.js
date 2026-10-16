@@ -12,7 +12,7 @@ const C721 = '0x00000000000000000000000000000000000c0721'
 const A = `0x${'1'.repeat(40)}`
 const initConfig = { net: { id: '31', name: 'RSK Testnet' } }
 const PROXY_LIST = ['ERC1167', 'ERC165', 'ERC721', 'ERC721Metadata']
-const PLAIN_LIST = ['ERC165', 'ERC721']
+const UNSORTED_LIST = ['ERC721', 'ERC165']
 
 const tokenState = () => new TokenState({ initConfig, nod3: {} })
 const stored = async () => ({
@@ -37,11 +37,11 @@ integrationDescribe('NFT ownership: the token state writers store the parser\'s 
   afterEach(() => sinon.restore())
 
   it('the block save stores each block\'s list in the parser\'s order, and the undo copies the earlier list back into token', async () => {
-    parserAnswers(number => number === 10 ? PROXY_LIST : PLAIN_LIST)
+    parserAnswers(number => number === 10 ? PROXY_LIST : UNSORTED_LIST)
     await saveWithTheIndexersTokenState(10, [erc721(C721, ZERO, A, 1)])
     await saveWithTheIndexersTokenState(20, [erc721(C721, ZERO, A, 2)])
 
-    expect((await stored()).states.map(s => s.interfaces)).to.deep.equal([PROXY_LIST, PLAIN_LIST])
+    expect((await stored()).states.map(s => s.interfaces)).to.deep.equal([PROXY_LIST, UNSORTED_LIST])
     expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
     expect((await stored()).token).to.deep.include({ blockNumber: 10, interfaces: PROXY_LIST })
   })
