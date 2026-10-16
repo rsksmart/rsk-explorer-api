@@ -4,8 +4,8 @@ import { Prisma } from '@prisma/client'
 import { getBlocksRepository } from '../../src/repositories/blocks.repository'
 import { nftRepository, tokenStateRepository } from '../../src/repositories'
 
-const DEADLOCK_IN_A_BATCH = 'Error in batch request 2: Error occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "40P01", message: "deadlock detected", severity: "ERROR", detail: Some("Process 87063 waits for ShareLock on transaction 4480265; blocked by process 87028.\\nProcess 87028 waits for ShareLock on transaction 4480266; blocked by process 87063."), column: None, hint: Some("See server log for query details.") }), transient: false })'
-const OTHER_QUERY_ERROR = 'Error in batch request 2: Error occurred during query execution:\nConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "57014", message: "canceling statement due to statement timeout", severity: "ERROR", detail: None, column: None, hint: None }), transient: false })'
+const DEADLOCK_PART_OF_THE_PRISMA_6_19_3_MESSAGE = 'PostgresError { code: "40P01", message: "deadlock detected", … }'
+const OTHER_QUERY_ERROR = 'PostgresError { code: "57014", message: "canceling statement due to statement timeout", … }'
 
 const unknownRequestError = message => new Prisma.PrismaClientUnknownRequestError(message, { clientVersion: '6.19.3' })
 
@@ -30,8 +30,8 @@ describe('# blocks.repository delete retry', function () {
   })
   afterEach(() => sinon.restore())
 
-  it('retries a batch that Postgres chose as a deadlock victim, which Prisma raises with no code, and deletes the block on the next attempt', async () => {
-    repo = repositoryRejectingFirstWith(unknownRequestError(DEADLOCK_IN_A_BATCH))
+  it('retries a batch that Postgres chose as a deadlock victim, which Prisma 6.19.3 raises with no code and this PostgresError text, and deletes the block on the next attempt', async () => {
+    repo = repositoryRejectingFirstWith(unknownRequestError(DEADLOCK_PART_OF_THE_PRISMA_6_19_3_MESSAGE))
 
     const result = await repo.deleteOne({ number: 20 })
 
