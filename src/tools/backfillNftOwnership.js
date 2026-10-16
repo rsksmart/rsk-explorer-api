@@ -4,14 +4,13 @@ import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC, NFT_STANDA
 import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
-import { exitOnUncaughtException } from './utils'
+import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
 
 const toolName = process.argv[1].split('/').pop()
 
 const READ_COMMITTED = { isolationLevel: 'ReadCommitted' }
 const RACED_WRITE_ERRORS = ['P2002', 'P2003', 'P2025']
 const WRITE_ATTEMPTS = 3
-const WHOLE_NUMBER = /^\d+$/
 const NFT_TRANSFER_EVENTS = {
   OR: [
     { topic0: TRANSFER_TOPIC, topic3: { not: null } },

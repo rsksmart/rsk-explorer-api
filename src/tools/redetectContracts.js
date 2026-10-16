@@ -4,7 +4,7 @@ import erc721Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC721.js
 import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
 import { nftTokensInterfaces } from '../lib/types'
-import { exitOnUncaughtException } from './utils'
+import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
 import fs from 'fs'
 import path from 'path'
 
@@ -94,9 +94,10 @@ async function main () {
     printUsageAndExit()
   }
 
-  const pageSize = parseInt(process.argv[3])
-  if (isNaN(pageSize) || pageSize <= 0) {
-    console.log('Invalid pageSize provided. Must be a positive number')
+  const pageSizeArg = process.argv[3]
+  const pageSize = Number(pageSizeArg)
+  if (!WHOLE_NUMBER.test(pageSizeArg || '') || pageSize === 0) {
+    console.log(`Invalid pageSize provided. Must be a whole number of at least 1, such as 50: got ${pageSizeArg}`)
     printUsageAndExit()
   }
 

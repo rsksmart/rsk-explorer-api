@@ -117,6 +117,17 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     expect(status).to.equal(1)
   })
 
+  it('the contract re-detection refuses a pageSize that is not a whole number above 0, with exit 1 and the reason', async () => {
+    const runs = await Promise.all(['5e2', '0', '50.5'].map(pageSize => runScript(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', pageSize])))
+    for (const run of runs) {
+      const leftResultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
+      if (leftResultFile) fs.unlinkSync(leftResultFile)
+    }
+
+    expect(runs.map(run => run.status)).to.deep.equal([1, 1, 1])
+    expect(runs.map(run => (run.stdout.match(/Must be a whole number of at least 1, such as 50: got (\S+)/) || [])[1])).to.deep.equal(['5e2', '0', '50.5'])
+  })
+
   it('phase B and the contract re-detection print their run report and exit 1, with no stack trace, when the node refuses the connection', async () => {
     await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     await prismaClient.token_state_at_block.deleteMany({})

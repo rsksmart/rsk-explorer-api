@@ -330,6 +330,8 @@ export function parseArguments (validOptions) {
   return options
 }
 
+export const WHOLE_NUMBER = /^\d+$/
+
 const isSystemCallError = error => Boolean(error && error.syscall)
 
 export function exitOnUncaughtException (headline, stoppedLine) {
