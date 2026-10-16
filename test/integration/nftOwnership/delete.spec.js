@@ -10,6 +10,25 @@ const C20 = '0x0000000000000000000000000000000000000020'
 const [A, B, C, H] = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
 
 const save = (number, tag, logs) => blocksRepository.saveBlockData(blockData(number, tag, logs))
+const nftContracts = n => Array.from({ length: n }, (_, i) => `0x${(0xe0721 + i).toString(16).padStart(40, '0')}`)
+
+async function stateReadsOfADeleteRepairing (contracts) {
+  await resetDatabase()
+  await save(10, 'a', contracts.map(contract => erc721(contract, ZERO, A, 1)))
+  await save(30, 'a', contracts.map(contract => erc721(contract, A, B, 1)))
+  const delegate = prismaClient.token_state_at_block
+  const originals = ['findFirst', 'findMany', 'groupBy'].map(name => [name, delegate[name]])
+  let reads = 0
+  for (const [name, original] of originals) delegate[name] = function (...args) { reads++; return original.apply(this, args) }
+
+  try {
+    expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+  } finally {
+    for (const [name, original] of originals) delegate[name] = original
+  }
+  expect(await differences()).to.deep.equal([])
+  return reads
+}
 
 const runBatch = prismaClient.$transaction
 
@@ -104,6 +123,13 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     const token = await prismaClient.token.findUnique({ where: { contract: C721 } })
     expect(token.blockNumber).to.equal(20)
     expect(await differences()).to.deep.equal([])
+  })
+
+  it('repairs the token rows of six contracts with as many state reads as one', async () => {
+    const one = await stateReadsOfADeleteRepairing(nftContracts(1))
+    const six = await stateReadsOfADeleteRepairing(nftContracts(6))
+
+    expect(six, `1 contract: ${one} reads · 6 contracts: ${six} reads`).to.equal(one)
   })
 
   it('deletes the state fact of a contract whose token row points at a later block', async () => {

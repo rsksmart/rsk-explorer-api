@@ -1,4 +1,19 @@
 export function getTokenStateRepository (prismaClient) {
+  async function latestOtherStates (contracts, doomedNumbers) {
+    if (!contracts.length) return new Map()
+    const maxima = await prismaClient.token_state_at_block.groupBy({
+      by: ['contract'],
+      where: { contract: { in: contracts }, blockNumber: { notIn: doomedNumbers } },
+      _max: { blockNumber: true }
+    })
+    if (!maxima.length) return new Map()
+    const states = await prismaClient.token_state_at_block.findMany({
+      where: { OR: maxima.map(row => ({ contract: row.contract, blockNumber: row._max.blockNumber })) }
+    })
+
+    return new Map(states.map(state => [state.contract, state]))
+  }
+
   return {
     insertStatements (block, tokenStates) {
       if (!tokenStates.length) return []
@@ -30,22 +45,13 @@ export function getTokenStateRepository (prismaClient) {
         select: { contract: true, version: true },
         orderBy: { contract: 'asc' }
       })
-      const statements = []
-
-      for (const { contract, version } of rows) {
-        const latest = await prismaClient.token_state_at_block.findFirst({
-          where: { contract, blockNumber: { notIn: numbers } },
-          orderBy: { blockNumber: 'desc' }
-        })
+      const latest = await latestOtherStates(rows.map(r => r.contract), numbers)
+      const statements = rows.map(({ contract, version }) => {
         const where = { contract, version }
-
-        if (latest) {
-          const { contract: _, ...state } = latest
-          statements.push(prismaClient.token.update({ where, data: state }))
-        } else {
-          statements.push(prismaClient.token.delete({ where }))
-        }
-      }
+        if (!latest.has(contract)) return prismaClient.token.delete({ where })
+        const { contract: _, ...state } = latest.get(contract)
+        return prismaClient.token.update({ where, data: state })
+      })
 
       return [...statements, prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: numbers } } })]
     }
