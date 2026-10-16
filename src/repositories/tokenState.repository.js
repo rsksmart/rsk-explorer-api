@@ -33,14 +33,14 @@ export function getTokenStateRepository (prismaClient) {
       const statements = []
 
       for (const { contract, version } of rows) {
-        const latest = await prismaClient.token_state_at_block.findFirst({
+        const newestRemainingState = await prismaClient.token_state_at_block.findFirst({
           where: { contract, blockNumber: { notIn: numbers } },
           orderBy: { blockNumber: 'desc' }
         })
         const where = { contract, version }
 
-        if (latest) {
-          const { contract: _, ...state } = latest
+        if (newestRemainingState) {
+          const { contract: _, ...state } = newestRemainingState
           statements.push(prismaClient.token.update({ where, data: state }))
         } else {
           statements.push(prismaClient.token.delete({ where }))
