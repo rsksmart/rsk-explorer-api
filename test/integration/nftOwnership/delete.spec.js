@@ -120,6 +120,30 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     expect(await differences()).to.deep.equal([])
   })
 
+  it('repairs the token rows of three contracts asking for at most one state row of one contract per read', async () => {
+    const contracts = [1, 2, 3].map(i => `0x${(0xe0721 + i).toString(16).padStart(40, '0')}`)
+    await save(10, 'a', contracts.map(contract => erc721(contract, ZERO, A, 1)))
+    await save(30, 'a', contracts.map(contract => erc721(contract, A, B, 1)))
+    const delegate = prismaClient.token_state_at_block
+    const originals = ['findFirst', 'findMany', 'groupBy'].map(name => [name, delegate[name]])
+    const repairReads = []
+    for (const [name, original] of originals) {
+      delegate[name] = function (query, ...rest) {
+        const factsOfTheDeletedBlocks = name === 'findMany' && query.where.blockNumber && query.where.blockNumber.in
+        if (!factsOfTheDeletedBlocks) repairReads.push(`${name}${name === 'findFirst' ? '' : ` take ${query.take}`} ${JSON.stringify(query.where.contract)}`)
+        return original.call(this, query, ...rest)
+      }
+    }
+
+    try {
+      expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
+    } finally {
+      for (const [name, original] of originals) delegate[name] = original
+    }
+    expect(repairReads.sort()).to.deep.equal(contracts.map(contract => `findFirst ${JSON.stringify(contract)}`))
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('deletes the state fact of a contract whose token row points at a later block', async () => {
     await save(20, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, A, B, 1)])
