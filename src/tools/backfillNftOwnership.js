@@ -194,6 +194,9 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   const fromBlock = fromArg !== undefined ? fromArg : 0
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
+  if (fromArg !== undefined && fromBlock > toBlock) {
+    throw new Error(`fromBlock ${fromBlock} is above toBlock ${toBlock}${toArg === undefined ? ' (the highest stored block)' : ''}: the range is empty`)
+  }
   const started = Date.now()
 
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk`)
@@ -225,10 +228,6 @@ async function main () {
     printUsageAndExit()
   }
   const [fromArg, toArg, chunkArg, concurrencyArg] = numbers.map(Number)
-  if (fromArg > toArg) {
-    console.log(`fromBlock ${fromArg} is above toBlock ${toArg}: the range is empty`)
-    printUsageAndExit()
-  }
   if (chunkArg === 0 || concurrencyArg === 0) {
     console.log('chunkBlocks and concurrency must be at least 1')
     printUsageAndExit()
