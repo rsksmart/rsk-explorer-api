@@ -140,13 +140,16 @@ export function getBlocksRepository (prismaClient) {
       }
 
       const attempts = replace ? 1 : SAVE_ATTEMPTS
-      for (let attempt = 1; ; attempt++) {
+      let lastStaleRead
+      for (let attempt = 1; attempt <= attempts; attempt++) {
         try {
           return await prismaClient.$transaction(await generateTransaction(), READ_COMMITTED)
         } catch (error) {
-          if (attempt === attempts || !STALE_READ_ERRORS.includes(error.code)) throw error
+          if (!STALE_READ_ERRORS.includes(error.code)) throw error
+          lastStaleRead = error
         }
       }
+      throw lastStaleRead
     },
     deleteOne (query) {
       return deleteBlocks(query)

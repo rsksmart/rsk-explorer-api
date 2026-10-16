@@ -91,6 +91,17 @@ describe('# blocks.repository saveBlockData replace', function () {
     expect($transaction.calledOnceWithExactly(sinon.match.array, { isolationLevel: 'ReadCommitted' })).to.equal(true)
   })
 
+  it('runs a save refused as a stale read on every attempt 3 times at most, then throws the last refusal', async () => {
+    const refusals = ['P2025', 'P2002', 'P2025', 'P2002'].map(code => Object.assign(new Error(`refused ${code}`), { code }))
+    const $transaction = sinon.stub()
+    refusals.forEach((refusal, call) => $transaction.onCall(call).rejects(refusal))
+    const refusing = getBlocksRepository({ $transaction, block: storedBlock() })
+    sinon.stub(refusing, 'insertOne').returns({ op: 'block.insert' })
+
+    expect(await refusing.saveBlockData(data).catch(e => e)).to.equal(refusals[2])
+    expect($transaction.callCount).to.equal(3)
+  })
+
   it('does not delete when not replacing', async () => {
     await repo.saveBlockData(data)
 
