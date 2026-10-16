@@ -1,11 +1,11 @@
 import { defaultAbiCoder } from '@ethersproject/abi'
 import { BigNumber } from 'bignumber.js'
-import { soliditySignature } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
+import { ERC721_TRANSFER_TOPIC0, ERC1155_TRANSFER_SINGLE_TOPIC0, ERC1155_TRANSFER_BATCH_TOPIC0 } from '@rsksmart/rsk-contract-parser'
 import { contractsInterfaces } from './types'
 
-export const TRANSFER_TOPIC = '0x' + soliditySignature('Transfer(address,address,uint256)')
-export const TRANSFER_SINGLE_TOPIC = '0x' + soliditySignature('TransferSingle(address,address,address,uint256,uint256)')
-export const TRANSFER_BATCH_TOPIC = '0x' + soliditySignature('TransferBatch(address,address,address,uint256[],uint256[])')
+export const TRANSFER_TOPIC = ERC721_TRANSFER_TOPIC0
+export const TRANSFER_SINGLE_TOPIC = ERC1155_TRANSFER_SINGLE_TOPIC0
+export const TRANSFER_BATCH_TOPIC = ERC1155_TRANSFER_BATCH_TOPIC0
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 export const NFT_STANDARDS = [contractsInterfaces.ERC721, contractsInterfaces.ERC1155]
 

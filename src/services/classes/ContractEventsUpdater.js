@@ -1,10 +1,9 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { ContractParser } from '@rsksmart/rsk-contract-parser'
+import { ContractParser, getBridgeAddress } from '@rsksmart/rsk-contract-parser'
 import { configRepository, eventRepository, verificationResultsRepository } from '../../repositories'
 import { prismaClient } from '../../lib/prismaClient'
 import nod3 from '../../lib/nod3Connect'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
-import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
 import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC } from '../../lib/nftTransfers'
 
 export default class ContractEventsUpdater {

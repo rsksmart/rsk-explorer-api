@@ -1,7 +1,5 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { soliditySignature } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
-import erc721Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC721.json'
-import erc1155Abi from '@rsksmart/rsk-contract-parser/dist/lib/jsonAbis/ERC1155.json'
+import { ERC721_AND_ERC1155_EVENT_TOPIC0S } from '@rsksmart/rsk-contract-parser'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
 import { nftTokensInterfaces } from '../lib/types'
 import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
@@ -10,11 +8,7 @@ import path from 'path'
 
 const toolName = process.argv[1].split('/').pop()
 
-const NFT_EVENT_TOPIC0S = new Set(
-  [...erc721Abi, ...erc1155Abi]
-    .filter(fragment => fragment && fragment.type === 'event')
-    .map(event => `0x${soliditySignature(`${event.name}(${(event.inputs || []).map(input => input.type).join(',')})`)}`)
-)
+const NFT_EVENT_TOPIC0S = new Set(ERC721_AND_ERC1155_EVENT_TOPIC0S)
 
 const failedEventTopic0 = event => {
   const raw = event.eventDebugData && event.eventDebugData.event
