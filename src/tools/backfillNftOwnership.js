@@ -195,7 +195,8 @@ export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fro
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
   if (fromArg !== undefined && fromBlock > toBlock) {
-    throw new Error(`fromBlock ${fromBlock} is above toBlock ${toBlock}${toArg === undefined ? ' (the highest stored block)' : ''}: the range is empty`)
+    const bound = toArg !== undefined ? `toBlock ${toBlock}` : highest ? `toBlock ${toBlock} (the highest stored block)` : 'every stored block (no block is stored)'
+    throw new Error(`fromBlock ${fromBlock} is above ${bound}: the range is empty`)
   }
   const started = Date.now()
 
