@@ -8,7 +8,7 @@ const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES 
 const OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME = 400
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
-// Holders lock in key order; a batch writes balances only after locking their holder.
+// Holder inserts, then updates, each in key order; balances follow their locked holder.
 const inLockOrder = rows => rows.sort(byKey)
 const newestFirst = (a, b) => b.lastBlockNumber - a.lastBlockNumber
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
@@ -120,7 +120,6 @@ export function getNftRepository (prismaClient) {
   }
 
   async function readHoldersThenBalances (holders, balances) {
-    // Holders first: a save committing between these reads makes this batch's version check fail.
     const holderRows = await findManyPerStatement('nft_holder', holdersUnderBindLimit(holders))
     const balanceRows = await findManyPerStatement('nft_balance', balancesUnderBindLimit(balances))
 
