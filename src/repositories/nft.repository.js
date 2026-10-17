@@ -46,7 +46,7 @@ const holdersUnderBindLimit = (sortedHolders, bindsTakenByTheRestOfTheWhere) => 
 const balancesUnderBindLimit = sortedBalances => inListsUnderBindLimit(sortedBalances, ['contract', 'standard', 'holder'], 'tokenId')
 const holderKey = ({ contract, standard, holder }) => `${contract}|${standard}|${holder}`
 const balanceKey = ({ contract, standard, tokenId, holder }) => `${contract}|${standard}|${holder}|${tokenId}`
-const holdsTheToken = quantity => quantity.gt(0) ? 1 : 0
+const heldTokenCount = quantity => quantity.gt(0) ? 1 : 0
 
 function netDeltas (signedFacts) {
   const balances = new Map()
@@ -90,7 +90,7 @@ function balanceTransitions (balances, holders, storedQuantities) {
   for (const balance of balances) {
     const storedQuantity = storedQuantities.get(balance.key)
     const newQuantity = (storedQuantity || new BigNumber(0)).plus(balance.delta)
-    const tokenCountChange = holdsTheToken(newQuantity) - (storedQuantity ? holdsTheToken(storedQuantity) : 0)
+    const tokenCountChange = heldTokenCount(newQuantity) - (storedQuantity ? heldTokenCount(storedQuantity) : 0)
     const holderChange = holderChanges.get(holderKey(balance))
     holderChange.tokenCount += tokenCountChange
     holderChange.quantity = holderChange.quantity.plus(balance.standard === contractsInterfaces.ERC721 ? tokenCountChange : balance.delta)
