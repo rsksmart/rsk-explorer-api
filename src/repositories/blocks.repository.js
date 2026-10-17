@@ -174,17 +174,20 @@ export function getBlocksRepository (prismaClient) {
   async function deleteBlocks (where) {
     const pinned = await findTargets(where)
     let targets = pinned
+    let lastRetryableError
 
-    for (let attempt = 1; targets.length; attempt++) {
+    for (let attempt = 1; attempt <= DELETE_ATTEMPTS && targets.length; attempt++) {
       try {
         await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
         return { count: targets.length }
       } catch (error) {
-        if (attempt === DELETE_ATTEMPTS || !isRetryableDeleteError(error)) throw error
-        targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
+        if (!isRetryableDeleteError(error)) throw error
+        lastRetryableError = error
+        if (attempt < DELETE_ATTEMPTS) targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
       }
     }
 
+    if (targets.length) throw lastRetryableError
     return { count: 0 }
   }
 }
