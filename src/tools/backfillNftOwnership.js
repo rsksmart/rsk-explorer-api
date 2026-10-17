@@ -157,7 +157,8 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
 
   const writeBlock = async (block, planned) => {
     let todo = planned
-    for (let attempt = 1; todo.length; attempt++) {
+    let lastRacedWrite
+    for (let attempt = 1; attempt <= WRITE_ATTEMPTS && todo.length; attempt++) {
       if (attempt > 1) await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
       const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
       if (!fetched.length) return
@@ -166,12 +167,16 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
         report.pairsWritten += fetched.length
         return
       } catch (error) {
-        if (attempt === WRITE_ATTEMPTS || !isRacedWrite(error)) throw error
-        report.pairsRaced++
-        console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
-        todo = (await pendingPairs([block.hash])).todo
+        if (!isRacedWrite(error)) throw error
+        lastRacedWrite = error
+        if (attempt < WRITE_ATTEMPTS) {
+          report.pairsRaced++
+          console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
+          todo = (await pendingPairs([block.hash])).todo
+        }
       }
     }
+    if (todo.length) throw lastRacedWrite
   }
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
