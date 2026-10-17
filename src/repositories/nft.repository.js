@@ -8,7 +8,7 @@ const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES 
 const OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME = 400
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
-// Holders and balances are written sorted by key, so two concurrent batches take their row locks on these tables in the same order.
+// Holders lock in key order; a batch writes balances only after locking their holder.
 const inLockOrder = rows => rows.sort(byKey)
 const newestFirst = (a, b) => b.lastBlockNumber - a.lastBlockNumber
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
@@ -120,7 +120,7 @@ export function getNftRepository (prismaClient) {
   }
 
   async function readHoldersThenBalances (holders, balances) {
-    // Holders before balances: a save that commits after the holder read moves the version this batch's update checks, so stale balances never pass.
+    // Holders first: a save committing between these reads makes this batch's version check fail.
     const holderRows = await findManyPerStatement('nft_holder', holdersUnderBindLimit(holders))
     const balanceRows = await findManyPerStatement('nft_balance', balancesUnderBindLimit(balances))
 
@@ -176,7 +176,7 @@ export function getNftRepository (prismaClient) {
       const noFactLeft = deletedHashes.has(storedHolder.lastBlockHash) && !lastBlock.lastBlockHash
       if (noFactLeft) holderDeletes.push(prismaClient.nft_holder.delete({ where: { contract_standard_holder: holderId(holder), quantity: 0, tokenCount: 0 } }))
 
-      // `update`, not `updateMany`: a version another save moved throws P2025 and rolls the batch back; `updateMany` would match no row and commit.
+      // `update` throws P2025 on a stale version; `updateMany` would match nothing and commit.
       holderUpdates.push(prismaClient.nft_holder.update({
         where: { contract_standard_holder: holderId(holder), version: storedHolder.version },
         data: { quantity: { increment: change.quantity.toFixed() }, tokenCount: { increment: change.tokenCount }, version: { increment: 1 }, ...lastBlock }
