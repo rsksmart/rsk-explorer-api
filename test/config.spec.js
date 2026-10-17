@@ -80,10 +80,11 @@ describe('# Config', function () {
     it('refuses an RSK_NODE_URL that is not an http or https URL, naming the variable and not its value', () => {
       const refusal = value => { try { withNodeUrlFromTheEnvironment({}, { RSK_NODE_URL: value }) } catch (error) { return error.message } }
 
-      expect(['localhost:4444', 'not a url', 'ws://env-node.test:4445'].map(refusal)).to.deep.equal([
-        'RSK_NODE_URL must be an http or https URL: got localhost:',
+      expect(['localhost:4444', 'not a url', 'ws://env-node.test:4445', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
+        'RSK_NODE_URL must be an http or https URL',
         'RSK_NODE_URL is not a URL',
-        'RSK_NODE_URL must be an http or https URL: got ws:'
+        'RSK_NODE_URL must be an http or https URL',
+        'RSK_NODE_URL must be an http or https URL'
       ])
     })
   })

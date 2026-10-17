@@ -76,7 +76,7 @@ export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
   } catch (error) {
     throw new Error('RSK_NODE_URL is not a URL')
   }
-  if (!RSK_NODE_URL_PROTOCOLS.includes(protocol)) throw new Error(`RSK_NODE_URL must be an http or https URL: got ${protocol}`)
+  if (!RSK_NODE_URL_PROTOCOLS.includes(protocol)) throw new Error('RSK_NODE_URL must be an http or https URL')
   if (fileConfig.source) console.log('RSK_NODE_URL from the environment replaces the source in config.json')
   return { ...fileConfig, source: { url: nodeUrl } }
 }
