@@ -19,7 +19,7 @@ const A = `0x${'1'.repeat(40)}`
 
 function runTool (tool, nodeUrl, args) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, ['--require', '@babel/register', tool, ...args], { cwd: ROOT, env: { ...process.env, NODE_URL: nodeUrl } })
+    const child = spawn(process.execPath, ['--require', '@babel/register', tool, ...args], { cwd: ROOT, env: { ...process.env, RSK_NODE_URL: nodeUrl } })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', chunk => { stdout += chunk })

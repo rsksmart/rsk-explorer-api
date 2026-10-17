@@ -6,7 +6,7 @@ import defaultConf from './defaultConfig'
 
 dotenv.config()
 
-const NODE_URL_PROTOCOLS = ['http:', 'https:']
+const RSK_NODE_URL_PROTOCOLS = ['http:', 'https:']
 
 const validateConfig = {
   existence: (config) => {
@@ -68,16 +68,16 @@ export function makeConfig (config = {}) {
 }
 
 export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
-  const nodeUrl = env.NODE_URL
+  const nodeUrl = env.RSK_NODE_URL
   if (!nodeUrl) return fileConfig
   let protocol
   try {
     protocol = new WhatwgURL(nodeUrl).protocol
   } catch (error) {
-    throw new Error('NODE_URL is not a URL')
+    throw new Error('RSK_NODE_URL is not a URL')
   }
-  if (!NODE_URL_PROTOCOLS.includes(protocol)) throw new Error(`NODE_URL must be an http or https URL: got ${protocol}`)
-  if (fileConfig.source) console.log('NODE_URL from the environment replaces the source in config.json')
+  if (!RSK_NODE_URL_PROTOCOLS.includes(protocol)) throw new Error(`RSK_NODE_URL must be an http or https URL: got ${protocol}`)
+  if (fileConfig.source) console.log('RSK_NODE_URL from the environment replaces the source in config.json')
   return { ...fileConfig, source: { url: nodeUrl } }
 }
 
