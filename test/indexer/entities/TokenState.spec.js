@@ -50,15 +50,12 @@ describe('TokenState', () => {
 })
 
 describe('toTokenState', () => {
-  it('fits hostile token data into the columns: control characters stripped, name 128 and symbol 32 characters', () => {
+  it('fits hostile token data into the columns: control characters stripped, name 128 and symbol 32 characters, cut on a character boundary', () => {
     const state = toTokenState(nft, details, { name: `a\u0000b${'n'.repeat(200)}`, symbol: `\u0007${'s'.repeat(40)}`, decimals: 18, totalSupply: null })
 
     expect(state.name).to.equal(`ab${'n'.repeat(126)}`)
     expect(state.symbol).to.equal('s'.repeat(32))
     expect(state.totalSupply).to.equal(null)
-  })
-
-  it('cuts a long name on a character boundary, as the column counts characters', () => {
     expect(toTokenState(nft, details, { name: '🙂'.repeat(130) }).name).to.equal('🙂'.repeat(128))
   })
 
