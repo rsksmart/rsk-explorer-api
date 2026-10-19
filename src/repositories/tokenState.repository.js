@@ -2,10 +2,10 @@ export function getTokenStateRepository (prismaClient) {
   return {
     insertStatements (newBlock, tokenStates) {
       if (!tokenStates.length) return []
-      const states = [...tokenStates].sort((a, b) => a.contract < b.contract ? -1 : 1)
+      const statesInContractOrder = [...tokenStates].sort((a, b) => a.contract < b.contract ? -1 : 1)
 
       return [
-        ...states.flatMap(({ contract, ...state }) => [
+        ...statesInContractOrder.flatMap(({ contract, ...state }) => [
           prismaClient.token.upsert({
             where: { contract },
             create: { contract, blockNumber: newBlock.number, ...state },
@@ -16,38 +16,38 @@ export function getTokenStateRepository (prismaClient) {
             data: { blockNumber: newBlock.number, ...state }
           })
         ]),
-        prismaClient.token_state_at_block.createMany({ data: states.map(state => ({ ...state, blockNumber: newBlock.number })) })
+        prismaClient.token_state_at_block.createMany({ data: statesInContractOrder.map(state => ({ ...state, blockNumber: newBlock.number })) })
       ]
     },
     async undoStatements (blocksToDelete) {
-      const numbers = blocksToDelete.map(b => b.number)
-      const facts = await prismaClient.token_state_at_block.findMany({ where: { blockNumber: { in: numbers } }, select: { contract: true } })
-      if (!facts.length) return []
-      const contracts = [...new Set(facts.map(f => f.contract))].sort()
+      const deletedBlockNumbers = blocksToDelete.map(b => b.number)
+      const statesOfDeletedBlocks = await prismaClient.token_state_at_block.findMany({ where: { blockNumber: { in: deletedBlockNumbers } }, select: { contract: true } })
+      if (!statesOfDeletedBlocks.length) return []
+      const contracts = [...new Set(statesOfDeletedBlocks.map(state => state.contract))].sort()
 
-      const rows = await prismaClient.token.findMany({
-        where: { contract: { in: contracts }, blockNumber: { in: numbers } },
+      const tokensAtDeletedBlocks = await prismaClient.token.findMany({
+        where: { contract: { in: contracts }, blockNumber: { in: deletedBlockNumbers } },
         select: { contract: true, version: true },
         orderBy: { contract: 'asc' }
       })
-      const statements = []
+      const tokenRepairs = []
 
-      for (const { contract, version } of rows) {
+      for (const { contract, version } of tokensAtDeletedBlocks) {
         const newestRemainingState = await prismaClient.token_state_at_block.findFirst({
-          where: { contract, blockNumber: { notIn: numbers } },
+          where: { contract, blockNumber: { notIn: deletedBlockNumbers } },
           orderBy: { blockNumber: 'desc' }
         })
         const where = { contract, version }
 
         if (newestRemainingState) {
           const { contract: _, ...state } = newestRemainingState
-          statements.push(prismaClient.token.update({ where, data: state }))
+          tokenRepairs.push(prismaClient.token.update({ where, data: state }))
         } else {
-          statements.push(prismaClient.token.delete({ where }))
+          tokenRepairs.push(prismaClient.token.delete({ where }))
         }
       }
 
-      return [...statements, prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: numbers } } })]
+      return [...tokenRepairs, prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: deletedBlockNumbers } } })]
     }
   }
 }
