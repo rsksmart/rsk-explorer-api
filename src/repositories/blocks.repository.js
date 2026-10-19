@@ -48,7 +48,18 @@ export function getBlocksRepository (prismaClient) {
       return prismaClient.block.createMany({ data: rawBlockToEntity(data), skipDuplicates: true })
     },
     async saveBlockData (data, { replace = false } = {}) {
-      const { block, transactions, internalTransactions, events, tokenAddresses, tokenStates, addresses, balances, latestBalances, status } = data
+      const {
+        block,
+        transactions,
+        internalTransactions,
+        events,
+        tokenAddresses,
+        tokenStates,
+        addresses,
+        balances,
+        latestBalances,
+        status
+      } = data
       if (!transactions.length && block.number > 0) throw new Error(`Invalid block ${block.number}. Missing transactions`)
 
       const getAddressesQueries = () => {
@@ -176,7 +187,10 @@ export function getBlocksRepository (prismaClient) {
       isRetryable: isRetryableDeleteError,
       run: async () => {
         if (!blocksToDelete.length) return { count: 0 }
-        await prismaClient.$transaction(await deleteStatements(blocksToDelete, await nftRepository.undoStatements(blocksToDelete)), READ_COMMITTED)
+        await prismaClient.$transaction(
+          await deleteStatements(blocksToDelete, await nftRepository.undoStatements(blocksToDelete)),
+          READ_COMMITTED
+        )
         return { count: blocksToDelete.length }
       },
       beforeRetry: async () => {

@@ -44,7 +44,8 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
     const detection = await updater.getContractParser(address)
     const { contractDetails } = detection
     const savedRows = await updater.saveContractDetails(address, contractDetails)
-    const isTagged = contractDetails.interfaces.some(contractInterface => candidateSet.interfaces.includes(contractInterface))
+    const isTagged = contractDetails.interfaces
+      .some(contractInterface => candidateSet.interfaces.includes(contractInterface))
     console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isTagged ? '' : ` (none of ${candidateSet.interfaces.join(', ')})`}. Interface/method rows added: ${savedRows}`)
 
     const result = await updater.updateContractEvents(address, pageSize, 0, detection)
@@ -59,10 +60,18 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
 
     if (failedEvents > 0) {
       console.log(`${progress} ${address}: ${failedEvents} event(s) of the candidate set failed to re-decode. A rerun retries it.`)
-      return { bucket: 'failed', entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures } }
+      return {
+        bucket: 'failed',
+        entry: { address, updatedEvents: result.updatedEvents.amount, failedEvents, otherFailures }
+      }
     }
 
-    const entry = { address, interfaces: contractDetails.interfaces, updatedEvents: result.updatedEvents.amount, otherFailures }
+    const entry = {
+      address,
+      interfaces: contractDetails.interfaces,
+      updatedEvents: result.updatedEvents.amount,
+      otherFailures
+    }
     return { bucket: isTagged ? 'tagged' : 'notTagged', entry }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). A rerun retries it.`)
@@ -70,7 +79,13 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
   }
 }
 
-export async function redetectCandidates ({ updater, candidateSet, candidates, pageSize, summary = { tagged: [], notTagged: [], failed: [] } }) {
+export async function redetectCandidates ({
+  updater,
+  candidateSet,
+  candidates,
+  pageSize,
+  summary = { tagged: [], notTagged: [], failed: [] }
+}) {
   for (const [index, address] of candidates.entries()) {
     const progress = `[${index + 1}/${candidates.length}]`
     const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize, progress })
@@ -108,7 +123,10 @@ async function main () {
   const started = Date.now()
   const summary = { tagged: [], notTagged: [], failed: [] }
   const summaryLine = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
-  exitOnUncaughtException(`[Tool ${toolName}]: Error re-detecting contracts`, () => `Stopped after ${Date.now() - started} ms. ${summaryLine()}`)
+  exitOnUncaughtException(
+    `[Tool ${toolName}]: Error re-detecting contracts`,
+    () => `Stopped after ${Date.now() - started} ms. ${summaryLine()}`
+  )
 
   console.log(`${toolName} ${setName}`)
   console.log(`Discovering candidates: ${candidateSet.description}`)

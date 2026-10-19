@@ -24,7 +24,11 @@ const toUint256 = value => {
   return /^\d+$/.test(digits) ? new BigNumber(digits).toFixed() : null
 }
 
-export function toTokenState (contract, { interfaces, proxyType, implementationAddress }, { name, symbol, decimals, totalSupply }) {
+export function toTokenState (
+  contract,
+  { interfaces, proxyType, implementationAddress },
+  { name, symbol, decimals, totalSupply }
+) {
   return {
     contract,
     interfaces,
@@ -51,7 +55,12 @@ export class TokenState extends BcThing {
   }
 
   async fetchOne (contract, blockNumber) {
-    const parser = new ContractParser({ nod3: this.nod3, initConfig: this.initConfig, log: this.log, txBlockNumber: blockNumber })
+    const parser = new ContractParser({
+      nod3: this.nod3,
+      initConfig: this.initConfig,
+      log: this.log,
+      txBlockNumber: blockNumber
+    })
     const details = await parser.getContractDetails(contract, blockNumber)
     const tokenData = await parser.getDefaultTokenData(parser.makeContract(contract), blockNumber)
     return toTokenState(contract, details, tokenData)

@@ -18,20 +18,42 @@ const NFT_TRANSFER_EVENTS = {
     { topic0: { in: [TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC] } }
   ]
 }
-const EVENT_FIELDS = { eventId: true, address: true, blockNumber: true, blockHash: true, transactionHash: true, timestamp: true, topic0: true, topic1: true, topic2: true, topic3: true, data: true }
+const EVENT_FIELDS = {
+  eventId: true,
+  address: true,
+  blockNumber: true,
+  blockHash: true,
+  transactionHash: true,
+  timestamp: true,
+  topic0: true,
+  topic1: true,
+  topic2: true,
+  topic3: true,
+  data: true
+}
 
 const newReport = phase => phase === 'A'
   ? { blocksRead: 0, blocksWritten: 0, blocksAlreadyStored: 0, blocksRaced: 0, facts: 0 }
   : { blocksRead: 0, pairs: 0, pairsAlreadyStored: 0, pairsWritten: 0, pairsFailed: [], pairsRaced: 0 }
 
-const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({ ...event, topics: [topic0, topic1, topic2, topic3].filter(topic => topic !== null) })
+const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({
+  ...event,
+  topics: [topic0, topic1, topic2, topic3].filter(topic => topic !== null)
+})
 const isRacedWrite = error => !!error && RACED_WRITE_ERRORS.includes(error.code)
-const lockBlockIfNotReplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
+const lockBlockIfNotReplaced = (prismaClient, { number, hash }) => prismaClient.block.update({
+  where: { number, hash },
+  data: { hash },
+  select: { number: true }
+})
 
 async function writtenOrDeletedMeanwhile (prismaClient, { hash }) {
   const [stored, facts] = await Promise.all([
     prismaClient.block.findUnique({ where: { hash }, select: { number: true } }),
-    prismaClient.token_transfer.findFirst({ where: { blockHash: hash, standard: { in: NFT_STANDARDS } }, select: { eventId: true } })
+    prismaClient.token_transfer.findFirst({
+      where: { blockHash: hash, standard: { in: NFT_STANDARDS } },
+      select: { eventId: true }
+    })
   ])
   return !stored || !!facts
 }
@@ -56,7 +78,14 @@ async function eachChunk ({ prismaClient, fromBlock, toBlock, chunkBlocks, onChu
   }
 }
 
-export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {}, report = newReport('A') }) {
+export async function backfillTransfers ({
+  prismaClient = defaultPrismaClient,
+  fromBlock,
+  toBlock,
+  chunkBlocks,
+  onChunkDone = () => {},
+  report = newReport('A')
+}) {
   const writeTransfers = (block, events) => retry({
     maxAttempts: WRITE_ATTEMPTS,
     isRetryable: isRacedWrite,
@@ -125,7 +154,15 @@ async function fetchPairs (fetchers, pairs, onFetched) {
   }))
 }
 
-export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {}, report = newReport('B') }) {
+export async function backfillTokenStates ({
+  prismaClient = defaultPrismaClient,
+  fromBlock,
+  toBlock,
+  chunkBlocks,
+  fetchers,
+  onChunkDone = () => {},
+  report = newReport('B')
+}) {
   const fetchedStates = new Map()
   const pairKey = ({ contract, blockNumber, blockHash }) => `${contract}|${blockNumber}|${blockHash}`
 
@@ -161,7 +198,10 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
       run: async () => {
         const fetched = pairsToWrite.map(pair => fetchedStates.get(pairKey(pair))).filter(Boolean)
         if (!fetched.length) return
-        await prismaClient.$transaction([lockBlockIfNotReplaced(prismaClient, block), ...tokenStateRepository.insertStatements(block, fetched)], READ_COMMITTED)
+        await prismaClient.$transaction([
+          lockBlockIfNotReplaced(prismaClient, block),
+          ...tokenStateRepository.insertStatements(block, fetched)
+        ], READ_COMMITTED)
         report.pairsWritten += fetched.length
       },
       beforeRetry: async (error, attempt) => {
@@ -191,18 +231,29 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
   return report
 }
 
-export async function runPhase ({ prismaClient = defaultPrismaClient, phase, fromArg, toArg, chunkBlocks = 1000, fetchers, report = newReport(phase) }) {
+export async function runPhase ({
+  prismaClient = defaultPrismaClient,
+  phase,
+  fromArg,
+  toArg,
+  chunkBlocks = 1000,
+  fetchers,
+  report = newReport(phase)
+}) {
   const fromBlock = fromArg !== undefined ? fromArg : 0
   const highest = await prismaClient.block.findFirst({ orderBy: { number: 'desc' }, select: { number: true } })
   const toBlock = toArg !== undefined ? toArg : (highest ? highest.number : -1)
   if (fromArg !== undefined && fromBlock > toBlock) {
-    const bound = toArg !== undefined ? `toBlock ${toBlock}` : highest ? `toBlock ${toBlock} (the highest stored block)` : 'every stored block (no block is stored)'
+    const bound = toArg !== undefined
+      ? `toBlock ${toBlock}`
+      : highest ? `toBlock ${toBlock} (the highest stored block)` : 'every stored block (no block is stored)'
     throw new Error(`fromBlock ${fromBlock} is above ${bound}: the range is empty`)
   }
   const started = Date.now()
 
   console.log(`${toolName} phase ${phase}: blocks ${fromBlock}..${toBlock}, ${chunkBlocks} stored blocks per chunk`)
-  const onChunkDone = ({ firstBlock, lastBlock }) => console.log(`chunk ${firstBlock}..${lastBlock} done · ${Math.round((Date.now() - started) / 1000)} s`)
+  const onChunkDone = ({ firstBlock, lastBlock }) =>
+    console.log(`chunk ${firstBlock}..${lastBlock} done · ${Math.round((Date.now() - started) / 1000)} s`)
 
   await (phase === 'A'
     ? backfillTransfers({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone, report })
@@ -238,7 +289,10 @@ async function main () {
   let fetchers
   if (phase === 'B') {
     const initConfig = await configRepository[EXPLORER_INITIAL_CONFIG_ID].get()
-    fetchers = Array.from({ length: concurrencyArg === undefined ? 4 : concurrencyArg }, () => new TokenState({ nod3, initConfig, log: console }))
+    fetchers = Array.from(
+      { length: concurrencyArg === undefined ? 4 : concurrencyArg },
+      () => new TokenState({ nod3, initConfig, log: console })
+    )
   }
 
   const report = newReport(phase)

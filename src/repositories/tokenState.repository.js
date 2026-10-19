@@ -16,12 +16,17 @@ export function getTokenStateRepository (prismaClient) {
             data: { blockNumber: newBlock.number, ...state }
           })
         ]),
-        prismaClient.token_state_at_block.createMany({ data: statesInContractOrder.map(state => ({ ...state, blockNumber: newBlock.number })) })
+        prismaClient.token_state_at_block.createMany({
+          data: statesInContractOrder.map(state => ({ ...state, blockNumber: newBlock.number }))
+        })
       ]
     },
     async undoStatements (blocksToDelete) {
       const deletedBlockNumbers = blocksToDelete.map(b => b.number)
-      const statesOfDeletedBlocks = await prismaClient.token_state_at_block.findMany({ where: { blockNumber: { in: deletedBlockNumbers } }, select: { contract: true } })
+      const statesOfDeletedBlocks = await prismaClient.token_state_at_block.findMany({
+        where: { blockNumber: { in: deletedBlockNumbers } },
+        select: { contract: true }
+      })
       if (!statesOfDeletedBlocks.length) return []
       const contracts = [...new Set(statesOfDeletedBlocks.map(state => state.contract))].sort()
 
@@ -47,7 +52,10 @@ export function getTokenStateRepository (prismaClient) {
         }
       }
 
-      return [...tokenRepairs, prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: deletedBlockNumbers } } })]
+      return [
+        ...tokenRepairs,
+        prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: deletedBlockNumbers } } })
+      ]
     }
   }
 }

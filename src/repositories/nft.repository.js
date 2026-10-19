@@ -23,8 +23,12 @@ function orConditionsPerStatement (sortedRows, sharedFields, listedField, parame
 
   for (const row of sortedRows) {
     const startsACondition = !sharesFieldsWithCondition(row)
-    const overParameterLimit = parametersUsedByTheRestOfTheWhere + parameters + (startsACondition ? sharedFields.length + 1 : 1) > QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE
-    if (overParameterLimit || (startsACondition && conditions.length === OR_CONDITIONS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME)) {
+    const overParameterLimit = parametersUsedByTheRestOfTheWhere + parameters + (startsACondition ? sharedFields.length + 1 : 1) >
+      QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE
+    if (
+      overParameterLimit ||
+      (startsACondition && conditions.length === OR_CONDITIONS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME)
+    ) {
       conditionsPerStatement.push(conditions)
       conditions = []
       parameters = 0
@@ -42,8 +46,10 @@ function orConditionsPerStatement (sortedRows, sharedFields, listedField, parame
   return conditions.length ? [...conditionsPerStatement, conditions] : conditionsPerStatement
 }
 
-const holderConditionsPerStatement = (sortedHolders, parametersUsedByTheRestOfTheWhere) => orConditionsPerStatement(sortedHolders, ['contract', 'standard'], 'holder', parametersUsedByTheRestOfTheWhere)
-const balanceConditionsPerStatement = sortedBalances => orConditionsPerStatement(sortedBalances, ['contract', 'standard', 'holder'], 'tokenId')
+const holderConditionsPerStatement = (sortedHolders, parametersUsedByTheRestOfTheWhere) =>
+  orConditionsPerStatement(sortedHolders, ['contract', 'standard'], 'holder', parametersUsedByTheRestOfTheWhere)
+const balanceConditionsPerStatement = sortedBalances =>
+  orConditionsPerStatement(sortedBalances, ['contract', 'standard', 'holder'], 'tokenId')
 const holderKey = ({ contract, standard, holder }) => `${contract}|${standard}|${holder}`
 const balanceKey = ({ contract, standard, tokenId, holder }) => `${contract}|${standard}|${holder}|${tokenId}`
 const heldTokenCount = quantity => quantity.gt(0) ? 1 : 0
@@ -93,7 +99,9 @@ function balanceTransitions (balances, holders, storedQuantities) {
     const tokenCountChange = heldTokenCount(newQuantity) - (storedQuantity ? heldTokenCount(storedQuantity) : 0)
     const holderChange = holderChanges.get(holderKey(balance))
     holderChange.tokenCount += tokenCountChange
-    holderChange.quantity = holderChange.quantity.plus(balance.standard === contractsInterfaces.ERC721 ? tokenCountChange : balance.change)
+    holderChange.quantity = holderChange.quantity.plus(
+      balance.standard === contractsInterfaces.ERC721 ? tokenCountChange : balance.change
+    )
 
     if (!storedQuantity) newBalances.push({ ...balanceId(balance), quantity: newQuantity.toFixed() })
     else if (newQuantity.isZero()) emptiedBalances.push(balance)
@@ -108,14 +116,18 @@ function balanceTransitions (balances, holders, storedQuantities) {
 }
 
 function lastBlockAfterThisBatch (storedHolder, newestRemainingFact, savedBlock, deletedHashes) {
-  if (deletedHashes.has(storedHolder.lastBlockHash)) return [newestRemainingFact, savedBlock].filter(Boolean).sort(newestFirst)[0] || {}
+  if (deletedHashes.has(storedHolder.lastBlockHash)) {
+    return [newestRemainingFact, savedBlock].filter(Boolean).sort(newestFirst)[0] || {}
+  }
   if (savedBlock && storedHolder.lastBlockNumber < savedBlock.lastBlockNumber) return savedBlock
   return {}
 }
 
 export function getNftRepository (prismaClient) {
   async function findManyPerStatement (model, conditionsPerStatement) {
-    const rowsPerStatement = await Promise.all(conditionsPerStatement.map(conditions => prismaClient[model].findMany({ where: { OR: conditions } })))
+    const rowsPerStatement = await Promise.all(
+      conditionsPerStatement.map(conditions => prismaClient[model].findMany({ where: { OR: conditions } }))
+    )
     return rowsPerStatement.flat()
   }
 
@@ -133,10 +145,16 @@ export function getNftRepository (prismaClient) {
     const readSide = side => holderConditionsPerStatement(sortedHolderRows, deletedBlockHashes.length).map(async conditions => {
       const groups = await prismaClient.token_transfer.groupBy({
         by: ['contract', 'standard', side],
-        where: { OR: conditions.map(({ holder, ...contractAndStandard }) => ({ ...contractAndStandard, [side]: holder })), blockHash: { notIn: deletedBlockHashes } },
+        where: {
+          OR: conditions.map(({ holder, ...contractAndStandard }) => ({ ...contractAndStandard, [side]: holder })),
+          blockHash: { notIn: deletedBlockHashes }
+        },
         _max: { blockNumber: true }
       })
-      return groups.map(row => [holderKey({ contract: row.contract, standard: row.standard, holder: row[side] }), row._max.blockNumber])
+      return groups.map(row => [
+        holderKey({ contract: row.contract, standard: row.standard, holder: row[side] }),
+        row._max.blockNumber
+      ])
     })
     const newestPerSide = (await Promise.all(['to', 'from'].flatMap(readSide))).flat()
 
@@ -150,10 +168,16 @@ export function getNftRepository (prismaClient) {
   async function readNewestRemainingFacts (sortedHolderRows, deletedBlockHashes) {
     const newestNumber = await newestRemainingBlockNumbers(sortedHolderRows, deletedBlockHashes)
     const numberLists = chunkArray([...new Set(newestNumber.values())], QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE)
-    const blocksOfNewestFacts = (await Promise.all(numberLists.map(numbers => prismaClient.block.findMany({ where: { number: { in: numbers } }, select: { number: true, hash: true } })))).flat()
+    const blocksOfNewestFacts = (await Promise.all(numberLists.map(numbers => prismaClient.block.findMany({
+      where: { number: { in: numbers } },
+      select: { number: true, hash: true }
+    })))).flat()
     const hashAt = new Map(blocksOfNewestFacts.map(({ number, hash }) => [number, hash]))
 
-    return new Map([...newestNumber].map(([key, number]) => [key, { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }]))
+    return new Map([...newestNumber].map(([key, number]) => [
+      key,
+      { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }
+    ]))
   }
 
   function holderStatements ({ holders, stored, holderChanges, newestRemainingFacts, savedBlock, deletedHashes }) {
@@ -167,18 +191,38 @@ export function getNftRepository (prismaClient) {
       const savedBlockOfHolder = holder.added ? savedBlock : null
 
       if (!storedHolder) {
-        newHolders.push({ ...holderId(holder), quantity: change.quantity.toFixed(), tokenCount: change.tokenCount, ...savedBlockOfHolder, version: 1 })
+        newHolders.push({
+          ...holderId(holder),
+          quantity: change.quantity.toFixed(),
+          tokenCount: change.tokenCount,
+          ...savedBlockOfHolder,
+          version: 1
+        })
         continue
       }
 
-      const lastBlock = lastBlockAfterThisBatch(storedHolder, newestRemainingFacts.get(holder.key), savedBlockOfHolder, deletedHashes)
+      const lastBlock = lastBlockAfterThisBatch(
+        storedHolder,
+        newestRemainingFacts.get(holder.key),
+        savedBlockOfHolder,
+        deletedHashes
+      )
       const noFactLeft = deletedHashes.has(storedHolder.lastBlockHash) && !lastBlock.lastBlockHash
-      if (noFactLeft) holderDeletes.push(prismaClient.nft_holder.delete({ where: { contract_standard_holder: holderId(holder), quantity: 0, tokenCount: 0 } }))
+      if (noFactLeft) {
+        holderDeletes.push(prismaClient.nft_holder.delete({
+          where: { contract_standard_holder: holderId(holder), quantity: 0, tokenCount: 0 }
+        }))
+      }
 
       // `update` throws P2025 on a stale version; `updateMany` would match nothing and commit.
       holderUpdates.push(prismaClient.nft_holder.update({
         where: { contract_standard_holder: holderId(holder), version: storedHolder.version },
-        data: { quantity: { increment: change.quantity.toFixed() }, tokenCount: { increment: change.tokenCount }, version: { increment: 1 }, ...lastBlock }
+        data: {
+          quantity: { increment: change.quantity.toFixed() },
+          tokenCount: { increment: change.tokenCount },
+          version: { increment: 1 },
+          ...lastBlock
+        }
       }))
     }
 
@@ -188,9 +232,14 @@ export function getNftRepository (prismaClient) {
   function balanceStatements ({ newBalances, emptiedBalances, balancesByNewQuantity }) {
     return {
       createBalances: newBalances.length ? [prismaClient.nft_balance.createMany({ data: newBalances })] : [],
-      deleteBalances: balanceConditionsPerStatement(emptiedBalances).map(conditions => prismaClient.nft_balance.deleteMany({ where: { OR: conditions } })),
+      deleteBalances: balanceConditionsPerStatement(emptiedBalances).map(conditions =>
+        prismaClient.nft_balance.deleteMany({ where: { OR: conditions } })
+      ),
       updateBalances: [...balancesByNewQuantity].flatMap(([quantity, balances]) =>
-        balanceConditionsPerStatement(balances).map(conditions => prismaClient.nft_balance.updateMany({ where: { OR: conditions }, data: { quantity } })))
+        balanceConditionsPerStatement(balances).map(conditions =>
+          prismaClient.nft_balance.updateMany({ where: { OR: conditions }, data: { quantity } })
+        )
+      )
     }
   }
 
@@ -199,18 +248,27 @@ export function getNftRepository (prismaClient) {
     if (!holders.length) return []
 
     const stored = await readHoldersThenBalances(holders, balances)
-    const removedSinceTheFactsWereRead = new Set(holders.filter(holder => !holder.added && !stored.holders.has(holder.key)).map(holder => holder.key))
+    const removedSinceTheFactsWereRead = new Set(holders
+      .filter(holder => !holder.added && !stored.holders.has(holder.key))
+      .map(holder => holder.key))
     const holdersToWrite = holders.filter(holder => !removedSinceTheFactsWereRead.has(holder.key))
     const balancesToWrite = balances.filter(balance => !removedSinceTheFactsWereRead.has(holderKey(balance)))
 
     const deletedHashes = new Set(deletedBlockHashes)
-    const holdersLastSeenInADeletedBlock = holders.map(holder => stored.holders.get(holder.key)).filter(row => row && deletedHashes.has(row.lastBlockHash))
+    const holdersLastSeenInADeletedBlock = holders
+      .map(holder => stored.holders.get(holder.key))
+      .filter(row => row && deletedHashes.has(row.lastBlockHash))
     const newestRemainingFacts = await readNewestRemainingFacts(holdersLastSeenInADeletedBlock, deletedBlockHashes)
 
     const transitions = balanceTransitions(balancesToWrite, holders, stored.quantities)
     const savedBlock = newBlock ? { lastBlockNumber: newBlock.number, lastBlockHash: newBlock.hash } : null
     const { newHolders, holderUpdates, holderDeletes } = holderStatements({
-      holders: holdersToWrite, stored, holderChanges: transitions.holderChanges, newestRemainingFacts, savedBlock, deletedHashes
+      holders: holdersToWrite,
+      stored,
+      holderChanges: transitions.holderChanges,
+      newestRemainingFacts,
+      savedBlock,
+      deletedHashes
     })
     const { createBalances, deleteBalances, updateBalances } = balanceStatements(transitions)
 
@@ -227,18 +285,30 @@ export function getNftRepository (prismaClient) {
   const nftFactsOfBlocks = blockHashes => ({ blockHash: { in: blockHashes }, standard: { in: NFT_STANDARDS } })
   const readFactsOfBlocks = blockHashes => prismaClient.token_transfer.findMany({ where: nftFactsOfBlocks(blockHashes) })
   const insertFacts = facts => facts.length ? [prismaClient.token_transfer.createMany({ data: facts })] : []
-  const deleteFacts = (blockHashes, facts) => facts.length ? [prismaClient.token_transfer.deleteMany({ where: nftFactsOfBlocks(blockHashes) })] : []
+  const deleteFacts = (blockHashes, facts) => facts.length
+    ? [prismaClient.token_transfer.deleteMany({ where: nftFactsOfBlocks(blockHashes) })]
+    : []
 
   return {
     async insertStatements (newBlock, newBlockEvents) {
       const addedFacts = decodeBlockNftTransfers(newBlockEvents)
-      const ownership = await ownershipStatements({ addedFacts, factsOfDeletedBlocks: [], newBlock, deletedBlockHashes: [] })
+      const ownership = await ownershipStatements({
+        addedFacts,
+        factsOfDeletedBlocks: [],
+        newBlock,
+        deletedBlockHashes: []
+      })
       return [...insertFacts(addedFacts), ...ownership]
     },
     async undoStatements (blocksToDelete) {
       const deletedBlockHashes = blocksToDelete.map(b => b.hash)
       const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
-      const ownership = await ownershipStatements({ addedFacts: [], factsOfDeletedBlocks, newBlock: null, deletedBlockHashes })
+      const ownership = await ownershipStatements({
+        addedFacts: [],
+        factsOfDeletedBlocks,
+        newBlock: null,
+        deletedBlockHashes
+      })
       return [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership]
     },
     async replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
@@ -246,7 +316,10 @@ export function getNftRepository (prismaClient) {
       const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
       const addedFacts = decodeBlockNftTransfers(newBlockEvents)
       const ownership = await ownershipStatements({ addedFacts, factsOfDeletedBlocks, newBlock, deletedBlockHashes })
-      return { undo: [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership], insert: insertFacts(addedFacts) }
+      return {
+        undo: [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership],
+        insert: insertFacts(addedFacts)
+      }
     }
   }
 }

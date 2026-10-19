@@ -1,6 +1,10 @@
 import { defaultAbiCoder } from '@ethersproject/abi'
 import { BigNumber } from 'bignumber.js'
-import { ERC721_TRANSFER_TOPIC0, ERC1155_TRANSFER_SINGLE_TOPIC0, ERC1155_TRANSFER_BATCH_TOPIC0 } from '@rsksmart/rsk-contract-parser'
+import {
+  ERC721_TRANSFER_TOPIC0,
+  ERC1155_TRANSFER_SINGLE_TOPIC0,
+  ERC1155_TRANSFER_BATCH_TOPIC0
+} from '@rsksmart/rsk-contract-parser'
 import { contractsInterfaces } from './types'
 
 export const TRANSFER_TOPIC = ERC721_TRANSFER_TOPIC0
@@ -21,13 +25,29 @@ function decodeErc1155Amounts (topic0, data) {
   }
 }
 
-export function decodeNftTransfers ({ eventId, address, blockNumber, blockHash, transactionHash, timestamp, topics = [], data }) {
+export function decodeNftTransfers ({
+  eventId,
+  address,
+  blockNumber,
+  blockHash,
+  transactionHash,
+  timestamp,
+  topics = [],
+  data
+}) {
   const [topic0] = topics
   if (topics.length !== 4) return []
   const fact = { eventId, blockNumber, blockHash, transactionHash, timestamp, contract: address.toLowerCase() }
 
   if (topic0 === TRANSFER_TOPIC) {
-    return [{ ...fact, standard: contractsInterfaces.ERC721, from: topicToAddress(topics[1]), to: topicToAddress(topics[2]), tokenId: topics[3].toLowerCase(), value: '1' }]
+    return [{
+      ...fact,
+      standard: contractsInterfaces.ERC721,
+      from: topicToAddress(topics[1]),
+      to: topicToAddress(topics[2]),
+      tokenId: topics[3].toLowerCase(),
+      value: '1'
+    }]
   }
   if (topic0 !== TRANSFER_SINGLE_TOPIC && topic0 !== TRANSFER_BATCH_TOPIC) return []
 
@@ -40,7 +60,14 @@ export function decodeNftTransfers ({ eventId, address, blockNumber, blockHash, 
 
   const from = topicToAddress(topics[2])
   const to = topicToAddress(topics[3])
-  return [...valueById].map(([tokenId, value]) => ({ ...fact, standard: contractsInterfaces.ERC1155, from, to, tokenId, value: value.toFixed() }))
+  return [...valueById].map(([tokenId, value]) => ({
+    ...fact,
+    standard: contractsInterfaces.ERC1155,
+    from,
+    to,
+    tokenId,
+    value: value.toFixed()
+  }))
 }
 
 export const decodeBlockNftTransfers = events => events.filter(Boolean).flatMap(decodeNftTransfers)
