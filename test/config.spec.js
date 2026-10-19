@@ -30,4 +30,69 @@ describe('# Config', function () {
     })
   })
 
+  describe('bitcoin.rpcUrl', function () {
+    const ENV_URL = 'https://bitcoin-mainnet.example.com/v2/from-the-environment'
+    const SECOND_URL = 'https://bitcoin-mainnet.example.com/v2/second-endpoint'
+    const FILE_URL = 'https://bitcoin-mainnet.example.com/v2/from-config-json'
+    const originalEnv = process.env.BITCOIN_RPC_URL
+
+    afterEach(function () {
+      if (originalEnv === undefined) delete process.env.BITCOIN_RPC_URL
+      else process.env.BITCOIN_RPC_URL = originalEnv
+    })
+
+    it('takes the endpoint from the environment', function () {
+      process.env.BITCOIN_RPC_URL = ENV_URL
+
+      expect(makeConfig({}).bitcoin.rpcUrl).to.deep.equal([ENV_URL])
+    })
+
+    it('reads a comma-separated environment list as ordered endpoints', function () {
+      process.env.BITCOIN_RPC_URL = ` ${ENV_URL} , ${SECOND_URL} `
+
+      expect(makeConfig({}).bitcoin.rpcUrl).to.deep.equal([ENV_URL, SECOND_URL])
+    })
+
+    it('ignores any rpcUrl in config.json: the environment is the only source', function () {
+      process.env.BITCOIN_RPC_URL = ENV_URL
+
+      expect(makeConfig({ bitcoin: { rpcUrl: FILE_URL } }).bitcoin.rpcUrl).to.deep.equal([ENV_URL])
+    })
+
+    it('yields no endpoints when the environment names none, with no default', function () {
+      delete process.env.BITCOIN_RPC_URL
+
+      expect(makeConfig({ bitcoin: { rpcUrl: FILE_URL } }).bitcoin.rpcUrl).to.deep.equal([])
+      expect(makeConfig({}).bitcoin.rpcUrl).to.deep.equal([])
+    })
+  })
+
+  describe('bitcoin.enabled', function () {
+    const originalEnv = process.env.BITCOIN_STATS_ENABLED
+
+    afterEach(function () {
+      if (originalEnv === undefined) delete process.env.BITCOIN_STATS_ENABLED
+      else process.env.BITCOIN_STATS_ENABLED = originalEnv
+    })
+
+    it('is disabled by default when the flag is unset', function () {
+      delete process.env.BITCOIN_STATS_ENABLED
+
+      expect(makeConfig({}).bitcoin.enabled).to.equal(false)
+    })
+
+    it('is enabled only for an explicit opt-in value', function () {
+      for (const value of ['true', 'TRUE', '1', 'yes', 'on', ' true ']) {
+        process.env.BITCOIN_STATS_ENABLED = value
+        expect(makeConfig({}).bitcoin.enabled, value).to.equal(true)
+      }
+    })
+
+    it('stays disabled for any other value', function () {
+      for (const value of ['false', '0', 'no', 'off', '', 'enabled']) {
+        process.env.BITCOIN_STATS_ENABLED = value
+        expect(makeConfig({}).bitcoin.enabled, value).to.equal(false)
+      }
+    })
+  })
 })
