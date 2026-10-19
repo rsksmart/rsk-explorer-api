@@ -28,7 +28,7 @@ export function toTokenState (contract, { interfaces, proxyType, implementationA
   return {
     contract,
     interfaces,
-    isFungible: interfaces.some(i => fungibleTokensInterfaces.includes(i)),
+    isFungible: interfaces.some(contractInterface => fungibleTokensInterfaces.includes(contractInterface)),
     isNft: true,
     proxyType: proxyType || null,
     implementation: isAddress(implementationAddress) ? implementationAddress.toLowerCase() : null,

@@ -44,7 +44,7 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
     const detection = await updater.getContractParser(address)
     const { contractDetails } = detection
     const savedRows = await updater.saveContractDetails(address, contractDetails)
-    const isTagged = contractDetails.interfaces.some(i => candidateSet.interfaces.includes(i))
+    const isTagged = contractDetails.interfaces.some(contractInterface => candidateSet.interfaces.includes(contractInterface))
     console.log(`${progress} ${address}: interfaces ${JSON.stringify(contractDetails.interfaces)}${isTagged ? '' : ` (none of ${candidateSet.interfaces.join(', ')})`}. Interface/method rows added: ${savedRows}`)
 
     const result = await updater.updateContractEvents(address, pageSize, 0, detection)
@@ -107,8 +107,8 @@ async function main () {
   const updater = new ContractEventsUpdater()
   const started = Date.now()
   const summary = { tagged: [], notTagged: [], failed: [] }
-  const counts = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
-  exitOnUncaughtException(`[Tool ${toolName}]: Error re-detecting contracts`, () => `Stopped after ${Date.now() - started} ms. ${counts()}`)
+  const summaryLine = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
+  exitOnUncaughtException(`[Tool ${toolName}]: Error re-detecting contracts`, () => `Stopped after ${Date.now() - started} ms. ${summaryLine()}`)
 
   console.log(`${toolName} ${setName}`)
   console.log(`Discovering candidates: ${candidateSet.description}`)
@@ -128,7 +128,7 @@ async function main () {
   await redetectCandidates({ updater, candidateSet, candidates, pageSize, summary })
 
   console.log('')
-  console.log(`Done in ${Date.now() - started} ms. ${counts()}`)
+  console.log(`Done in ${Date.now() - started} ms. ${summaryLine()}`)
 
   const fileName = `redetect-contracts-${setName}-${Date.now()}.json`
   const resultFilePath = path.join(__dirname, fileName)
