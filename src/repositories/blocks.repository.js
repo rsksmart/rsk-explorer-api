@@ -1,7 +1,7 @@
 import { rawBlockToEntity, blockEntityToRaw } from '../converters/blocks.converters'
 import { generateFindQuery } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
-import { withBoundedRetries } from '../lib/boundedRetries'
+import { retry } from '../lib/retry'
 
 import {
   txRepository,
@@ -140,8 +140,8 @@ export function getBlocksRepository (prismaClient) {
         return transaction
       }
 
-      return withBoundedRetries({
-        attempts: replace ? 1 : SAVE_ATTEMPTS,
+      return retry({
+        maxAttempts: replace ? 1 : SAVE_ATTEMPTS,
         isRetryable: error => STALE_READ_ERRORS.includes(error.code),
         run: async () => prismaClient.$transaction(await generateTransaction(), READ_COMMITTED)
       })
@@ -171,8 +171,8 @@ export function getBlocksRepository (prismaClient) {
     let targets = pinned
     if (!targets.length) return { count: 0 }
 
-    const deleted = await withBoundedRetries({
-      attempts: DELETE_ATTEMPTS,
+    const deleted = await retry({
+      maxAttempts: DELETE_ATTEMPTS,
       isRetryable: isRetryableDeleteError,
       run: async () => {
         await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { withBoundedRetries } from '../../src/lib/boundedRetries'
+import { retry } from '../../src/lib/retry'
 
 const refusal = attempt => Object.assign(new Error(`refused on attempt ${attempt}`), { code: 'P2025' })
 const isRetryable = error => error.code === 'P2025'
@@ -10,16 +10,16 @@ const refusedOnEveryAttempt = () => {
   return run
 }
 
-describe('withBoundedRetries', () => {
+describe('retry', () => {
   it('runs work refused on every attempt 3 times at most, prepares a retry only between attempts, and throws the last refusal', async () => {
     const run = refusedOnEveryAttempt()
-    const finishedElsewhere = sinon.stub().resolves(false)
+    const doneByAnotherWriter = sinon.stub().resolves(false)
     const beforeRetry = sinon.stub().resolves(true)
 
-    const error = await withBoundedRetries({ attempts: 3, isRetryable, run, finishedElsewhere, beforeRetry }).catch(e => e)
+    const error = await retry({ maxAttempts: 3, isRetryable, run, doneByAnotherWriter, beforeRetry }).catch(e => e)
 
     expect(error.message).to.equal('refused on attempt 3')
-    expect([run.callCount, finishedElsewhere.callCount]).to.deep.equal([3, 3])
+    expect([run.callCount, doneByAnotherWriter.callCount]).to.deep.equal([3, 3])
     expect(beforeRetry.args.map(([refused, attempt]) => [refused.message, attempt])).to.deep.equal([['refused on attempt 1', 1], ['refused on attempt 2', 2]])
   })
 
@@ -29,10 +29,10 @@ describe('withBoundedRetries', () => {
     runs[0].onFirstCall().rejects(refusal(1)).onSecondCall().resolves({ count: 1 })
 
     const outcomes = await Promise.all([
-      withBoundedRetries({ attempts: 3, isRetryable, run: runs[0] }),
-      withBoundedRetries({ attempts: 3, isRetryable, run: runs[1] }).catch(e => e),
-      withBoundedRetries({ attempts: 3, isRetryable, run: runs[2], finishedElsewhere: async () => true }),
-      withBoundedRetries({ attempts: 3, isRetryable, run: runs[3], beforeRetry: async () => false })
+      retry({ maxAttempts: 3, isRetryable, run: runs[0] }),
+      retry({ maxAttempts: 3, isRetryable, run: runs[1] }).catch(e => e),
+      retry({ maxAttempts: 3, isRetryable, run: runs[2], doneByAnotherWriter: async () => true }),
+      retry({ maxAttempts: 3, isRetryable, run: runs[3], beforeRetry: async () => false })
     ])
 
     expect(outcomes).to.deep.equal([{ count: 1 }, other, undefined, undefined])

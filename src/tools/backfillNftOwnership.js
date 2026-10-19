@@ -5,7 +5,7 @@ import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
 import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
-import { withBoundedRetries } from '../lib/boundedRetries'
+import { retry } from '../lib/retry'
 
 const toolName = process.argv[1].split('/').pop()
 
@@ -57,8 +57,8 @@ async function eachChunk ({ prismaClient, fromBlock, toBlock, chunkBlocks, onChu
 }
 
 export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {}, report = newReport('A') }) {
-  const writeTransfers = (block, events) => withBoundedRetries({
-    attempts: WRITE_ATTEMPTS,
+  const writeTransfers = (block, events) => retry({
+    maxAttempts: WRITE_ATTEMPTS,
     isRetryable: isRacedWrite,
     run: async () => {
       const statements = await nftRepository.insertStatements(block, events)
@@ -67,7 +67,7 @@ export async function backfillTransfers ({ prismaClient = defaultPrismaClient, f
       report.blocksWritten++
       report.facts += count
     },
-    finishedElsewhere: async error => {
+    doneByAnotherWriter: async error => {
       if (!(await writtenOrDeletedMeanwhile(prismaClient, block))) return false
       report.blocksRaced++
       console.log(`block ${block.number} ${block.hash}: ${error.code}, deleted or written by another writer meanwhile. Skipped.`)
@@ -156,8 +156,8 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
 
   const writeBlock = (block, planned) => {
     let todo = planned
-    return withBoundedRetries({
-      attempts: WRITE_ATTEMPTS,
+    return retry({
+      maxAttempts: WRITE_ATTEMPTS,
       isRetryable: isRacedWrite,
       run: async () => {
         const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
