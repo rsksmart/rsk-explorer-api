@@ -36,7 +36,9 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     await save(30, 'a', [])
     await prismaClient.$transaction(tokenStateRepository.insertStatements({ number: 30 }, [tokenStateAt(C721, 30)]))
 
-    const errors = await Promise.all([10, 30].map(number => prismaClient.block.deleteMany({ where: { number } }).catch(error => error)))
+    const errors = await Promise.all([10, 30].map(number =>
+      prismaClient.block.deleteMany({ where: { number } }).catch(error => error)
+    ))
     expect(errors.map(error => error.code)).to.deep.equal(['P2003', 'P2003'])
     expect(await prismaClient.block.deleteMany({ where: { number: 20 } })).to.deep.equal({ count: 1 })
   })
@@ -109,7 +111,10 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     await save(30, 'a', [erc721(C721, A, B, 1), erc721(C721, ZERO, C, 2), erc1155Single(C1155, ZERO, H, 7, 3)])
     await save(40, 'a', [erc721(C721, ZERO, A, 9)])
 
-    await blocksRepository.saveBlockData(blockData(30, 'e', [erc721(C721, A, C, 1), erc1155Single(C1155, ZERO, B, 8, 2)]), { replace: true })
+    await blocksRepository.saveBlockData(
+      blockData(30, 'e', [erc721(C721, A, C, 1), erc1155Single(C1155, ZERO, B, 8, 2)]),
+      { replace: true }
+    )
 
     const stored = await prismaClient.block.findUnique({ where: { number: 30 } })
     expect(stored.hash).to.equal(blockHashOf(30, 'e'))

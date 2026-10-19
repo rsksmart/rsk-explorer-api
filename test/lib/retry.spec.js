@@ -20,7 +20,10 @@ describe('retry', () => {
 
     expect(error.message).to.equal('refused on attempt 3')
     expect([run.callCount, doneByAnotherWriter.callCount]).to.deep.equal([3, 3])
-    expect(beforeRetry.args.map(([refused, attempt]) => [refused.message, attempt])).to.deep.equal([['refused on attempt 1', 1], ['refused on attempt 2', 2]])
+    expect(beforeRetry.args.map(([refused, attempt]) => [refused.message, attempt])).to.deep.equal([
+      ['refused on attempt 1', 1],
+      ['refused on attempt 2', 2]
+    ])
   })
 
   it('returns what the work returns after a refusal, rethrows any other error at once, and ends without an error when another writer did the work', async () => {

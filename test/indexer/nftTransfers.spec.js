@@ -1,19 +1,40 @@
 import { expect } from 'chai'
 import { defaultAbiCoder } from '@ethersproject/abi'
-import { decodeNftTransfers, TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC } from '../../src/lib/nftTransfers'
+import {
+  decodeNftTransfers,
+  TRANSFER_TOPIC,
+  TRANSFER_SINGLE_TOPIC,
+  TRANSFER_BATCH_TOPIC
+} from '../../src/lib/nftTransfers'
 
 const contract = '0xB50069B248D0B9C268032EF16F1A6E019EB9807F'
 const from = '0x1111111111111111111111111111111111111111'
 const to = '0x2222222222222222222222222222222222222222'
 const operator = '0x3333333333333333333333333333333333333333'
 const padTo32Bytes = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
-const log = (topics, data = '0x') => ({ eventId: '0597d6700000064cbabababababababab', address: contract, blockNumber: 5928199, blockHash: padTo32Bytes('ab'), transactionHash: padTo32Bytes('cd'), timestamp: 1640000000, topics, data })
+const log = (topics, data = '0x') => ({
+  eventId: '0597d6700000064cbabababababababab',
+  address: contract,
+  blockNumber: 5928199,
+  blockHash: padTo32Bytes('ab'),
+  transactionHash: padTo32Bytes('cd'),
+  timestamp: 1640000000,
+  topics,
+  data
+})
 
 describe('decodeNftTransfers', () => {
   it('reads an ERC-721 token id from topic3 and lowercases every address', () => {
     const [fact] = decodeNftTransfers(log([TRANSFER_TOPIC, padTo32Bytes(from), padTo32Bytes(to), padTo32Bytes('0A')]))
 
-    expect(fact).to.include({ standard: 'ERC721', contract: contract.toLowerCase(), from, to, tokenId: padTo32Bytes('0a'), value: '1' })
+    expect(fact).to.include({
+      standard: 'ERC721',
+      contract: contract.toLowerCase(),
+      from,
+      to,
+      tokenId: padTo32Bytes('0a'),
+      value: '1'
+    })
   })
 
   it('ignores a 3-topic ERC-20 Transfer', () => {
@@ -53,6 +74,9 @@ describe('decodeNftTransfers', () => {
 
   it('returns no fact for undecodable ERC-1155 data or a log with the wrong topic count', () => {
     expect(decodeNftTransfers(log([TRANSFER_SINGLE_TOPIC, padTo32Bytes(from), padTo32Bytes(from), padTo32Bytes(to)], '0x1234')).length).to.equal(0)
-    expect(decodeNftTransfers(log([TRANSFER_SINGLE_TOPIC, padTo32Bytes(from), padTo32Bytes(to)], defaultAbiCoder.encode(['uint256', 'uint256'], [1, 1]))).length).to.equal(0)
+    expect(decodeNftTransfers(log(
+      [TRANSFER_SINGLE_TOPIC, padTo32Bytes(from), padTo32Bytes(to)],
+      defaultAbiCoder.encode(['uint256', 'uint256'], [1, 1])
+    )).length).to.equal(0)
   })
 })

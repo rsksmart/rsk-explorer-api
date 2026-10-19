@@ -19,7 +19,10 @@ const A = `0x${'1'.repeat(40)}`
 
 function runTool (tool, nodeUrl, args) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, ['--require', '@babel/register', tool, ...args], { cwd: ROOT, env: { ...process.env, RSK_NODE_URL: nodeUrl } })
+    const child = spawn(process.execPath, ['--require', '@babel/register', tool, ...args], {
+      cwd: ROOT,
+      env: { ...process.env, RSK_NODE_URL: nodeUrl }
+    })
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', chunk => { stdout += chunk })
@@ -49,7 +52,11 @@ function nodeAnsweringEveryCallWithAnError () {
     request.on('data', chunk => { body += chunk })
     request.on('end', () => {
       const payload = JSON.parse(body)
-      const errorAnswer = ({ id }) => ({ jsonrpc: '2.0', id, error: { code: -32603, message: 'injected internal error' } })
+      const errorAnswer = ({ id }) => ({
+        jsonrpc: '2.0',
+        id,
+        error: { code: -32603, message: 'injected internal error' }
+      })
       response.setHeader('content-type', 'application/json')
       response.end(JSON.stringify(Array.isArray(payload) ? payload.map(errorAnswer) : errorAnswer(payload)))
     })
@@ -65,7 +72,10 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
     node = await nodeAnsweringEveryCallWithAnError()
     await resetDatabase()
     await prismaClient.explorer_initial_config.deleteMany({})
-    await configRepository[EXPLORER_INITIAL_CONFIG_ID].save({ nativeContracts: { bridge: '0x0000000000000000000000000000000001000006' }, net: { id: '31' } })
+    await configRepository[EXPLORER_INITIAL_CONFIG_ID].save({
+      nativeContracts: { bridge: '0x0000000000000000000000000000000001000006' },
+      net: { id: '31' }
+    })
     await blocksRepository.saveBlockData(blockData(10, 'a', [erc721(C721, ZERO, A, 1)]))
     await resetDatabase({ keepBlocksAndEvents: true })
   })
@@ -93,20 +103,30 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
     expect(allOutput(reversed)).to.include('fromBlock 20 is above toBlock 10: the range is empty')
     expect(allOutput(aboveTip)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
     expect(oneBlock.stdout).to.include('blocks 10..10')
-    expect(redetect.slice(0, 3).map(run => firstMatch(run.stdout, /Must be a whole number of at least 1, such as 50: got (\S+)/))).to.deep.equal(['5e2', '0', '50.5'])
+    expect(redetect.slice(0, 3).map(run => firstMatch(run.stdout, /Must be a whole number of at least 1, such as 50: got (\S+)/)))
+      .to.deep.equal(['5e2', '0', '50.5'])
     expect([failedPair.status, failedPair.stdout.includes('"failure":"injected internal error"')]).to.deep.equal([1, true])
-    expect(redetect[3].stdout).to.include(`${C721}: FAILED`).and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
+    expect(redetect[3].stdout)
+      .to.include(`${C721}: FAILED`)
+      .and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
   })
 
   it('phase B and the contract re-detection print their run report and exit 1, with no stack trace, when the node refuses the connection', async () => {
     await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
     await prismaClient.token_state_at_block.deleteMany({})
     const nodeUrl = `http://127.0.0.1:${await closedPort()}`
-    const [phaseB, redetect] = await Promise.all([runBackfill(nodeUrl, 'B'), runTool(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])])
+    const [phaseB, redetect] = await Promise.all([
+      runBackfill(nodeUrl, 'B'),
+      runTool(REDETECT, nodeUrl, ['nft-transfer-emitters', '50'])
+    ])
 
     expect([phaseB.status, redetect.status]).to.deep.equal([1, 1])
-    expect(phaseB.stdout).to.include('Error backfilling NFT ownership: connect ECONNREFUSED').and.include('Stopped: {"blocksRead":1,"pairs":1,')
-    expect(redetect.stdout).to.include('Error re-detecting contracts: connect ECONNREFUSED').and.match(/Stopped after \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 0/)
+    expect(phaseB.stdout)
+      .to.include('Error backfilling NFT ownership: connect ECONNREFUSED')
+      .and.include('Stopped: {"blocksRead":1,"pairs":1,')
+    expect(redetect.stdout)
+      .to.include('Error re-detecting contracts: connect ECONNREFUSED')
+      .and.match(/Stopped after \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 0/)
     expect(phaseB.stderr + redetect.stderr).not.to.match(/^\s+at /m)
   })
 })

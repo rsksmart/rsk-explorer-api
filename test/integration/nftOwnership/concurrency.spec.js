@@ -23,7 +23,9 @@ function recordRefusal (error) {
 
 async function transactionWithHold (statements, ...options) {
   const hold = currentHold.getStore()
-  if (!hold || !Array.isArray(statements)) return realTransaction.call(prismaClient, statements, ...options).catch(recordRefusal)
+  if (!hold || !Array.isArray(statements)) {
+    return realTransaction.call(prismaClient, statements, ...options).catch(recordRefusal)
+  }
   if (hold.delay) await sleep(hold.delay)
   const statementsWithSleep = [...statements]
   if (hold.seconds) {
@@ -34,7 +36,8 @@ async function transactionWithHold (statements, ...options) {
 }
 
 const withHold = (hold, operation) => () => currentHold.run(hold, operation)
-const erc721Logs = (from, to, count, firstTokenId = 1) => Array.from({ length: count }, (_, i) => erc721(C721, from, to, firstTokenId + i))
+const erc721Logs = (from, to, count, firstTokenId = 1) =>
+  Array.from({ length: count }, (_, i) => erc721(C721, from, to, firstTokenId + i))
 
 async function saveLikeInsertBlock (number, tag, logs) {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -74,23 +77,41 @@ const casesWithAGuaranteedRefusal = [
 
 const cases = {
   'two saves of the same block': async base => [
-    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])),
-    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)]))
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [
+      ...erc721Logs(ZERO, A, 10),
+      erc1155Single(C1155, ZERO, B, 7, 2)
+    ])),
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [
+      ...erc721Logs(ZERO, A, 10),
+      erc1155Single(C1155, ZERO, B, 7, 2)
+    ]))
   ],
   'two saves of adjacent blocks sharing holders': async base => [
-    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 2, 'a', [...erc721Logs(A, B, 20), erc1155Single(C1155, A, C, 1, 1)])),
-    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...erc721Logs(ZERO, A, 20), erc1155Single(C1155, ZERO, A, 1, 3)]))
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 2, 'a', [
+      ...erc721Logs(A, B, 20),
+      erc1155Single(C1155, A, C, 1, 1)
+    ])),
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [
+      ...erc721Logs(ZERO, A, 20),
+      erc1155Single(C1155, ZERO, A, 1, 3)
+    ]))
   ],
   'two deletes of the same block': async base => {
     await saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])
     await saveLikeInsertBlock(base + 1, 'a', erc721Logs(A, B, 5))
-    return [withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base })), withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base }))]
+    return [
+      withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base })),
+      withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base }))
+    ]
   },
   'a delete of N against a save of N+1 sharing an address': async base => {
     await saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, A, 7, 2)])
     return [
       withHold({ seconds: 0.05, at: 1 }, () => blocksRepository.deleteOne({ number: base })),
-      withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...erc721Logs(A, B, 5, 100), erc1155Single(C1155, A, B, 7, 1)]))
+      withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [
+        ...erc721Logs(A, B, 5, 100),
+        erc1155Single(C1155, A, B, 7, 1)
+      ]))
     ]
   },
   'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch': async base => {
@@ -121,7 +142,10 @@ const cases = {
     await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 3)])
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 20 }) },
-      withHold({ seconds: 0.4, at: 3 }, () => saveLikeInsertBlock(base + 25, 'a', [erc721(C721, ZERO, A, 4), erc721(C721, ZERO, H, 5)]))
+      withHold({ seconds: 0.4, at: 3 }, () => saveLikeInsertBlock(base + 25, 'a', [
+        erc721(C721, ZERO, A, 4),
+        erc721(C721, ZERO, H, 5)
+      ]))
     ]
   },
   'last block: a delete of N against a save of M > N sharing the holder': async base => {
@@ -142,13 +166,18 @@ const cases = {
   'last block: two deletes of the holder\'s two newest blocks': async base => {
     await saveTwoBlocksForA(base)
     await saveLikeInsertBlock(base + 40, 'a', [erc721(C721, ZERO, A, 4)])
-    return [withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 })), withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 30 }))]
+    return [
+      withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 })),
+      withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 30 }))
+    ]
   }
 }
 
 async function setDefaultIsolation (level) {
   const [{ name }] = await prismaClient.$queryRaw`SELECT current_database() AS name`
-  await prismaClient.$executeRawUnsafe(`ALTER DATABASE "${name}" ${level ? `SET default_transaction_isolation = '${level}'` : 'RESET default_transaction_isolation'}`)
+  await prismaClient.$executeRawUnsafe(
+    `ALTER DATABASE "${name}" ${level ? `SET default_transaction_isolation = '${level}'` : 'RESET default_transaction_isolation'}`
+  )
   await prismaClient.$disconnect()
   const [{ default_transaction_isolation: current }] = await prismaClient.$queryRaw`SHOW default_transaction_isolation`
   return current
@@ -164,11 +193,16 @@ function raceEveryCase () {
         const operations = await prepare(base)
         const results = await Promise.allSettled(operations.map(operation => operation()))
 
-        expect(results.filter(result => result.status === 'rejected').map(result => result.reason.code || result.reason.message), `${name} trial ${trial}`).to.deep.equal([])
+        expect(
+          results.filter(result => result.status === 'rejected').map(result => result.reason.code || result.reason.message),
+          `${name} trial ${trial}`
+        ).to.deep.equal([])
         expect(await differences(), `${name} trial ${trial}`).to.deep.equal([])
       }
       expect(refusals.filter(code => code === '40P01'), `${name}: deadlocks, including any a retry absorbed`).to.deep.equal([])
-      if (casesWithAGuaranteedRefusal.includes(name)) expect(refusals.filter(code => code === 'P2025')).to.have.lengthOf(TRIALS)
+      if (casesWithAGuaranteedRefusal.includes(name)) {
+        expect(refusals.filter(code => code === 'P2025')).to.have.lengthOf(TRIALS)
+      }
     })
   }
 }

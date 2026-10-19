@@ -18,7 +18,19 @@ const originals = []
 function countModelOperations () {
   for (const model of MODELS_THE_NFT_WRITES_TOUCH) {
     const delegate = prismaClient[model]
-    for (const method of ['findFirst', 'findMany', 'findUnique', 'groupBy', 'create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany']) {
+    for (const method of [
+      'findFirst',
+      'findMany',
+      'findUnique',
+      'groupBy',
+      'create',
+      'createMany',
+      'update',
+      'updateMany',
+      'upsert',
+      'delete',
+      'deleteMany'
+    ]) {
       const original = delegate[method]
       originals.push([delegate, method, original])
       delegate[method] = function (...args) {
@@ -77,7 +89,8 @@ integrationDescribe('NFT ownership: the statements of a block\'s save and delete
 
     expect(manyIds, `100 ids: ${fewIds} · 1,000 ids: ${manyIds}`).to.deep.equal(fewIds)
     expect(manyHolders.moved - fewHolders.moved, `saves: ${fewHolders.moved} · ${manyHolders.moved}`).to.be.at.most(addedHolders)
-    expect(manyHolders.deleted - fewHolders.deleted, `deletes: ${fewHolders.deleted} · ${manyHolders.deleted}`).to.be.at.most(2 * addedHolders)
+    expect(manyHolders.deleted - fewHolders.deleted, `deletes: ${fewHolders.deleted} · ${manyHolders.deleted}`)
+      .to.be.at.most(2 * addedHolders)
     expect(mostOrConditions).to.be.within(1, 400)
   })
 })

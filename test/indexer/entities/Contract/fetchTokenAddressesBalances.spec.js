@@ -46,7 +46,10 @@ describe('Contract entity: fetchTokenAddressesBalances', () => {
   })
 
   describe('NFT-only contracts (their ownership lives in the NFT tables)', () => {
-    for (const contractInterfaces of [['ERC165', 'ERC1155', 'ERC1155MetadataURI'], ['ERC165', 'ERC721', 'ERC721Metadata']]) {
+    for (const contractInterfaces of [
+      ['ERC165', 'ERC1155', 'ERC1155MetadataURI'],
+      ['ERC165', 'ERC721', 'ERC721Metadata']
+    ]) {
       it(`writes no token address row and calls no balanceOf for ${contractInterfaces.join(', ')}`, async () => {
         const batchRequest = sinon.stub().rejects(new Error('should not be called'))
         const contract = makeContract({ contractInterfaces, batchRequest })

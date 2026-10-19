@@ -9,7 +9,11 @@ describe('backfillNftOwnership exit code', () => {
     const cleanA = { blocksRead: 7, blocksWritten: 6, facts: 13 }
 
     expect([
-      exitCodeOf({ ...cleanB, pairsWritten: 8, pairsFailed: [{ contract: '0x00000000000000000000000000000000000e0721', blockNumber: 12 }] }),
+      exitCodeOf({
+        ...cleanB,
+        pairsWritten: 8,
+        pairsFailed: [{ contract: '0x00000000000000000000000000000000000e0721', blockNumber: 12 }]
+      }),
       exitCodeOf(cleanB),
       exitCodeOf(cleanA)
     ]).to.deep.equal([1, 0, 0])
@@ -26,8 +30,13 @@ describe('backfillNftOwnership phase A write retries', () => {
     const prismaClient = {
       $transaction,
       block: { findMany: nextBlocks, findUnique: sinon.stub().resolves({ number: block.number }) },
-      event: { findMany: sinon.stub().resolves([{ blockHash: block.hash, topic0: '0x01', topic1: null, topic2: null, topic3: null }]) },
-      token_transfer: { groupBy: sinon.stub().resolves([]), findFirst: sinon.stub().resolves(factsWrittenMeanwhile ? { eventId: 'e1' } : null) }
+      event: {
+        findMany: sinon.stub().resolves([{ blockHash: block.hash, topic0: '0x01', topic1: null, topic2: null, topic3: null }])
+      },
+      token_transfer: {
+        groupBy: sinon.stub().resolves([]),
+        findFirst: sinon.stub().resolves(factsWrittenMeanwhile ? { eventId: 'e1' } : null)
+      }
     }
     return backfillTransfers({ prismaClient, fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
   }

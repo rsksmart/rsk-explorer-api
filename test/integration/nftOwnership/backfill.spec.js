@@ -33,7 +33,13 @@ async function storeAsTheIndexerBeforeTheBackfill () {
 }
 
 const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, ...options })
-const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [tokenStateFetcher(), tokenStateFetcher()], ...options })
+const phaseB = (options = {}) => backfillTokenStates({
+  fromBlock: 0,
+  toBlock: 100,
+  chunkBlocks: 3,
+  fetchers: [tokenStateFetcher(), tokenStateFetcher()],
+  ...options
+})
 
 const realTransaction = prismaClient.$transaction
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -116,7 +122,11 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
         prismaClient.block.updateMany({ where: { number: 10 }, data: { size: { increment: 0 } } }),
         prismaClient.token_state_at_block.count({ where: { blockNumber: 10 } })
       ], { isolationLevel: 'ReadCommitted' }))
-      return realTransaction.call(prismaClient, [statements[0], prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'), ...statements.slice(1)], ...options)
+      return realTransaction.call(prismaClient, [
+        statements[0],
+        prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'),
+        ...statements.slice(1)
+      ], ...options)
     }
 
     await phaseB()
@@ -132,7 +142,8 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
 
     const phaseBReport = await phaseB({ fetchers: [tokenStateFetcher({ failsFor })] })
 
-    expect(phaseBReport.pairsFailed.map(pair => [pair.contract, pair.blockNumber, pair.failure])).to.deep.equal([[C721, 12, 'injected node error']])
+    expect(phaseBReport.pairsFailed.map(pair => [pair.contract, pair.blockNumber, pair.failure]))
+      .to.deep.equal([[C721, 12, 'injected node error']])
     expect(phaseBReport).to.include({ pairsWritten: 8 })
     expect(await prismaClient.token_state_at_block.count({ where: { contract: C721, blockNumber: 12 } })).to.equal(0)
 

@@ -21,13 +21,19 @@ describe('exitOnUncaughtException', () => {
 
     const { stdout, stderr, exits } = handle(error)
 
-    expect(stdout).to.deep.equal(["[Tool t]: Error: Cannot read properties of null (reading 'field')", 'Stopped: {"blocksRead":3}'])
+    expect(stdout).to.deep.equal([
+      "[Tool t]: Error: Cannot read properties of null (reading 'field')",
+      'Stopped: {"blocksRead":3}'
+    ])
     expect(stderr).to.deep.equal([error.stack])
     expect(exits).to.deep.equal([[1]])
   })
 
   it('prints a refused connection without a stack, as its location is in Node, not in this code', () => {
-    const error = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:1'), { syscall: 'connect', code: 'ECONNREFUSED' })
+    const error = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:1'), {
+      syscall: 'connect',
+      code: 'ECONNREFUSED'
+    })
 
     const { stdout, stderr, exits } = handle(error)
 

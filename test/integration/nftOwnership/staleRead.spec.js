@@ -9,7 +9,10 @@ const C1155 = '0x000000000000000000000000000000000c001155'
 const [A, B, D] = ['1', '2', 'd'].map(digit => `0x${digit.repeat(40)}`)
 
 const realTransaction = prismaClient.$transaction
-const holderAndBalanceReads = [[prismaClient.nft_holder, prismaClient.nft_holder.findMany], [prismaClient.nft_balance, prismaClient.nft_balance.findMany]]
+const holderAndBalanceReads = [
+  [prismaClient.nft_holder, prismaClient.nft_holder.findMany],
+  [prismaClient.nft_balance, prismaClient.nft_balance.findMany]
+]
 const save = (number, logs) => blocksRepository.saveBlockData(blockData(number, 'a', logs))
 
 let refusalCodes = []

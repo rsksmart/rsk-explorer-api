@@ -30,7 +30,13 @@ function randomLog ({ randomBelow, pickOne }) {
   if (logKind === 0) return erc721(C721, pickOne(ADDRESSES), pickOne(ADDRESSES), 1 + randomBelow(6))
   if (logKind === 1) return erc1155Single(C1155, pickOne(ADDRESSES), pickOne(ADDRESSES), 1 + randomBelow(4), randomBelow(5))
   const count = 1 + randomBelow(3)
-  return erc1155Batch(C1155, pickOne(ADDRESSES), pickOne(ADDRESSES), Array.from({ length: count }, () => 1 + randomBelow(4)), Array.from({ length: count }, () => randomBelow(5)))
+  return erc1155Batch(
+    C1155,
+    pickOne(ADDRESSES),
+    pickOne(ADDRESSES),
+    Array.from({ length: count }, () => 1 + randomBelow(4)),
+    Array.from({ length: count }, () => randomBelow(5))
+  )
 }
 
 function nextOperation ({ pickOne }, storedIndexes, missingIndexes) {
@@ -46,7 +52,11 @@ integrationDescribe('NFT ownership: saveBlockData and the repository delete in r
     it(`equals a replay of the stored blocks after every operation (seed ${seed})`, async () => {
       const random = seededRandom(seed)
       const { randomBelow, pickOne } = random
-      const blockVersions = Array.from({ length: HEIGHTS }, (_, index) => ['a', 'b', 'c'].map(tag => ({ number: (index + 1) * 10, tag, logs: Array.from({ length: randomBelow(5) }, () => randomLog(random)) })))
+      const blockVersions = Array.from({ length: HEIGHTS }, (_, index) => ['a', 'b', 'c'].map(tag => ({
+        number: (index + 1) * 10,
+        tag,
+        logs: Array.from({ length: randomBelow(5) }, () => randomLog(random))
+      })))
       const blockNumberAt = index => blockVersions[index][0].number
       const stored = new Map()
       await resetDatabase()
@@ -73,7 +83,8 @@ integrationDescribe('NFT ownership: saveBlockData and the repository delete in r
           deletedIndexes.forEach(index => stored.delete(index))
         } else {
           const chosenIndexes = storedIndexes.filter(() => randomBelow(2))
-          expect(await blocksRepository.deleteMany({ number: { in: chosenIndexes.map(blockNumberAt) } })).to.deep.equal({ count: chosenIndexes.length })
+          expect(await blocksRepository.deleteMany({ number: { in: chosenIndexes.map(blockNumberAt) } }))
+            .to.deep.equal({ count: chosenIndexes.length })
           chosenIndexes.forEach(index => stored.delete(index))
         }
 

@@ -1,7 +1,12 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { Nod3 } from '@rsksmart/nod3'
-import { processCandidate, redetectCandidates, CANDIDATE_SETS, candidateSetNamed } from '../../src/tools/redetectContracts.js'
+import {
+  processCandidate,
+  redetectCandidates,
+  CANDIDATE_SETS,
+  candidateSetNamed
+} from '../../src/tools/redetectContracts.js'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 import { eventRepository } from '../../src/repositories'
 
@@ -116,14 +121,20 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
         transactionHash: `0x${'ab'.repeat(32)}`,
         logIndex: 0,
         timestamp: 1700000000,
-        topics: [TRANSFER_TOPIC0, padTo32Bytes('0x0'), padTo32Bytes('0x1111111111111111111111111111111111111111'), padTo32Bytes('0x7')],
+        topics: [
+          TRANSFER_TOPIC0,
+          padTo32Bytes('0x0'),
+          padTo32Bytes('0x1111111111111111111111111111111111111111'),
+          padTo32Bytes('0x7')
+        ],
         data: '0x'
       }
       const updater = realUpdater(fakeNode())
       updater.fetchPaginatedEvents.resolves({ events: [storedTransfer], next: null })
       const upsertOne = sinon.stub(eventRepository, 'upsertOne').resolves({})
 
-      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 }).finally(() => upsertOne.restore())
+      const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
+        .finally(() => upsertOne.restore())
 
       expect(bucket).to.equal('tagged')
       expect(updater.getContractParser.callCount).to.equal(1)

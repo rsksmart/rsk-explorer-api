@@ -15,13 +15,28 @@ const UNSORTED_LIST = ['ERC721', 'ERC165']
 
 const tokenState = () => new TokenState({ initConfig, nod3: {} })
 const storedRows = async () => ({
-  token: await prismaClient.token.findUnique({ where: { contract: C721 }, select: { blockNumber: true, interfaces: true, isNft: true } }),
-  states: await prismaClient.token_state_at_block.findMany({ select: { blockNumber: true, interfaces: true, isNft: true }, orderBy: { blockNumber: 'asc' } })
+  token: await prismaClient.token.findUnique({
+    where: { contract: C721 },
+    select: { blockNumber: true, interfaces: true, isNft: true }
+  }),
+  states: await prismaClient.token_state_at_block.findMany({
+    select: { blockNumber: true, interfaces: true, isNft: true },
+    orderBy: { blockNumber: 'asc' }
+  })
 })
 
 function parserAnswers (interfacesAtBlock) {
-  sinon.stub(ContractParser.prototype, 'getContractDetails').callsFake(async (contract, blockNumber) => ({ interfaces: interfacesAtBlock(blockNumber), proxyType: null, implementationAddress: null }))
-  sinon.stub(ContractParser.prototype, 'getDefaultTokenData').resolves({ name: 'Name', symbol: 'SYM', decimals: 0, totalSupply: '1' })
+  sinon.stub(ContractParser.prototype, 'getContractDetails').callsFake(async (contract, blockNumber) => ({
+    interfaces: interfacesAtBlock(blockNumber),
+    proxyType: null,
+    implementationAddress: null
+  }))
+  sinon.stub(ContractParser.prototype, 'getDefaultTokenData').resolves({
+    name: 'Name',
+    symbol: 'SYM',
+    decimals: 0,
+    totalSupply: '1'
+  })
 }
 
 async function saveWithTheIndexersTokenState (number, logs) {
