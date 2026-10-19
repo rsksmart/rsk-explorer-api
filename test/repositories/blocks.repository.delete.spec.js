@@ -39,7 +39,7 @@ describe('# blocks.repository delete retry', function () {
     expect(transactions).to.equal(2)
   })
 
-  it('returns a count of 0 after one batch when the blocks it pinned are gone by the time it reads them again', async () => {
+  it('returns a count of 0 after one batch when the blocks it read first are gone by the time it reads them again', async () => {
     const $transaction = sinon.stub().rejects(Object.assign(new Error('refused'), { code: 'P2025' }))
     const findMany = sinon.stub().resolves([])
     findMany.onFirstCall().resolves([{ number: 20, hash: '0xa20' }])

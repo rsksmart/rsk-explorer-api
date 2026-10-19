@@ -110,7 +110,7 @@ export async function backfillTransfers ({
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
     report.blocksRead += blocks.length
     const events = await prismaClient.event.findMany({
-      where: { blockHash: { in: blocks.map(b => b.hash) }, ...NFT_TRANSFER_EVENTS },
+      where: { blockHash: { in: blocks.map(block => block.hash) }, ...NFT_TRANSFER_EVENTS },
       select: EVENT_FIELDS,
       orderBy: { eventId: 'asc' }
     })
@@ -215,7 +215,7 @@ export async function backfillTokenStates ({
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
     report.blocksRead += blocks.length
-    const { pairs, pairsToWrite } = await readPairsToWrite(blocks.map(b => b.hash))
+    const { pairs, pairsToWrite } = await readPairsToWrite(blocks.map(block => block.hash))
     report.pairs += pairs.length
     report.pairsAlreadyStored += pairs.length - pairsToWrite.length
 

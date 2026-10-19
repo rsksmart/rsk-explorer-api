@@ -180,8 +180,8 @@ export function getBlocksRepository (prismaClient) {
   }
 
   async function deleteBlocks (where) {
-    const pinned = await findBlocksToDelete(where)
-    let blocksToDelete = pinned
+    const blocksReadFirst = await findBlocksToDelete(where)
+    let blocksToDelete = blocksReadFirst
     return retry({
       maxAttempts: DELETE_ATTEMPTS,
       isRetryable: isRetryableDeleteError,
@@ -194,7 +194,7 @@ export function getBlocksRepository (prismaClient) {
         return { count: blocksToDelete.length }
       },
       beforeRetry: async () => {
-        blocksToDelete = await findBlocksToDelete({ hash: { in: pinned.map(b => b.hash) } })
+        blocksToDelete = await findBlocksToDelete({ hash: { in: blocksReadFirst.map(block => block.hash) } })
       }
     })
   }

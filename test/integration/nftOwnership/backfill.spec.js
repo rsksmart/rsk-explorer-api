@@ -83,8 +83,10 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     prismaClient.$transaction = realTransaction
     const rerunB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [tokenStateFetcher()] })
 
-    expect([killedA.message, killedB.message]).to.deep.equal(['process killed', 'process killed'])
-    expect([factsAfterKilledA, statesAfterKilledB]).to.deep.equal([4, 7])
+    expect(killedA.message).to.equal('process killed')
+    expect(killedB.message).to.equal('process killed')
+    expect(factsAfterKilledA).to.equal(4)
+    expect(statesAfterKilledB).to.equal(7)
     expect(rerunA).to.include({ blocksAlreadyStored: 2, blocksWritten: 4 })
     expect(rerunB).to.include({ pairsAlreadyStored: 7, pairsWritten: 2 })
     expect(await differences()).to.deep.equal([])
@@ -112,7 +114,7 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await differences()).to.deep.equal([])
   })
 
-  it('phase B holds its block\'s row from the pin to the commit: another writer of that row waits for the commit and then sees its state facts', async () => {
+  it('phase B locks its block\'s row until the commit: another writer of that row waits for the commit and then sees its state facts', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
     let otherWriter

@@ -22,7 +22,7 @@ export function getTokenStateRepository (prismaClient) {
       ]
     },
     async undoStatements (blocksToDelete) {
-      const deletedBlockNumbers = blocksToDelete.map(b => b.number)
+      const deletedBlockNumbers = blocksToDelete.map(block => block.number)
       const statesOfDeletedBlocks = await prismaClient.token_state_at_block.findMany({
         where: { blockNumber: { in: deletedBlockNumbers } },
         select: { contract: true }

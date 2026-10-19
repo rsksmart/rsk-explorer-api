@@ -301,7 +301,7 @@ export function getNftRepository (prismaClient) {
       return [...insertFacts(addedFacts), ...ownership]
     },
     async undoStatements (blocksToDelete) {
-      const deletedBlockHashes = blocksToDelete.map(b => b.hash)
+      const deletedBlockHashes = blocksToDelete.map(block => block.hash)
       const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
       const ownership = await ownershipStatements({
         addedFacts: [],
@@ -312,7 +312,7 @@ export function getNftRepository (prismaClient) {
       return [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership]
     },
     async replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
-      const deletedBlockHashes = blocksToDelete.map(b => b.hash)
+      const deletedBlockHashes = blocksToDelete.map(block => block.hash)
       const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
       const addedFacts = decodeBlockNftTransfers(newBlockEvents)
       const ownership = await ownershipStatements({ addedFacts, factsOfDeletedBlocks, newBlock, deletedBlockHashes })

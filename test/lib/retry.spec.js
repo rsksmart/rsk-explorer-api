@@ -19,27 +19,40 @@ describe('retry', () => {
     const error = await retry({ maxAttempts: 3, isRetryable, run, doneByAnotherWriter, beforeRetry }).catch(thrown => thrown)
 
     expect(error.message).to.equal('refused on attempt 3')
-    expect([run.callCount, doneByAnotherWriter.callCount]).to.deep.equal([3, 3])
+    expect(run.callCount).to.equal(3)
+    expect(doneByAnotherWriter.callCount).to.equal(3)
     expect(beforeRetry.args.map(([refused, attempt]) => [refused.message, attempt])).to.deep.equal([
       ['refused on attempt 1', 1],
       ['refused on attempt 2', 2]
     ])
   })
 
-  it('returns what the work returns after a refusal, rethrows any other error at once, and ends without an error when another writer did the work', async () => {
+  it('returns what the work returns after one refusal', async () => {
+    const run = sinon.stub()
+    run.onFirstCall().rejects(refusal(1)).onSecondCall().resolves({ count: 1 })
+
+    const result = await retry({ maxAttempts: 3, isRetryable, run })
+
+    expect(result).to.deep.equal({ count: 1 })
+    expect(run.callCount).to.equal(2)
+  })
+
+  it('rethrows another error at once', async () => {
     const connectionLost = new Error('connection lost')
-    const refusedOnce = sinon.stub()
-    refusedOnce.onFirstCall().rejects(refusal(1)).onSecondCall().resolves({ count: 1 })
-    const failsWithAnotherError = sinon.stub().rejects(connectionLost)
-    const alwaysRefused = refusedOnEveryAttempt()
+    const run = sinon.stub().rejects(connectionLost)
 
-    const outcomes = await Promise.all([
-      retry({ maxAttempts: 3, isRetryable, run: refusedOnce }),
-      retry({ maxAttempts: 3, isRetryable, run: failsWithAnotherError }).catch(thrown => thrown),
-      retry({ maxAttempts: 3, isRetryable, run: alwaysRefused, doneByAnotherWriter: async () => true })
-    ])
+    const error = await retry({ maxAttempts: 3, isRetryable, run }).catch(thrown => thrown)
 
-    expect(outcomes).to.deep.equal([{ count: 1 }, connectionLost, undefined])
-    expect([refusedOnce, failsWithAnotherError, alwaysRefused].map(run => run.callCount)).to.deep.equal([2, 1, 1])
+    expect(error).to.equal(connectionLost)
+    expect(run.callCount).to.equal(1)
+  })
+
+  it('ends without an error when another writer did the work', async () => {
+    const run = refusedOnEveryAttempt()
+
+    const result = await retry({ maxAttempts: 3, isRetryable, run, doneByAnotherWriter: async () => true })
+
+    expect(result).to.equal(undefined)
+    expect(run.callCount).to.equal(1)
   })
 })
