@@ -26,7 +26,7 @@ const newReport = phase => phase === 'A'
 
 const toRawEvent = ({ topic0, topic1, topic2, topic3, ...event }) => ({ ...event, topics: [topic0, topic1, topic2, topic3].filter(topic => topic !== null) })
 const isRacedWrite = error => !!error && RACED_WRITE_ERRORS.includes(error.code)
-const pinUnreplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
+const lockBlockIfNotReplaced = (prismaClient, { number, hash }) => prismaClient.block.update({ where: { number, hash }, data: { hash }, select: { number: true } })
 
 async function writtenOrDeletedMeanwhile (prismaClient, { hash }) {
   const [stored, facts] = await Promise.all([
@@ -126,22 +126,22 @@ async function fetchPairs (fetchers, pairs, onFetched) {
 }
 
 export async function backfillTokenStates ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, fetchers, onChunkDone = () => {}, report = newReport('B') }) {
-  const states = new Map()
+  const fetchedStates = new Map()
   const pairKey = ({ contract, blockNumber, blockHash }) => `${contract}|${blockNumber}|${blockHash}`
 
-  const pendingPairs = async hashes => {
+  const readPairsToWrite = async hashes => {
     const pairs = await prismaClient.token_transfer.groupBy({
       by: ['contract', 'blockNumber', 'blockHash'],
       where: { blockHash: { in: hashes }, standard: { in: NFT_STANDARDS } },
       orderBy: [{ blockNumber: 'asc' }, { contract: 'asc' }]
     })
-    if (!pairs.length) return { pairs, todo: [] }
+    if (!pairs.length) return { pairs, pairsToWrite: [] }
     const stored = await prismaClient.token_state_at_block.findMany({
       where: { blockNumber: { in: [...new Set(pairs.map(p => p.blockNumber))] } },
       select: { contract: true, blockNumber: true }
     })
     const storedKeys = new Set(stored.map(s => `${s.contract}|${s.blockNumber}`))
-    return { pairs, todo: pairs.filter(p => !storedKeys.has(`${p.contract}|${p.blockNumber}`)) }
+    return { pairs, pairsToWrite: pairs.filter(p => !storedKeys.has(`${p.contract}|${p.blockNumber}`)) }
   }
 
   const recordFetch = (pair, { state, failure }) => {
@@ -150,42 +150,42 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
       console.log(`pair ${pair.contract} at ${pair.blockNumber}: ${failure.message}. Not stored; a rerun retries it.`)
       return
     }
-    states.set(pairKey(pair), state)
+    fetchedStates.set(pairKey(pair), state)
   }
 
-  const writeBlock = (block, planned) => {
-    let todo = planned
+  const writeBlockStates = (block, pairsOfBlock) => {
+    let pairsToWrite = pairsOfBlock
     return retry({
       maxAttempts: WRITE_ATTEMPTS,
       isRetryable: isRacedWrite,
       run: async () => {
-        const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
+        const fetched = pairsToWrite.map(pair => fetchedStates.get(pairKey(pair))).filter(Boolean)
         if (!fetched.length) return
-        await prismaClient.$transaction([pinUnreplaced(prismaClient, block), ...tokenStateRepository.insertStatements(block, fetched)], READ_COMMITTED)
+        await prismaClient.$transaction([lockBlockIfNotReplaced(prismaClient, block), ...tokenStateRepository.insertStatements(block, fetched)], READ_COMMITTED)
         report.pairsWritten += fetched.length
       },
       beforeRetry: async (error, attempt) => {
         report.pairsRaced++
         console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
-        todo = (await pendingPairs([block.hash])).todo
-        await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
+        pairsToWrite = (await readPairsToWrite([block.hash])).pairsToWrite
+        await fetchPairs(fetchers, pairsToWrite.filter(pair => !fetchedStates.has(pairKey(pair))), recordFetch)
       }
     })
   }
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
     report.blocksRead += blocks.length
-    const { pairs, todo } = await pendingPairs(blocks.map(b => b.hash))
+    const { pairs, pairsToWrite } = await readPairsToWrite(blocks.map(b => b.hash))
     report.pairs += pairs.length
-    report.pairsAlreadyStored += pairs.length - todo.length
+    report.pairsAlreadyStored += pairs.length - pairsToWrite.length
 
-    await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
+    await fetchPairs(fetchers, pairsToWrite.filter(pair => !fetchedStates.has(pairKey(pair))), recordFetch)
 
     for (const block of blocks) {
-      const planned = todo.filter(pair => pair.blockHash === block.hash)
-      if (planned.length) await writeBlock(block, planned)
+      const pairsOfBlock = pairsToWrite.filter(pair => pair.blockHash === block.hash)
+      if (pairsOfBlock.length) await writeBlockStates(block, pairsOfBlock)
     }
-    for (const pair of todo) states.delete(pairKey(pair))
+    for (const pair of pairsToWrite) fetchedStates.delete(pairKey(pair))
   })
 
   return report
