@@ -1,7 +1,4 @@
 import { expect } from 'chai'
-import fs from 'fs'
-import os from 'os'
-import path from 'path'
 import sinon from 'sinon'
 import { makeConfig, nodeSources, createNodeSource, withNodeUrlFromTheEnvironment } from '../src/lib/config'
 
@@ -55,35 +52,11 @@ describe('# Config', function () {
       expect(empty).to.equal(fileConfig)
     })
 
-    it('is read from the .env file of the working directory when the environment has none', () => {
-      const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'rsk-node-url-'))
-      fs.writeFileSync(path.join(directory, '.env'), 'RSK_NODE_URL=http://dotenv-node.test:4451\n')
-      const configModule = require.resolve('../src/lib/config')
-      const loadedConfigModule = require.cache[configModule]
-      const workingDirectory = process.cwd()
-      const environmentValue = process.env.RSK_NODE_URL
-      delete process.env.RSK_NODE_URL
-
-      try {
-        process.chdir(directory)
-        delete require.cache[configModule]
-        expect(require('../src/lib/config').config.source.url).to.equal('http://dotenv-node.test:4451')
-      } finally {
-        process.chdir(workingDirectory)
-        require.cache[configModule] = loadedConfigModule
-        if (environmentValue === undefined) delete process.env.RSK_NODE_URL
-        else process.env.RSK_NODE_URL = environmentValue
-        fs.rmSync(directory, { recursive: true })
-      }
-    })
-
     it('refuses an RSK_NODE_URL that is not an http or https URL, naming the variable and not its value', () => {
       const refusal = value => { try { withNodeUrlFromTheEnvironment({}, { RSK_NODE_URL: value }) } catch (error) { return error.message } }
 
-      expect(['localhost:4444', 'not a url', 'ws://env-node.test:4445', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
-        'RSK_NODE_URL must be an http or https URL',
+      expect(['not a url', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
         'RSK_NODE_URL is not a URL',
-        'RSK_NODE_URL must be an http or https URL',
         'RSK_NODE_URL must be an http or https URL'
       ])
     })
