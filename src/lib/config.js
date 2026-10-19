@@ -1,6 +1,6 @@
 import path from 'path'
 import fs from 'fs'
-import URL, { URL as WhatwgURL } from 'url'
+import legacyUrl from 'url'
 import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
 
@@ -72,7 +72,7 @@ export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
   if (!nodeUrl) return fileConfig
   let protocol
   try {
-    protocol = new WhatwgURL(nodeUrl).protocol
+    protocol = new URL(nodeUrl).protocol
   } catch (error) {
     throw new Error('RSK_NODE_URL is not a URL')
   }
@@ -109,7 +109,7 @@ export function nodeSources (sources) {
 
 export function createNodeSource (s) {
   let url = s.url || `${s.protocol}://${s.node}:${s.port}`
-  let { protocol, port, hostname: node } = URL.parse(url)
+  let { protocol, port, hostname: node } = legacyUrl.parse(url)
   protocol = protocol.replace(/:$/, '')
   return { protocol, node, port, url }
 }
