@@ -99,4 +99,15 @@ describe('# blocks.repository saveBlockData replace', function () {
     expect(deletes).to.have.lengthOf(0)
     expect(captured[0]).to.deep.equal({ op: 'block.insert', number: 500 })
   })
+
+  it('saves like an insert when a replace finds no stored block: nothing is undone and the NFT inserts follow the block', async () => {
+    block.findMany.resolves([])
+    nftRepository.insertStatements.resolves([{ op: 'nft.insert' }])
+
+    await repo.saveBlockData(data, { replace: true })
+
+    expect(nftRepository.replaceStatements.called).to.equal(false)
+    expect(tokenStateRepository.undoStatements.called).to.equal(false)
+    expect(captured.slice(0, 2)).to.deep.equal([{ op: 'block.insert', number: 500 }, { op: 'nft.insert' }])
+  })
 })

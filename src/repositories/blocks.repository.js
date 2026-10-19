@@ -110,15 +110,20 @@ export function getBlocksRepository (prismaClient) {
 
       const generateTransaction = async () => {
         const blocksToDelete = replace ? await findBlocksToDelete({ number: block.number }) : []
-        const nftStatements = blocksToDelete.length
-          ? await nftRepository.replaceStatements(blocksToDelete, block, events)
-          : { undo: [], insert: await nftRepository.insertStatements(block, events) }
-        const replacedBlockDeletes = replace ? await deleteStatements(blocksToDelete, nftStatements.undo) : []
+        let replacedBlockDeletes = []
+        let nftInserts
+        if (blocksToDelete.length) {
+          const nftStatements = await nftRepository.replaceStatements(blocksToDelete, block, events)
+          replacedBlockDeletes = await deleteStatements(blocksToDelete, nftStatements.undo)
+          nftInserts = nftStatements.insert
+        } else {
+          nftInserts = await nftRepository.insertStatements(block, events)
+        }
 
         const transaction = [
           ...replacedBlockDeletes,
           this.insertOne(block), // insert block
-          ...nftStatements.insert,
+          ...nftInserts,
           ...tokenStateRepository.insertStatements(block, tokenStates),
           ...getAddressesQueries(), // insert addresses
           ...balancesRepository.insertMany(balances, latestBalances), // insert balances
