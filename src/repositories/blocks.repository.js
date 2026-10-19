@@ -110,7 +110,7 @@ export function getBlocksRepository (prismaClient) {
 
       const generateTransaction = async () => {
         const blocksToDelete = replace ? await findBlocksToDelete({ number: block.number }) : []
-        const nft = replace
+        const nft = blocksToDelete.length
           ? await nftRepository.replaceStatements(blocksToDelete, block, events)
           : { undo: [], insert: await nftRepository.insertStatements(block, events) }
         const replacedBlock = replace ? await deleteStatements(blocksToDelete, nft.undo) : []

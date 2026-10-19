@@ -224,29 +224,29 @@ export function getNftRepository (prismaClient) {
     ]
   }
 
-  async function statements ({ blocksToDelete = [], newBlock = null, newBlockEvents = [] }) {
-    const deletedBlockHashes = blocksToDelete.map(b => b.hash)
-    const factsOfDeletedBlocks = { blockHash: { in: deletedBlockHashes }, standard: { in: NFT_STANDARDS } }
-    const undoneFacts = blocksToDelete.length ? await prismaClient.token_transfer.findMany({ where: factsOfDeletedBlocks }) : []
-    const addedFacts = newBlock ? decodeBlockNftTransfers(newBlockEvents) : []
-    const ownership = await ownershipStatements({ addedFacts, undoneFacts, newBlock, deletedBlockHashes })
-    const undoFacts = undoneFacts.length ? [prismaClient.token_transfer.deleteMany({ where: factsOfDeletedBlocks })] : []
-    const insertFacts = addedFacts.length ? [prismaClient.token_transfer.createMany({ data: addedFacts })] : []
-
-    return blocksToDelete.length
-      ? { undo: [...undoFacts, ...ownership], insert: insertFacts }
-      : { undo: [], insert: [...insertFacts, ...ownership] }
-  }
+  const nftFactsOfBlocks = blockHashes => ({ blockHash: { in: blockHashes }, standard: { in: NFT_STANDARDS } })
+  const readFactsOfBlocks = blockHashes => prismaClient.token_transfer.findMany({ where: nftFactsOfBlocks(blockHashes) })
+  const insertFacts = facts => facts.length ? [prismaClient.token_transfer.createMany({ data: facts })] : []
+  const deleteFacts = (blockHashes, facts) => facts.length ? [prismaClient.token_transfer.deleteMany({ where: nftFactsOfBlocks(blockHashes) })] : []
 
   return {
     async insertStatements (newBlock, newBlockEvents) {
-      return (await statements({ newBlock, newBlockEvents })).insert
+      const addedFacts = decodeBlockNftTransfers(newBlockEvents)
+      const ownership = await ownershipStatements({ addedFacts, undoneFacts: [], newBlock, deletedBlockHashes: [] })
+      return [...insertFacts(addedFacts), ...ownership]
     },
     async undoStatements (blocksToDelete) {
-      return (await statements({ blocksToDelete })).undo
+      const deletedBlockHashes = blocksToDelete.map(b => b.hash)
+      const undoneFacts = await readFactsOfBlocks(deletedBlockHashes)
+      const ownership = await ownershipStatements({ addedFacts: [], undoneFacts, newBlock: null, deletedBlockHashes })
+      return [...deleteFacts(deletedBlockHashes, undoneFacts), ...ownership]
     },
-    replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
-      return statements({ blocksToDelete, newBlock, newBlockEvents })
+    async replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
+      const deletedBlockHashes = blocksToDelete.map(b => b.hash)
+      const undoneFacts = await readFactsOfBlocks(deletedBlockHashes)
+      const addedFacts = decodeBlockNftTransfers(newBlockEvents)
+      const ownership = await ownershipStatements({ addedFacts, undoneFacts, newBlock, deletedBlockHashes })
+      return { undo: [...deleteFacts(deletedBlockHashes, undoneFacts), ...ownership], insert: insertFacts(addedFacts) }
     }
   }
 }
