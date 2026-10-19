@@ -47,6 +47,16 @@ function rightBeforeTheHolderRead (competing) {
   prismaClient.$transaction = recordingBatch
 }
 
+function rightBeforeTheNextHolderRead (competing) {
+  const [[holders, findHolders]] = readers
+  holders.findMany = async function (...args) {
+    holders.findMany = findHolders
+    await competing()
+    return findHolders.apply(this, args)
+  }
+  prismaClient.$transaction = recordingBatch
+}
+
 integrationDescribe('NFT ownership: a save that read holders or balances another writer changed before its batch', function () {
   this.timeout(120000)
 
@@ -84,6 +94,18 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
     await save(30, [erc721(C721, ZERO, D, 5)])
 
     expect(codes).to.deep.equal(['P2002'])
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('a second delete of a block whose holder another delete of the same block removed after the facts were read returns { count: 0 }', async () => {
+    await save(5, [erc721(C721, ZERO, A, 1)])
+    await save(10, [erc721(C721, A, B, 1)])
+    rightBeforeTheNextHolderRead(() => blocksRepository.deleteOne({ number: 10 }))
+
+    const second = await blocksRepository.deleteOne({ number: 10 })
+
+    expect(second).to.deep.equal({ count: 0 })
+    expect(codes).to.deep.equal(['P2025'])
     expect(await differences()).to.deep.equal([])
   })
 })

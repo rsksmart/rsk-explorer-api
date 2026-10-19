@@ -69,7 +69,7 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
     await prismaClient.explorer_initial_config.deleteMany({})
   })
 
-  it('each tool exits 1 with the reason on an argument that is not a whole number or names an empty range, and on a candidate the node fails, and exits 0 on a valid range', async () => {
+  it('each tool exits 1 with the reason on an argument that is not a whole number or names an empty range, and on a candidate or a pair the node fails, and exits 0 on a valid range', async () => {
     const nodeUrl = `http://127.0.0.1:${node.address().port}`
     const backfillRuns = [['A', '3400000', '3.49e6'], ['A', '20', '10'], ['B', '1000'], ['A', '10', '10']]
     const [exponent, reversed, aboveTip, oneBlock, ...redetect] = await Promise.all([
@@ -80,6 +80,7 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
       const resultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
       if (resultFile) fs.unlinkSync(resultFile)
     }
+    const failedPair = await runBackfill(nodeUrl, 'B')
     const output = run => run.stdout + run.stderr
 
     expect([exponent, reversed, aboveTip, oneBlock, ...redetect].map(run => run.status)).to.deep.equal([1, 1, 1, 0, 1, 1, 1, 1])
@@ -88,6 +89,7 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
     expect(output(aboveTip)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
     expect(oneBlock.stdout).to.include('blocks 10..10')
     expect(redetect.slice(0, 3).map(run => (run.stdout.match(/Must be a whole number of at least 1, such as 50: got (\S+)/) || [])[1])).to.deep.equal(['5e2', '0', '50.5'])
+    expect([failedPair.status, failedPair.stdout.includes('"failure":"injected internal error"')]).to.deep.equal([1, true])
     expect(redetect[3].stdout).to.include(`${C721}: FAILED`).and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
   })
 
