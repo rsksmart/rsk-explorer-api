@@ -1,4 +1,4 @@
-export async function retry ({ maxAttempts, isRetryable, run, doneByAnotherWriter = async () => false, beforeRetry = async () => true }) {
+export async function retry ({ maxAttempts, isRetryable, run, doneByAnotherWriter = async () => false, beforeRetry = async () => {} }) {
   let lastError
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -7,7 +7,7 @@ export async function retry ({ maxAttempts, isRetryable, run, doneByAnotherWrite
       if (!isRetryable(error)) throw error
       if (await doneByAnotherWriter(error)) return
       lastError = error
-      if (attempt < maxAttempts && !(await beforeRetry(error, attempt))) return
+      if (attempt < maxAttempts) await beforeRetry(error, attempt)
     }
   }
   throw lastError

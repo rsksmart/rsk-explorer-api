@@ -75,7 +75,6 @@ export async function backfillTransfers ({ prismaClient = defaultPrismaClient, f
     },
     beforeRetry: async (error, attempt) => {
       console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, a holder changed since it was read. Reading again`)
-      return true
     }
   })
 
@@ -169,9 +168,7 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
         report.pairsRaced++
         console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
         todo = (await pendingPairs([block.hash])).todo
-        if (!todo.length) return false
         await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
-        return true
       }
     })
   }

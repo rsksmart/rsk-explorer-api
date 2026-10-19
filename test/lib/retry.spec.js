@@ -14,7 +14,7 @@ describe('retry', () => {
   it('runs work refused on every attempt 3 times at most, prepares a retry only between attempts, and throws the last refusal', async () => {
     const run = refusedOnEveryAttempt()
     const doneByAnotherWriter = sinon.stub().resolves(false)
-    const beforeRetry = sinon.stub().resolves(true)
+    const beforeRetry = sinon.stub().resolves()
 
     const error = await retry({ maxAttempts: 3, isRetryable, run, doneByAnotherWriter, beforeRetry }).catch(e => e)
 
@@ -23,19 +23,18 @@ describe('retry', () => {
     expect(beforeRetry.args.map(([refused, attempt]) => [refused.message, attempt])).to.deep.equal([['refused on attempt 1', 1], ['refused on attempt 2', 2]])
   })
 
-  it('returns what the work returns, rethrows any other error at once, and ends without an error when the work is finished elsewhere or nothing is left', async () => {
+  it('returns what the work returns after a refusal, rethrows any other error at once, and ends without an error when another writer did the work', async () => {
     const other = new Error('connection lost')
-    const runs = [sinon.stub(), sinon.stub().rejects(other), refusedOnEveryAttempt(), refusedOnEveryAttempt()]
+    const runs = [sinon.stub(), sinon.stub().rejects(other), refusedOnEveryAttempt()]
     runs[0].onFirstCall().rejects(refusal(1)).onSecondCall().resolves({ count: 1 })
 
     const outcomes = await Promise.all([
       retry({ maxAttempts: 3, isRetryable, run: runs[0] }),
       retry({ maxAttempts: 3, isRetryable, run: runs[1] }).catch(e => e),
-      retry({ maxAttempts: 3, isRetryable, run: runs[2], doneByAnotherWriter: async () => true }),
-      retry({ maxAttempts: 3, isRetryable, run: runs[3], beforeRetry: async () => false })
+      retry({ maxAttempts: 3, isRetryable, run: runs[2], doneByAnotherWriter: async () => true })
     ])
 
-    expect(outcomes).to.deep.equal([{ count: 1 }, other, undefined, undefined])
-    expect(runs.map(run => run.callCount)).to.deep.equal([2, 1, 1, 1])
+    expect(outcomes).to.deep.equal([{ count: 1 }, other, undefined])
+    expect(runs.map(run => run.callCount)).to.deep.equal([2, 1, 1])
   })
 })

@@ -169,20 +169,17 @@ export function getBlocksRepository (prismaClient) {
   async function deleteBlocks (where) {
     const pinned = await findTargets(where)
     let targets = pinned
-    if (!targets.length) return { count: 0 }
-
-    const deleted = await retry({
+    return retry({
       maxAttempts: DELETE_ATTEMPTS,
       isRetryable: isRetryableDeleteError,
       run: async () => {
+        if (!targets.length) return { count: 0 }
         await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
         return { count: targets.length }
       },
       beforeRetry: async () => {
         targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
-        return targets.length > 0
       }
     })
-    return deleted || { count: 0 }
   }
 }
