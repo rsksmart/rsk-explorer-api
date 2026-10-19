@@ -109,11 +109,11 @@ export function getBlocksRepository (prismaClient) {
       }
 
       const generateTransaction = async () => {
-        const targets = replace ? await findTargets({ number: block.number }) : []
+        const blocksToDelete = replace ? await findBlocksToDelete({ number: block.number }) : []
         const nft = replace
-          ? await nftRepository.replaceStatements(targets, block, events)
+          ? await nftRepository.replaceStatements(blocksToDelete, block, events)
           : { undo: [], insert: await nftRepository.insertStatements(block, events) }
-        const replacedBlock = replace ? await deleteStatements(targets, nft.undo) : []
+        const replacedBlock = replace ? await deleteStatements(blocksToDelete, nft.undo) : []
 
         const transaction = [
           this.insertOne(block), // insert block
@@ -154,31 +154,31 @@ export function getBlocksRepository (prismaClient) {
     }
   }
 
-  async function deleteStatements (blocks, nftUndo = null) {
+  async function deleteStatements (blocksToDelete, nftUndo = null) {
     return [
-      ...(nftUndo || await nftRepository.undoStatements(blocks)),
-      ...await tokenStateRepository.undoStatements(blocks),
-      ...blocks.map(({ number, hash }) => prismaClient.block.delete({ where: { number, hash } }))
+      ...(nftUndo || await nftRepository.undoStatements(blocksToDelete)),
+      ...await tokenStateRepository.undoStatements(blocksToDelete),
+      ...blocksToDelete.map(({ number, hash }) => prismaClient.block.delete({ where: { number, hash } }))
     ]
   }
 
-  function findTargets (where) {
+  function findBlocksToDelete (where) {
     return prismaClient.block.findMany({ where, select: { number: true, hash: true }, orderBy: { number: 'asc' } })
   }
 
   async function deleteBlocks (where) {
-    const pinned = await findTargets(where)
-    let targets = pinned
+    const pinned = await findBlocksToDelete(where)
+    let blocksToDelete = pinned
     return retry({
       maxAttempts: DELETE_ATTEMPTS,
       isRetryable: isRetryableDeleteError,
       run: async () => {
-        if (!targets.length) return { count: 0 }
-        await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
-        return { count: targets.length }
+        if (!blocksToDelete.length) return { count: 0 }
+        await prismaClient.$transaction(await deleteStatements(blocksToDelete), READ_COMMITTED)
+        return { count: blocksToDelete.length }
       },
       beforeRetry: async () => {
-        targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
+        blocksToDelete = await findBlocksToDelete({ hash: { in: pinned.map(b => b.hash) } })
       }
     })
   }

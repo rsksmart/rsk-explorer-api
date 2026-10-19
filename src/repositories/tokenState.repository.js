@@ -1,6 +1,6 @@
 export function getTokenStateRepository (prismaClient) {
   return {
-    insertStatements (block, tokenStates) {
+    insertStatements (newBlock, tokenStates) {
       if (!tokenStates.length) return []
       const states = [...tokenStates].sort((a, b) => a.contract < b.contract ? -1 : 1)
 
@@ -8,19 +8,19 @@ export function getTokenStateRepository (prismaClient) {
         ...states.flatMap(({ contract, ...state }) => [
           prismaClient.token.upsert({
             where: { contract },
-            create: { contract, blockNumber: block.number, ...state },
+            create: { contract, blockNumber: newBlock.number, ...state },
             update: { version: { increment: 1 } }
           }),
           prismaClient.token.updateMany({
-            where: { contract, blockNumber: { lt: block.number } },
-            data: { blockNumber: block.number, ...state }
+            where: { contract, blockNumber: { lt: newBlock.number } },
+            data: { blockNumber: newBlock.number, ...state }
           })
         ]),
-        prismaClient.token_state_at_block.createMany({ data: states.map(state => ({ ...state, blockNumber: block.number })) })
+        prismaClient.token_state_at_block.createMany({ data: states.map(state => ({ ...state, blockNumber: newBlock.number })) })
       ]
     },
-    async undoStatements (blocks) {
-      const numbers = blocks.map(b => b.number)
+    async undoStatements (blocksToDelete) {
+      const numbers = blocksToDelete.map(b => b.number)
       const facts = await prismaClient.token_state_at_block.findMany({ where: { blockNumber: { in: numbers } }, select: { contract: true } })
       if (!facts.length) return []
       const contracts = [...new Set(facts.map(f => f.contract))].sort()

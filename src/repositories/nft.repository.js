@@ -150,8 +150,8 @@ export function getNftRepository (prismaClient) {
   async function readNewestRemainingFacts (sortedHolderRows, deletedBlockHashes) {
     const newestNumber = await newestRemainingBlockNumbers(sortedHolderRows, deletedBlockHashes)
     const numberLists = chunkArray([...new Set(newestNumber.values())], BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE)
-    const blocks = (await Promise.all(numberLists.map(numbers => prismaClient.block.findMany({ where: { number: { in: numbers } }, select: { number: true, hash: true } })))).flat()
-    const hashAt = new Map(blocks.map(({ number, hash }) => [number, hash]))
+    const blocksOfNewestFacts = (await Promise.all(numberLists.map(numbers => prismaClient.block.findMany({ where: { number: { in: numbers } }, select: { number: true, hash: true } })))).flat()
+    const hashAt = new Map(blocksOfNewestFacts.map(({ number, hash }) => [number, hash]))
 
     return new Map([...newestNumber].map(([key, number]) => [key, { lastBlockNumber: number, lastBlockHash: hashAt.get(number) }]))
   }
@@ -194,7 +194,7 @@ export function getNftRepository (prismaClient) {
     }
   }
 
-  async function ownershipStatements ({ addedFacts, undoneFacts, block, deletedBlockHashes }) {
+  async function ownershipStatements ({ addedFacts, undoneFacts, newBlock, deletedBlockHashes }) {
     const { balances, holders } = netDeltas([[addedFacts, 1], [undoneFacts, -1]])
     if (!holders.length) return []
 
@@ -208,7 +208,7 @@ export function getNftRepository (prismaClient) {
     const newestRemainingFacts = await readNewestRemainingFacts(holdersLastSeenInADeletedBlock, deletedBlockHashes)
 
     const transitions = balanceTransitions(balancesToWrite, holders, stored.quantities)
-    const savedBlock = block ? { lastBlockNumber: block.number, lastBlockHash: block.hash } : null
+    const savedBlock = newBlock ? { lastBlockNumber: newBlock.number, lastBlockHash: newBlock.hash } : null
     const { newHolders, holderUpdates, holderDeletes } = holderStatements({
       holders: holdersToWrite, stored, holderChanges: transitions.holderChanges, newestRemainingFacts, savedBlock, deletedHashes
     })
@@ -224,29 +224,29 @@ export function getNftRepository (prismaClient) {
     ]
   }
 
-  async function statements ({ blocks = [], block = null, events = [] }) {
-    const deletedBlockHashes = blocks.map(b => b.hash)
+  async function statements ({ blocksToDelete = [], newBlock = null, newBlockEvents = [] }) {
+    const deletedBlockHashes = blocksToDelete.map(b => b.hash)
     const factsOfDeletedBlocks = { blockHash: { in: deletedBlockHashes }, standard: { in: NFT_STANDARDS } }
-    const undoneFacts = blocks.length ? await prismaClient.token_transfer.findMany({ where: factsOfDeletedBlocks }) : []
-    const addedFacts = block ? decodeBlockNftTransfers(events) : []
-    const ownership = await ownershipStatements({ addedFacts, undoneFacts, block, deletedBlockHashes })
+    const undoneFacts = blocksToDelete.length ? await prismaClient.token_transfer.findMany({ where: factsOfDeletedBlocks }) : []
+    const addedFacts = newBlock ? decodeBlockNftTransfers(newBlockEvents) : []
+    const ownership = await ownershipStatements({ addedFacts, undoneFacts, newBlock, deletedBlockHashes })
     const undoFacts = undoneFacts.length ? [prismaClient.token_transfer.deleteMany({ where: factsOfDeletedBlocks })] : []
     const insertFacts = addedFacts.length ? [prismaClient.token_transfer.createMany({ data: addedFacts })] : []
 
-    return blocks.length
+    return blocksToDelete.length
       ? { undo: [...undoFacts, ...ownership], insert: insertFacts }
       : { undo: [], insert: [...insertFacts, ...ownership] }
   }
 
   return {
-    async insertStatements (block, events) {
-      return (await statements({ block, events })).insert
+    async insertStatements (newBlock, newBlockEvents) {
+      return (await statements({ newBlock, newBlockEvents })).insert
     },
-    async undoStatements (blocks) {
-      return (await statements({ blocks })).undo
+    async undoStatements (blocksToDelete) {
+      return (await statements({ blocksToDelete })).undo
     },
-    replaceStatements (blocks, block, events) {
-      return statements({ blocks, block, events })
+    replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
+      return statements({ blocksToDelete, newBlock, newBlockEvents })
     }
   }
 }
