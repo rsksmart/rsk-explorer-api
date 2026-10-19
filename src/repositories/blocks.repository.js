@@ -110,14 +110,15 @@ export function getBlocksRepository (prismaClient) {
 
       const generateTransaction = async () => {
         const blocksToDelete = replace ? await findBlocksToDelete({ number: block.number }) : []
-        const nft = blocksToDelete.length
+        const nftStatements = blocksToDelete.length
           ? await nftRepository.replaceStatements(blocksToDelete, block, events)
           : { undo: [], insert: await nftRepository.insertStatements(block, events) }
-        const replacedBlock = replace ? await deleteStatements(blocksToDelete, nft.undo) : []
+        const replacedBlockDeletes = replace ? await deleteStatements(blocksToDelete, nftStatements.undo) : []
 
         const transaction = [
+          ...replacedBlockDeletes,
           this.insertOne(block), // insert block
-          ...nft.insert,
+          ...nftStatements.insert,
           ...tokenStateRepository.insertStatements(block, tokenStates),
           ...getAddressesQueries(), // insert addresses
           ...balancesRepository.insertMany(balances, latestBalances), // insert balances
@@ -128,10 +129,6 @@ export function getBlocksRepository (prismaClient) {
           ...getTokensAddressesQueries(), // insert tokenAddresses
           ...summaryRepository.insertOne(data) // save block summary
         ]
-
-        if (replace) {
-          transaction.unshift(...replacedBlock)
-        }
 
         if (status) {
           transaction.push(statusRepository.insertOne(status)) // insert status
@@ -154,9 +151,9 @@ export function getBlocksRepository (prismaClient) {
     }
   }
 
-  async function deleteStatements (blocksToDelete, nftUndo = null) {
+  async function deleteStatements (blocksToDelete, nftUndo) {
     return [
-      ...(nftUndo || await nftRepository.undoStatements(blocksToDelete)),
+      ...nftUndo,
       ...await tokenStateRepository.undoStatements(blocksToDelete),
       ...blocksToDelete.map(({ number, hash }) => prismaClient.block.delete({ where: { number, hash } }))
     ]
@@ -174,7 +171,7 @@ export function getBlocksRepository (prismaClient) {
       isRetryable: isRetryableDeleteError,
       run: async () => {
         if (!blocksToDelete.length) return { count: 0 }
-        await prismaClient.$transaction(await deleteStatements(blocksToDelete), READ_COMMITTED)
+        await prismaClient.$transaction(await deleteStatements(blocksToDelete, await nftRepository.undoStatements(blocksToDelete)), READ_COMMITTED)
         return { count: blocksToDelete.length }
       },
       beforeRetry: async () => {
