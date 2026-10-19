@@ -3,9 +3,9 @@ import { decodeBlockNftTransfers, NFT_STANDARDS, ZERO_ADDRESS } from '../lib/nft
 import { contractsInterfaces } from '../lib/types'
 import { chunkArray } from '../lib/utils'
 
-const PRISMA_MAX_BIND_VALUES = 32767
-const BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE = PRISMA_MAX_BIND_VALUES - 1
-const OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME = 400
+const PRISMA_MAX_QUERY_PARAMETERS = 32767
+const QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE = PRISMA_MAX_QUERY_PARAMETERS - 1
+const OR_CONDITIONS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME = 400
 
 const byKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0
 // Holder inserts, then updates, each in key order; balances follow their locked holder.
@@ -14,70 +14,70 @@ const newestFirst = (a, b) => b.lastBlockNumber - a.lastBlockNumber
 const holderId = ({ contract, standard, holder }) => ({ contract, standard, holder })
 const balanceId = ({ contract, standard, tokenId, holder }) => ({ contract, standard, tokenId, holder })
 
-function inListsUnderBindLimit (sortedRows, prefix, listed, bindsTakenByTheRestOfTheWhere = 0) {
-  const statements = []
-  let arms = []
-  let binds = 0
-  let arm = null
-  const sharesPrefix = row => !!arm && prefix.every(field => arm[field] === row[field])
+function orConditionsPerStatement (sortedRows, sharedFields, listedField, parametersUsedByTheRestOfTheWhere = 0) {
+  const conditionsPerStatement = []
+  let conditions = []
+  let parameters = 0
+  let condition = null
+  const sharesFieldsWithCondition = row => !!condition && sharedFields.every(field => condition[field] === row[field])
 
   for (const row of sortedRows) {
-    const opensAnArm = !sharesPrefix(row)
-    const overBindLimit = bindsTakenByTheRestOfTheWhere + binds + (opensAnArm ? prefix.length + 1 : 1) > BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE
-    if (overBindLimit || (opensAnArm && arms.length === OR_ARMS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME)) {
-      statements.push(arms)
-      arms = []
-      binds = 0
-      arm = null
+    const startsACondition = !sharesFieldsWithCondition(row)
+    const overParameterLimit = parametersUsedByTheRestOfTheWhere + parameters + (startsACondition ? sharedFields.length + 1 : 1) > QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE
+    if (overParameterLimit || (startsACondition && conditions.length === OR_CONDITIONS_POSTGRES_STILL_PLANS_IN_LINEAR_TIME)) {
+      conditionsPerStatement.push(conditions)
+      conditions = []
+      parameters = 0
+      condition = null
     }
-    if (!sharesPrefix(row)) {
-      arm = { ...Object.fromEntries(prefix.map(field => [field, row[field]])), [listed]: { in: [] } }
-      arms.push(arm)
-      binds += prefix.length
+    if (!sharesFieldsWithCondition(row)) {
+      condition = { ...Object.fromEntries(sharedFields.map(field => [field, row[field]])), [listedField]: { in: [] } }
+      conditions.push(condition)
+      parameters += sharedFields.length
     }
-    arm[listed].in.push(row[listed])
-    binds++
+    condition[listedField].in.push(row[listedField])
+    parameters++
   }
 
-  return arms.length ? [...statements, arms] : statements
+  return conditions.length ? [...conditionsPerStatement, conditions] : conditionsPerStatement
 }
 
-const holdersUnderBindLimit = (sortedHolders, bindsTakenByTheRestOfTheWhere) => inListsUnderBindLimit(sortedHolders, ['contract', 'standard'], 'holder', bindsTakenByTheRestOfTheWhere)
-const balancesUnderBindLimit = sortedBalances => inListsUnderBindLimit(sortedBalances, ['contract', 'standard', 'holder'], 'tokenId')
+const holderConditionsPerStatement = (sortedHolders, parametersUsedByTheRestOfTheWhere) => orConditionsPerStatement(sortedHolders, ['contract', 'standard'], 'holder', parametersUsedByTheRestOfTheWhere)
+const balanceConditionsPerStatement = sortedBalances => orConditionsPerStatement(sortedBalances, ['contract', 'standard', 'holder'], 'tokenId')
 const holderKey = ({ contract, standard, holder }) => `${contract}|${standard}|${holder}`
 const balanceKey = ({ contract, standard, tokenId, holder }) => `${contract}|${standard}|${holder}|${tokenId}`
 const heldTokenCount = quantity => quantity.gt(0) ? 1 : 0
 
-function netDeltas (signedFacts) {
+function netChanges (addedFacts, factsOfDeletedBlocks) {
   const balances = new Map()
   const holders = new Map()
 
-  const touchHolder = (contract, standard, holder, added) => {
+  const recordHolder = (contract, standard, holder, added) => {
     if (holder === ZERO_ADDRESS) return
     const key = holderKey({ contract, standard, holder })
     const entry = holders.get(key) || { key, contract, standard, holder, added: false }
     entry.added = entry.added || added
     holders.set(key, entry)
   }
-  const addToBalance = (contract, standard, tokenId, holder, delta) => {
+  const addToBalance = (contract, standard, tokenId, holder, change) => {
     if (holder === ZERO_ADDRESS) return
     const key = balanceKey({ contract, standard, tokenId, holder })
-    const entry = balances.get(key) || { key, contract, standard, tokenId, holder, delta: new BigNumber(0) }
-    entry.delta = entry.delta.plus(delta)
+    const entry = balances.get(key) || { key, contract, standard, tokenId, holder, change: new BigNumber(0) }
+    entry.change = entry.change.plus(change)
     balances.set(key, entry)
   }
 
-  for (const [facts, sign] of signedFacts) {
+  for (const [facts, sign] of [[addedFacts, 1], [factsOfDeletedBlocks, -1]]) {
     for (const fact of facts) {
       const value = new BigNumber(fact.value.toString()).times(sign)
-      touchHolder(fact.contract, fact.standard, fact.to, sign > 0)
-      touchHolder(fact.contract, fact.standard, fact.from, sign > 0)
+      recordHolder(fact.contract, fact.standard, fact.to, sign > 0)
+      recordHolder(fact.contract, fact.standard, fact.from, sign > 0)
       addToBalance(fact.contract, fact.standard, fact.tokenId, fact.to, value)
       addToBalance(fact.contract, fact.standard, fact.tokenId, fact.from, value.negated())
     }
   }
 
-  const changedBalances = [...balances.values()].filter(balance => !balance.delta.isZero())
+  const changedBalances = [...balances.values()].filter(balance => !balance.change.isZero())
   return { balances: inLockOrder(changedBalances), holders: inLockOrder([...holders.values()]) }
 }
 
@@ -89,11 +89,11 @@ function balanceTransitions (balances, holders, storedQuantities) {
 
   for (const balance of balances) {
     const storedQuantity = storedQuantities.get(balance.key)
-    const newQuantity = (storedQuantity || new BigNumber(0)).plus(balance.delta)
+    const newQuantity = (storedQuantity || new BigNumber(0)).plus(balance.change)
     const tokenCountChange = heldTokenCount(newQuantity) - (storedQuantity ? heldTokenCount(storedQuantity) : 0)
     const holderChange = holderChanges.get(holderKey(balance))
     holderChange.tokenCount += tokenCountChange
-    holderChange.quantity = holderChange.quantity.plus(balance.standard === contractsInterfaces.ERC721 ? tokenCountChange : balance.delta)
+    holderChange.quantity = holderChange.quantity.plus(balance.standard === contractsInterfaces.ERC721 ? tokenCountChange : balance.change)
 
     if (!storedQuantity) newBalances.push({ ...balanceId(balance), quantity: newQuantity.toFixed() })
     else if (newQuantity.isZero()) emptiedBalances.push(balance)
@@ -114,14 +114,14 @@ function lastBlockAfterThisBatch (storedHolder, newestRemainingFact, savedBlock,
 }
 
 export function getNftRepository (prismaClient) {
-  async function findManyPerStatement (model, armLists) {
-    const rowsPerStatement = await Promise.all(armLists.map(arms => prismaClient[model].findMany({ where: { OR: arms } })))
+  async function findManyPerStatement (model, conditionsPerStatement) {
+    const rowsPerStatement = await Promise.all(conditionsPerStatement.map(conditions => prismaClient[model].findMany({ where: { OR: conditions } })))
     return rowsPerStatement.flat()
   }
 
   async function readHoldersThenBalances (holders, balances) {
-    const holderRows = await findManyPerStatement('nft_holder', holdersUnderBindLimit(holders))
-    const balanceRows = await findManyPerStatement('nft_balance', balancesUnderBindLimit(balances))
+    const holderRows = await findManyPerStatement('nft_holder', holderConditionsPerStatement(holders))
+    const balanceRows = await findManyPerStatement('nft_balance', balanceConditionsPerStatement(balances))
 
     return {
       holders: new Map(holderRows.map(row => [holderKey(row), row])),
@@ -130,10 +130,10 @@ export function getNftRepository (prismaClient) {
   }
 
   async function newestRemainingBlockNumbers (sortedHolderRows, deletedBlockHashes) {
-    const readSide = side => holdersUnderBindLimit(sortedHolderRows, deletedBlockHashes.length).map(async arms => {
+    const readSide = side => holderConditionsPerStatement(sortedHolderRows, deletedBlockHashes.length).map(async conditions => {
       const groups = await prismaClient.token_transfer.groupBy({
         by: ['contract', 'standard', side],
-        where: { OR: arms.map(({ holder, ...contractAndStandard }) => ({ ...contractAndStandard, [side]: holder })), blockHash: { notIn: deletedBlockHashes } },
+        where: { OR: conditions.map(({ holder, ...contractAndStandard }) => ({ ...contractAndStandard, [side]: holder })), blockHash: { notIn: deletedBlockHashes } },
         _max: { blockNumber: true }
       })
       return groups.map(row => [holderKey({ contract: row.contract, standard: row.standard, holder: row[side] }), row._max.blockNumber])
@@ -149,7 +149,7 @@ export function getNftRepository (prismaClient) {
 
   async function readNewestRemainingFacts (sortedHolderRows, deletedBlockHashes) {
     const newestNumber = await newestRemainingBlockNumbers(sortedHolderRows, deletedBlockHashes)
-    const numberLists = chunkArray([...new Set(newestNumber.values())], BINDS_LEFT_FOR_A_FIND_OFFSET_OR_AN_UPDATED_VALUE)
+    const numberLists = chunkArray([...new Set(newestNumber.values())], QUERY_PARAMETERS_LEFT_FOR_AN_OFFSET_OR_A_NEW_VALUE)
     const blocksOfNewestFacts = (await Promise.all(numberLists.map(numbers => prismaClient.block.findMany({ where: { number: { in: numbers } }, select: { number: true, hash: true } })))).flat()
     const hashAt = new Map(blocksOfNewestFacts.map(({ number, hash }) => [number, hash]))
 
@@ -188,14 +188,14 @@ export function getNftRepository (prismaClient) {
   function balanceStatements ({ newBalances, emptiedBalances, balancesByNewQuantity }) {
     return {
       createBalances: newBalances.length ? [prismaClient.nft_balance.createMany({ data: newBalances })] : [],
-      deleteBalances: balancesUnderBindLimit(emptiedBalances).map(arms => prismaClient.nft_balance.deleteMany({ where: { OR: arms } })),
+      deleteBalances: balanceConditionsPerStatement(emptiedBalances).map(conditions => prismaClient.nft_balance.deleteMany({ where: { OR: conditions } })),
       updateBalances: [...balancesByNewQuantity].flatMap(([quantity, balances]) =>
-        balancesUnderBindLimit(balances).map(arms => prismaClient.nft_balance.updateMany({ where: { OR: arms }, data: { quantity } })))
+        balanceConditionsPerStatement(balances).map(conditions => prismaClient.nft_balance.updateMany({ where: { OR: conditions }, data: { quantity } })))
     }
   }
 
-  async function ownershipStatements ({ addedFacts, undoneFacts, newBlock, deletedBlockHashes }) {
-    const { balances, holders } = netDeltas([[addedFacts, 1], [undoneFacts, -1]])
+  async function ownershipStatements ({ addedFacts, factsOfDeletedBlocks, newBlock, deletedBlockHashes }) {
+    const { balances, holders } = netChanges(addedFacts, factsOfDeletedBlocks)
     if (!holders.length) return []
 
     const stored = await readHoldersThenBalances(holders, balances)
@@ -232,21 +232,21 @@ export function getNftRepository (prismaClient) {
   return {
     async insertStatements (newBlock, newBlockEvents) {
       const addedFacts = decodeBlockNftTransfers(newBlockEvents)
-      const ownership = await ownershipStatements({ addedFacts, undoneFacts: [], newBlock, deletedBlockHashes: [] })
+      const ownership = await ownershipStatements({ addedFacts, factsOfDeletedBlocks: [], newBlock, deletedBlockHashes: [] })
       return [...insertFacts(addedFacts), ...ownership]
     },
     async undoStatements (blocksToDelete) {
       const deletedBlockHashes = blocksToDelete.map(b => b.hash)
-      const undoneFacts = await readFactsOfBlocks(deletedBlockHashes)
-      const ownership = await ownershipStatements({ addedFacts: [], undoneFacts, newBlock: null, deletedBlockHashes })
-      return [...deleteFacts(deletedBlockHashes, undoneFacts), ...ownership]
+      const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
+      const ownership = await ownershipStatements({ addedFacts: [], factsOfDeletedBlocks, newBlock: null, deletedBlockHashes })
+      return [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership]
     },
     async replaceStatements (blocksToDelete, newBlock, newBlockEvents) {
       const deletedBlockHashes = blocksToDelete.map(b => b.hash)
-      const undoneFacts = await readFactsOfBlocks(deletedBlockHashes)
+      const factsOfDeletedBlocks = await readFactsOfBlocks(deletedBlockHashes)
       const addedFacts = decodeBlockNftTransfers(newBlockEvents)
-      const ownership = await ownershipStatements({ addedFacts, undoneFacts, newBlock, deletedBlockHashes })
-      return { undo: [...deleteFacts(deletedBlockHashes, undoneFacts), ...ownership], insert: insertFacts(addedFacts) }
+      const ownership = await ownershipStatements({ addedFacts, factsOfDeletedBlocks, newBlock, deletedBlockHashes })
+      return { undo: [...deleteFacts(deletedBlockHashes, factsOfDeletedBlocks), ...ownership], insert: insertFacts(addedFacts) }
     }
   }
 }
