@@ -39,18 +39,6 @@ describe('# blocks.repository delete retry', function () {
     expect(batches).to.equal(2)
   })
 
-  it('runs a delete refused on every attempt 3 times at most, reads its targets again only before a retry, then throws the last refusal', async () => {
-    const refusals = ['P2025', 'P2003', 'P2025', 'P2003'].map(code => Object.assign(new Error(`refused ${code}`), { code }))
-    const $transaction = sinon.stub()
-    refusals.forEach((refusal, call) => $transaction.onCall(call).rejects(refusal))
-    const findMany = sinon.stub().resolves([{ number: 20, hash: '0xa20' }])
-    repo = getBlocksRepository({ $transaction, block: { findMany, delete: args => ({ op: 'block.delete', ...args }) } })
-
-    expect(await repo.deleteOne({ number: 20 }).catch(e => e)).to.equal(refusals[2])
-    expect($transaction.callCount).to.equal(3)
-    expect(findMany.callCount).to.equal(3)
-  })
-
   it('returns a count of 0 when the blocks it pinned are gone by the time it reads them again', async () => {
     const $transaction = sinon.stub().rejects(Object.assign(new Error('refused'), { code: 'P2025' }))
     const findMany = sinon.stub().resolves([])

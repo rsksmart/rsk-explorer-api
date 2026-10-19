@@ -5,6 +5,7 @@ import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
 import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
+import { withBoundedRetries } from '../lib/boundedRetries'
 
 const toolName = process.argv[1].split('/').pop()
 
@@ -56,29 +57,27 @@ async function eachChunk ({ prismaClient, fromBlock, toBlock, chunkBlocks, onChu
 }
 
 export async function backfillTransfers ({ prismaClient = defaultPrismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone = () => {}, report = newReport('A') }) {
-  const writeTransfers = async (block, events) => {
-    let lastRacedWrite
-    for (let attempt = 1; attempt <= WRITE_ATTEMPTS; attempt++) {
+  const writeTransfers = (block, events) => withBoundedRetries({
+    attempts: WRITE_ATTEMPTS,
+    isRetryable: isRacedWrite,
+    run: async () => {
       const statements = await nftRepository.insertStatements(block, events)
       if (!statements.length) return
-      try {
-        const [{ count }] = await prismaClient.$transaction(statements, READ_COMMITTED)
-        report.blocksWritten++
-        report.facts += count
-        return
-      } catch (error) {
-        if (!isRacedWrite(error)) throw error
-        if (await writtenOrDeletedMeanwhile(prismaClient, block)) {
-          report.blocksRaced++
-          console.log(`block ${block.number} ${block.hash}: ${error.code}, deleted or written by another writer meanwhile. Skipped.`)
-          return
-        }
-        lastRacedWrite = error
-        if (attempt < WRITE_ATTEMPTS) console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, a holder changed since it was read. Reading again`)
-      }
+      const [{ count }] = await prismaClient.$transaction(statements, READ_COMMITTED)
+      report.blocksWritten++
+      report.facts += count
+    },
+    finishedElsewhere: async error => {
+      if (!(await writtenOrDeletedMeanwhile(prismaClient, block))) return false
+      report.blocksRaced++
+      console.log(`block ${block.number} ${block.hash}: ${error.code}, deleted or written by another writer meanwhile. Skipped.`)
+      return true
+    },
+    beforeRetry: async (error, attempt) => {
+      console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, a holder changed since it was read. Reading again`)
+      return true
     }
-    throw lastRacedWrite
-  }
+  })
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {
     report.blocksRead += blocks.length
@@ -155,28 +154,26 @@ export async function backfillTokenStates ({ prismaClient = defaultPrismaClient,
     states.set(pairKey(pair), state)
   }
 
-  const writeBlock = async (block, planned) => {
+  const writeBlock = (block, planned) => {
     let todo = planned
-    let lastRacedWrite
-    for (let attempt = 1; attempt <= WRITE_ATTEMPTS && todo.length; attempt++) {
-      if (attempt > 1) await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
-      const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
-      if (!fetched.length) return
-      try {
+    return withBoundedRetries({
+      attempts: WRITE_ATTEMPTS,
+      isRetryable: isRacedWrite,
+      run: async () => {
+        const fetched = todo.map(pair => states.get(pairKey(pair))).filter(Boolean)
+        if (!fetched.length) return
         await prismaClient.$transaction([pinUnreplaced(prismaClient, block), ...tokenStateRepository.insertStatements(block, fetched)], READ_COMMITTED)
         report.pairsWritten += fetched.length
-        return
-      } catch (error) {
-        if (!isRacedWrite(error)) throw error
-        lastRacedWrite = error
-        if (attempt < WRITE_ATTEMPTS) {
-          report.pairsRaced++
-          console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
-          todo = (await pendingPairs([block.hash])).todo
-        }
+      },
+      beforeRetry: async (error, attempt) => {
+        report.pairsRaced++
+        console.log(`block ${block.number} ${block.hash}: ${error.code} on attempt ${attempt}, reading its pairs again`)
+        todo = (await pendingPairs([block.hash])).todo
+        if (!todo.length) return false
+        await fetchPairs(fetchers, todo.filter(pair => !states.has(pairKey(pair))), recordFetch)
+        return true
       }
-    }
-    if (todo.length) throw lastRacedWrite
+    })
   }
 
   await eachChunk({ prismaClient, fromBlock, toBlock, chunkBlocks, onChunkDone }, async blocks => {

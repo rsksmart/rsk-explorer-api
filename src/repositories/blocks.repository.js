@@ -1,6 +1,7 @@
 import { rawBlockToEntity, blockEntityToRaw } from '../converters/blocks.converters'
 import { generateFindQuery } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
+import { withBoundedRetries } from '../lib/boundedRetries'
 
 import {
   txRepository,
@@ -139,17 +140,11 @@ export function getBlocksRepository (prismaClient) {
         return transaction
       }
 
-      const attempts = replace ? 1 : SAVE_ATTEMPTS
-      let lastStaleRead
-      for (let attempt = 1; attempt <= attempts; attempt++) {
-        try {
-          return await prismaClient.$transaction(await generateTransaction(), READ_COMMITTED)
-        } catch (error) {
-          if (!STALE_READ_ERRORS.includes(error.code)) throw error
-          lastStaleRead = error
-        }
-      }
-      throw lastStaleRead
+      return withBoundedRetries({
+        attempts: replace ? 1 : SAVE_ATTEMPTS,
+        isRetryable: error => STALE_READ_ERRORS.includes(error.code),
+        run: async () => prismaClient.$transaction(await generateTransaction(), READ_COMMITTED)
+      })
     },
     deleteOne (query) {
       return deleteBlocks(query)
@@ -174,20 +169,20 @@ export function getBlocksRepository (prismaClient) {
   async function deleteBlocks (where) {
     const pinned = await findTargets(where)
     let targets = pinned
-    let lastRetryableError
+    if (!targets.length) return { count: 0 }
 
-    for (let attempt = 1; attempt <= DELETE_ATTEMPTS && targets.length; attempt++) {
-      try {
+    const deleted = await withBoundedRetries({
+      attempts: DELETE_ATTEMPTS,
+      isRetryable: isRetryableDeleteError,
+      run: async () => {
         await prismaClient.$transaction(await deleteStatements(targets), READ_COMMITTED)
         return { count: targets.length }
-      } catch (error) {
-        if (!isRetryableDeleteError(error)) throw error
-        lastRetryableError = error
-        if (attempt < DELETE_ATTEMPTS) targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
+      },
+      beforeRetry: async () => {
+        targets = await findTargets({ hash: { in: pinned.map(b => b.hash) } })
+        return targets.length > 0
       }
-    }
-
-    if (targets.length) throw lastRetryableError
-    return { count: 0 }
+    })
+    return deleted || { count: 0 }
   }
 }
