@@ -42,7 +42,7 @@ export class Address extends DataCollectorItem {
           let { data } = aData
           if (data.type === addrTypes.CONTRACT) {
             const verified = await this.parent.getModule('ContractVerification')
-              .run('isVerified', { address, match: true })
+              .run('isVerified', { address })
             if (verified) data.verification = verified.data
           }
           aData.data = data
