@@ -6,31 +6,37 @@ import { integrationDescribe, resetDatabase, differences } from './replay'
 const C721 = '0x00000000000000000000000000000000000f0721'
 const C1155 = '0x000000000000000000000000000000000f001155'
 const C20 = '0x0000000000000000000000000000000000000020'
-const PEOPLE = [ZERO, ...['1', '2', '3', '4', '5'].map(x => `0x${x.repeat(40)}`)]
-const HEIGHT = 25
+const ADDRESSES = [ZERO, ...['1', '2', '3', '4', '5'].map(digit => `0x${digit.repeat(40)}`)]
+const HEIGHTS = 25
 const STEPS = 120
 const SEEDS = [1, 2, 3, 4, 5, 6]
 
-function generator (seed) {
+function seededRandom (seed) {
   let state = seed >>> 0
-  const rand = n => {
+  const randomBelow = limit => {
     state = (state + 0x6d2b79f5) >>> 0
     let t = state
     t = Math.imul(t ^ (t >>> 15), t | 1)
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return (((t ^ (t >>> 14)) >>> 0) / 4294967296 * n) | 0
+    return (((t ^ (t >>> 14)) >>> 0) / 4294967296 * limit) | 0
   }
-  return { rand, pick: list => list[rand(list.length)] }
+  return { randomBelow, pickOne: list => list[randomBelow(list.length)] }
 }
 
-function randomLog ({ rand, pick }) {
-  const kind = rand(5)
-  if (kind === 3) return erc20(C20, pick(PEOPLE), pick(PEOPLE), rand(1000))
-  if (kind === 4) return erc20(C721, pick(PEOPLE), pick(PEOPLE), rand(1000))
-  if (kind === 0) return erc721(C721, pick(PEOPLE), pick(PEOPLE), 1 + rand(6))
-  if (kind === 1) return erc1155Single(C1155, pick(PEOPLE), pick(PEOPLE), 1 + rand(4), rand(5))
-  const n = 1 + rand(3)
-  return erc1155Batch(C1155, pick(PEOPLE), pick(PEOPLE), Array.from({ length: n }, () => 1 + rand(4)), Array.from({ length: n }, () => rand(5)))
+function randomLog ({ randomBelow, pickOne }) {
+  const logKind = randomBelow(5)
+  if (logKind === 3) return erc20(C20, pickOne(ADDRESSES), pickOne(ADDRESSES), randomBelow(1000))
+  if (logKind === 4) return erc20(C721, pickOne(ADDRESSES), pickOne(ADDRESSES), randomBelow(1000))
+  if (logKind === 0) return erc721(C721, pickOne(ADDRESSES), pickOne(ADDRESSES), 1 + randomBelow(6))
+  if (logKind === 1) return erc1155Single(C1155, pickOne(ADDRESSES), pickOne(ADDRESSES), 1 + randomBelow(4), randomBelow(5))
+  const count = 1 + randomBelow(3)
+  return erc1155Batch(C1155, pickOne(ADDRESSES), pickOne(ADDRESSES), Array.from({ length: count }, () => 1 + randomBelow(4)), Array.from({ length: count }, () => randomBelow(5)))
+}
+
+function nextOperation ({ pickOne }, storedIndexes, missingIndexes) {
+  if (!storedIndexes.length) return 'insert'
+  if (!missingIndexes.length) return pickOne(['deleteOne', 'deleteSuffix', 'deleteSet'])
+  return pickOne(['insert', 'insert', 'insert', 'deleteOne', 'deleteSuffix', 'deleteSet'])
 }
 
 integrationDescribe('NFT ownership: saveBlockData and the repository delete in random order', function () {
@@ -38,40 +44,41 @@ integrationDescribe('NFT ownership: saveBlockData and the repository delete in r
 
   for (const seed of SEEDS) {
     it(`equals a replay of the stored blocks after every operation (seed ${seed})`, async () => {
-      const random = generator(seed)
-      const { rand, pick } = random
-      const versions = Array.from({ length: HEIGHT }, (_, i) => ['a', 'b', 'c'].map(tag => ({ number: (i + 1) * 10, tag, logs: Array.from({ length: rand(5) }, () => randomLog(random)) })))
+      const random = seededRandom(seed)
+      const { randomBelow, pickOne } = random
+      const blockVersions = Array.from({ length: HEIGHTS }, (_, index) => ['a', 'b', 'c'].map(tag => ({ number: (index + 1) * 10, tag, logs: Array.from({ length: randomBelow(5) }, () => randomLog(random)) })))
+      const blockNumberAt = index => blockVersions[index][0].number
       const stored = new Map()
       await resetDatabase()
 
       for (let step = 0; step < STEPS; step++) {
-        const missing = versions.map((_, i) => i).filter(i => !stored.has(i))
-        const present = [...stored.keys()]
-        const op = !present.length ? 'insert' : !missing.length ? pick(['deleteOne', 'deleteSuffix', 'deleteSet']) : pick(['insert', 'insert', 'insert', 'deleteOne', 'deleteSuffix', 'deleteSet'])
+        const missingIndexes = blockVersions.map((_, index) => index).filter(index => !stored.has(index))
+        const storedIndexes = [...stored.keys()]
+        const operation = nextOperation(random, storedIndexes, missingIndexes)
 
-        if (op === 'insert') {
-          const i = pick(missing)
-          const v = pick(versions[i])
-          await blocksRepository.saveBlockData(blockData(v.number, v.tag, v.logs))
-          stored.set(i, v)
-        } else if (op === 'deleteOne') {
-          const i = pick(present)
-          expect(await blocksRepository.deleteOne({ number: versions[i][0].number })).to.deep.equal({ count: 1 })
-          stored.delete(i)
-        } else if (op === 'deleteSuffix') {
-          const from = pick(present)
-          const gone = versions.map((_, i) => i).filter(i => i >= from)
-          const count = gone.filter(i => stored.has(i)).length
-          expect(await blocksRepository.deleteMany({ number: { in: gone.map(i => versions[i][0].number) } })).to.deep.equal({ count })
-          gone.forEach(i => stored.delete(i))
+        if (operation === 'insert') {
+          const index = pickOne(missingIndexes)
+          const version = pickOne(blockVersions[index])
+          await blocksRepository.saveBlockData(blockData(version.number, version.tag, version.logs))
+          stored.set(index, version)
+        } else if (operation === 'deleteOne') {
+          const index = pickOne(storedIndexes)
+          expect(await blocksRepository.deleteOne({ number: blockNumberAt(index) })).to.deep.equal({ count: 1 })
+          stored.delete(index)
+        } else if (operation === 'deleteSuffix') {
+          const firstDeleted = pickOne(storedIndexes)
+          const deletedIndexes = blockVersions.map((_, index) => index).filter(index => index >= firstDeleted)
+          const count = deletedIndexes.filter(index => stored.has(index)).length
+          expect(await blocksRepository.deleteMany({ number: { in: deletedIndexes.map(blockNumberAt) } })).to.deep.equal({ count })
+          deletedIndexes.forEach(index => stored.delete(index))
         } else {
-          const set = present.filter(() => rand(2))
-          expect(await blocksRepository.deleteMany({ number: { in: set.map(i => versions[i][0].number) } })).to.deep.equal({ count: set.length })
-          set.forEach(i => stored.delete(i))
+          const chosenIndexes = storedIndexes.filter(() => randomBelow(2))
+          expect(await blocksRepository.deleteMany({ number: { in: chosenIndexes.map(blockNumberAt) } })).to.deep.equal({ count: chosenIndexes.length })
+          chosenIndexes.forEach(index => stored.delete(index))
         }
 
-        const diffs = await differences()
-        expect(diffs, `seed ${seed} step ${step} ${op} (stored ${stored.size}/${HEIGHT})`).to.deep.equal([])
+        const found = await differences()
+        expect(found, `seed ${seed} step ${step} ${operation} (stored ${stored.size}/${HEIGHTS})`).to.deep.equal([])
       }
     })
   }

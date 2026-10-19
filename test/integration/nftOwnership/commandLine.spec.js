@@ -30,6 +30,11 @@ function runTool (tool, nodeUrl, args) {
 
 const runBackfill = (nodeUrl, ...args) => runTool(BACKFILL, nodeUrl, args)
 
+function firstMatch (text, pattern) {
+  const match = text.match(pattern)
+  return match ? match[1] : undefined
+}
+
 function closedPort () {
   const server = net.createServer()
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => {
@@ -44,9 +49,9 @@ function nodeAnsweringEveryCallWithAnError () {
     request.on('data', chunk => { body += chunk })
     request.on('end', () => {
       const payload = JSON.parse(body)
-      const answer = ({ id }) => ({ jsonrpc: '2.0', id, error: { code: -32603, message: 'injected internal error' } })
+      const errorAnswer = ({ id }) => ({ jsonrpc: '2.0', id, error: { code: -32603, message: 'injected internal error' } })
       response.setHeader('content-type', 'application/json')
-      response.end(JSON.stringify(Array.isArray(payload) ? payload.map(answer) : answer(payload)))
+      response.end(JSON.stringify(Array.isArray(payload) ? payload.map(errorAnswer) : errorAnswer(payload)))
     })
   })
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server)))
@@ -77,18 +82,18 @@ integrationDescribe('NFT ownership: the backfill and the re-detection run as com
       ...['5e2', '0', '50.5', '50'].map(pageSize => runTool(REDETECT, nodeUrl, ['nft-transfer-emitters', pageSize]))
     ])
     for (const run of redetect) {
-      const resultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
+      const resultFile = firstMatch(run.stdout, /Result file saved to (\S+)/)
       if (resultFile) fs.unlinkSync(resultFile)
     }
     const failedPair = await runBackfill(nodeUrl, 'B')
-    const output = run => run.stdout + run.stderr
+    const allOutput = run => run.stdout + run.stderr
 
     expect([exponent, reversed, aboveTip, oneBlock, ...redetect].map(run => run.status)).to.deep.equal([1, 1, 1, 0, 1, 1, 1, 1])
     expect(exponent.stdout).to.include('must be whole numbers, such as 3490000: got 3.49e6')
-    expect(output(reversed)).to.include('fromBlock 20 is above toBlock 10: the range is empty')
-    expect(output(aboveTip)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
+    expect(allOutput(reversed)).to.include('fromBlock 20 is above toBlock 10: the range is empty')
+    expect(allOutput(aboveTip)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
     expect(oneBlock.stdout).to.include('blocks 10..10')
-    expect(redetect.slice(0, 3).map(run => (run.stdout.match(/Must be a whole number of at least 1, such as 50: got (\S+)/) || [])[1])).to.deep.equal(['5e2', '0', '50.5'])
+    expect(redetect.slice(0, 3).map(run => firstMatch(run.stdout, /Must be a whole number of at least 1, such as 50: got (\S+)/))).to.deep.equal(['5e2', '0', '50.5'])
     expect([failedPair.status, failedPair.stdout.includes('"failure":"injected internal error"')]).to.deep.equal([1, true])
     expect(redetect[3].stdout).to.include(`${C721}: FAILED`).and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
   })

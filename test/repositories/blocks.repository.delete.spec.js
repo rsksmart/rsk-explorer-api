@@ -10,13 +10,13 @@ const OTHER_QUERY_ERROR = 'PostgresError { code: "57014", message: "canceling st
 const unknownRequestError = message => new Prisma.PrismaClientUnknownRequestError(message, { clientVersion: '6.19.3' })
 
 describe('# blocks.repository delete retry', function () {
-  let batches
+  let transactions
   let repo
 
-  const repositoryRejectingFirstWith = error => {
-    batches = 0
+  const repositoryWhoseFirstTransactionFails = error => {
+    transactions = 0
     return getBlocksRepository({
-      $transaction: () => ++batches === 1 ? Promise.reject(error) : Promise.resolve([]),
+      $transaction: () => ++transactions === 1 ? Promise.reject(error) : Promise.resolve([]),
       block: {
         findMany: sinon.stub().resolves([{ number: 20, hash: '0xa20' }]),
         delete: args => ({ op: 'block.delete', ...args })
@@ -31,12 +31,12 @@ describe('# blocks.repository delete retry', function () {
   afterEach(() => sinon.restore())
 
   it('retries a batch that Postgres chose as a deadlock victim, which Prisma 6.19.3 raises with no code and this PostgresError text, and deletes the block on the next attempt', async () => {
-    repo = repositoryRejectingFirstWith(unknownRequestError(DEADLOCK_PART_OF_THE_PRISMA_6_19_3_MESSAGE))
+    repo = repositoryWhoseFirstTransactionFails(unknownRequestError(DEADLOCK_PART_OF_THE_PRISMA_6_19_3_MESSAGE))
 
     const result = await repo.deleteOne({ number: 20 })
 
     expect(result).to.deep.equal({ count: 1 })
-    expect(batches).to.equal(2)
+    expect(transactions).to.equal(2)
   })
 
   it('returns a count of 0 after one batch when the blocks it pinned are gone by the time it reads them again', async () => {
@@ -50,11 +50,11 @@ describe('# blocks.repository delete retry', function () {
   })
 
   it('does not retry another query error that has no Prisma code', async () => {
-    repo = repositoryRejectingFirstWith(unknownRequestError(OTHER_QUERY_ERROR))
+    repo = repositoryWhoseFirstTransactionFails(unknownRequestError(OTHER_QUERY_ERROR))
 
-    const error = await repo.deleteOne({ number: 20 }).catch(e => e)
+    const error = await repo.deleteOne({ number: 20 }).catch(thrown => thrown)
 
     expect(error.message).to.include('57014')
-    expect(batches).to.equal(1)
+    expect(transactions).to.equal(1)
   })
 })

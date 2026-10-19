@@ -14,13 +14,13 @@ const PROXY_LIST = ['ERC1167', 'ERC165', 'ERC721', 'ERC721Metadata']
 const UNSORTED_LIST = ['ERC721', 'ERC165']
 
 const tokenState = () => new TokenState({ initConfig, nod3: {} })
-const stored = async () => ({
+const storedRows = async () => ({
   token: await prismaClient.token.findUnique({ where: { contract: C721 }, select: { blockNumber: true, interfaces: true, isNft: true } }),
   states: await prismaClient.token_state_at_block.findMany({ select: { blockNumber: true, interfaces: true, isNft: true }, orderBy: { blockNumber: 'asc' } })
 })
 
-function parserAnswers (interfacesAt) {
-  sinon.stub(ContractParser.prototype, 'getContractDetails').callsFake(async (contract, blockNumber) => ({ interfaces: interfacesAt(blockNumber), proxyType: null, implementationAddress: null }))
+function parserAnswers (interfacesAtBlock) {
+  sinon.stub(ContractParser.prototype, 'getContractDetails').callsFake(async (contract, blockNumber) => ({ interfaces: interfacesAtBlock(blockNumber), proxyType: null, implementationAddress: null }))
   sinon.stub(ContractParser.prototype, 'getDefaultTokenData').resolves({ name: 'Name', symbol: 'SYM', decimals: 0, totalSupply: '1' })
 }
 
@@ -40,8 +40,8 @@ integrationDescribe('NFT ownership: the token state writers store the parser\'s 
     await saveWithTheIndexersTokenState(10, [erc721(C721, ZERO, A, 1)])
     await saveWithTheIndexersTokenState(20, [erc721(C721, ZERO, A, 2)])
 
-    expect((await stored()).states.map(s => s.interfaces)).to.deep.equal([PROXY_LIST, UNSORTED_LIST])
+    expect((await storedRows()).states.map(state => state.interfaces)).to.deep.equal([PROXY_LIST, UNSORTED_LIST])
     expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
-    expect((await stored()).token).to.deep.include({ blockNumber: 10, interfaces: PROXY_LIST })
+    expect((await storedRows()).token).to.deep.include({ blockNumber: 10, interfaces: PROXY_LIST })
   })
 })

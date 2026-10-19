@@ -67,7 +67,7 @@ describe('# blocks.repository saveBlockData replace', function () {
     expect(repo.deleteOne.called).to.equal(false)
     expect(nftRepository.replaceStatements.calledOnceWithExactly([{ number: 500, hash: '0xstale' }], data.block, data.events)).to.equal(true)
     expect(captured.slice(0, 3)).to.deep.equal([{ op: 'nft.undo' }, { op: 'token.undo' }, { op: 'block.delete', where: { number: 500, hash: '0xstale' } }])
-    const inserts = captured.filter(o => o && o.op === 'block.insert' && o.number === 500)
+    const inserts = captured.filter(statement => statement && statement.op === 'block.insert' && statement.number === 500)
     expect(inserts).to.have.lengthOf(1)
   })
 
@@ -76,7 +76,7 @@ describe('# blocks.repository saveBlockData replace', function () {
     sinon.stub(failing, 'insertOne').returns({ op: 'block.insert' })
 
     let message
-    try { await failing.saveBlockData(data, { replace: true }) } catch (err) { message = err.message }
+    try { await failing.saveBlockData(data, { replace: true }) } catch (error) { message = error.message }
 
     expect(message).to.equal('tx failed')
   })
@@ -87,7 +87,7 @@ describe('# blocks.repository saveBlockData replace', function () {
     const refusing = getBlocksRepository({ $transaction, block: storedBlock() })
     sinon.stub(refusing, 'insertOne').returns({ op: 'block.insert' })
 
-    expect(await refusing.saveBlockData(data, { replace: true }).catch(e => e)).to.equal(refused)
+    expect(await refusing.saveBlockData(data, { replace: true }).catch(thrown => thrown)).to.equal(refused)
     expect($transaction.calledOnceWithExactly(sinon.match.array, { isolationLevel: 'ReadCommitted' })).to.equal(true)
   })
 
@@ -95,7 +95,7 @@ describe('# blocks.repository saveBlockData replace', function () {
     await repo.saveBlockData(data)
 
     expect(block.findMany.called).to.equal(false)
-    const deletes = captured.filter(o => o && o.op === 'block.delete')
+    const deletes = captured.filter(statement => statement && statement.op === 'block.delete')
     expect(deletes).to.have.lengthOf(0)
     expect(captured[0]).to.deep.equal({ op: 'block.insert', number: 500 })
   })

@@ -13,82 +13,98 @@ export async function resetDatabase ({ keepBlocksAndEvents = false } = {}) {
   for (const table of keepBlocksAndEvents ? NFT_TABLES : TABLES_CHILDREN_FIRST) await prismaClient[table].deleteMany({})
 }
 
-const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
+const padTo32Bytes = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
 const topicToAddress = topic => `0x${topic.slice(-40)}`.toLowerCase()
-const later = (a, b) => a.blockNumber !== b.blockNumber ? a.blockNumber > b.blockNumber
-  : a.transactionIndex !== b.transactionIndex ? a.transactionIndex > b.transactionIndex : a.logIndex > b.logIndex
 
-function legsOf (event) {
+function isLaterEvent (event, other) {
+  if (event.blockNumber !== other.blockNumber) return event.blockNumber > other.blockNumber
+  if (event.transactionIndex !== other.transactionIndex) return event.transactionIndex > other.transactionIndex
+  return event.logIndex > other.logIndex
+}
+
+function movesOf (event) {
   if (event.topic0 === TRANSFER_TOPIC && event.topic3) {
-    return [{ standard: 'ERC721', tokenId: event.topic3.toLowerCase(), value: 1n, from: topicToAddress(event.topic1), to: topicToAddress(event.topic2) }]
+    return [{ standard: 'ERC721', tokenId: event.topic3.toLowerCase(), quantity: 1n, from: topicToAddress(event.topic1), to: topicToAddress(event.topic2) }]
   }
   if ((event.topic0 !== TRANSFER_SINGLE_TOPIC && event.topic0 !== TRANSFER_BATCH_TOPIC) || !event.topic3) return []
   const args = JSON.parse(event.args)
   const from = topicToAddress(event.topic2)
   const to = topicToAddress(event.topic3)
-  const ids = event.topic0 === TRANSFER_SINGLE_TOPIC ? [args[3]] : args[3]
-  const values = event.topic0 === TRANSFER_SINGLE_TOPIC ? [args[4]] : args[4]
-  return ids.flatMap((id, i) => values[i] === undefined ? [] : [{ standard: 'ERC1155', tokenId: word(BigInt(id).toString(16)), value: BigInt(values[i]), from, to }])
+  const isSingle = event.topic0 === TRANSFER_SINGLE_TOPIC
+  const tokenIds = isSingle ? [args[3]] : args[3]
+  const quantities = isSingle ? [args[4]] : args[4]
+  const moves = []
+  for (let i = 0; i < tokenIds.length; i++) {
+    if (quantities[i] === undefined) continue
+    moves.push({ standard: 'ERC1155', tokenId: padTo32Bytes(BigInt(tokenIds[i]).toString(16)), quantity: BigInt(quantities[i]), from, to })
+  }
+  return moves
+}
+
+function withoutContract (state) {
+  const copy = { ...state }
+  delete copy.contract
+  return copy
 }
 
 export async function replay ({ tokenState = tokenStateAt, eventWhere = {} } = {}) {
   const events = await prismaClient.event.findMany({ where: eventWhere })
-  const facts = new Map()
-  const amounts = new Map()
-  const holders = new Map()
-  const triggers = new Map()
+  const factQuantities = new Map()
+  const balanceQuantities = new Map()
+  const lastEventByHolder = new Map()
+  const blocksByContract = new Map()
 
   for (const event of events) {
-    for (const leg of legsOf(event)) {
+    for (const move of movesOf(event)) {
       const contract = event.address.toLowerCase()
-      const factKey = `${event.eventId}|${leg.tokenId}`
-      facts.set(factKey, ((facts.get(factKey) || 0n) + leg.value))
-      const blocks = triggers.get(contract) || triggers.set(contract, new Set()).get(contract)
-      blocks.add(event.blockNumber)
-      for (const [holder, value] of [[leg.to, leg.value], [leg.from, -leg.value]]) {
+      const factKey = `${event.eventId}|${move.tokenId}`
+      factQuantities.set(factKey, (factQuantities.get(factKey) || 0n) + move.quantity)
+      if (!blocksByContract.has(contract)) blocksByContract.set(contract, new Set())
+      blocksByContract.get(contract).add(event.blockNumber)
+      for (const [holder, change] of [[move.to, move.quantity], [move.from, -move.quantity]]) {
         if (holder === ZERO_ADDRESS) continue
-        const key = `${contract}|${leg.standard}|${holder}`
-        const balanceKey = `${contract}|${leg.standard}|${leg.tokenId}|${holder}`
-        amounts.set(balanceKey, (amounts.get(balanceKey) || 0n) + value)
-        const seen = holders.get(key)
-        if (!seen || later(event, seen)) holders.set(key, event)
+        const holderKey = `${contract}|${move.standard}|${holder}`
+        const balanceKey = `${contract}|${move.standard}|${move.tokenId}|${holder}`
+        balanceQuantities.set(balanceKey, (balanceQuantities.get(balanceKey) || 0n) + change)
+        const lastEvent = lastEventByHolder.get(holderKey)
+        if (!lastEvent || isLaterEvent(event, lastEvent)) lastEventByHolder.set(holderKey, event)
       }
     }
   }
 
-  const balances = new Map([...amounts].filter(([, v]) => v !== 0n).map(([k, v]) => [k, v.toString()]))
-  const perHolder = new Map([...holders.keys()].map(k => [k, { quantity: 0n, count: 0 }]))
-  for (const [key, value] of balances) {
-    const [contract, standard, , holder] = key.split('|')
-    const h = perHolder.get(`${contract}|${standard}|${holder}`)
-    h.quantity += BigInt(value)
-    if (BigInt(value) > 0n) h.count++
+  const balances = new Map([...balanceQuantities].filter(([, quantity]) => quantity !== 0n).map(([key, quantity]) => [key, quantity.toString()]))
+  const totalsByHolder = new Map([...lastEventByHolder.keys()].map(holderKey => [holderKey, { quantity: 0n, tokenCount: 0 }]))
+  for (const [balanceKey, quantity] of balances) {
+    const [contract, standard, , holder] = balanceKey.split('|')
+    const totals = totalsByHolder.get(`${contract}|${standard}|${holder}`)
+    totals.quantity += BigInt(quantity)
+    if (BigInt(quantity) > 0n) totals.tokenCount++
   }
-  const holderRows = new Map([...perHolder].map(([key, { quantity, count }]) => {
-    const last = holders.get(key)
-    const shown = key.split('|')[1] === 'ERC721' ? BigInt(count) : quantity
-    return [key, `${shown}/${count}@${last.blockNumber}/${last.blockHash}`]
+  const holders = new Map([...totalsByHolder].map(([holderKey, { quantity, tokenCount }]) => {
+    const lastEvent = lastEventByHolder.get(holderKey)
+    const isErc721 = holderKey.split('|')[1] === 'ERC721'
+    const shownQuantity = isErc721 ? BigInt(tokenCount) : quantity
+    return [holderKey, `${shownQuantity}/${tokenCount}@${lastEvent.blockNumber}/${lastEvent.blockHash}`]
   }))
 
   const tokens = new Map()
   const states = new Map()
-  for (const [contract, blocks] of triggers) {
-    const latest = Math.max(...blocks)
-    const { contract: _, ...state } = tokenState(contract, latest)
-    tokens.set(contract, JSON.stringify({ blockNumber: latest, ...state }))
-    for (const number of blocks) {
-      const { contract: __, ...atBlock } = tokenState(contract, number)
-      states.set(`${contract}|${number}`, JSON.stringify(atBlock))
+  for (const [contract, blockNumbers] of blocksByContract) {
+    const latestBlock = Math.max(...blockNumbers)
+    tokens.set(contract, JSON.stringify({ blockNumber: latestBlock, ...withoutContract(tokenState(contract, latestBlock)) }))
+    for (const blockNumber of blockNumbers) {
+      states.set(`${contract}|${blockNumber}`, JSON.stringify(withoutContract(tokenState(contract, blockNumber))))
     }
   }
 
-  return { facts: new Map([...facts].map(([k, v]) => [k, v.toString()])), balances, holders: holderRows, tokens, states }
+  const facts = new Map([...factQuantities].map(([key, quantity]) => [key, quantity.toString()]))
+  return { facts, balances, holders, tokens, states }
 }
 
 export async function tableState () {
-  const facts = new Map((await prismaClient.token_transfer.findMany()).map(f => [`${f.eventId}|${f.tokenId}`, f.value.toFixed()]))
-  const balances = new Map((await prismaClient.nft_balance.findMany({ where: { quantity: { not: 0 } } })).map(b => [`${b.contract}|${b.standard}|${b.tokenId}|${b.holder}`, b.quantity.toFixed()]))
-  const holders = new Map((await prismaClient.nft_holder.findMany()).map(h => [`${h.contract}|${h.standard}|${h.holder}`, `${h.quantity.toFixed()}/${h.tokenCount}@${h.lastBlockNumber}/${h.lastBlockHash}`]))
+  const facts = new Map((await prismaClient.token_transfer.findMany()).map(fact => [`${fact.eventId}|${fact.tokenId}`, fact.value.toFixed()]))
+  const balances = new Map((await prismaClient.nft_balance.findMany({ where: { quantity: { not: 0 } } })).map(balance => [`${balance.contract}|${balance.standard}|${balance.tokenId}|${balance.holder}`, balance.quantity.toFixed()]))
+  const holders = new Map((await prismaClient.nft_holder.findMany()).map(holder => [`${holder.contract}|${holder.standard}|${holder.holder}`, `${holder.quantity.toFixed()}/${holder.tokenCount}@${holder.lastBlockNumber}/${holder.lastBlockHash}`]))
   const tokens = new Map((await prismaClient.token.findMany()).map(({ contract, version, totalSupply, ...rest }) => [contract, JSON.stringify({
     blockNumber: rest.blockNumber, interfaces: rest.interfaces, isFungible: rest.isFungible, isNft: rest.isNft, proxyType: rest.proxyType,
     implementation: rest.implementation, name: rest.name, symbol: rest.symbol, decimals: rest.decimals, totalSupply: totalSupply === null ? null : totalSupply.toFixed()
@@ -103,12 +119,12 @@ export async function tableState () {
 
 export async function differences (options) {
   const [expected, actual] = await Promise.all([replay(options), tableState()])
-  const diffs = []
-  for (const part of ['facts', 'balances', 'holders', 'tokens', 'states']) {
-    for (const key of new Set([...expected[part].keys(), ...actual[part].keys()])) {
-      if (expected[part].get(key) !== actual[part].get(key)) diffs.push(`${part} ${key}: replay=${expected[part].get(key)} table=${actual[part].get(key)}`)
+  const found = []
+  for (const table of ['facts', 'balances', 'holders', 'tokens', 'states']) {
+    for (const key of new Set([...expected[table].keys(), ...actual[table].keys()])) {
+      if (expected[table].get(key) !== actual[table].get(key)) found.push(`${table} ${key}: replay=${expected[table].get(key)} table=${actual[table].get(key)}`)
     }
   }
-  if (actual.zeroRows) diffs.push(`zero balance rows left: ${actual.zeroRows}`)
-  return diffs
+  if (actual.zeroRows) found.push(`zero balance rows left: ${actual.zeroRows}`)
+  return found
 }

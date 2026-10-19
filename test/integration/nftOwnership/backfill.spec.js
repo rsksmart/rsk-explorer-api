@@ -8,7 +8,7 @@ import { integrationDescribe, resetDatabase, differences } from './replay'
 const C721 = '0x00000000000000000000000000000000000e0721'
 const C1155 = '0x000000000000000000000000000000000e001155'
 const C20 = '0x0000000000000000000000000000000000000020'
-const [A, B, C] = ['1', '2', '3'].map(x => `0x${x.repeat(40)}`)
+const [A, B, C] = ['1', '2', '3'].map(digit => `0x${digit.repeat(40)}`)
 
 const HISTORY = [
   [10, [erc721(C721, ZERO, A, 1), erc721(C721, ZERO, A, 2), erc1155Single(C1155, ZERO, A, 7, 5)]],
@@ -20,9 +20,9 @@ const HISTORY = [
   [16, [erc1155Single(C1155, A, ZERO, 7, 3)]]
 ]
 
-const fetcher = ({ failing = () => false } = {}) => ({
+const tokenStateFetcher = ({ failsFor = () => false } = {}) => ({
   async fetchOne (contract, blockNumber) {
-    if (failing(contract, blockNumber)) throw new Error('injected node error')
+    if (failsFor(contract, blockNumber)) throw new Error('injected node error')
     return tokenStateAt(contract, blockNumber)
   }
 })
@@ -33,15 +33,15 @@ async function storeAsTheIndexerBeforeTheBackfill () {
 }
 
 const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, ...options })
-const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
+const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [tokenStateFetcher(), tokenStateFetcher()], ...options })
 
-const runBatch = prismaClient.$transaction
+const realTransaction = prismaClient.$transaction
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
-const killedAtBatch = n => {
-  let batches = 0
+const killTheProcessAtTransaction = number => {
+  let transactions = 0
   prismaClient.$transaction = async (...args) => {
-    if (++batches === n) throw new Error('process killed')
-    return runBatch.apply(prismaClient, args)
+    if (++transactions === number) throw new Error('process killed')
+    return realTransaction.apply(prismaClient, args)
   }
 }
 
@@ -49,33 +49,33 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
   this.timeout(120000)
 
   beforeEach(resetDatabase)
-  afterEach(() => { prismaClient.$transaction = runBatch })
+  afterEach(() => { prismaClient.$transaction = realTransaction })
 
   it('phase A and phase B over blocks stored before the NFT tables existed equal a replay of their events', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
 
-    const a = await phaseA()
-    const b = await phaseB()
+    const phaseAReport = await phaseA()
+    const phaseBReport = await phaseB()
 
-    expect(a).to.include({ blocksWritten: 6, blocksAlreadyStored: 0, blocksRaced: 0 })
-    expect(b).to.deep.include({ pairs: 9, pairsWritten: 9, pairsFailed: [] })
+    expect(phaseAReport).to.include({ blocksWritten: 6, blocksAlreadyStored: 0, blocksRaced: 0 })
+    expect(phaseBReport).to.deep.include({ pairs: 9, pairsWritten: 9, pairsFailed: [] })
     expect(await differences()).to.deep.equal([])
   })
 
   it('phase A and phase B each killed after a block committed, then run again with no arguments, equal a replay', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
 
-    killedAtBatch(3)
+    killTheProcessAtTransaction(3)
     const killedA = await runPhase({ phase: 'A', chunkBlocks: 3 }).catch(error => error)
     const factsAfterKilledA = await prismaClient.token_transfer.count()
-    prismaClient.$transaction = runBatch
+    prismaClient.$transaction = realTransaction
     const rerunA = await runPhase({ phase: 'A', chunkBlocks: 3 })
 
-    killedAtBatch(5)
-    const killedB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] }).catch(error => error)
+    killTheProcessAtTransaction(5)
+    const killedB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [tokenStateFetcher()] }).catch(error => error)
     const statesAfterKilledB = await prismaClient.token_state_at_block.count()
-    prismaClient.$transaction = runBatch
-    const rerunB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [fetcher()] })
+    prismaClient.$transaction = realTransaction
+    const rerunB = await runPhase({ phase: 'B', chunkBlocks: 3, fetchers: [tokenStateFetcher()] })
 
     expect([killedA.message, killedB.message]).to.deep.equal(['process killed', 'process killed'])
     expect([factsAfterKilledA, statesAfterKilledB]).to.deep.equal([4, 7])
@@ -98,11 +98,11 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
       }
     }
 
-    const b = await phaseB({ chunkBlocks: 10, fetchers: [replacingBlock11] })
+    const phaseBReport = await phaseB({ chunkBlocks: 10, fetchers: [replacingBlock11] })
 
     expect(replaced).to.equal(true)
     expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: 11 } })).to.equal(0)
-    expect(b).to.include({ pairsRaced: 1, pairsWritten: 8 })
+    expect(phaseBReport).to.include({ pairsRaced: 1, pairsWritten: 8 })
     expect(await differences()).to.deep.equal([])
   })
 
@@ -110,13 +110,13 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
     let otherWriter
-    prismaClient.$transaction = async (statements, ...rest) => {
-      prismaClient.$transaction = runBatch
-      otherWriter = sleep(150).then(() => runBatch.call(prismaClient, [
+    prismaClient.$transaction = async (statements, ...options) => {
+      prismaClient.$transaction = realTransaction
+      otherWriter = sleep(150).then(() => realTransaction.call(prismaClient, [
         prismaClient.block.updateMany({ where: { number: 10 }, data: { size: { increment: 0 } } }),
         prismaClient.token_state_at_block.count({ where: { blockNumber: 10 } })
       ], { isolationLevel: 'ReadCommitted' }))
-      return runBatch.call(prismaClient, [statements[0], prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'), ...statements.slice(1)], ...rest)
+      return realTransaction.call(prismaClient, [statements[0], prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'), ...statements.slice(1)], ...options)
     }
 
     await phaseB()
@@ -128,12 +128,12 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
   it('phase B stores no pair whose read failed, reports it, and a later run fills it', async () => {
     await storeAsTheIndexerBeforeTheBackfill()
     await phaseA()
-    const failing = (contract, blockNumber) => contract === C721 && blockNumber === 12
+    const failsFor = (contract, blockNumber) => contract === C721 && blockNumber === 12
 
-    const b = await phaseB({ fetchers: [fetcher({ failing })] })
+    const phaseBReport = await phaseB({ fetchers: [tokenStateFetcher({ failsFor })] })
 
-    expect(b.pairsFailed.map(p => [p.contract, p.blockNumber, p.failure])).to.deep.equal([[C721, 12, 'injected node error']])
-    expect(b).to.include({ pairsWritten: 8 })
+    expect(phaseBReport.pairsFailed.map(pair => [pair.contract, pair.blockNumber, pair.failure])).to.deep.equal([[C721, 12, 'injected node error']])
+    expect(phaseBReport).to.include({ pairsWritten: 8 })
     expect(await prismaClient.token_state_at_block.count({ where: { contract: C721, blockNumber: 12 } })).to.equal(0)
 
     const rerun = await phaseB()

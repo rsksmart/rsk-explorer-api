@@ -7,29 +7,34 @@ import { integrationDescribe, resetDatabase, differences } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000e0721'
 const C1155 = '0x000000000000000000000000000000000e001155'
-const [A, B, C, H] = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
+const [A, B, C, H] = ['1', '2', '3', '9'].map(digit => `0x${digit.repeat(40)}`)
 const TRIALS = 10
 
-const runBatch = prismaClient.$transaction
-const holds = new AsyncLocalStorage()
+const realTransaction = prismaClient.$transaction
+const currentHold = new AsyncLocalStorage()
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const refusals = []
-const recordRefusal = error => {
-  refusals.push(error.code || (String(error.message).includes('code: "40P01"') ? '40P01' : 'no code'))
+function recordRefusal (error) {
+  if (error.code) refusals.push(error.code)
+  else if (String(error.message).includes('code: "40P01"')) refusals.push('40P01')
+  else refusals.push('no code')
   throw error
 }
 
-async function heldBatch (statements, ...rest) {
-  const hold = holds.getStore()
-  if (!hold || !Array.isArray(statements)) return runBatch.call(prismaClient, statements, ...rest).catch(recordRefusal)
+async function transactionWithHold (statements, ...options) {
+  const hold = currentHold.getStore()
+  if (!hold || !Array.isArray(statements)) return realTransaction.call(prismaClient, statements, ...options).catch(recordRefusal)
   if (hold.delay) await sleep(hold.delay)
-  const held = [...statements]
-  if (hold.seconds) held.splice(hold.at === 'end' ? held.length : hold.at, 0, prismaClient.$executeRawUnsafe(`SELECT pg_sleep(${hold.seconds})`))
-  return runBatch.call(prismaClient, held, ...rest).catch(recordRefusal)
+  const statementsWithSleep = [...statements]
+  if (hold.seconds) {
+    const sleepAt = hold.at === 'end' ? statementsWithSleep.length : hold.at
+    statementsWithSleep.splice(sleepAt, 0, prismaClient.$executeRawUnsafe(`SELECT pg_sleep(${hold.seconds})`))
+  }
+  return realTransaction.call(prismaClient, statementsWithSleep, ...options).catch(recordRefusal)
 }
 
-const held = (hold, op) => () => holds.run(hold, op)
-const logs721 = (from, to, n, offset = 1) => Array.from({ length: n }, (_, i) => erc721(C721, from, to, offset + i))
+const withHold = (hold, operation) => () => currentHold.run(hold, operation)
+const erc721Logs = (from, to, count, firstTokenId = 1) => Array.from({ length: count }, (_, i) => erc721(C721, from, to, firstTokenId + i))
 
 async function saveLikeInsertBlock (number, tag, logs) {
   for (let attempt = 1; attempt <= 3; attempt++) {
@@ -54,7 +59,7 @@ async function replaceLikeInsertBlock (number, tag, logs) {
   }
 }
 
-const twoBlocksForA = async base => {
+const saveTwoBlocksForA = async base => {
   await saveLikeInsertBlock(base + 10, 'a', [erc721(C721, ZERO, A, 1)])
   await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 2)])
 }
@@ -63,52 +68,52 @@ const casesWithAGuaranteedRefusal = [
   'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch',
   'two deletes that both repair the token row, one of two blocks and one of the newer of them',
   'last block: a replace of N against a save of M < N whose transaction stays open across the replace batch',
-  'no fact left: a delete of N against a save of M < N whose only leg for the holder is a self-transfer, held open across the delete batch',
+  'no fact left: a delete of N against a save of M < N whose only transfer for the holder is a self-transfer, held open across the delete batch',
   'lock order: a delete of N that repairs the higher-key holder against a save of M between N and the lower holder\'s last block, which holds the lower holder and then takes the higher one'
 ]
 
 const cases = {
   'two saves of the same block': async base => [
-    held({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...logs721(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])),
-    held({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...logs721(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)]))
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])),
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)]))
   ],
   'two saves of adjacent blocks sharing holders': async base => [
-    held({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 2, 'a', [...logs721(A, B, 20), erc1155Single(C1155, A, C, 1, 1)])),
-    held({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...logs721(ZERO, A, 20), erc1155Single(C1155, ZERO, A, 1, 3)]))
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 2, 'a', [...erc721Logs(A, B, 20), erc1155Single(C1155, A, C, 1, 1)])),
+    withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...erc721Logs(ZERO, A, 20), erc1155Single(C1155, ZERO, A, 1, 3)]))
   ],
   'two deletes of the same block': async base => {
-    await saveLikeInsertBlock(base, 'a', [...logs721(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])
-    await saveLikeInsertBlock(base + 1, 'a', logs721(A, B, 5))
-    return [held({ delay: 30 }, () => blocksRepository.deleteOne({ number: base })), held({ delay: 30 }, () => blocksRepository.deleteOne({ number: base }))]
+    await saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, B, 7, 2)])
+    await saveLikeInsertBlock(base + 1, 'a', erc721Logs(A, B, 5))
+    return [withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base })), withHold({ delay: 30 }, () => blocksRepository.deleteOne({ number: base }))]
   },
   'a delete of N against a save of N+1 sharing an address': async base => {
-    await saveLikeInsertBlock(base, 'a', [...logs721(ZERO, A, 10), erc1155Single(C1155, ZERO, A, 7, 2)])
+    await saveLikeInsertBlock(base, 'a', [...erc721Logs(ZERO, A, 10), erc1155Single(C1155, ZERO, A, 7, 2)])
     return [
-      held({ seconds: 0.05, at: 1 }, () => blocksRepository.deleteOne({ number: base })),
-      held({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...logs721(A, B, 5, 100), erc1155Single(C1155, A, B, 7, 1)]))
+      withHold({ seconds: 0.05, at: 1 }, () => blocksRepository.deleteOne({ number: base })),
+      withHold({ seconds: 0.05, at: 2 }, () => saveLikeInsertBlock(base + 1, 'a', [...erc721Logs(A, B, 5, 100), erc1155Single(C1155, A, B, 7, 1)]))
     ]
   },
   'last block: a delete of N against a save of M < N whose transaction stays open across the delete batch': async base => {
-    await twoBlocksForA(base)
+    await saveTwoBlocksForA(base)
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
-      held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
+      withHold({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
     ]
   },
   'last block: a replace of N against a save of M < N whose transaction stays open across the replace batch': async base => {
-    await twoBlocksForA(base)
+    await saveTwoBlocksForA(base)
     return [
       async () => { await sleep(60); return replaceLikeInsertBlock(base + 30, 'e', [erc721(C721, ZERO, C, 2)]) },
-      held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
+      withHold({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, A, B, 1)]))
     ]
   },
-  'no fact left: a delete of N against a save of M < N whose only leg for the holder is a self-transfer, held open across the delete batch': async base => {
+  'no fact left: a delete of N against a save of M < N whose only transfer for the holder is a self-transfer, held open across the delete batch': async base => {
     await saveLikeInsertBlock(base + 10, 'a', [erc721(C721, ZERO, A, 1)])
     await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, H, 2), erc721(C721, H, ZERO, 2)])
     await saveLikeInsertBlock(base + 40, 'a', [erc721(C721, ZERO, A, 9)])
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
-      held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, H, H, 5)]))
+      withHold({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 20, 'a', [erc721(C721, H, H, 5)]))
     ]
   },
   'lock order: a delete of N that repairs the higher-key holder against a save of M between N and the lower holder\'s last block, which holds the lower holder and then takes the higher one': async base => {
@@ -116,28 +121,28 @@ const cases = {
     await saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, A, 3)])
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 20 }) },
-      held({ seconds: 0.4, at: 3 }, () => saveLikeInsertBlock(base + 25, 'a', [erc721(C721, ZERO, A, 4), erc721(C721, ZERO, H, 5)]))
+      withHold({ seconds: 0.4, at: 3 }, () => saveLikeInsertBlock(base + 25, 'a', [erc721(C721, ZERO, A, 4), erc721(C721, ZERO, H, 5)]))
     ]
   },
   'last block: a delete of N against a save of M > N sharing the holder': async base => {
-    await twoBlocksForA(base)
+    await saveTwoBlocksForA(base)
     return [
       async () => { await sleep(60); return blocksRepository.deleteOne({ number: base + 30 }) },
-      held({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 40, 'a', [erc721(C721, A, B, 1)]))
+      withHold({ seconds: 0.4, at: 'end' }, () => saveLikeInsertBlock(base + 40, 'a', [erc721(C721, A, B, 1)]))
     ]
   },
   'two deletes that both repair the token row, one of two blocks and one of the newer of them': async base => {
-    await twoBlocksForA(base)
+    await saveTwoBlocksForA(base)
     await saveLikeInsertBlock(base + 40, 'a', [erc721(C721, ZERO, B, 4)])
     return [
-      held({ delay: 80 }, () => blocksRepository.deleteMany({ number: { in: [base + 30, base + 40] } })),
-      held({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 }))
+      withHold({ delay: 80 }, () => blocksRepository.deleteMany({ number: { in: [base + 30, base + 40] } })),
+      withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 }))
     ]
   },
   'last block: two deletes of the holder\'s two newest blocks': async base => {
-    await twoBlocksForA(base)
+    await saveTwoBlocksForA(base)
     await saveLikeInsertBlock(base + 40, 'a', [erc721(C721, ZERO, A, 4)])
-    return [held({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 })), held({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 30 }))]
+    return [withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 40 })), withHold({ delay: 80 }, () => blocksRepository.deleteOne({ number: base + 30 }))]
   }
 }
 
@@ -150,16 +155,16 @@ async function setDefaultIsolation (level) {
 }
 
 function raceEveryCase () {
-  for (const [name, setup] of Object.entries(cases)) {
+  for (const [name, prepare] of Object.entries(cases)) {
     it(`${name}: every trial equals a replay, and no delete error reaches the caller`, async () => {
       refusals.length = 0
       for (let trial = 0; trial < TRIALS; trial++) {
         await resetDatabase()
         const base = 1000 * (trial + 1)
-        const ops = await setup(base)
-        const results = await Promise.allSettled(ops.map(op => op()))
+        const operations = await prepare(base)
+        const results = await Promise.allSettled(operations.map(operation => operation()))
 
-        expect(results.filter(r => r.status === 'rejected').map(r => r.reason.code || r.reason.message), `${name} trial ${trial}`).to.deep.equal([])
+        expect(results.filter(result => result.status === 'rejected').map(result => result.reason.code || result.reason.message), `${name} trial ${trial}`).to.deep.equal([])
         expect(await differences(), `${name} trial ${trial}`).to.deep.equal([])
       }
       expect(refusals.filter(code => code === '40P01'), `${name}: deadlocks, including any a retry absorbed`).to.deep.equal([])
@@ -173,9 +178,9 @@ integrationDescribe('NFT ownership: concurrent saves and deletes through the rep
 
   before(async () => {
     expect(await setDefaultIsolation(null)).to.equal('read committed')
-    prismaClient.$transaction = heldBatch
+    prismaClient.$transaction = transactionWithHold
   })
-  after(() => { prismaClient.$transaction = runBatch })
+  after(() => { prismaClient.$transaction = realTransaction })
 
   raceEveryCase()
 })
@@ -185,10 +190,10 @@ integrationDescribe('NFT ownership: concurrent saves and deletes on a database w
 
   before(async () => {
     expect(await setDefaultIsolation('repeatable read')).to.equal('repeatable read')
-    prismaClient.$transaction = heldBatch
+    prismaClient.$transaction = transactionWithHold
   })
   after(async () => {
-    prismaClient.$transaction = runBatch
+    prismaClient.$transaction = realTransaction
     await setDefaultIsolation(null)
   })
 

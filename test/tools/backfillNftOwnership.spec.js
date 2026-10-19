@@ -18,7 +18,7 @@ describe('backfillNftOwnership exit code', () => {
 
 describe('backfillNftOwnership phase A write retries', () => {
   const block = { number: 10, hash: '0xa10' }
-  const refused = code => Object.assign(new Error(`refused ${code}`), { code })
+  const refusal = code => Object.assign(new Error(`refused ${code}`), { code })
 
   const phaseA = ($transaction, factsWrittenMeanwhile) => {
     const nextBlocks = sinon.stub().resolves([])
@@ -38,8 +38,8 @@ describe('backfillNftOwnership phase A write retries', () => {
     sinon.stub(nftRepository, 'insertStatements').resolves([{ op: 'token_transfer.createMany' }])
     sinon.stub(console, 'log')
     const refusedOnce = sinon.stub().resolves([{ count: 2 }])
-    refusedOnce.onFirstCall().rejects(refused('P2025'))
-    const refusedAsWritten = sinon.stub().rejects(refused('P2002'))
+    refusedOnce.onFirstCall().rejects(refusal('P2025'))
+    const refusedAsWritten = sinon.stub().rejects(refusal('P2002'))
 
     const [retried, skipped] = [await phaseA(refusedOnce, false), await phaseA(refusedAsWritten, true)]
 
@@ -51,7 +51,7 @@ describe('backfillNftOwnership phase A write retries', () => {
 describe('backfillNftOwnership phase B write retries', () => {
   const block = { number: 10, hash: '0xa10' }
   const pair = { contract: '0x00000000000000000000000000000000000e0721', blockNumber: 10, blockHash: block.hash }
-  const raced = attempt => Object.assign(new Error(`refused on attempt ${attempt}`), { code: 'P2002' })
+  const raceRefusal = attempt => Object.assign(new Error(`refused on attempt ${attempt}`), { code: 'P2002' })
 
   const phaseB = ($transaction, pairReads) => {
     const nextBlocks = sinon.stub().resolves([])
@@ -77,13 +77,13 @@ describe('backfillNftOwnership phase B write retries', () => {
 
   it('reads its pairs again after a refusal, writes those still missing, and stops without an error when they are already stored', async () => {
     const refusedOnce = sinon.stub().resolves([])
-    refusedOnce.onFirstCall().rejects(raced(1))
-    const refusedAlways = sinon.stub().rejects(raced(1))
-    const storedByThen = sinon.stub().resolves([])
-    storedByThen.onFirstCall().resolves([pair])
+    refusedOnce.onFirstCall().rejects(raceRefusal(1))
+    const refusedAlways = sinon.stub().rejects(raceRefusal(1))
+    const pairGoneOnTheSecondRead = sinon.stub().resolves([])
+    pairGoneOnTheSecondRead.onFirstCall().resolves([pair])
 
     const retried = await phaseB(refusedOnce, sinon.stub().resolves([pair]))
-    const stopped = await phaseB(refusedAlways, storedByThen)
+    const stopped = await phaseB(refusedAlways, pairGoneOnTheSecondRead)
 
     expect([retried.report.pairsRaced, retried.report.pairsWritten, refusedOnce.callCount]).to.deep.equal([1, 1, 2])
     expect(stopped.outcome).to.equal(stopped.report)

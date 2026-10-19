@@ -86,14 +86,15 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
 
   describe('through the real contract parser, against a node that answers every probe', () => {
     const SELECTOR_LESS_CODE = '0x6001600155'
-    const answer = ({ method, params }) => {
+    const ERC165_AND_ERC721_INTERFACE_IDS = ['0x01ffc9a7', '0x80ac58cd']
+    const answerProbe = ({ method, params }) => {
       if (method === 'eth_getCode') return SELECTOR_LESS_CODE
       if (method === 'eth_getStorageAt') return `0x${'0'.repeat(64)}`
       const interfaceId = `0x${params[0].data.slice(10, 18)}`
-      return `0x${'0'.repeat(63)}${['0x01ffc9a7', '0x80ac58cd'].includes(interfaceId) ? 1 : 0}`
+      return `0x${'0'.repeat(63)}${ERC165_AND_ERC721_INTERFACE_IDS.includes(interfaceId) ? 1 : 0}`
     }
     const fakeNode = () => {
-      const rpc = { sendMethod: async (method, params = []) => answer({ method, params }) }
+      const rpc = { sendMethod: async (method, params = []) => answerProbe({ method, params }) }
       return new Nod3({ url: 'fake', rpc })
     }
     const realUpdater = nod3 => {
@@ -107,7 +108,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
     }
 
     it('detects each candidate once and re-decodes its stored events with that detection', async () => {
-      const word = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
+      const padTo32Bytes = hex => `0x${hex.replace(/^0x/, '').padStart(64, '0')}`
       const storedTransfer = {
         eventId: '0222dee200800b6b87e4ec24d4947c0b',
         address,
@@ -115,7 +116,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
         transactionHash: `0x${'ab'.repeat(32)}`,
         logIndex: 0,
         timestamp: 1700000000,
-        topics: [TRANSFER_TOPIC0, word('0x0'), word('0x1111111111111111111111111111111111111111'), word('0x7')],
+        topics: [TRANSFER_TOPIC0, padTo32Bytes('0x0'), padTo32Bytes('0x1111111111111111111111111111111111111111'), padTo32Bytes('0x7')],
         data: '0x'
       }
       const updater = realUpdater(fakeNode())

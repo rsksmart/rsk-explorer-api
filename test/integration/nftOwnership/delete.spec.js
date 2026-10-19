@@ -7,20 +7,20 @@ import { integrationDescribe, resetDatabase, differences } from './replay'
 const C721 = '0x00000000000000000000000000000000000e0721'
 const C1155 = '0x000000000000000000000000000000000e001155'
 const C20 = '0x0000000000000000000000000000000000000020'
-const [A, B, C, H] = ['1', '2', '3', '9'].map(x => `0x${x.repeat(40)}`)
+const [A, B, C, H] = ['1', '2', '3', '9'].map(digit => `0x${digit.repeat(40)}`)
 
 const save = (number, tag, logs) => blocksRepository.saveBlockData(blockData(number, tag, logs))
 
-const runBatch = prismaClient.$transaction
+const realTransaction = prismaClient.$transaction
 
-function beforeTheNextBatch (concurrentWork) {
-  let pending = true
+function beforeTheNextTransaction (concurrentWork) {
+  let notRunYet = true
   prismaClient.$transaction = async (...args) => {
-    if (pending) {
-      pending = false
+    if (notRunYet) {
+      notRunYet = false
       await concurrentWork()
     }
-    return runBatch.apply(prismaClient, args)
+    return realTransaction.apply(prismaClient, args)
   }
 }
 
@@ -28,7 +28,7 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
   this.timeout(120000)
 
   beforeEach(resetDatabase)
-  afterEach(() => { prismaClient.$transaction = runBatch })
+  afterEach(() => { prismaClient.$transaction = realTransaction })
 
   it('a delete that bypasses the repository fails on the Restrict key of a block with NFT facts or token state facts', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
@@ -36,22 +36,22 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
     await save(30, 'a', [])
     await prismaClient.$transaction(tokenStateRepository.insertStatements({ number: 30 }, [tokenStateAt(C721, 30)]))
 
-    const errors = await Promise.all([10, 30].map(number => prismaClient.block.deleteMany({ where: { number } }).catch(e => e)))
-    expect(errors.map(e => e.code)).to.deep.equal(['P2003', 'P2003'])
+    const errors = await Promise.all([10, 30].map(number => prismaClient.block.deleteMany({ where: { number } }).catch(error => error)))
+    expect(errors.map(error => error.code)).to.deep.equal(['P2003', 'P2003'])
     expect(await prismaClient.block.deleteMany({ where: { number: 20 } })).to.deep.equal({ count: 1 })
   })
 
   it('fails the batch instead of deleting a holder whose last fact goes while its stored sum or token count is not zero, and changes nothing', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
-    const key = { contract_standard_holder: { contract: C721, standard: 'ERC721', holder: A } }
+    const holderKey = { contract_standard_holder: { contract: C721, standard: 'ERC721', holder: A } }
 
     for (const notZero of [{ quantity: '5', tokenCount: BigInt(1) }, { quantity: '1', tokenCount: BigInt(2) }]) {
-      await prismaClient.nft_holder.update({ where: key, data: notZero })
-      const error = await blocksRepository.deleteOne({ number: 10 }).catch(e => e)
+      await prismaClient.nft_holder.update({ where: holderKey, data: notZero })
+      const error = await blocksRepository.deleteOne({ number: 10 }).catch(refusal => refusal)
 
       expect(error.code).to.equal('P2025')
       expect(await prismaClient.block.count({ where: { number: 10 } })).to.equal(1)
-      const holder = await prismaClient.nft_holder.findUnique({ where: key })
+      const holder = await prismaClient.nft_holder.findUnique({ where: holderKey })
       expect([holder.quantity.toFixed(), holder.tokenCount]).to.deep.equal([notZero.quantity, notZero.tokenCount])
     }
   })
@@ -59,7 +59,7 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
   it('repairs the last block when a save of an older block lands between the delete read and its batch', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, ZERO, A, 2)])
-    beforeTheNextBatch(() => save(20, 'a', [erc721(C721, A, B, 1)]))
+    beforeTheNextTransaction(() => save(20, 'a', [erc721(C721, A, B, 1)]))
 
     expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 1 })
 
@@ -71,7 +71,7 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
   it('never deletes a block replaced between the delete read and its batch', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, ZERO, A, 2)])
-    beforeTheNextBatch(async () => {
+    beforeTheNextTransaction(async () => {
       await blocksRepository.deleteOne({ number: 30 })
       await save(30, 'e', [erc721(C721, ZERO, C, 3)])
     })
@@ -86,11 +86,11 @@ integrationDescribe('NFT ownership: the repository block delete', function () {
   it('absorbs a second delete of the same block that commits first', async () => {
     await save(10, 'a', [erc721(C721, ZERO, A, 1)])
     await save(30, 'a', [erc721(C721, ZERO, A, 2)])
-    let concurrent
-    beforeTheNextBatch(async () => { concurrent = await blocksRepository.deleteOne({ number: 30 }) })
+    let concurrentDelete
+    beforeTheNextTransaction(async () => { concurrentDelete = await blocksRepository.deleteOne({ number: 30 }) })
 
     expect(await blocksRepository.deleteOne({ number: 30 })).to.deep.equal({ count: 0 })
-    expect(concurrent).to.deep.equal({ count: 1 })
+    expect(concurrentDelete).to.deep.equal({ count: 1 })
     expect(await differences()).to.deep.equal([])
   })
 
