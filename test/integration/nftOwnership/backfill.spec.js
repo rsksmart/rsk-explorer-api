@@ -36,6 +36,7 @@ const phaseA = (options = {}) => backfillTransfers({ fromBlock: 0, toBlock: 100,
 const phaseB = (options = {}) => backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 3, fetchers: [fetcher(), fetcher()], ...options })
 
 const runBatch = prismaClient.$transaction
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const killedAtBatch = n => {
   let batches = 0
   prismaClient.$transaction = async (...args) => {
@@ -103,6 +104,25 @@ integrationDescribe('NFT ownership: the two-phase backfill', function () {
     expect(await prismaClient.token_state_at_block.count({ where: { blockNumber: 11 } })).to.equal(0)
     expect(b).to.include({ pairsRaced: 1, pairsWritten: 8 })
     expect(await differences()).to.deep.equal([])
+  })
+
+  it('phase B holds its block\'s row from the pin to the commit: another writer of that row waits for the commit and then sees its state facts', async () => {
+    await storeAsTheIndexerBeforeTheBackfill()
+    await phaseA()
+    let otherWriter
+    prismaClient.$transaction = async (statements, ...rest) => {
+      prismaClient.$transaction = runBatch
+      otherWriter = sleep(150).then(() => runBatch.call(prismaClient, [
+        prismaClient.block.updateMany({ where: { number: 10 }, data: { size: { increment: 0 } } }),
+        prismaClient.token_state_at_block.count({ where: { blockNumber: 10 } })
+      ], { isolationLevel: 'ReadCommitted' }))
+      return runBatch.call(prismaClient, [statements[0], prismaClient.$executeRawUnsafe('SELECT pg_sleep(0.6)'), ...statements.slice(1)], ...rest)
+    }
+
+    await phaseB()
+    const [, statesSeenByTheOtherWriter] = await otherWriter
+
+    expect(statesSeenByTheOtherWriter).to.equal(2)
   })
 
   it('phase B stores no pair whose read failed, reports it, and a later run fills it', async () => {
