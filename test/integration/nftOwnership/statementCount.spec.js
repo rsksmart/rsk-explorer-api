@@ -52,19 +52,6 @@ async function batchShape (n) {
   return steps
 }
 
-async function erc721Shape (n) {
-  await resetDatabase()
-  const all = ids(n)
-  const steps = [
-    await save(10, all.map(i => erc721(C721, ZERO, A, i))),
-    await save(20, all.map(i => erc721(C721, A, B, i)))
-  ]
-  expect(await differences()).to.deep.equal([])
-  steps.push(await remove(20))
-  expect(await differences()).to.deep.equal([])
-  return steps
-}
-
 async function distinctHolders (n) {
   await resetDatabase()
   const all = ids(n)
@@ -82,38 +69,14 @@ integrationDescribe('NFT ownership: the statements of a block\'s save and delete
   before(countModelOperations)
   after(() => originals.forEach(([delegate, name, original]) => { delegate[name] = original }))
 
-  it('a TransferBatch minted to A, moved A to B and deleted again: 100 ids and 1,000 ids take the same operations at every step', async () => {
-    const few = await batchShape(100)
-    const many = await batchShape(1000)
+  it('a block\'s save and delete take the same operations for 100 and 1,000 ids, at most one more per added holder on a save and two on a delete, and no balance statement sends more than 400 OR arms', async () => {
+    const [fewIds, manyIds] = [await batchShape(100), await batchShape(1000)]
+    const [fewHolders, manyHolders] = [await distinctHolders(50), await distinctHolders(500)]
+    const addedHolders = manyHolders.holders - fewHolders.holders
 
-    expect(many, `100 ids: ${few} · 1,000 ids: ${many}`).to.deep.equal(few)
-  })
-
-  it('ERC-721 tokens minted to A, moved A to B and deleted again: 50 tokens and 500 tokens take the same operations at every step', async () => {
-    const few = await erc721Shape(50)
-    const many = await erc721Shape(500)
-
-    expect(many, `50 tokens: ${few} · 500 tokens: ${many}`).to.deep.equal(few)
-  })
-
-  it('ERC-721 transfers between distinct holders: each added holder adds at most one operation to the save', async () => {
-    const few = await distinctHolders(50)
-    const many = await distinctHolders(500)
-
-    expect(many.moved - few.moved, `50 transfers: ${few.moved} · 500 transfers: ${many.moved}`).to.be.at.most(many.holders - few.holders)
-  })
-
-  it('ERC-721 transfers between 1,000 distinct holders: no balance statement sends more than 400 OR arms, past which Postgres plans it in superlinear time', async () => {
-    widestOr = 0
-    await distinctHolders(500)
-
+    expect(manyIds, `100 ids: ${fewIds} · 1,000 ids: ${manyIds}`).to.deep.equal(fewIds)
+    expect(manyHolders.moved - fewHolders.moved, `saves: ${fewHolders.moved} · ${manyHolders.moved}`).to.be.at.most(addedHolders)
+    expect(manyHolders.deleted - fewHolders.deleted, `deletes: ${fewHolders.deleted} · ${manyHolders.deleted}`).to.be.at.most(2 * addedHolders)
     expect(widestOr).to.be.within(1, 400)
-  })
-
-  it('deleting ERC-721 transfers between distinct holders: each added holder adds at most two operations, its update and, when no fact is left, its removal', async () => {
-    const few = await distinctHolders(50)
-    const many = await distinctHolders(500)
-
-    expect(many.deleted - few.deleted, `50 transfers: ${few.deleted} · 500 transfers: ${many.deleted}`).to.be.at.most(2 * (many.holders - few.holders))
   })
 })

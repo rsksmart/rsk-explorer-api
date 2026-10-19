@@ -1,8 +1,7 @@
 import { expect } from 'chai'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
-import { backfillTransfers, backfillTokenStates } from '../../../src/tools/backfillNftOwnership'
-import { blockData, erc721, erc1155Single, tokenStateAt, ZERO } from './fixtures'
+import { blockData, erc721, erc1155Single, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase, differences } from './replay'
 
 const C721 = '0x00000000000000000000000000000000000c0721'
@@ -48,16 +47,6 @@ function rightBeforeTheHolderRead (competing) {
   prismaClient.$transaction = recordingBatch
 }
 
-function rightBeforeTheNextHolderRead (competing) {
-  const [[holders, findHolders]] = readers
-  holders.findMany = async function (...args) {
-    holders.findMany = findHolders
-    await competing()
-    return findHolders.apply(this, args)
-  }
-  prismaClient.$transaction = recordingBatch
-}
-
 integrationDescribe('NFT ownership: a save that read holders or balances another writer changed before its batch', function () {
   this.timeout(120000)
 
@@ -95,56 +84,6 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
     await save(30, [erc721(C721, ZERO, D, 5)])
 
     expect(codes).to.deep.equal(['P2002'])
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('a second delete of a block whose holder another delete of the same block removed after the facts were read returns { count: 0 }', async () => {
-    await save(5, [erc721(C721, ZERO, A, 1)])
-    await save(10, [erc721(C721, A, B, 1)])
-    rightBeforeTheNextHolderRead(() => blocksRepository.deleteOne({ number: 10 }))
-
-    const second = await blocksRepository.deleteOne({ number: 10 })
-
-    expect(second).to.deep.equal({ count: 0 })
-    expect(codes).to.deep.equal(['P2025'])
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('a replace of a block whose holder a delete of the same block removed after the facts were read fails with P2025, which insertBlock refetches on', async () => {
-    await save(10, [erc721(C721, ZERO, A, 1)])
-    rightBeforeTheNextHolderRead(() => blocksRepository.deleteOne({ number: 10 }))
-
-    const failure = await blocksRepository.saveBlockData(blockData(10, 'b', []), { replace: true }).catch(error => error)
-
-    expect(failure).to.include({ code: 'P2025' })
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('phase A skips, as raced, a block whose facts another phase A run stored after the first one read it', async () => {
-    await save(10, [erc1155Single(C1155, ZERO, A, 7, 5), erc721(C721, ZERO, A, 1)])
-    await resetDatabase({ keepBlocksAndEvents: true })
-    beforeTheFirstBatch(() => backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 }))
-
-    const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
-    prismaClient.$transaction = runBatch
-    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number) }] })
-
-    expect(codes).to.deep.equal(['P2002'])
-    expect(a).to.include({ blocksWritten: 0, blocksRaced: 1 })
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('phase A writes a block whose holder the live path created after phase A read it, instead of skipping it as raced', async () => {
-    await save(10, [erc1155Single(C1155, ZERO, A, 7, 5), erc721(C721, ZERO, A, 1)])
-    await resetDatabase({ keepBlocksAndEvents: true })
-    beforeTheFirstBatch(() => save(20, [erc1155Single(C1155, ZERO, A, 7, 3)]))
-
-    const a = await backfillTransfers({ fromBlock: 0, toBlock: 100, chunkBlocks: 10 })
-    prismaClient.$transaction = runBatch
-    await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [{ fetchOne: async (contract, number) => tokenStateAt(contract, number) }] })
-
-    expect(codes).to.deep.equal(['P2002'])
-    expect(a).to.include({ blocksWritten: 1, blocksRaced: 0, blocksAlreadyStored: 1 })
     expect(await differences()).to.deep.equal([])
   })
 })

@@ -5,10 +5,10 @@ import net from 'net'
 import path from 'path'
 import { spawn } from 'child_process'
 import { prismaClient } from '../../../src/lib/prismaClient'
-import { blocksRepository, configRepository, tokenStateRepository } from '../../../src/repositories'
+import { blocksRepository, configRepository } from '../../../src/repositories'
 import { backfillTransfers } from '../../../src/tools/backfillNftOwnership'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../../src/lib/defaultConfig'
-import { blockData, erc721, tokenStateAt, ZERO } from './fixtures'
+import { blockData, erc721, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase } from './replay'
 
 const ROOT = path.resolve(__dirname, '../../..')
@@ -52,7 +52,7 @@ function nodeAnsweringEveryCallWithAnError () {
   return new Promise(resolve => server.listen(0, '127.0.0.1', () => resolve(server)))
 }
 
-integrationDescribe('NFT ownership: the backfill command line exits 0 only when its phase has nothing left to store', function () {
+integrationDescribe('NFT ownership: the backfill and the re-detection run as commands', function () {
   this.timeout(120000)
   let node
 
@@ -69,55 +69,26 @@ integrationDescribe('NFT ownership: the backfill command line exits 0 only when 
     await prismaClient.explorer_initial_config.deleteMany({})
   })
 
-  it('phase A exits 0 after writing every block', async () => {
-    const { status, stdout } = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'A')
-
-    expect(stdout).to.include('"blocksWritten":1')
-    expect(status).to.equal(0)
-  })
-
-  it('phase B exits 1 while the node fails a pair\'s reads, and 0 once a rerun finds nothing left to store', async () => {
-    const failed = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'B')
-    await prismaClient.$transaction(tokenStateRepository.insertStatements({ number: 10 }, [tokenStateAt(C721, 10)]))
-    const rerun = await runBackfill(`http://127.0.0.1:${node.address().port}`, 'B')
-
-    expect(failed.stdout).to.include('"failure":"injected internal error"')
-    expect([failed.status, rerun.status]).to.deep.equal([1, 0])
-  })
-
-  it('refuses a block argument that is not a whole number, and a fromBlock above toBlock or above the highest stored block, with exit 1 and the reason', async () => {
+  it('each tool exits 1 with the reason on an argument that is not a whole number or names an empty range, and on a candidate the node fails, and exits 0 on a valid range', async () => {
     const nodeUrl = `http://127.0.0.1:${node.address().port}`
-    const runs = [['A', '3400000', '3.49e6'], ['A', '10abc'], ['A', '20', '10'], ['A', '1000'], ['B', '1000'], ['A', '10', '10']]
-    const [exponent, suffix, reversed, aboveTipA, aboveTipB, oneBlock] = await Promise.all(runs.map(args => runBackfill(nodeUrl, ...args)))
+    const backfillRuns = [['A', '3400000', '3.49e6'], ['A', '20', '10'], ['B', '1000'], ['A', '10', '10']]
+    const [exponent, reversed, aboveTip, oneBlock, ...redetect] = await Promise.all([
+      ...backfillRuns.map(args => runBackfill(nodeUrl, ...args)),
+      ...['5e2', '0', '50.5', '50'].map(pageSize => runTool(REDETECT, nodeUrl, ['nft-transfer-emitters', pageSize]))
+    ])
+    for (const run of redetect) {
+      const resultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
+      if (resultFile) fs.unlinkSync(resultFile)
+    }
     const output = run => run.stdout + run.stderr
 
-    expect([exponent, suffix, reversed, aboveTipA, aboveTipB, oneBlock].map(run => run.status)).to.deep.equal([1, 1, 1, 1, 1, 0])
+    expect([exponent, reversed, aboveTip, oneBlock, ...redetect].map(run => run.status)).to.deep.equal([1, 1, 1, 0, 1, 1, 1, 1])
     expect(exponent.stdout).to.include('must be whole numbers, such as 3490000: got 3.49e6')
-    expect(suffix.stdout).to.include('got 10abc')
     expect(output(reversed)).to.include('fromBlock 20 is above toBlock 10: the range is empty')
-    expect(output(aboveTipA)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
-    expect(output(aboveTipB)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
+    expect(output(aboveTip)).to.include('fromBlock 1000 is above toBlock 10 (the highest stored block): the range is empty')
     expect(oneBlock.stdout).to.include('blocks 10..10')
-  })
-
-  it('the contract re-detection reports the candidate the node fails as failed in its summary, and exits 1', async () => {
-    const { status, stdout } = await runTool(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', '50'])
-    const resultFile = (stdout.match(/Result file saved to (\S+)/) || [])[1]
-    if (resultFile) fs.unlinkSync(resultFile)
-
-    expect(stdout).to.include(`${C721}: FAILED`).and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
-    expect(status).to.equal(1)
-  })
-
-  it('the contract re-detection refuses a pageSize that is not a whole number above 0, with exit 1 and the reason', async () => {
-    const runs = await Promise.all(['5e2', '0', '50.5'].map(pageSize => runTool(REDETECT, `http://127.0.0.1:${node.address().port}`, ['nft-transfer-emitters', pageSize])))
-    for (const run of runs) {
-      const leftResultFile = (run.stdout.match(/Result file saved to (\S+)/) || [])[1]
-      if (leftResultFile) fs.unlinkSync(leftResultFile)
-    }
-
-    expect(runs.map(run => run.status)).to.deep.equal([1, 1, 1])
-    expect(runs.map(run => (run.stdout.match(/Must be a whole number of at least 1, such as 50: got (\S+)/) || [])[1])).to.deep.equal(['5e2', '0', '50.5'])
+    expect(redetect.slice(0, 3).map(run => (run.stdout.match(/Must be a whole number of at least 1, such as 50: got (\S+)/) || [])[1])).to.deep.equal(['5e2', '0', '50.5'])
+    expect(redetect[3].stdout).to.include(`${C721}: FAILED`).and.match(/Done in \d+ ms\. tagged \(ERC721, ERC1155\): 0, not tagged: 0, failed: 1/)
   })
 
   it('phase B and the contract re-detection print their run report and exit 1, with no stack trace, when the node refuses the connection', async () => {

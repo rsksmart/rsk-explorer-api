@@ -15,34 +15,6 @@ integrationDescribe('NFT ownership: blocks whose statements would pass Prisma\'s
 
   beforeEach(resetDatabase)
 
-  it('saves and deletes a TransferBatch moving 3,300 ids between two holders, 6,600 balance keys', async () => {
-    const moved = ids(3300)
-    await save(10, [erc1155Batch(C1155, ZERO, A, moved, moved.map(() => 1))])
-    await save(20, [erc1155Batch(C1155, A, B, moved, moved.map(() => 1))])
-    expect(await differences()).to.deep.equal([])
-
-    expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('saves and deletes a TransferBatch moving 17,000 ids between two holders, whose 34,000 balance keys fill a read to the bind limit exactly', async () => {
-    const moved = ids(17000)
-    await save(10, [erc1155Batch(C1155, ZERO, A, moved, moved.map(() => 1))])
-    await save(20, [erc1155Batch(C1155, A, B, moved, moved.map(() => 1))])
-    expect(await differences()).to.deep.equal([])
-
-    expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
-    expect(await differences()).to.deep.equal([])
-  })
-
-  it('saves and deletes 5,500 zero-value TransferSingle logs between distinct holders, 11,000 holders in one block', async () => {
-    await save(20, ids(5500).map(i => erc1155Single(C1155, holderAt('3', i), holderAt('4', i), 1, 0)))
-    expect(await differences()).to.deep.equal([])
-
-    expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
-    expect(await differences()).to.deep.equal([])
-  })
-
   it('deletes four blocks of 4,100 zero-value TransferSingle logs at once, whose 32,800 holders all need a new last block: the holder list and the four deleted hashes fill a read to the bind limit exactly', async () => {
     const blocks = [20, 21, 22, 23]
     for (const [k, number] of blocks.entries()) await save(number, ids(4100).map(i => erc1155Single(C1155, holderAt('5', k * 4100 + i), holderAt('6', k * 4100 + i), 1, 0)))

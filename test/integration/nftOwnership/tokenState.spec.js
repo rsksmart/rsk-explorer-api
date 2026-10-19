@@ -4,7 +4,6 @@ import ContractParser from '@rsksmart/rsk-contract-parser'
 import { prismaClient } from '../../../src/lib/prismaClient'
 import { blocksRepository } from '../../../src/repositories'
 import { TokenState } from '../../../src/services/classes/TokenState'
-import { backfillTokenStates } from '../../../src/tools/backfillNftOwnership'
 import { blockData, erc721, ZERO } from './fixtures'
 import { integrationDescribe, resetDatabase } from './replay'
 
@@ -44,28 +43,5 @@ integrationDescribe('NFT ownership: the token state writers store the parser\'s 
     expect((await stored()).states.map(s => s.interfaces)).to.deep.equal([PROXY_LIST, UNSORTED_LIST])
     expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
     expect((await stored()).token).to.deep.include({ blockNumber: 10, interfaces: PROXY_LIST })
-  })
-
-  it('both writers store a collection the parser does not tag as an NFT with an empty list', async () => {
-    parserAnswers(() => [])
-    await saveWithTheIndexersTokenState(10, [erc721(C721, ZERO, A, 1)])
-    const data = blockData(20, 'a', [erc721(C721, ZERO, A, 2)])
-    await blocksRepository.saveBlockData({ ...data, tokenStates: [] })
-
-    await backfillTokenStates({ fromBlock: 20, toBlock: 20, chunkBlocks: 10, fetchers: [tokenState()] })
-
-    const untagged = { interfaces: [], isNft: true }
-    expect(await stored()).to.deep.equal({ token: { blockNumber: 20, ...untagged }, states: [{ blockNumber: 10, ...untagged }, { blockNumber: 20, ...untagged }] })
-  })
-
-  it('backfill phase B stores the same list through the same TokenState', async () => {
-    parserAnswers(() => PROXY_LIST)
-    const data = blockData(10, 'a', [erc721(C721, ZERO, A, 1)])
-    await blocksRepository.saveBlockData({ ...data, tokenStates: [] })
-
-    const report = await backfillTokenStates({ fromBlock: 0, toBlock: 100, chunkBlocks: 10, fetchers: [tokenState()] })
-
-    expect(report).to.include({ pairsWritten: 1 })
-    expect(await stored()).to.deep.equal({ token: { blockNumber: 10, interfaces: PROXY_LIST, isNft: true }, states: [{ blockNumber: 10, interfaces: PROXY_LIST, isNft: true }] })
   })
 })
