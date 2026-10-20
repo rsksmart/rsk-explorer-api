@@ -148,6 +148,17 @@ const cases = {
       ]))
     ]
   },
+  'lock order: a delete of N that writes the token rows of two contracts, against a save of M > N that holds the lower contract\'s token and then takes the higher one': async base => {
+    await saveLikeInsertBlock(base + 10, 'a', [erc721(C721, ZERO, A, 1), erc1155Single(C1155, ZERO, A, 7, 2)])
+    await saveLikeInsertBlock(base + 20, 'a', [erc721(C721, ZERO, A, 2)])
+    return [
+      withHold({ seconds: 0.6, at: 6 }, () => blocksRepository.deleteOne({ number: base + 10 })),
+      async () => {
+        await sleep(150)
+        return saveLikeInsertBlock(base + 30, 'a', [erc721(C721, ZERO, B, 3), erc1155Single(C1155, ZERO, B, 7, 1)])
+      }
+    ]
+  },
   'last block: a delete of N against a save of M > N sharing the holder': async base => {
     await saveTwoBlocksForA(base)
     return [

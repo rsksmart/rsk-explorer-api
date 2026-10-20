@@ -124,6 +124,15 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
     expect(await differences()).to.deep.equal([])
   })
 
+  it('a delete whose newest remaining token state another delete removed, and whose block number a new block then took, is refused (P2025), reads again, and the token equals a replay', async () => {
+    await save(5, [erc721(C721, ZERO, A, 5)])
+    await save(10, [erc721(C721, ZERO, B, 10)])
+    await save(20, [erc721(C721, ZERO, D, 20)])
+    beforeTheFirstTransaction(async () => {
+      await blocksRepository.deleteOne({ number: 10 })
+      await blocksRepository.saveBlockData(blockData(10, 'b', []))
+    })
+
     expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
 
     expect(refusalCodes).to.deep.equal(['P2025'])

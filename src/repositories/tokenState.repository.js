@@ -28,32 +28,40 @@ export function getTokenStateRepository (prismaClient) {
         select: { contract: true }
       })
       if (!statesOfDeletedBlocks.length) return []
-      const contracts = [...new Set(statesOfDeletedBlocks.map(state => state.contract))].sort()
+      const contractsInLockOrder = [...new Set(statesOfDeletedBlocks.map(state => state.contract))].sort()
 
       const tokensAtDeletedBlocks = await prismaClient.token.findMany({
-        where: { contract: { in: contracts }, blockNumber: { in: deletedBlockNumbers } },
+        where: { contract: { in: contractsInLockOrder }, blockNumber: { in: deletedBlockNumbers } },
         select: { contract: true, version: true },
         orderBy: { contract: 'asc' }
       })
-      const tokenRepairs = []
+      const versionOfTokenAtADeletedBlock = new Map(
+        tokensAtDeletedBlocks.map(({ contract, version }) => [contract, version])
+      )
+      const tokenWrites = []
 
-      for (const { contract, version } of tokensAtDeletedBlocks) {
+      for (const contract of contractsInLockOrder) {
+        if (!versionOfTokenAtADeletedBlock.has(contract)) {
+          tokenWrites.push(prismaClient.token.updateMany({ where: { contract }, data: { version: { increment: 1 } } }))
+          continue
+        }
+
         const newestRemainingState = await prismaClient.token_state_at_block.findFirst({
           where: { contract, blockNumber: { notIn: deletedBlockNumbers } },
           orderBy: { blockNumber: 'desc' }
         })
-        const where = { contract, version }
+        const where = { contract, version: versionOfTokenAtADeletedBlock.get(contract) }
 
         if (newestRemainingState) {
           const { contract: _, ...state } = newestRemainingState
-          tokenRepairs.push(prismaClient.token.update({ where, data: state }))
+          tokenWrites.push(prismaClient.token.update({ where, data: { ...state, version: { increment: 1 } } }))
         } else {
-          tokenRepairs.push(prismaClient.token.delete({ where }))
+          tokenWrites.push(prismaClient.token.delete({ where }))
         }
       }
 
       return [
-        ...tokenRepairs,
+        ...tokenWrites,
         prismaClient.token_state_at_block.deleteMany({ where: { blockNumber: { in: deletedBlockNumbers } } })
       ]
     }
