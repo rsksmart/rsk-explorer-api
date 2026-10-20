@@ -15,6 +15,7 @@ export const NFT_STANDARDS = [contractsInterfaces.ERC721, contractsInterfaces.ER
 
 const topicToAddress = topic => `0x${topic.slice(-40)}`.toLowerCase()
 const toTokenId = value => `0x${new BigNumber(value.toString()).toString(16).padStart(64, '0')}`
+const dateFromSeconds = seconds => new Date(Number(seconds) * 1000)
 
 function decodeErc1155Amounts (topic0, data) {
   try {
@@ -37,7 +38,14 @@ export function decodeNftTransfers ({
 }) {
   const [topic0] = topics
   if (topics.length !== 4) return []
-  const fact = { eventId, blockNumber, blockHash, transactionHash, timestamp, contract: address.toLowerCase() }
+  const fact = {
+    eventId,
+    blockNumber,
+    blockHash,
+    transactionHash,
+    timestamp: dateFromSeconds(timestamp),
+    contract: address.toLowerCase()
+  }
 
   if (topic0 === TRANSFER_TOPIC) {
     return [{

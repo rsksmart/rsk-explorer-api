@@ -85,6 +85,7 @@ function withoutContract (state) {
 export async function replay ({ tokenState = tokenStateAt, eventWhere = {} } = {}) {
   const events = await prismaClient.event.findMany({ where: eventWhere })
   const factQuantities = new Map()
+  const factSeconds = new Map()
   const balanceQuantities = new Map()
   const lastEventByHolder = new Map()
   const blocksByContract = new Map()
@@ -94,6 +95,7 @@ export async function replay ({ tokenState = tokenStateAt, eventWhere = {} } = {
       const contract = event.address.toLowerCase()
       const factKey = `${event.eventId}|${move.tokenId}`
       factQuantities.set(factKey, (factQuantities.get(factKey) || 0n) + move.quantity)
+      factSeconds.set(factKey, event.timestamp)
       if (!blocksByContract.has(contract)) blocksByContract.set(contract, new Set())
       blocksByContract.get(contract).add(event.blockNumber)
       for (const [holder, change] of [[move.to, move.quantity], [move.from, -move.quantity]]) {
@@ -138,14 +140,14 @@ export async function replay ({ tokenState = tokenStateAt, eventWhere = {} } = {
     }
   }
 
-  const facts = new Map([...factQuantities].map(([key, quantity]) => [key, quantity.toString()]))
+  const facts = new Map([...factQuantities].map(([key, quantity]) => [key, `${quantity}@${factSeconds.get(key)}`]))
   return { facts, balances, holders, tokens, states }
 }
 
 export async function tableState () {
   const facts = new Map((await prismaClient.token_transfer.findMany()).map(fact => [
     `${fact.eventId}|${fact.tokenId}`,
-    fact.value.toFixed()
+    `${fact.value.toFixed()}@${fact.timestamp.getTime() / 1000}`
   ]))
   const balances = new Map((await prismaClient.nft_balance.findMany({ where: { quantity: { not: 0 } } })).map(balance => [
     `${balance.contract}|${balance.standard}|${balance.tokenId}|${balance.holder}`,

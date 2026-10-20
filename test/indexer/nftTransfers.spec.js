@@ -37,6 +37,15 @@ describe('decodeNftTransfers', () => {
     })
   })
 
+  it('stores the block time as a Date, from seconds the save sends as a number and the backfill reads as a BigInt', () => {
+    const topics = [TRANSFER_TOPIC, padTo32Bytes(from), padTo32Bytes(to), padTo32Bytes('0a')]
+    const [fromSave] = decodeNftTransfers(log(topics))
+    const [fromBackfill] = decodeNftTransfers({ ...log(topics), timestamp: 1640000000n })
+
+    expect(fromSave.timestamp).to.deep.equal(new Date('2021-12-20T11:33:20.000Z'))
+    expect(fromBackfill.timestamp).to.deep.equal(new Date('2021-12-20T11:33:20.000Z'))
+  })
+
   it('ignores a 3-topic ERC-20 Transfer', () => {
     expect(decodeNftTransfers(log([TRANSFER_TOPIC, padTo32Bytes(from), padTo32Bytes(to)], padTo32Bytes('05')))).to.deep.equal([])
   })
