@@ -216,7 +216,11 @@ export function getNftRepository (prismaClient) {
 
       // `update` throws P2025 on a stale version; `updateMany` would match nothing and commit.
       holderUpdates.push(prismaClient.nft_holder.update({
-        where: { contract_standard_holder: holderId(holder), version: storedHolder.version },
+        where: {
+          contract_standard_holder: holderId(holder),
+          version: storedHolder.version,
+          lastBlockHash: storedHolder.lastBlockHash
+        },
         data: {
           quantity: { increment: change.quantity.toFixed() },
           tokenCount: { increment: change.tokenCount },

@@ -81,6 +81,19 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
     expect(await differences()).to.deep.equal([])
   })
 
+  it('a save whose holder a delete removed and another save re-created at the same version after the read is refused (P2025), reads again, and the tables equal a replay', async () => {
+    await save(10, [erc1155Single(C1155, ZERO, A, 7, 5)])
+    beforeTheFirstTransaction(async () => {
+      await blocksRepository.deleteOne({ number: 10 })
+      await save(20, [erc1155Single(C1155, ZERO, A, 7, 3)])
+    })
+
+    await save(30, [erc1155Single(C1155, ZERO, A, 7, 2)])
+
+    expect(refusalCodes).to.deep.equal(['P2025'])
+    expect(await differences()).to.deep.equal([])
+  })
+
   it('reads the balances only after the holders\' rows, never before or alongside them, so a save that commits in between cannot leave stale balances under a fresh version', async () => {
     await save(10, [erc1155Single(C1155, ZERO, A, 7, 5)])
     rightBeforeTheHolderRead(() => save(20, [erc1155Single(C1155, ZERO, A, 7, 3)]))
@@ -107,6 +120,12 @@ integrationDescribe('NFT ownership: a save that read holders or balances another
     const second = await blocksRepository.deleteOne({ number: 10 })
 
     expect(second).to.deep.equal({ count: 0 })
+    expect(refusalCodes).to.deep.equal(['P2025'])
+    expect(await differences()).to.deep.equal([])
+  })
+
+    expect(await blocksRepository.deleteOne({ number: 20 })).to.deep.equal({ count: 1 })
+
     expect(refusalCodes).to.deep.equal(['P2025'])
     expect(await differences()).to.deep.equal([])
   })
