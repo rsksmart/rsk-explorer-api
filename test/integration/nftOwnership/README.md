@@ -20,6 +20,6 @@ They need a real Postgres. The NFT tables are derived from `event`, and nothing 
 
 Point `DATABASE_URL` at a Postgres database whose name ends in `_test` and that has the migrations applied (`npx prisma migrate deploy`). The tests empty its tables (blocks, transactions, events, addresses, balances and the NFT tables) and change its default isolation level for a while. With any other database name, the tests are skipped.
 
-Then run `npx mocha test/integration/nftOwnership`. The 54 tests take about two minutes on a laptop.
+Then run `npx mocha test/integration/nftOwnership`. The 55 tests take about two minutes on a laptop.
 
 The repository's CI does not run any tests today, so this suite runs only when someone starts it.
