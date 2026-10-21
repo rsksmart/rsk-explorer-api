@@ -36,10 +36,18 @@ integrationDescribe('the re-detection writes only the token names a contract is 
   })
 
   it('writes nothing for a value the contract did not return, and an empty stored name counts as none', async () => {
-    const named = await updater.saveMissingTokenNames(UNNAMED, { name: null, symbol: '', decimals: null })
+    const named = await updater.saveMissingTokenNames(UNNAMED, { name: null, symbol: null, decimals: null })
 
     expect(named).to.equal(null)
     expect(await Promise.all([UNNAMED, NAMED].map(address => updater.hasStoredName(address)))).to.deep.equal([false, true])
     expect(await storedNames(UNNAMED)).to.deep.equal({ symbol: null, decimals: null, address_contract_addressToaddress: { name: '' } })
+  })
+
+  it('stores an empty symbol the contract returned, as the live token path does, only where none is stored', async () => {
+    const named = await Promise.all([UNNAMED, NAMED].map(address => updater.saveMissingTokenNames(address, { name: null, symbol: '', decimals: null })))
+
+    expect(named).to.deep.equal([{ symbol: '' }, null])
+    expect((await storedNames(UNNAMED)).symbol).to.equal('')
+    expect((await storedNames(NAMED)).symbol).to.equal('KEPT')
   })
 })

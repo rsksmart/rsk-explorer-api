@@ -89,7 +89,7 @@ export default class ContractEventsUpdater {
     if (name) {
       writes.push({ field: 'name', value: name, query: this.prismaClient.address.updateMany({ where: { address, OR: [{ name: null }, { name: '' }] }, data: { name } }) })
     }
-    if (symbol) {
+    if (symbol !== null) {
       writes.push({ field: 'symbol', value: symbol, query: this.prismaClient.contract.updateMany({ where: { address, symbol: null }, data: { symbol } }) })
     }
     if (decimals !== null) {
