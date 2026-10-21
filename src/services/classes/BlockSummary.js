@@ -7,9 +7,10 @@ import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import config from '../../lib/config'
 
 export class BlockSummary extends BcThing {
-  constructor (hashOrNumber, { nod3, log, initConfig }) {
+  constructor (hashOrNumber, { nod3, log, initConfig, replace }) {
     super({ nod3, initConfig, log, name: 'Summary' })
     this.hashOrNumber = hashOrNumber
+    this.replace = replace
     this.Addresses = undefined
     this.data = {
       block: null,
@@ -109,10 +110,10 @@ export class BlockSummary extends BcThing {
 
   async getAddresses () {
     try {
-      let { Addresses, nod3, initConfig } = this
+      let { Addresses, nod3, initConfig, replace } = this
       if (!Addresses) {
         let blockData = await this.getBlockData()
-        Addresses = new BlockAddresses(blockData, { nod3, initConfig })
+        Addresses = new BlockAddresses(blockData, { nod3, initConfig, replace })
         let { miner } = blockData
         let options = { block: blockData }
         Addresses.add(miner, options)
