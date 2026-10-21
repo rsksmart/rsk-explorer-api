@@ -30,7 +30,8 @@ const makeUpdater = (events, interfaces = ['ERC1155']) => ({
   getContractParser: sinon.stub().resolves({ parser: makeParser(), contractDetails: { interfaces } }),
   saveContractDetails: sinon.stub().resolves(3),
   updateContractEvents: sinon.stub().resolves({ updatedEvents: { amount: events.length, events } }),
-  saveMissingTokenNames: sinon.stub().resolves(null)
+  saveMissingTokenNames: sinon.stub().resolves(null),
+  hasStoredName: sinon.stub().resolves(false)
 })
 
 describe('redetectContracts candidate sets', () => {
@@ -74,6 +75,21 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
 
     expect(updater.saveMissingTokenNames.firstCall.args[1]).to.include(named)
     expect([bucket, entry.named]).to.deep.equal(['tagged', named])
+  })
+
+  it('counts a tagged contract as unnamed when the parser returned no name and none is stored, without failing it', async () => {
+    const candidates = [address, `0x${'2'.repeat(40)}`]
+    const updater = makeUpdater([decodedEvent()])
+    const { parser } = await updater.getContractParser()
+    parser.getDefaultTokenData.resolves({ ...tokenData, name: null })
+    updater.getContractParser.resolves({ parser, contractDetails: { interfaces: ['ERC721'] } })
+    updater.hasStoredName.withArgs(candidates[1]).resolves(true)
+
+    const summary = await redetectCandidates({ updater, candidateSet, candidates, pageSize: 50 })
+
+    expect(summary.unnamed).to.deep.equal([address])
+    expect(summary.tagged.map(entry => entry.address)).to.deep.equal(candidates)
+    expect(summary.failed).to.deep.equal([])
   })
 
   it('reports a tagged contract as failed when its token data cannot be read or written, so a rerun retries it', async () => {
@@ -145,6 +161,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       sinon.stub(updater, 'getContractABI').resolves(null)
       sinon.stub(updater, 'saveContractDetails').resolves(2)
       sinon.stub(updater, 'saveMissingTokenNames').resolves(null)
+      sinon.stub(updater, 'hasStoredName').resolves(false)
       sinon.stub(updater, 'fetchPaginatedEvents').resolves({ events: [], next: null })
       sinon.spy(updater, 'getContractParser')
       return updater

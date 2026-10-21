@@ -101,6 +101,12 @@ export default class ContractEventsUpdater {
     return written.length ? Object.fromEntries(written.map(({ field, value }) => [field, value])) : null
   }
 
+  async hasStoredName (contractAddress) {
+    this.validateContractAddress(contractAddress)
+    const stored = await this.prismaClient.address.findUnique({ where: { address: contractAddress.toLowerCase() }, select: { name: true } })
+    return Boolean(stored && stored.name)
+  }
+
   async updateAllContractsEvents (pageSize, sinceBlockNumber = 0) {
     try {
       const contracts = await this.prismaClient.contract.findMany({ select: { address: true } })

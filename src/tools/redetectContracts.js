@@ -77,8 +77,13 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
 
     const { parser } = detection
     const tokenData = await parser.getDefaultTokenData(parser.makeContract(address))
-    entry.named = await updater.saveMissingTokenNames(address, toTokenState(address, contractDetails, tokenData))
+    const tokenState = toTokenState(address, contractDetails, tokenData)
+    entry.named = await updater.saveMissingTokenNames(address, tokenState)
     console.log(`${progress} ${address}: ${entry.named ? `wrote missing token data ${JSON.stringify(entry.named)}` : 'no missing token data written'}`)
+    if (!tokenState.name && !await updater.hasStoredName(address)) {
+      entry.unnamed = true
+      console.log(`${progress} ${address}: name not returned (no name() or a failed call; rerun with this address)`)
+    }
     return { bucket: 'tagged', entry }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). A rerun retries it.`)
@@ -91,12 +96,13 @@ export async function redetectCandidates ({
   candidateSet,
   candidates,
   pageSize,
-  summary = { tagged: [], notTagged: [], failed: [] }
+  summary = { tagged: [], notTagged: [], failed: [], unnamed: [] }
 }) {
   for (const [index, address] of candidates.entries()) {
     const progress = `[${index + 1}/${candidates.length}]`
     const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize, progress })
     summary[bucket].push(entry)
+    if (entry.unnamed) summary.unnamed.push(address)
   }
 
   return summary
@@ -128,8 +134,8 @@ async function main () {
 
   const updater = new ContractEventsUpdater()
   const started = Date.now()
-  const summary = { tagged: [], notTagged: [], failed: [] }
-  const summaryLine = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}`
+  const summary = { tagged: [], notTagged: [], failed: [], unnamed: [] }
+  const summaryLine = () => `tagged (${candidateSet.interfaces.join(', ')}): ${summary.tagged.length}, not tagged: ${summary.notTagged.length}, failed: ${summary.failed.length}, unnamed: ${summary.unnamed.length}`
   exitOnUncaughtException(
     `[Tool ${toolName}]: Error re-detecting contracts`,
     () => `Stopped after ${Date.now() - started} ms. ${summaryLine()}`
