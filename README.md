@@ -97,6 +97,8 @@ DATABASE_URL=postgres://postgres:12345678@localhost:5432/explorer_db
 }
 ```
 
+- `RSK_NODE_URL` in the environment or the `.env` file, when set and not empty, replaces that `source` with one http or https node, and the process prints one line when `config.json` also names a source.
+
 ### api
 - **address** [string] api server bind address
 - **port**  [number] api server port

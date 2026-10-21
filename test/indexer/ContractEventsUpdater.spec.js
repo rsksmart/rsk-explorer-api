@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import sinon from 'sinon'
 import ContractEventsUpdater from '../../src/services/classes/ContractEventsUpdater'
 
+const TRANSFER_TOPIC0 = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
 const TRANSFER_SINGLE_TOPIC0 = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
 const TRANSFER_BATCH_TOPIC0 = '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb'
 
@@ -16,21 +17,8 @@ const makeFakePrismaClient = () => ({
 })
 
 describe('ContractEventsUpdater', () => {
-  describe('findEventEmittersByTopic0', () => {
-    it('rejects when no topic0s are provided', async () => {
-      const updater = new ContractEventsUpdater({ prismaClient: makeFakePrismaClient() })
-      for (const badInput of [undefined, [], 'not-an-array']) {
-        let error
-        try {
-          await updater.findEventEmittersByTopic0(badInput)
-        } catch (err) {
-          error = err
-        }
-        expect(error, `input: ${JSON.stringify(badInput)}`).to.be.an('error')
-      }
-    })
-
-    it('groups events by address and returns the distinct emitters', async () => {
+  describe('findNftTransferEmitters', () => {
+    it('asks for the emitters of four-topic Transfer, TransferSingle and TransferBatch logs, never of three-topic Transfer', async () => {
       const prismaClient = makeFakePrismaClient()
       prismaClient.event.groupBy.resolves([
         { address: '0xb8ef8a681c00d41cc0ca6e64b7415b020a6a206a' },
@@ -38,13 +26,17 @@ describe('ContractEventsUpdater', () => {
       ])
       const updater = new ContractEventsUpdater({ prismaClient })
 
-      const topic0s = [TRANSFER_SINGLE_TOPIC0, TRANSFER_BATCH_TOPIC0]
-      const emitters = await updater.findEventEmittersByTopic0(topic0s)
+      const emitters = await updater.findNftTransferEmitters()
 
       expect(prismaClient.event.groupBy.calledOnce).to.equal(true)
       expect(prismaClient.event.groupBy.firstCall.args[0]).to.deep.equal({
         by: ['address'],
-        where: { topic0: { in: topic0s } },
+        where: {
+          OR: [
+            { topic0: TRANSFER_TOPIC0, topic3: { not: null } },
+            { topic0: { in: [TRANSFER_SINGLE_TOPIC0, TRANSFER_BATCH_TOPIC0] } }
+          ]
+        },
         orderBy: { address: 'asc' }
       })
       expect(emitters).to.deep.equal([

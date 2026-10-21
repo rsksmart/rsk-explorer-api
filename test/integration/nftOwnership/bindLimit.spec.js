@@ -1,0 +1,41 @@
+import { expect } from 'chai'
+import { blocksRepository } from '../../../src/repositories'
+import { blockData, erc1155Batch, erc1155Single, ZERO } from './fixtures'
+import { integrationDescribe, resetDatabase, differences } from './replay'
+
+const C1155 = '0x000000000000000000000000000000000f001155'
+const [A, B] = ['1', '2'].map(digit => `0x${digit.repeat(40)}`)
+const holderAt = (prefix, i) => `0x${prefix}${i.toString(16).padStart(39, '0')}`
+const tokenIds = count => Array.from({ length: count }, (_, i) => i + 1)
+
+const save = (number, logs) => blocksRepository.saveBlockData(blockData(number, 'a', logs))
+
+integrationDescribe('NFT ownership: blocks whose statements would pass Prisma\'s query parameter limit', function () {
+  this.timeout(600000)
+
+  beforeEach(resetDatabase)
+
+  it('deletes four blocks of 4,100 zero-value TransferSingle logs at once, whose 32,800 holders all need a new last block: the holder list and the four deleted hashes fill a read to the query parameter limit exactly', async () => {
+    const blocks = [20, 21, 22, 23]
+    for (const [blockIndex, number] of blocks.entries()) {
+      await save(number, tokenIds(4100).map(i => erc1155Single(
+        C1155,
+        holderAt('5', blockIndex * 4100 + i),
+        holderAt('6', blockIndex * 4100 + i),
+        1,
+        0
+      )))
+    }
+
+    expect(await blocksRepository.deleteMany({ number: { in: blocks } })).to.deep.equal({ count: 4 })
+    expect(await differences()).to.deep.equal([])
+  })
+
+  it('deletes a block of 16,500 TransferBatch facts, more ids than one read can send as query parameters', async () => {
+    const minted = tokenIds(16500)
+    await save(10, [erc1155Batch(C1155, ZERO, A, minted, minted.map(() => 1))])
+
+    expect(await blocksRepository.deleteOne({ number: 10 })).to.deep.equal({ count: 1 })
+    expect(await differences()).to.deep.equal([])
+  })
+})

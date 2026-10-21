@@ -1,7 +1,7 @@
 import { BcThing } from './BcThing'
 import ContractParser from '@rsksmart/rsk-contract-parser'
 import defaultABI from '@rsksmart/rsk-contract-parser/dist/lib/Abi'
-import { NULL_BALANCE, tokensInterfaces, accountBalanceTokensInterfaces } from '../../lib/types'
+import { NULL_BALANCE, tokensInterfaces, fungibleTokensInterfaces } from '../../lib/types'
 import TokenAddress from './TokenAddress'
 import { chunkArray } from '../../lib/utils'
 import { isNativeContract } from '../../lib/NativeContracts'
@@ -175,21 +175,12 @@ class Contract extends BcThing {
   async fetchTokenAddressesBalances (blockNumber) {
     if (!this.fetched) await this.fetch()
     if (!this.isToken) return []
+    if (!this.data.contractInterfaces.some(i => fungibleTokensInterfaces.includes(i))) return []
     const { addresses, address, contract, nod3 } = this
 
     const tokenAddresses = Object.keys(addresses)
     let tokenAddressesBalances = []
     const data = []
-
-    const hasAccountBalance = this.data.contractInterfaces.some(i => accountBalanceTokensInterfaces.includes(i))
-    if (!hasAccountBalance) {
-      for (const tokenAddress of tokenAddresses) {
-        const tokenAddressInstance = addresses[tokenAddress]
-        tokenAddressInstance.setTokenAddressBalance(NULL_BALANCE)
-        data.push(tokenAddressInstance.getData(true))
-      }
-      return data
-    }
 
     // generate all batch requests
     try {
