@@ -19,10 +19,18 @@ const OWNERSHIP_TRANSFERRED_TOPIC0 = '0x8be0079c531659141344cd1fd0a4f28419497f97
 const failedEvent = topic0 => ({ error: true, eventDebugData: { event: { topics: [topic0] } } })
 const decodedEvent = () => ({ error: false })
 
+const tokenData = { name: 'Rootstock Punks', symbol: 'RPUNK', decimals: '0', totalSupply: '100' }
+
+const makeParser = () => ({
+  makeContract: sinon.stub().returns({ address }),
+  getDefaultTokenData: sinon.stub().resolves(tokenData)
+})
+
 const makeUpdater = (events, interfaces = ['ERC1155']) => ({
-  getContractParser: sinon.stub().resolves({ contractDetails: { interfaces } }),
+  getContractParser: sinon.stub().resolves({ parser: makeParser(), contractDetails: { interfaces } }),
   saveContractDetails: sinon.stub().resolves(3),
-  updateContractEvents: sinon.stub().resolves({ updatedEvents: { amount: events.length, events } })
+  updateContractEvents: sinon.stub().resolves({ updatedEvents: { amount: events.length, events } }),
+  saveMissingTokenNames: sinon.stub().resolves(null)
 })
 
 describe('redetectContracts candidate sets', () => {
@@ -54,7 +62,35 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
     const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
     expect(bucket).to.equal('tagged')
-    expect(entry).to.deep.equal({ address, interfaces: ['ERC1155'], updatedEvents: 2, otherFailures: 1 })
+    expect(entry).to.deep.equal({ address, interfaces: ['ERC1155'], updatedEvents: 2, otherFailures: 1, named: null })
+  })
+
+  it('writes the token name, symbol and decimals of a tagged contract, normalized, and reports what it wrote', async () => {
+    const updater = makeUpdater([decodedEvent()])
+    const named = { name: 'Rootstock Punks', symbol: 'RPUNK', decimals: 0 }
+    updater.saveMissingTokenNames.resolves(named)
+
+    const { bucket, entry } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
+
+    expect(updater.saveMissingTokenNames.firstCall.args[1]).to.include(named)
+    expect([bucket, entry.named]).to.deep.equal(['tagged', named])
+  })
+
+  it('reports a tagged contract as failed when its token data cannot be read or written, so a rerun retries it', async () => {
+    const unreadable = makeUpdater([decodedEvent()])
+    const { parser } = await unreadable.getContractParser()
+    parser.getDefaultTokenData.rejects(new Error('injected token data error'))
+    unreadable.getContractParser.resolves({ parser, contractDetails: { interfaces: ['ERC721'] } })
+    const unwritable = makeUpdater([decodedEvent()])
+    unwritable.saveMissingTokenNames.rejects(new Error('injected write error'))
+
+    const results = await Promise.all([unreadable, unwritable].map(updater =>
+      processCandidate({ updater, candidateSet, address, pageSize: 50 })))
+
+    expect(results).to.deep.equal([
+      { bucket: 'failed', entry: { address, error: 'injected token data error' } },
+      { bucket: 'failed', entry: { address, error: 'injected write error' } }
+    ])
   })
 
   for (const [standard, topic0] of [['ERC-1155', TRANSFER_SINGLE_TOPIC0], ['ERC-721', TRANSFER_TOPIC0]]) {
@@ -74,6 +110,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
     const { bucket } = await processCandidate({ updater, candidateSet, address, pageSize: 50 })
 
     expect(updater.saveContractDetails.calledOnceWithExactly(address, { interfaces: ['ERC20'] })).to.equal(true)
+    expect(updater.saveMissingTokenNames.called).to.equal(false)
     expect(bucket).to.equal('notTagged')
   })
 
@@ -107,6 +144,7 @@ describe('redetectContracts processCandidate over the NFT transfer emitters', ()
       sinon.stub(updater, 'getInitConfig').resolves({ net: { id: '30' } })
       sinon.stub(updater, 'getContractABI').resolves(null)
       sinon.stub(updater, 'saveContractDetails').resolves(2)
+      sinon.stub(updater, 'saveMissingTokenNames').resolves(null)
       sinon.stub(updater, 'fetchPaginatedEvents').resolves({ events: [], next: null })
       sinon.spy(updater, 'getContractParser')
       return updater

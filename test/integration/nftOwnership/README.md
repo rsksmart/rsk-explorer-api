@@ -13,13 +13,13 @@ They need a real Postgres. The NFT tables are derived from `event`, and nothing 
 5. `staleRead.spec.js` covers a save or delete whose read went stale before its batch committed.
 6. `statementCount.spec.js` and `bindLimit.spec.js` check that a block's statements grow with holders, not with token ids, and stay under the query parameter limit.
 7. `tokenState.spec.js` checks the token state written on a save and restored on a delete.
-8. `backfill.spec.js` and `commandLine.spec.js` cover the one-off backfill and re-detection tools. They can go once those tools have run in every environment.
+8. `backfill.spec.js`, `commandLine.spec.js` and `tokenNames.spec.js` cover the one-off backfill and re-detection tools. They can go once those tools have run in every environment.
 9. `fixtures.js` builds the blocks and logs the tests save.
 
 ## Running them
 
 Point `DATABASE_URL` at a Postgres database whose name ends in `_test` and that has the migrations applied (`npx prisma migrate deploy`). The tests empty its tables (blocks, transactions, events, addresses, balances and the NFT tables) and change its default isolation level for a while. With any other database name, the tests are skipped.
 
-Then run `npx mocha test/integration/nftOwnership`. The 55 tests take about two minutes on a laptop.
+Then run `npx mocha test/integration/nftOwnership`. The 57 tests take about two minutes on a laptop.
 
 The repository's CI does not run any tests today, so this suite runs only when someone starts it.

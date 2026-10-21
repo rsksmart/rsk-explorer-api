@@ -81,6 +81,26 @@ export default class ContractEventsUpdater {
     return results.reduce((total, r) => total + (r.count || 0), 0)
   }
 
+  async saveMissingTokenNames (contractAddress, { name, symbol, decimals }) {
+    this.validateContractAddress(contractAddress)
+    const address = contractAddress.toLowerCase()
+
+    const writes = []
+    if (name) {
+      writes.push({ field: 'name', value: name, query: this.prismaClient.address.updateMany({ where: { address, OR: [{ name: null }, { name: '' }] }, data: { name } }) })
+    }
+    if (symbol) {
+      writes.push({ field: 'symbol', value: symbol, query: this.prismaClient.contract.updateMany({ where: { address, symbol: null }, data: { symbol } }) })
+    }
+    if (decimals !== null) {
+      writes.push({ field: 'decimals', value: decimals, query: this.prismaClient.contract.updateMany({ where: { address, decimals: null }, data: { decimals } }) })
+    }
+
+    const results = await this.prismaClient.$transaction(writes.map(write => write.query))
+    const written = writes.filter((write, index) => results[index].count > 0)
+    return written.length ? Object.fromEntries(written.map(({ field, value }) => [field, value])) : null
+  }
+
   async updateAllContractsEvents (pageSize, sinceBlockNumber = 0) {
     try {
       const contracts = await this.prismaClient.contract.findMany({ select: { address: true } })

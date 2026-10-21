@@ -2,6 +2,7 @@ import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
 import { ERC721_AND_ERC1155_EVENT_TOPIC0S } from '@rsksmart/rsk-contract-parser'
 import ContractEventsUpdater from '../services/classes/ContractEventsUpdater'
 import { nftTokensInterfaces } from '../lib/types'
+import { toTokenState } from '../services/classes/TokenState'
 import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
 import fs from 'fs'
 import path from 'path'
@@ -72,7 +73,13 @@ export async function processCandidate ({ updater, candidateSet, address, pageSi
       updatedEvents: result.updatedEvents.amount,
       otherFailures
     }
-    return { bucket: isTagged ? 'tagged' : 'notTagged', entry }
+    if (!isTagged) return { bucket: 'notTagged', entry }
+
+    const { parser } = detection
+    const tokenData = await parser.getDefaultTokenData(parser.makeContract(address))
+    entry.named = await updater.saveMissingTokenNames(address, toTokenState(address, contractDetails, tokenData))
+    console.log(`${progress} ${address}: ${entry.named ? `wrote missing token data ${JSON.stringify(entry.named)}` : 'no missing token data written'}`)
+    return { bucket: 'tagged', entry }
   } catch (error) {
     console.log(`${progress} ${address}: FAILED (${error.message}). A rerun retries it.`)
     return { bucket: 'failed', entry: { address, error: error.message } }
