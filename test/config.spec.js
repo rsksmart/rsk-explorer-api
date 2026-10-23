@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { makeConfig, nodeSources, createNodeSource, withNodeUrlFromTheEnvironment } from '../src/lib/config'
+import { createConfig, makeConfig, nodeSources, createNodeSource, withNodeUrlFromTheEnvironment } from '../src/lib/config'
 
 describe('# Config', function () {
   it('should get the default config', () => {
@@ -32,7 +32,19 @@ describe('# Config', function () {
   })
 
   describe('RSK_NODE_URL', function () {
-    afterEach(() => sinon.restore())
+    const originalEnv = process.env.RSK_NODE_URL
+
+    afterEach(() => {
+      sinon.restore()
+      if (originalEnv === undefined) delete process.env.RSK_NODE_URL
+      else process.env.RSK_NODE_URL = originalEnv
+    })
+
+    it('is applied by createConfig, which every process loads its config through', () => {
+      process.env.RSK_NODE_URL = 'http://env-node.test:4450'
+
+      expect(createConfig().source.url).to.equal('http://env-node.test:4450')
+    })
 
     it('replaces the source of config.json with its one node, says so in one line without the URL, and leaves the file config as it is when unset or empty', () => {
       const log = sinon.stub(console, 'log')
