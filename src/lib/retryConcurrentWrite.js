@@ -5,9 +5,9 @@
  * @param {function(Error): boolean} options.isRetryable Whether an error from run allows another attempt.
  * @param {function(): Promise<*>} options.run The work to run.
  * @param {function(Error): Promise<boolean>} [options.doneByAnotherWriter] Called after each retryable error; true stops without an error.
- * @param {function(Error, number): Promise<void>} [options.beforeRetry] Called with the error and the attempt number before the next attempt.
+ * @param {function(Error, number): Promise<void>} [options.beforeRetry] Called with the error and the number of the attempt that failed, before the next attempt.
  * @returns {Promise<*>} What run returns, or undefined when doneByAnotherWriter returns true.
- * @throws {Error} An error isRetryable refuses, at once; the last retryable error, after maxAttempts calls.
+ * @throws {Error} An error isRetryable refuses, at once; the last retryable error, after maxAttempts calls; any error isRetryable, doneByAnotherWriter or beforeRetry throws.
  */
 export async function retryConcurrentWrite ({
   maxAttempts,
