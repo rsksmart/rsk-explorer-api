@@ -1,12 +1,10 @@
 import path from 'path'
 import fs from 'fs'
-import legacyUrl from 'url'
+import URL from 'url'
 import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
 
 dotenv.config()
-
-const RSK_NODE_URL_PROTOCOLS = ['http:', 'https:']
 
 const validateConfig = {
   existence: (config) => {
@@ -17,7 +15,7 @@ const validateConfig = {
 }
 
 export function createConfig (file) {
-  const config = makeConfig(withNodeUrlFromTheEnvironment(loadConfig(file)))
+  const config = makeConfig(loadConfig(file))
 
   // validations
   validateConfig.existence(config)
@@ -87,20 +85,6 @@ export function makeConfig (config = {}) {
   return config
 }
 
-export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
-  const nodeUrl = env.RSK_NODE_URL
-  if (!nodeUrl) return fileConfig
-  let protocol
-  try {
-    protocol = new URL(nodeUrl).protocol
-  } catch (error) {
-    throw new Error('RSK_NODE_URL is not a URL')
-  }
-  if (!RSK_NODE_URL_PROTOCOLS.includes(protocol)) throw new Error('RSK_NODE_URL must be an http or https URL')
-  if (fileConfig.source) console.log('RSK_NODE_URL from the environment replaces the source in config.json')
-  return { ...fileConfig, source: { url: nodeUrl } }
-}
-
 function loadConfig (file) {
   let config = {}
   if (file) {
@@ -129,7 +113,7 @@ export function nodeSources (sources) {
 
 export function createNodeSource (s) {
   let url = s.url || `${s.protocol}://${s.node}:${s.port}`
-  let { protocol, port, hostname: node } = legacyUrl.parse(url)
+  let { protocol, port, hostname: node } = URL.parse(url)
   protocol = protocol.replace(/:$/, '')
   return { protocol, node, port, url }
 }
