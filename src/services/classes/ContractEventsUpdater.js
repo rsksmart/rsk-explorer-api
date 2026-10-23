@@ -1,15 +1,17 @@
 import { isAddress } from '@rsksmart/rsk-utils/dist/addresses'
-import { ContractParser } from '@rsksmart/rsk-contract-parser'
+import { ContractParser, getBridgeAddress } from '@rsksmart/rsk-contract-parser'
 import { configRepository, eventRepository, verificationResultsRepository } from '../../repositories'
 import { prismaClient } from '../../lib/prismaClient'
 import nod3 from '../../lib/nod3Connect'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../../lib/defaultConfig'
-import { getBridgeAddress } from '@rsksmart/rsk-contract-parser/dist/lib/utils'
+import { TRANSFER_TOPIC, TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC } from '../../lib/nftTransfers'
 
 export default class ContractEventsUpdater {
-  constructor ({ log = console } = {}) {
+  constructor ({ log = console, prismaClient: prismaClientInstance = prismaClient, nod3: nod3Connection = nod3 } = {}) {
     this.log = log
     this.initConfig = null
+    this.prismaClient = prismaClientInstance
+    this.nod3 = nod3Connection
   }
 
   async getInitConfig () {
@@ -42,9 +44,72 @@ export default class ContractEventsUpdater {
     if (isNaN(pageSize)) throw new Error('Invalid pageSize value provided. Must be a number')
   }
 
+  async findNftTransferEmitters () {
+    const groups = await this.prismaClient.event.groupBy({
+      by: ['address'],
+      where: {
+        OR: [
+          { topic0: TRANSFER_TOPIC, topic3: { not: null } },
+          { topic0: { in: [TRANSFER_SINGLE_TOPIC, TRANSFER_BATCH_TOPIC] } }
+        ]
+      },
+      orderBy: { address: 'asc' }
+    })
+
+    return groups.map(group => group.address)
+  }
+
+  async saveContractDetails (contractAddress, { interfaces = [], methods = [] } = {}) {
+    this.validateContractAddress(contractAddress)
+    contractAddress = contractAddress.toLowerCase()
+
+    const queries = []
+    if (interfaces.length) {
+      queries.push(this.prismaClient.contract_interface.createMany({
+        data: interfaces.map(inter => ({ interface: inter, contractAddress })),
+        skipDuplicates: true
+      }))
+    }
+    if (methods.length) {
+      queries.push(this.prismaClient.contract_method.createMany({
+        data: methods.map(method => ({ method, contractAddress })),
+        skipDuplicates: true
+      }))
+    }
+
+    const results = await this.prismaClient.$transaction(queries)
+    return results.reduce((total, r) => total + (r.count || 0), 0)
+  }
+
+  async saveMissingTokenNames (contractAddress, { name, symbol, decimals }) {
+    this.validateContractAddress(contractAddress)
+    const address = contractAddress.toLowerCase()
+
+    const writes = []
+    if (name) {
+      writes.push({ field: 'name', value: name, query: this.prismaClient.address.updateMany({ where: { address, OR: [{ name: null }, { name: '' }] }, data: { name } }) })
+    }
+    if (symbol !== null) {
+      writes.push({ field: 'symbol', value: symbol, query: this.prismaClient.contract.updateMany({ where: { address, symbol: null }, data: { symbol } }) })
+    }
+    if (decimals !== null) {
+      writes.push({ field: 'decimals', value: decimals, query: this.prismaClient.contract.updateMany({ where: { address, decimals: null }, data: { decimals } }) })
+    }
+
+    const results = await this.prismaClient.$transaction(writes.map(write => write.query))
+    const written = writes.filter((write, index) => results[index].count > 0)
+    return written.length ? Object.fromEntries(written.map(({ field, value }) => [field, value])) : null
+  }
+
+  async hasStoredName (contractAddress) {
+    this.validateContractAddress(contractAddress)
+    const stored = await this.prismaClient.address.findUnique({ where: { address: contractAddress.toLowerCase() }, select: { name: true } })
+    return Boolean(stored && stored.name)
+  }
+
   async updateAllContractsEvents (pageSize, sinceBlockNumber = 0) {
     try {
-      const contracts = await prismaClient.contract.findMany({ select: { address: true } })
+      const contracts = await this.prismaClient.contract.findMany({ select: { address: true } })
       const contractAddresses = contracts.map(contract => contract.address)
       const results = {}
 
@@ -64,7 +129,7 @@ export default class ContractEventsUpdater {
     }
   }
 
-  async updateContractEvents (contractAddress, pageSize, sinceBlockNumber = 0) {
+  async updateContractEvents (contractAddress, pageSize, sinceBlockNumber = 0, detection = null) {
     try {
       const result = {
         contractDetails: null,
@@ -83,7 +148,7 @@ export default class ContractEventsUpdater {
       contractAddress = contractAddress.toLowerCase()
 
       const isBridge = this.isBridgeAddress(contractAddress)
-      const { parser, contractDetails, verifiedAbi } = await this.getContractParser(contractAddress)
+      const { parser, contractDetails, verifiedAbi } = detection || await this.getContractParser(contractAddress)
       result.contractDetails = contractDetails
       result.verifiedAbi = isBridge ? true : verifiedAbi
 
@@ -299,7 +364,7 @@ export default class ContractEventsUpdater {
       this.validateContractAddress(contractAddress)
 
       const initConfig = await this.getInitConfig()
-      const parser = new ContractParser({ nod3, initConfig })
+      const parser = new ContractParser({ nod3: this.nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.getContractABI(contractAddress, contractDetails)
 
@@ -328,7 +393,7 @@ export default class ContractEventsUpdater {
       this.validateContractAddress(contractAddress)
 
       const initConfig = await this.getInitConfig()
-      const parser = new ContractParser({ nod3, initConfig })
+      const parser = new ContractParser({ nod3: this.nod3, initConfig })
       let contractDetails = await parser.getContractDetails(contractAddress)
       const verifiedAbi = await this.fetchAbiFromDb(contractAddress)
 
@@ -357,7 +422,7 @@ export default class ContractEventsUpdater {
 
     const bridgeAddress = getBridgeAddress()
     const initConfig = await this.getInitConfig()
-    const parser = new ContractParser({ nod3, initConfig, txBlockNumber: blockNumber })
+    const parser = new ContractParser({ nod3: this.nod3, initConfig, txBlockNumber: blockNumber })
     const contractDetails = await parser.getContractDetails(bridgeAddress)
 
     return {

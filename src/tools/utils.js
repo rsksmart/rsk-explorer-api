@@ -322,3 +322,16 @@ export function parseArguments (validOptions) {
 
   return options
 }
+
+export const WHOLE_NUMBER = /^\d+$/
+
+const isSystemCallError = error => Boolean(error && error.syscall)
+
+export function exitOnUncaughtException (headline, stoppedLine) {
+  process.on('uncaughtException', error => {
+    console.log(`${headline}: ${(error && error.message) || error}`)
+    if (!isSystemCallError(error)) console.error(error && error.stack ? error.stack : error)
+    console.log(stoppedLine())
+    process.exit(1)
+  })
+}

@@ -34,7 +34,8 @@ export const contractsInterfaces = {
   ERC20: 'ERC20',
   ERC677: 'ERC677',
   ERC165: 'ERC165',
-  ERC721: 'ERC721'
+  ERC721: 'ERC721',
+  ERC1155: 'ERC1155'
 }
 
 const ci = contractsInterfaces
@@ -42,7 +43,18 @@ const ci = contractsInterfaces
 export const tokensInterfaces = [
   ci.ERC20,
   ci.ERC677,
-  ci.ERC721
+  ci.ERC721,
+  ci.ERC1155
+]
+
+export const fungibleTokensInterfaces = [
+  ci.ERC20,
+  ci.ERC677
+]
+
+export const nftTokensInterfaces = [
+  ci.ERC721,
+  ci.ERC1155
 ]
 
 export const events = {

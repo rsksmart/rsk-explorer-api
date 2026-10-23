@@ -19,6 +19,7 @@
     "verify-merge-mining": "npx babel-node src/tools/verifyMergeMiningPipeline.js",
     "lint": "npx eslint src/**/* --quiet",
     "test": "npx mocha --exit",
+    "test:indexer": "npx mocha --exit test/indexer",
     "api-docs": "mkdir -p public && npx babel-node src/api/makeOpenApiSpec.js > public/swagger.json",
     "start-api": "mkdir -p logs/api && pm2 start dist/api/api.pm2.config.js",
     "stop-api": "pm2 stop dist/api/api.pm2.config.js",
@@ -46,7 +47,7 @@
   "dependencies": {
     "@prisma/client": "6.19.3",
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "2.2.5",
+    "@rsksmart/rsk-contract-parser": "github:rsksmart/rsk-contract-parser#d7b80f18cd6c1eea4960bbfe2d5f55c6d74ef75e",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
