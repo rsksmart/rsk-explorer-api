@@ -1,7 +1,7 @@
 import { rawBlockToEntity, blockEntityToRaw } from '../converters/blocks.converters'
 import { generateFindQuery } from './utils'
 import { blockRelatedTables } from './includeRelatedTables'
-import { retry } from '../lib/retry'
+import { retryConcurrentWrite } from '../lib/retryConcurrentWrite'
 
 import {
   txRepository,
@@ -153,7 +153,7 @@ export function getBlocksRepository (prismaClient) {
         return transaction
       }
 
-      return retry({
+      return retryConcurrentWrite({
         maxAttempts: replace ? 1 : SAVE_ATTEMPTS,
         isRetryable: error => STALE_READ_ERRORS.includes(error.code),
         run: async () => prismaClient.$transaction(await generateTransaction(), READ_COMMITTED)
@@ -182,7 +182,7 @@ export function getBlocksRepository (prismaClient) {
   async function deleteBlocks (where) {
     const blocksReadFirst = await findBlocksToDelete(where)
     let blocksToDelete = blocksReadFirst
-    return retry({
+    return retryConcurrentWrite({
       maxAttempts: DELETE_ATTEMPTS,
       isRetryable: isRetryableDeleteError,
       run: async () => {

@@ -5,7 +5,7 @@ import nod3 from '../lib/nod3Connect'
 import { TokenState } from '../services/classes/TokenState'
 import { EXPLORER_INITIAL_CONFIG_ID } from '../lib/defaultConfig'
 import { exitOnUncaughtException, WHOLE_NUMBER } from './utils'
-import { retry } from '../lib/retry'
+import { retryConcurrentWrite } from '../lib/retryConcurrentWrite'
 
 const toolName = process.argv[1].split('/').pop()
 
@@ -86,7 +86,7 @@ export async function backfillTransfers ({
   onChunkDone = () => {},
   report = newReport('A')
 }) {
-  const writeTransfers = (block, events) => retry({
+  const writeTransfers = (block, events) => retryConcurrentWrite({
     maxAttempts: WRITE_ATTEMPTS,
     isRetryable: isRacedWrite,
     run: async () => {
@@ -192,7 +192,7 @@ export async function backfillTokenStates ({
 
   const writeBlockStates = (block, pairsOfBlock) => {
     let pairsToWrite = pairsOfBlock
-    return retry({
+    return retryConcurrentWrite({
       maxAttempts: WRITE_ATTEMPTS,
       isRetryable: isRacedWrite,
       run: async () => {
