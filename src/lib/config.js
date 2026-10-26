@@ -6,8 +6,6 @@ import defaultConf from './defaultConfig'
 
 dotenv.config()
 
-const RSK_NODE_URL_PROTOCOLS = ['http:', 'https:']
-
 const validateConfig = {
   existence: (config) => {
     if (!config) {
@@ -17,12 +15,31 @@ const validateConfig = {
 }
 
 export function createConfig (file) {
-  const config = makeConfig(withNodeUrlFromTheEnvironment(loadConfig(file)))
+  const config = makeConfig(loadConfig(file))
 
   // validations
   validateConfig.existence(config)
 
   return config
+}
+
+/**
+ * Validates an http/https URL environment variable, used consistently across the URL-bearing envs.
+ * @param {string} value - The raw environment value.
+ * @param {string} name - The variable name, for error messages (its value is never echoed).
+ * @returns {string} The validated value.
+ */
+function requireHttpUrl (value, name) {
+  let url
+  try {
+    url = new URL(value)
+  } catch (error) {
+    throw new Error(`${name} must be a valid URL`)
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`${name} must be an http or https URL`)
+  }
+  return value
 }
 
 /**
@@ -72,6 +89,11 @@ export function makeConfig (config = {}) {
   }
   config.blocks.services = services
   // defaults  servers/ports
+  // The RSK node source comes from RSK_NODE_URL; config.json no longer carries a source, and the
+  // built-in default stands in for local dev when the variable is unset.
+  if (process.env.RSK_NODE_URL) {
+    config.source = { url: requireHttpUrl(process.env.RSK_NODE_URL, 'RSK_NODE_URL') }
+  }
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
 
@@ -85,20 +107,6 @@ export function makeConfig (config = {}) {
   // }
 
   return config
-}
-
-export function withNodeUrlFromTheEnvironment (fileConfig, env = process.env) {
-  const nodeUrl = env.RSK_NODE_URL
-  if (!nodeUrl) return fileConfig
-  let protocol
-  try {
-    protocol = new URL(nodeUrl).protocol
-  } catch (error) {
-    throw new Error('RSK_NODE_URL is not a URL')
-  }
-  if (!RSK_NODE_URL_PROTOCOLS.includes(protocol)) throw new Error('RSK_NODE_URL must be an http or https URL')
-  if (fileConfig.source) console.log('RSK_NODE_URL from the environment replaces the source in config.json')
-  return { ...fileConfig, source: { url: nodeUrl } }
 }
 
 function loadConfig (file) {

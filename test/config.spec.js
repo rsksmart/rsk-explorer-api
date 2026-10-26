@@ -1,6 +1,5 @@
 import { expect } from 'chai'
-import sinon from 'sinon'
-import { createConfig, makeConfig, nodeSources, createNodeSource, withNodeUrlFromTheEnvironment } from '../src/lib/config'
+import { createConfig, makeConfig, nodeSources, createNodeSource } from '../src/lib/config'
 
 describe('# Config', function () {
   it('should get the default config', () => {
@@ -35,56 +34,50 @@ describe('# Config', function () {
     const originalEnv = process.env.RSK_NODE_URL
 
     afterEach(() => {
-      sinon.restore()
       if (originalEnv === undefined) delete process.env.RSK_NODE_URL
       else process.env.RSK_NODE_URL = originalEnv
     })
 
-    it('is applied by createConfig, which every process loads its config through', () => {
+    it('is the node source, applied by createConfig that every process loads its config through', () => {
       process.env.RSK_NODE_URL = 'http://env-node.test:4450'
 
       expect(createConfig().source.url).to.equal('http://env-node.test:4450')
     })
 
-    it('replaces the source of config.json with its one node, says so in one line without the URL, and leaves the file config as it is when unset or empty', () => {
-      const log = sinon.stub(console, 'log')
-      const fileConfig = {
-        source: [{ url: 'http://file-node:4444' }, { url: 'http://file-node:4445' }],
-        api: { port: 3003 }
-      }
+    it('becomes the parsed source, also under blocks.source', () => {
+      process.env.RSK_NODE_URL = 'https://env-node.test:4450/key'
 
-      const fromEnvironment = makeConfig(
-        withNodeUrlFromTheEnvironment(fileConfig, { RSK_NODE_URL: 'https://env-node.test:4450/key' })
-      )
-      const lines = log.args.map(([line]) => line)
-      const unset = withNodeUrlFromTheEnvironment(fileConfig, {})
-      const empty = withNodeUrlFromTheEnvironment(fileConfig, { RSK_NODE_URL: '' })
-      log.restore()
+      const config = makeConfig({ api: { port: 3003 } })
 
-      expect(fromEnvironment.source).to.deep.equal({
+      expect(config.source).to.deep.equal({
         protocol: 'https',
         node: 'env-node.test',
         port: '4450',
         url: 'https://env-node.test:4450/key'
       })
-      expect(fromEnvironment.blocks.source).to.equal(fromEnvironment.source)
-      expect(fromEnvironment.api.port).to.equal(3003)
-      expect(lines).to.deep.equal(['RSK_NODE_URL from the environment replaces the source in config.json'])
-      expect(unset).to.equal(fileConfig)
-      expect(empty).to.equal(fileConfig)
+      expect(config.blocks.source).to.equal(config.source)
     })
 
-    it('refuses an RSK_NODE_URL that is not an http or https URL, naming the variable and not its value', () => {
+    it('falls back to the built-in default source when unset', () => {
+      delete process.env.RSK_NODE_URL
+
+      expect(makeConfig().source.url).to.equal('http://localhost:4444')
+    })
+
+    it('refuses a value that is not an http or https URL, naming the variable and not its value', () => {
       const refusal = value => {
+        process.env.RSK_NODE_URL = value
         try {
-          withNodeUrlFromTheEnvironment({}, { RSK_NODE_URL: value })
+          makeConfig()
+          return null
         } catch (error) {
           return error.message
         }
       }
 
-      expect(['not a url', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
-        'RSK_NODE_URL is not a URL',
+      expect(['not a url', 'ftp://env-node.test', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
+        'RSK_NODE_URL must be a valid URL',
+        'RSK_NODE_URL must be an http or https URL',
         'RSK_NODE_URL must be an http or https URL'
       ])
     })
