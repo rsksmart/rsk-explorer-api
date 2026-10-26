@@ -4,10 +4,7 @@ const conf = {
   name,
   script: 'index.js',
   cwd: __dirname,
-  node_args: '--env-file ../../.env',
-  env: {
-    RSK_NODE_URL: process.env.RSK_NODE_URL
-  },
+  node_args: '-r dotenv/config',
   error_file: `../../logs/blocks/${name}-error.log`,
   out_file: `../../logs/blocks/${name}-out.log`
 }
