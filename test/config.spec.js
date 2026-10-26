@@ -14,12 +14,9 @@ describe('# Config', function () {
     let port = '555'
     let url = `${protocol}://${node}:${port}`
     let source = createNodeSource({ url })
-    it(`should return a source object`, () => {
-      expect(source.url).to.be.equal(url)
-      expect(source.protocol).to.be.equal(protocol)
-      expect(source.node).to.be.equal(node)
-      expect(source.port).to.be.equal(port)
-      expect(createNodeSource(Object.assign(Object.assign({}, source), { url: null }))).to.be.deep.equal(source)
+    it(`carries the url, building it from parts when url is absent`, () => {
+      expect(source).to.deep.equal({ url })
+      expect(createNodeSource({ protocol, node, port, url: null })).to.deep.equal({ url })
     })
     it(`should return an object`, () => {
       expect(nodeSources(source)).to.be.an('object')
@@ -44,17 +41,12 @@ describe('# Config', function () {
       expect(createConfig().source.url).to.equal('http://env-node.test:4450')
     })
 
-    it('becomes the parsed source, also under blocks.source', () => {
+    it('becomes the source, also under blocks.source', () => {
       process.env.RSK_NODE_URL = 'https://env-node.test:4450/key'
 
       const config = makeConfig({ api: { port: 3003 } })
 
-      expect(config.source).to.deep.equal({
-        protocol: 'https',
-        node: 'env-node.test',
-        port: '4450',
-        url: 'https://env-node.test:4450/key'
-      })
+      expect(config.source).to.deep.equal({ url: 'https://env-node.test:4450/key' })
       expect(config.blocks.source).to.equal(config.source)
     })
 

@@ -1,6 +1,5 @@
 import path from 'path'
 import fs from 'fs'
-import legacyUrl from 'url'
 import dotenv from 'dotenv'
 import defaultConf from './defaultConfig'
 
@@ -136,10 +135,9 @@ export function nodeSources (sources) {
 }
 
 export function createNodeSource (s) {
-  let url = s.url || `${s.protocol}://${s.node}:${s.port}`
-  let { protocol, port, hostname: node } = legacyUrl.parse(url)
-  protocol = protocol.replace(/:$/, '')
-  return { protocol, node, port, url }
+  // Only the url is used downstream (nod3 connects through it). The parts form just builds a url
+  // for a source still expressed as protocol/node/port, like the built-in default.
+  return { url: s.url || `${s.protocol}://${s.node}:${s.port}` }
 }
 
 export const config = createConfig('../../config.json')
