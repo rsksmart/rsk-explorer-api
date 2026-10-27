@@ -41,28 +41,24 @@ npx prisma@6.19.3 generate
   - For more options:
     - see [pm2-logrotate](https://pm2.keymetrics.io/docs/usage/log-management/#pm2-logrotate-module)
     - see [pm2-logrotate configuration](https://github.com/keymetrics/pm2-logrotate#configure) to set the rotation options
-- Configure the database connection in a `.env` file at the project root (required by Prisma and the app):
+- Configure the database connection and the RSK node URL in a `.env` file at the project root (`DATABASE_URL` is required by Prisma and the app; `RSK_NODE_URL` is optional and defaults to `http://localhost:4444`):
 
 ```bash
 DATABASE_URL=postgres://USER:PASSWORD@HOST:PORT/DATABASE_NAME
+RSK_NODE_URL=http://HOST:PORT
 ```
 
 Example:
 
 ```bash
 DATABASE_URL=postgres://postgres:12345678@localhost:5432/explorer_db
+RSK_NODE_URL=http://localhost:4444
 ```
 
-- Configure node urls and other settings in `src/lib/defaultConfig.js`, or override them with a `config.json` at the project root (see `config-example.json`):
+- The RSK node URL comes from `RSK_NODE_URL` (see the `.env` above). Other settings default to `src/lib/defaultConfig.js` and can be overridden with a `config.json` at the project root (see `config-example.json`):
 
 ```javascript
 {
-  source: {
-    protocol: 'http',
-    node: 'localhost',
-    port: 4444,
-    url: null
-  },
   sourceRoutes: { // Nod3Router routes, used as default when source is an array of sources
     subscribe: 0, // delegates subscriptions to the first node
     rsk: 0, // delegates rsk module to the node that handle subscriptions
@@ -97,7 +93,7 @@ DATABASE_URL=postgres://postgres:12345678@localhost:5432/explorer_db
 }
 ```
 
-- `RSK_NODE_URL` in the environment or the `.env` file is the RSK node every process connects to (one http or https URL). It is the only place the node is configured — `config.json` no longer carries a `source` — and the built-in `source` default above stands in for local dev when the variable is unset.
+- `RSK_NODE_URL` in the environment or the `.env` file is the RSK node every process connects to (one http or https URL, validated when set). It is the only place the node is configured; when it is unset, the explorer logs a warning and uses the built-in default (`http://localhost:4444`) for local dev.
 
 ### api
 - **address** [string] api server bind address
@@ -132,7 +128,7 @@ Run commands:
 - Start block service: npm run start-blocks
 - Start api: npm run start-api
 
-Note: an rsk node must be running in port or url specified in defaultConfig.js. Otherwise, blocks service will crash. 
+Note: an rsk node must be running at the URL configured by `RSK_NODE_URL` (or the default `http://localhost:4444`). Otherwise, the blocks service will crash. 
 
 ## Section 4: Logs
 To see block service logs:
