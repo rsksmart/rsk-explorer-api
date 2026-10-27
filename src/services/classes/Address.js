@@ -9,7 +9,7 @@ import { isZeroAddress } from '@rsksmart/rsk-utils'
 import { getNativeContractName, isNativeContract } from '../../lib/NativeContracts'
 
 export class Address extends BcThing {
-  constructor (address, { nod3, initConfig, tx, block, log } = {}) {
+  constructor (address, { nod3, initConfig, tx, block, log, replace } = {}) {
     super({ nod3, initConfig, log, name: 'Address' })
     if (!this.isAddress(address)) throw new Error((`Invalid address: ${address}`))
     this.isZeroAddress = isZeroAddress(address)
@@ -24,6 +24,7 @@ export class Address extends BcThing {
     this.dbData = undefined
     this.blockCode = undefined
     this.tx = tx
+    this.replace = replace
     this.data = createAddressData(this)
     this.setBlock(block)
   }
@@ -97,7 +98,7 @@ export class Address extends BcThing {
       this.saveCode()
       if (code) {
         // get contract info
-        let deployedCode = (dbData) ? dbData[fields.DEPLOYED_CODE] : undefined
+        let deployedCode = await this.getStoredDeployedCode()
         if (!deployedCode) {
           let deployData = await this.getDeploymentData()
 
@@ -136,6 +137,17 @@ export class Address extends BcThing {
       return Promise.reject(err)
     }
   }
+
+  async getStoredDeployedCode () {
+    try {
+      let { address, replace } = this
+      if (replace) return
+      return getDeployedCode(await this.repository.findCreationTx(address), address)
+    } catch (err) {
+      this.log.debug(err)
+    }
+  }
+
   async searchDeploymentData () {
     try {
       let { bcSearch, address, blockNumber } = this

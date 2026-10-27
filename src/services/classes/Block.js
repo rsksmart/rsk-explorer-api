@@ -12,7 +12,7 @@ export class Block extends BcThing {
     this.fetched = false
     this.log = log || console
     this.number = number
-    this.summary = new BlockSummary(number, { nod3, initConfig, log })
+    this.summary = new BlockSummary(number, { nod3, initConfig, log, replace })
     this.data = { block: null }
     this.status = status
     this.isTipBlock = tipBlock
