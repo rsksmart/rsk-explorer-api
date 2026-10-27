@@ -56,6 +56,15 @@ describe('# Config', function () {
       expect(makeConfig().source.url).to.equal('http://localhost:4444')
     })
 
+    it('accepts a comma-separated list as multiple sources, in order and de-duplicated', () => {
+      process.env.RSK_NODE_URL = 'http://a.test:4444, http://b.test:4444, http://a.test:4444'
+
+      expect(makeConfig().source).to.deep.equal([
+        { url: 'http://a.test:4444' },
+        { url: 'http://b.test:4444' }
+      ])
+    })
+
     it('refuses a value that is not an http or https URL, naming the variable and not its value', () => {
       const refusal = value => {
         process.env.RSK_NODE_URL = value

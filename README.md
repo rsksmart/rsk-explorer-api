@@ -93,7 +93,8 @@ RSK_NODE_URL=http://localhost:4444
 }
 ```
 
-- `RSK_NODE_URL` in the environment or the `.env` file is the RSK node every process connects to (one http or https URL, validated when set). It is the only place the node is configured; when it is unset, the explorer logs a warning and uses the built-in default (`http://localhost:4444`) for local dev.
+- `RSK_NODE_URL` in the environment or the `.env` file is the RSK node(s) every process connects to: one http or https URL, or a comma-separated list for multiple nodes (each validated when set). It is the only place the node is configured; when it is unset, the explorer logs a warning and uses the built-in default (`http://localhost:4444`) for local dev.
+  - With more than one URL, the nodes are wired through `sourceRoutes` (see `src/lib/defaultConfig.js`), so **order matters**: by default the first node serves subscriptions and the `rsk` module, and the second serves `trace_`. This is module routing, not failover.
 
 ### api
 - **address** [string] api server bind address

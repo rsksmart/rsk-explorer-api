@@ -1,7 +1,7 @@
 import path from 'path'
 import fs from 'fs'
 import dotenv from 'dotenv'
-import defaultConf from './defaultConfig'
+import defaultConf, { DEFAULT_RSK_NODE_URL } from './defaultConfig'
 
 dotenv.config()
 
@@ -42,10 +42,10 @@ function requireHttpUrl (value, name) {
 }
 
 /**
- * Splits a comma-separated BITCOIN_RPC_URL into a trimmed list of endpoints,
- * supporting multiple endpoints for failover.
- * @param {string} [value] - The raw BITCOIN_RPC_URL value (e.g. 'http://a:8332, http://b:8332').
- * @returns {string[]} The trimmed, non-empty endpoints in order (e.g. ['http://a:8332', 'http://b:8332']); [] when unset.
+ * Splits a comma-separated URL list (BITCOIN_RPC_URL, RSK_NODE_URL) into a trimmed
+ * list of endpoints, preserving order.
+ * @param {string} [value] - The raw value (e.g. 'http://a:4444, http://b:4444').
+ * @returns {string[]} The trimmed, non-empty endpoints in order (e.g. ['http://a:4444', 'http://b:4444']); [] when unset.
  */
 const parseEndpointList = value =>
   (value || '').split(',').map(s => s.trim()).filter(Boolean)
@@ -89,14 +89,15 @@ export function makeConfig (config = {}) {
   config.blocks.services = services
   // defaults  servers/ports
 
-  if (process.env.RSK_NODE_URL) {
-    config.source = { url: requireHttpUrl(process.env.RSK_NODE_URL, 'RSK_NODE_URL') }
-  } else {
-    console.log('WARNING: RSK_NODE_URL is not set, using default', defaultConf.DEFAULT_RSK_NODE_URL)
-    config.source = { url: defaultConf.DEFAULT_RSK_NODE_URL }
+  // RSK_NODE_URL is one http/https URL, or a comma-separated list for multiple nodes
+  // (wired through sourceRoutes). When unset, fall back to the built-in default.
+  const rskNodeUrls = parseEndpointList(process.env.RSK_NODE_URL)
+  if (rskNodeUrls.length === 0) {
+    console.log('WARNING: RSK_NODE_URL is not set, using default', DEFAULT_RSK_NODE_URL)
+    rskNodeUrls.push(DEFAULT_RSK_NODE_URL)
   }
 
-  config.source = nodeSources(config.source)
+  config.source = nodeSources(rskNodeUrls.map(url => ({ url: requireHttpUrl(url, 'RSK_NODE_URL') })))
   config.blocks.source = config.source
 
   config.bitcoin.rpcUrl = parseEndpointList(process.env.BITCOIN_RPC_URL)
