@@ -12,6 +12,8 @@ export const EXPLORER_INITIAL_CONFIG_ID = 'explorerInitialConfig'
 export const EXPLORER_SETTINGS_ID = 'explorerSettings'
 export const CONTRACT_VERIFIER_SOLC_VERSIONS_ID = 'contractVerifierSolcVersions'
 
+export const DEFAULT_RSK_NODE_URL = 'http://localhost:4444'
+
 export const enabledServices = {
   LIVE_SYNCER: 'liveSyncer',
   STATIC_SYNCER: 'staticSyncer',
@@ -31,12 +33,6 @@ const setAllModules = (status) =>
     }, {})
 
 export default {
-  source: {
-    protocol: 'http',
-    node: 'localhost',
-    port: 4444,
-    url: null
-  },
   sourceRoutes: { // Nod3Router routes, used as default when source is an array of sources
     subscribe: 0, // delegates subscriptions to the first node
     rsk: 0, // delegates rsk module to the node that handle subscriptions

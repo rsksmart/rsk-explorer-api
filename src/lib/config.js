@@ -88,11 +88,14 @@ export function makeConfig (config = {}) {
   }
   config.blocks.services = services
   // defaults  servers/ports
-  // The RSK node source comes from RSK_NODE_URL; config.json no longer carries a source, and the
-  // built-in default stands in for local dev when the variable is unset.
+
   if (process.env.RSK_NODE_URL) {
     config.source = { url: requireHttpUrl(process.env.RSK_NODE_URL, 'RSK_NODE_URL') }
+  } else {
+    console.log('WARNING: RSK_NODE_URL is not set, using default', defaultConf.DEFAULT_RSK_NODE_URL)
+    config.source = { url: defaultConf.DEFAULT_RSK_NODE_URL }
   }
+
   config.source = nodeSources(config.source)
   config.blocks.source = config.source
 
@@ -135,8 +138,6 @@ export function nodeSources (sources) {
 }
 
 export function createNodeSource (s) {
-  // Only the url is used downstream (nod3 connects through it). The parts form just builds a url
-  // for a source still expressed as protocol/node/port, like the built-in default.
   return { url: s.url || `${s.protocol}://${s.node}:${s.port}` }
 }
 
