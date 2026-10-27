@@ -89,8 +89,6 @@ export function makeConfig (config = {}) {
   config.blocks.services = services
   // defaults  servers/ports
 
-  // RSK_NODE_URL is one http/https URL, or a comma-separated list for multiple nodes
-  // (wired through sourceRoutes). When unset, fall back to the built-in default.
   const rskNodeUrls = parseEndpointList(process.env.RSK_NODE_URL)
   if (rskNodeUrls.length === 0) {
     console.log('WARNING: RSK_NODE_URL is not set, using default', DEFAULT_RSK_NODE_URL)
