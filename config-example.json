@@ -1,9 +1,4 @@
 {
-  "source": {
-    "protocol": "http",
-    "node": "localhost",
-    "port": 4444
-  },
   "api": {
     "address": "localhost",
     "port": 3003,

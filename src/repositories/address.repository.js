@@ -20,6 +20,11 @@ export function getAddressRepository (prismaClient) {
 
       return address ? addressEntityToRaw(address, endpointOptions) : null
     },
+    async findCreationTx (address) {
+      const creationTx = await prismaClient.contract_creation_tx.findUnique({ where: { contractAddress: address }, select: { tx: true } })
+
+      return creationTx ? JSON.parse(creationTx.tx) : null
+    },
     async find (query = {}, project = {}, sort = {}, limit = 0, endpointOptions) {
       const { useV2, action } = endpointOptions
       if (useV2) {
