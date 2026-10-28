@@ -47,7 +47,7 @@
   "dependencies": {
     "@prisma/client": "6.19.3",
     "@rsksmart/nod3": "^0.5.0",
-    "@rsksmart/rsk-contract-parser": "github:rsksmart/rsk-contract-parser#d7b80f18cd6c1eea4960bbfe2d5f55c6d74ef75e",
+    "@rsksmart/rsk-contract-parser": "2.4.0",
     "@rsksmart/rsk-js-cli": "^1.0.0",
     "@rsksmart/rsk-utils": "^1.1.0",
     "bignumber.js": "^7.2.1",
