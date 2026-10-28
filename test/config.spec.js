@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { makeConfig, nodeSources, createNodeSource } from '../src/lib/config'
+import { createConfig, makeConfig, nodeSources, createNodeSource } from '../src/lib/config'
 
 describe('# Config', function () {
   it('should get the default config', () => {
@@ -14,12 +14,9 @@ describe('# Config', function () {
     let port = '555'
     let url = `${protocol}://${node}:${port}`
     let source = createNodeSource({ url })
-    it(`should return a source object`, () => {
-      expect(source.url).to.be.equal(url)
-      expect(source.protocol).to.be.equal(protocol)
-      expect(source.node).to.be.equal(node)
-      expect(source.port).to.be.equal(port)
-      expect(createNodeSource(Object.assign(Object.assign({}, source), { url: null }))).to.be.deep.equal(source)
+    it(`carries the url, building it from parts when url is absent`, () => {
+      expect(source).to.deep.equal({ url })
+      expect(createNodeSource({ protocol, node, port, url: null })).to.deep.equal({ url })
     })
     it(`should return an object`, () => {
       expect(nodeSources(source)).to.be.an('object')
@@ -27,6 +24,63 @@ describe('# Config', function () {
     })
     it('should return an array of source objects', () => {
       expect(nodeSources([source, { url: 'https://x.com' }])).to.be.an('array')
+    })
+  })
+
+  describe('RSK_NODE_URL', function () {
+    const originalEnv = process.env.RSK_NODE_URL
+
+    afterEach(() => {
+      if (originalEnv === undefined) delete process.env.RSK_NODE_URL
+      else process.env.RSK_NODE_URL = originalEnv
+    })
+
+    it('is the node source, applied by createConfig that every process loads its config through', () => {
+      process.env.RSK_NODE_URL = 'http://env-node.test:4450'
+
+      expect(createConfig().source.url).to.equal('http://env-node.test:4450')
+    })
+
+    it('becomes the source, also under blocks.source', () => {
+      process.env.RSK_NODE_URL = 'https://env-node.test:4450/key'
+
+      const config = makeConfig({ api: { port: 3003 } })
+
+      expect(config.source).to.deep.equal({ url: 'https://env-node.test:4450/key' })
+      expect(config.blocks.source).to.equal(config.source)
+    })
+
+    it('falls back to the built-in default source when unset', () => {
+      delete process.env.RSK_NODE_URL
+
+      expect(makeConfig().source.url).to.equal('http://localhost:4444')
+    })
+
+    it('accepts a comma-separated list as multiple sources, in order and de-duplicated', () => {
+      process.env.RSK_NODE_URL = 'http://a.test:4444, http://b.test:4444, http://a.test:4444'
+
+      expect(makeConfig().source).to.deep.equal([
+        { url: 'http://a.test:4444' },
+        { url: 'http://b.test:4444' }
+      ])
+    })
+
+    it('refuses a value that is not an http or https URL, naming the variable and not its value', () => {
+      const refusal = value => {
+        process.env.RSK_NODE_URL = value
+        try {
+          makeConfig()
+          return null
+        } catch (error) {
+          return error.message
+        }
+      }
+
+      expect(['not a url', 'ftp://env-node.test', 'secret-key-123:pass@env-node.test'].map(refusal)).to.deep.equal([
+        'RSK_NODE_URL must be a valid URL',
+        'RSK_NODE_URL must be an http or https URL',
+        'RSK_NODE_URL must be an http or https URL'
+      ])
     })
   })
 

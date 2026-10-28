@@ -1,8 +1,7 @@
 import path from 'path'
 import fs from 'fs'
-import URL from 'url'
 import dotenv from 'dotenv'
-import defaultConf from './defaultConfig'
+import defaultConf, { DEFAULT_RSK_NODE_URL } from './defaultConfig'
 
 dotenv.config()
 
@@ -24,10 +23,29 @@ export function createConfig (file) {
 }
 
 /**
- * Splits a comma-separated BITCOIN_RPC_URL into a trimmed list of endpoints,
- * supporting multiple endpoints for failover.
- * @param {string} [value] - The raw BITCOIN_RPC_URL value (e.g. 'http://a:8332, http://b:8332').
- * @returns {string[]} The trimmed, non-empty endpoints in order (e.g. ['http://a:8332', 'http://b:8332']); [] when unset.
+ * Validates an http/https URL environment variable, used consistently across the URL-bearing envs.
+ * @param {string} value - The raw environment value.
+ * @param {string} name - The variable name, for error messages (its value is never echoed).
+ * @returns {string} The validated value.
+ */
+function requireHttpUrl (value, name) {
+  let url
+  try {
+    url = new URL(value)
+  } catch (error) {
+    throw new Error(`${name} must be a valid URL`)
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error(`${name} must be an http or https URL`)
+  }
+  return value
+}
+
+/**
+ * Splits a comma-separated URL list (BITCOIN_RPC_URL, RSK_NODE_URL) into a trimmed
+ * list of endpoints, preserving order.
+ * @param {string} [value] - The raw value (e.g. 'http://a:4444, http://b:4444').
+ * @returns {string[]} The trimmed, non-empty endpoints in order (e.g. ['http://a:4444', 'http://b:4444']); [] when unset.
  */
 const parseEndpointList = value =>
   (value || '').split(',').map(s => s.trim()).filter(Boolean)
@@ -70,7 +88,14 @@ export function makeConfig (config = {}) {
   }
   config.blocks.services = services
   // defaults  servers/ports
-  config.source = nodeSources(config.source)
+
+  const rskNodeUrls = parseEndpointList(process.env.RSK_NODE_URL)
+  if (rskNodeUrls.length === 0) {
+    console.log('WARNING: RSK_NODE_URL is not set, using default', DEFAULT_RSK_NODE_URL)
+    rskNodeUrls.push(DEFAULT_RSK_NODE_URL)
+  }
+
+  config.source = nodeSources(rskNodeUrls.map(url => ({ url: requireHttpUrl(url, 'RSK_NODE_URL') })))
   config.blocks.source = config.source
 
   config.bitcoin.rpcUrl = parseEndpointList(process.env.BITCOIN_RPC_URL)
@@ -112,10 +137,7 @@ export function nodeSources (sources) {
 }
 
 export function createNodeSource (s) {
-  let url = s.url || `${s.protocol}://${s.node}:${s.port}`
-  let { protocol, port, hostname: node } = URL.parse(url)
-  protocol = protocol.replace(/:$/, '')
-  return { protocol, node, port, url }
+  return { url: s.url || `${s.protocol}://${s.node}:${s.port}` }
 }
 
 export const config = createConfig('../../config.json')

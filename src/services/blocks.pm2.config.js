@@ -1,9 +1,20 @@
+import { existsSync } from 'fs'
+import dotenv from 'dotenv'
+
 const name = 'blocks'
+
+const envPath = `${__dirname}/../../.env`
+if (existsSync(envPath)) {
+  dotenv.config({ path: envPath })
+}
 
 const conf = {
   name,
   script: 'index.js',
   cwd: __dirname,
+  env: {
+    RSK_NODE_URL: process.env.RSK_NODE_URL
+  },
   error_file: `../../logs/blocks/${name}-error.log`,
   out_file: `../../logs/blocks/${name}-out.log`
 }
