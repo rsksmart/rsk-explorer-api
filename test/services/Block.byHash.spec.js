@@ -98,7 +98,7 @@ function stubNode () {
   return { nod3, requests }
 }
 
-async function storeThrough (key) {
+async function storeBlock ({ hash }) {
   const { nod3, requests } = stubNode()
   const saved = []
   const stored = new Map()
@@ -116,7 +116,7 @@ async function storeThrough (key) {
   sinon.stub(console, 'trace')
 
   const number = Number(rawBlock.number)
-  const result = await insertBlock(number, { nod3, log, initConfig }, { log, tipBlock: true, hash: key === 'hash' ? rawBlock.hash : null })
+  const result = await insertBlock(number, { nod3, log, initConfig }, { log, tipBlock: true, hash })
 
   sinon.restore()
   const otherRequests = requests.filter(r => !r.method.startsWith('eth_getBlockBy'))
@@ -128,8 +128,8 @@ describe('# a block stored by hash holds the same data as one stored by number',
   afterEach(() => sinon.restore())
 
   it('passes the same block, transactions, receipts, events, addresses, balances and stats to the store', async () => {
-    const byNumber = await storeThrough('number')
-    const byHash = await storeThrough('hash')
+    const byNumber = await storeBlock({ hash: null })
+    const byHash = await storeBlock({ hash: rawBlock.hash })
 
     expect(byNumber.result).to.equal(true)
     expect(byHash.result).to.equal(true)

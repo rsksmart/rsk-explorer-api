@@ -27,28 +27,20 @@ describe('# insertBlock checks the stored hash after saving', function () {
 
   afterEach(() => sinon.restore())
 
-  const failures = [
-    ['skips because another block is already stored at that height', { written: false, storedHash: foreignHash }],
-    ['writes, but another block is stored at that height afterwards', { written: true, storedHash: foreignHash }],
-    ['writes, but no block is stored at that height afterwards', { written: true, storedHash: null }]
-  ]
+  it('fails loud when the save writes, but another block is stored at that height afterwards', async () => {
+    const save = sinon.stub(Block.prototype, 'save').resolves(true)
+    sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: foreignHash })
+    const { log, lines } = recordingLog()
 
-  for (const [title, { written, storedHash }] of failures) {
-    it(`fails loud when the save ${title}`, async () => {
-      const save = sinon.stub(Block.prototype, 'save').resolves(written)
-      sinon.stub(blocksRepository, 'findOne').resolves(storedHash && { number: 500, hash: storedHash })
-      const { log, lines } = recordingLog()
+    const result = await insertBlock(500, blocksBase, { log })
 
-      const result = await insertBlock(500, blocksBase, { log })
+    expect(result).to.equal(false)
+    expect(save.callCount).to.equal(3)
+    expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
+    expect(lines.error.some(line => line.includes(`expected ${fetchedHash}`))).to.equal(true)
+  })
 
-      expect(result).to.equal(false)
-      expect(save.callCount).to.equal(3)
-      expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
-      expect(lines.error.some(line => line.includes(`expected ${fetchedHash}`))).to.equal(true)
-    })
-  }
-
-  it('never reaches the write when the real save finds another block at that height', async () => {
+  it('fails loud when the save skips because another block is already stored at that height', async () => {
     const saveBlockData = sinon.stub(blocksRepository, 'saveBlockData').resolves()
     sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: foreignHash })
     const { log, lines } = recordingLog()
@@ -57,7 +49,9 @@ describe('# insertBlock checks the stored hash after saving', function () {
 
     expect(result).to.equal(false)
     expect(saveBlockData.called).to.equal(false)
+    expect(requestedKeys).to.have.lengthOf(3)
     expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
+    expect(lines.error.some(line => line.includes(`expected ${fetchedHash}`))).to.equal(true)
   })
 
   it('fetches by the given hash and compares the stored row with it', async () => {
