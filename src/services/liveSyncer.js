@@ -71,7 +71,8 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
   log.info('Checking blocks congruence...')
 
   let chainsParentBlockFound = false
-  const missingBlocks = [{ number: toBlock.number, hash: toBlock.hash }] // include latest by default
+  // include latest by default
+  const missingBlocks = [{ number: toBlock.number, hash: toBlock.hash }]
   const blocksToDelete = []
 
   let childBlock = toBlock
