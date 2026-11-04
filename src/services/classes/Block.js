@@ -7,12 +7,12 @@ import { REPOSITORIES } from '../../repositories'
 import { bitcoinRskNetWorks } from '../../lib/types'
 import defaultConfig from '../../lib/defaultConfig'
 export class Block extends BcThing {
-  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false, replace = false) {
+  constructor (number, { nod3, log, initConfig }, status = null, tipBlock = false, replace = false, hash = null) {
     super({ nod3, initConfig, log, name: 'Blocks' })
     this.fetched = false
     this.log = log || console
     this.number = number
-    this.summary = new BlockSummary(number, { nod3, initConfig, log, replace })
+    this.summary = new BlockSummary(hash || number, { nod3, initConfig, log, replace })
     this.data = { block: null }
     this.status = status
     this.isTipBlock = tipBlock
@@ -47,6 +47,7 @@ export class Block extends BcThing {
       const exists = replace ? null : await this.repository.findOne({ number })
       if (exists) {
         this.log.warn(`Block ${number} already in db. Skipped`)
+        return false
       } else {
         data = this.getData(true)
         const { balances, latestBalances } = await fetchAddressesBalancesFromNode(data.addresses, data.block, this.nod3)
@@ -62,6 +63,7 @@ export class Block extends BcThing {
           const blockchainStats = await getBlockchainStats({ bitcoinNetwork: bitcoinRskNetWorks[this.initConfig.net.id], blockHash: data.block.hash, blockNumber: data.block.number })
           await this.statsRepository.insertOne(blockchainStats)
         }
+        return true
       }
     } catch (error) {
       this.log.error(`Error saving block ${number} data`)

@@ -7,31 +7,41 @@ import Logger from './Logger.js'
 
 const RETRIES = 3
 
-export async function insertBlock (number, blocksBase, { log, tipBlock = false, replace = false }, status = undefined) {
+export async function insertBlock (number, blocksBase, { log, tipBlock = false, replace = false, hash = null }, status = undefined) {
   let remainingAttempts = RETRIES
   let block
 
   while (remainingAttempts > 0) {
     try {
-      block = new Block(number, blocksBase, status, tipBlock, replace)
+      block = new Block(number, blocksBase, status, tipBlock, replace, hash)
       let fetchingTime = Date.now()
       await block.fetch()
       fetchingTime = Date.now() - fetchingTime
 
       let savingTime = Date.now()
-      await block.save()
+      const written = await block.save()
       savingTime = Date.now() - savingTime
 
-      log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
+      const expectedHash = getExpectedHash(block, hash)
+      const storedBlock = await blocksRepository.findOne({ number })
+      if (!storedBlock || storedBlock.hash !== expectedHash) {
+        throw new Error(`Block ${number} in db has hash ${storedBlock && storedBlock.hash}, expected ${expectedHash}`)
+      }
+
+      if (written) {
+        log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
+      } else {
+        log.info(`Block ${number} already in db with the expected hash ${expectedHash}. Write skipped.`)
+      }
       return true
     } catch (err) {
       log.error(`Error saving block ${number}`)
       log.error(err)
 
       const storedBlock = await blocksRepository.findOne({ number })
-      const canonicalHash = block && block.data.block && block.data.block.hash
+      const expectedHash = getExpectedHash(block, hash)
 
-      if (storedBlock && storedBlock.hash === canonicalHash) {
+      if (storedBlock && storedBlock.hash === expectedHash) {
         log.error(`Block ${storedBlock.number} was saved but the blockchain stats saving process may have failed. Check the logs`)
         return true
       }
@@ -45,9 +55,11 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
   return false
 }
 
+const getExpectedHash = (block, hash) => hash || (block && block.data.block && block.data.block.hash)
+
 export async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {
-  for (const number of blocks) {
-    await insertBlock(number, blocksBase, { initConfig, log })
+  for (const { number, hash } of blocks) {
+    await insertBlock(number, blocksBase, { initConfig, log, hash })
   }
 }
 

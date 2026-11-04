@@ -59,7 +59,7 @@ export async function updateDbTipBlock (number, blocksBase, { initConfig, log },
   // previous block is not in db OR previousBlock exists and blocks are congruent
   if (!previousBlockInDb || sameHash(previousBlockInDb.hash, nextBlock.parentHash)) {
     // normal insert
-    await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true })
+    await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true, hash: nextBlock.hash })
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
     log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash. Possible reorganization.`)
@@ -71,16 +71,19 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
   log.info('Checking blocks congruence...')
 
   let chainsParentBlockFound = false
-  const missingBlocks = [toBlock.number] // include latest by default
+  const missingBlocks = [{ number: toBlock.number, hash: toBlock.hash }] // include latest by default
   const blocksToDelete = []
 
+  let childBlock = toBlock
   let current = toBlock.number - 1
   let gap = confirmationsThreshold - 1 // - 1 since we already know last db block is incongruent
 
   try {
     while (!chainsParentBlockFound && gap > 0) {
       // approach: by comparing both previous blocks hashes until finding fork block OR reaching confirmations gap
-      const newChainPreviousBlock = await nod3.eth.getBlock(current)
+      // walk by parentHash: during a reorg the node can answer a block number from the old chain
+      const newChainPreviousBlock = await nod3.eth.getBlock(childBlock.parentHash)
+      if (!newChainPreviousBlock) throw new Error(`Node returned no block for hash ${childBlock.parentHash}, parent of block ${childBlock.number}`)
       const dbChainPreviousBlock = await getDbBlock(current)
 
       if (dbChainPreviousBlock) {
@@ -90,10 +93,11 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
 
       // db block is inexistent or incongruent
       blocksToDelete.push(newChainPreviousBlock.number)
-      missingBlocks.unshift(newChainPreviousBlock.number)
+      missingBlocks.unshift({ number: newChainPreviousBlock.number, hash: newChainPreviousBlock.hash })
 
       log.info(`Block ${current} now belongs to an old chain. Queued for deletion.`)
 
+      childBlock = newChainPreviousBlock
       current--
       gap--
     }

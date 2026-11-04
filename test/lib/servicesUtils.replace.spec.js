@@ -39,14 +39,13 @@ describe('# insertBlock replace-path retry', function () {
     expect(result).to.equal(true)
   })
 
-  it('reports success without touching the stored-block check when the save succeeds', async () => {
-    saveStub.resolves()
-    const findOneSpy = sinon.stub(blocksRepository, 'findOne').resolves(null)
+  it('reports success without retrying when the save succeeds and stores the canonical block', async () => {
+    saveStub.resolves(true)
+    sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: '0xcanonical' })
 
     const result = await insertBlock(500, blocksBase, { log, replace: true })
 
     expect(saveStub.callCount).to.equal(1)
-    expect(findOneSpy.called).to.equal(false)
     expect(result).to.equal(true)
   })
 })
