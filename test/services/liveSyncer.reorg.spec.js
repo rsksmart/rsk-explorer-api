@@ -119,33 +119,23 @@ describe('# liveSyncer stores the block its child points to', function () {
     }
   })
 
-  it('replays 2026-10-22: block 9347554 ends as 0xb2a69626…, not the old-chain 0xe6b0ad5b…', async () => {
-    // real hashes from the incident logs; 9347553 keeps its real prefix only, 9347556 is made up
-    const h9347553 = `0x9a5d2609${'0'.repeat(56)}`
-    const canonical9347554 = '0xb2a696268dfbc8d1f8c4ae4743f9441661db6afcce799d341a9ee2b50573591c'
-    const oldChain9347554 = '0xe6b0ad5b665cadfccd5aa3575090ad6f91936a594252d92abe2b134edd73fdc9'
-    const h9347555 = '0x112ea225e115296a35b96886ba5bb253185c8aa072e3606f513529f536334bde'
-    const h9347556 = hashOf('9347556')
-    const chain = [
-      block(9347553, h9347553, hashOf('9347552')),
-      block(9347554, canonical9347554, h9347553),
-      block(9347555, h9347555, canonical9347554),
-      block(9347556, h9347556, h9347555)
-    ]
-    const uncle = block(9347554, oldChain9347554, h9347553)
-    const stored = storeHolding([chain[0], uncle])
-    let requestsFor9347554 = 0
-    // the node answers 9347554 by number with the old-chain block once, on the second request
-    const byNumber = number => {
-      if (number === 9347554 && ++requestsFor9347554 === 2) return uncle
-      return chain.find(b => b.number === number)
+  it('ends with the canonical block across two reorgs in a row at one height, while the node answers that height by number with a sibling', async () => {
+    const common = block(100, hashOf('c100'), hashOf('c99'))
+    const sibling = block(101, hashOf('a101'), common.hash)
+    const firstChain = [block(101, hashOf('b101'), common.hash), block(102, hashOf('b102'), hashOf('b101'))]
+    const secondChain = [block(101, hashOf('d101'), common.hash), block(102, hashOf('d102'), hashOf('d101')), block(103, hashOf('d103'), hashOf('d102'))]
+    const stored = storeHolding([common, sibling])
+    const blocks = [common, sibling, ...firstChain, ...secondChain]
+    connect({ blocks, byNumber: number => (number === 101 ? sibling : firstChain.find(b => b.number === number)) })
+    await updateDbTipBlock(102, blocksBase, { initConfig, log }, confirmationsThreshold)
+    expect([101, 102].map(n => stored.get(n).hash)).to.deep.equal(firstChain.map(b => b.hash))
+
+    connect({ blocks, byNumber: number => (number === 101 ? sibling : secondChain.find(b => b.number === number)) })
+    await updateDbTipBlock(103, blocksBase, { initConfig, log }, confirmationsThreshold)
+
+    expect([100, 101, 102, 103].map(n => stored.get(n).hash)).to.deep.equal([common, ...secondChain].map(b => b.hash))
+    for (const number of [100, 101, 102]) {
+      expect(stored.get(number).hash, `height ${number}`).to.equal(stored.get(number + 1).parentHash)
     }
-    connect({ blocks: [...chain, uncle], byNumber })
-
-    await updateDbTipBlock(9347555, blocksBase, { initConfig, log }, confirmationsThreshold)
-    await updateDbTipBlock(9347556, blocksBase, { initConfig, log }, confirmationsThreshold)
-
-    expect(stored.get(9347554).hash).to.equal(canonical9347554)
-    expect([9347553, 9347554, 9347555, 9347556].map(n => stored.get(n).hash)).to.deep.equal(chain.map(b => b.hash))
   })
 })
