@@ -86,6 +86,23 @@ describe('# liveSyncer stores the block its child points to', function () {
     expect(node.requests.filter(r => r.method === 'eth_getBlockByNumber').map(r => Number(r.hashOrNumber))).to.deep.equal([103])
   })
 
+  it('re-adds the reorganized heights lowest first, and still adds the heights above one that fails to save', async () => {
+    const common = block(100, hashOf('c100'), hashOf('c99'))
+    const oldChain = [block(101, hashOf('a101'), common.hash), block(102, hashOf('a102'), hashOf('a101'))]
+    const newChain = [block(101, hashOf('b101'), common.hash), block(102, hashOf('b102'), hashOf('b101')), block(103, hashOf('b103'), hashOf('b102'))]
+    const stored = storeHolding([common, ...oldChain])
+    blocksRepository.saveBlockData.callsFake(async ({ block }) => {
+      if (block.number !== 101) stored.set(block.number, { number: block.number, hash: block.hash, parentHash: block.parentHash })
+    })
+    connect({ blocks: [common, ...oldChain, ...newChain], byNumber: number => newChain.find(b => b.number === number) })
+
+    await updateDbTipBlock(103, blocksBase, { initConfig, log }, confirmationsThreshold)
+
+    expect(blocksRepository.saveBlockData.args.map(([data]) => data.block.number)).to.deep.equal([101, 101, 101, 102, 103])
+    expect(stored.has(101)).to.equal(false)
+    expect([102, 103].map(n => stored.get(n).hash)).to.deep.equal([newChain[1].hash, newChain[2].hash])
+  })
+
   it('stores the tip block whose parentHash it checked, even when a second request by number returns another block', async () => {
     const parent = block(100, hashOf('c100'), hashOf('c99'))
     const checked = block(101, hashOf('a101'), parent.hash)
