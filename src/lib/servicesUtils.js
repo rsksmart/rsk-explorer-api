@@ -25,7 +25,7 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
       const expectedHash = getExpectedHash(block, hash)
       const storedBlock = await blocksRepository.findOne({ number })
       if (!storedBlock || storedBlock.hash !== expectedHash) {
-        throw new Error(`Block ${number} in db has hash ${storedBlock && storedBlock.hash}, expected ${expectedHash}`)
+        throw new Error(`Block ${number}: db has ${storedBlock ? storedBlock.hash : 'no row'}, expected ${expectedHash}`)
       }
 
       if (written) {

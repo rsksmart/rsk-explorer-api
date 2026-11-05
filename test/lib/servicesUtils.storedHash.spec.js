@@ -37,7 +37,18 @@ describe('# insertBlock checks the stored hash after saving', function () {
     expect(result).to.equal(false)
     expect(save.callCount).to.equal(3)
     expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
-    expect(lines.error.some(line => line.includes(`expected ${fetchedHash}`))).to.equal(true)
+    expect(lines.error.some(line => line.includes(`Block 500: db has ${foreignHash}, expected ${fetchedHash}`))).to.equal(true)
+  })
+
+  it('fails loud when the save writes, but no row is stored at that height afterwards', async () => {
+    sinon.stub(Block.prototype, 'save').resolves(true)
+    sinon.stub(blocksRepository, 'findOne').resolves(null)
+    const { log, lines } = recordingLog()
+
+    const result = await insertBlock(500, blocksBase, { log })
+
+    expect(result).to.equal(false)
+    expect(lines.error).to.include(`Error: Block 500: db has no row, expected ${fetchedHash}`)
   })
 
   it('fails loud when the save skips because another block is already stored at that height', async () => {
