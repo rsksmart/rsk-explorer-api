@@ -132,6 +132,20 @@ describe('# liveSyncer stores the block its child points to', function () {
     expect(lines).to.include(`Block 101: db has none, new chain has ${newChain[0].hash}. Queued for the new chain.`)
   })
 
+  it('stops before deleting any row when the node has no block for a parentHash, and names that hash', async () => {
+    const common = block(100, hashOf('c100'), hashOf('c99'))
+    const stale = block(101, hashOf('a101'), common.hash)
+    const tip = block(102, hashOf('b102'), hashOf('b101'))
+    const stored = storeHolding([common, stale])
+    connect({ blocks: [common, stale, tip], byNumber: () => tip })
+
+    const error = await updateDbTipBlock(102, blocksBase, { initConfig, log }, confirmationsThreshold).catch(err => err)
+
+    expect(error).to.be.an('error').with.property('message').that.includes(tip.parentHash)
+    expect(blocksRepository.deleteMany.called).to.equal(false)
+    expect([...stored.values()]).to.deep.equal([common, stale])
+  })
+
   it('ends with the canonical block across two reorgs in a row at one height, while the node answers that height by number with a sibling', async () => {
     const common = block(100, hashOf('c100'), hashOf('c99'))
     const sibling = block(101, hashOf('a101'), common.hash)
