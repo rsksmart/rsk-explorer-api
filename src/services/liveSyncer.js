@@ -81,8 +81,7 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
 
   try {
     while (!chainsParentBlockFound && gap > 0) {
-      // approach: by comparing both previous blocks hashes until finding fork block OR reaching confirmations gap
-      // walk by parentHash: during a reorg the node can answer a block number from the old chain
+      // walk back by parentHash, not by number: during a reorg a number can return an old-chain block
       const newChainPreviousBlock = await nod3.eth.getBlock(childBlock.parentHash)
       if (!newChainPreviousBlock) throw new Error(`Node returned no block for hash ${childBlock.parentHash}, parent of block ${childBlock.number}`)
       const dbChainPreviousBlock = await getDbBlock(current)
