@@ -112,11 +112,24 @@ describe('# liveSyncer stores the block its child points to', function () {
 
     const lineWith = text => lines.find(line => line.includes(text)) || ''
     expect(lineWith('is incongruent')).to.include(stale.hash).and.include(newChain[1].parentHash)
-    expect(lineWith('now belongs to an old chain')).to.include(stale.hash).and.include(newChain[0].hash)
+    expect(lines).to.include(`Block 101: db has ${stale.hash}, new chain has ${newChain[0].hash}. Queued for the new chain.`)
     expect(lineWith('Adding new chain blocks')).to.include(newChain[0].hash).and.include(newChain[1].hash)
     for (const { number, hash } of newChain) {
       expect(lineWith(`Block ${number} (${hash}) saved`), `height ${number}`).to.not.equal('')
     }
+  })
+
+  it('logs "none" as the db hash of a queued height that has no row', async () => {
+    const common = block(100, hashOf('c100'), hashOf('c99'))
+    const stale = block(102, hashOf('a102'), hashOf('a101'))
+    const newChain = [block(101, hashOf('b101'), common.hash), block(102, hashOf('b102'), hashOf('b101')), block(103, hashOf('b103'), hashOf('b102'))]
+    storeHolding([common, stale])
+    connect({ blocks: [common, stale, ...newChain], byNumber: number => newChain.find(b => b.number === number) })
+    const lines = []
+
+    await updateDbTipBlock(103, blocksBase, { initConfig, log: { ...log, info: line => lines.push(line) } }, confirmationsThreshold)
+
+    expect(lines).to.include(`Block 101: db has none, new chain has ${newChain[0].hash}. Queued for the new chain.`)
   })
 
   it('ends with the canonical block across two reorgs in a row at one height, while the node answers that height by number with a sibling', async () => {

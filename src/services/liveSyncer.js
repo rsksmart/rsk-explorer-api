@@ -95,8 +95,8 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
       blocksToDelete.push(newChainPreviousBlock.number)
       missingBlocks.unshift({ number: newChainPreviousBlock.number, hash: newChainPreviousBlock.hash })
 
-      const oldHash = dbChainPreviousBlock ? dbChainPreviousBlock.hash : 'none stored'
-      log.info(`Block ${current} (${oldHash}) now belongs to an old chain; the new chain has ${newChainPreviousBlock.hash}. Queued for deletion.`)
+      const storedHash = dbChainPreviousBlock ? dbChainPreviousBlock.hash : 'none'
+      log.info(`Block ${current}: db has ${storedHash}, new chain has ${newChainPreviousBlock.hash}. Queued for the new chain.`)
 
       childBlock = newChainPreviousBlock
       current--
