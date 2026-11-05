@@ -13,10 +13,10 @@ const sender = pad('5e0d01', 40)
 const receiver = pad('2ec01', 40)
 const txHash = pad('7a01', 64)
 const rawBlock = {
-  number: '0x8e9fe2',
+  number: '0x65',
   hash: pad('b10c', 64),
   parentHash: pad('b10b', 64),
-  timestamp: '0x6717f2a0',
+  timestamp: '0x3e8',
   miner,
   transactions: [txHash],
   uncles: [],
@@ -50,7 +50,7 @@ const rawReceipt = {
     topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', pad(sender.slice(2), 64), pad(miner.slice(2), 64)],
     data: pad('64', 64),
     blockHash: pad('b10c', 64),
-    blockNumber: '0x8e9fe2',
+    blockNumber: rawBlock.number,
     transactionHash: txHash,
     transactionIndex: '0x0',
     logIndex: '0x0'
@@ -95,7 +95,7 @@ async function storeBlock ({ hash }) {
   sinon.stub(summaryRepository, 'find').resolves([])
   const stats = sinon.stub(blockchainStats, 'getBlockchainStats').resolves({})
   sinon.stub(statsRepository, 'insertOne').resolves()
-  sinon.stub(Date, 'now').returns(1729616000000)
+  sinon.stub(Date, 'now').returns(1000000)
   // the log comes from an address without code, so it is stored undecoded and Tx traces it
   sinon.stub(console, 'trace')
 
