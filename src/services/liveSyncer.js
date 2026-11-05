@@ -1,4 +1,4 @@
-import { insertBlock, getDbBlock, sameHash, insertBlocks } from '../lib/servicesUtils'
+import { insertBlock, getDbBlock, sameHash } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
 import Logger from '../lib/Logger'
 import { getInitConfig } from '../lib/Setup'
@@ -71,7 +71,6 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
   log.info('Checking blocks congruence...')
 
   let chainsParentBlockFound = false
-  // include latest by default
   const missingBlocks = [{ number: toBlock.number, hash: toBlock.hash }]
   const blocksToDelete = []
 
@@ -107,7 +106,9 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
     log.info(`Deleting old chain blocks... (Total: ${blocksToDelete.length}. Blocks: ${blocksToDelete})`)
     await blocksRepository.deleteMany({ number: { in: blocksToDelete } })
     log.info(`Finished deleting old chain blocks. Adding new chain blocks... (Total: ${missingBlocks.length}. Blocks: ${JSON.stringify(missingBlocks)})`)
-    await insertBlocks(missingBlocks, blocksBase, { initConfig, log })
+    for (const { number, hash } of missingBlocks) {
+      await insertBlock(number, blocksBase, { initConfig, log, hash })
+    }
     log.info(`Finished adding new chain blocks.`)
     log.info(`Finished reorganization process!`)
   } catch (error) {

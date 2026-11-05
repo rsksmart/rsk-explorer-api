@@ -57,12 +57,6 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
 
 const getExpectedHash = (block, hash) => hash || (block && block.data.block && block.data.block.hash)
 
-export async function insertBlocks (blocks = [], blocksBase, { initConfig, log }) {
-  for (const { number, hash } of blocks) {
-    await insertBlock(number, blocksBase, { initConfig, log, hash })
-  }
-}
-
 export async function saveInitialTip (syncStatus, tipSize) {
   const initConfig = await getInitConfig()
   const log = Logger('[save-tip-blocks]')
