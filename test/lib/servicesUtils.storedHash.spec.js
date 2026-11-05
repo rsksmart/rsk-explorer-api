@@ -66,6 +66,18 @@ describe('# insertBlock checks the stored hash after saving', function () {
     expect(result).to.equal(false)
   })
 
+  it('logs a save that threw over a row with the expected hash as a possible stats failure, never as saved', async () => {
+    sinon.stub(Block.prototype, 'save').rejects(new Error('stats insert failed'))
+    sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: fetchedHash })
+    const { log, lines } = recordingLog()
+
+    const result = await insertBlock(500, blocksBase, { log })
+
+    expect(result).to.equal(true)
+    expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
+    expect(lines.error.filter(line => line.includes(`Block 500 (${fetchedHash}) was saved but the blockchain stats saving process may have failed`))).to.have.lengthOf(1)
+  })
+
   it('logs a write as saved when the stored row carries the expected hash', async () => {
     sinon.stub(Block.prototype, 'save').resolves(true)
     sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: fetchedHash })

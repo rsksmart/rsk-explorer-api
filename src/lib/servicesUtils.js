@@ -29,7 +29,7 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
       }
 
       if (written) {
-        log.info(`Block ${number} saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
+        log.info(`Block ${number} (${expectedHash}) saved. Fetched in ${fetchingTime} ms. Saved in ${savingTime} ms.`)
       } else {
         log.info(`Block ${number} already in db with the expected hash ${expectedHash}. Write skipped.`)
       }
@@ -42,7 +42,7 @@ export async function insertBlock (number, blocksBase, { log, tipBlock = false, 
       const expectedHash = getExpectedHash(block, hash)
 
       if (storedBlock && storedBlock.hash === expectedHash) {
-        log.error(`Block ${storedBlock.number} was saved but the blockchain stats saving process may have failed. Check the logs`)
+        log.error(`Block ${storedBlock.number} (${storedBlock.hash}) was saved but the blockchain stats saving process may have failed. Check the logs`)
         return true
       }
 

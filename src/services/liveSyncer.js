@@ -62,7 +62,7 @@ export async function updateDbTipBlock (number, blocksBase, { initConfig, log },
     await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true, hash: nextBlock.hash })
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
-    log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash. Possible reorganization.`)
+    log.info(`Latest db block (${previousBlockInDb.number}) hash ${previousBlockInDb.hash} is incongruent with next block (${nextBlock.number}) parentHash ${nextBlock.parentHash}. Possible reorganization.`)
     await reorganize(blocksBase, nextBlock, { initConfig, log }, confirmationsThreshold)
   }
 }
@@ -96,7 +96,8 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
       blocksToDelete.push(newChainPreviousBlock.number)
       missingBlocks.unshift({ number: newChainPreviousBlock.number, hash: newChainPreviousBlock.hash })
 
-      log.info(`Block ${current} now belongs to an old chain. Queued for deletion.`)
+      const oldHash = dbChainPreviousBlock ? dbChainPreviousBlock.hash : 'none stored'
+      log.info(`Block ${current} (${oldHash}) now belongs to an old chain; the new chain has ${newChainPreviousBlock.hash}. Queued for deletion.`)
 
       childBlock = newChainPreviousBlock
       current--

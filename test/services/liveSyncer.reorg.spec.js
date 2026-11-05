@@ -100,6 +100,25 @@ describe('# liveSyncer stores the block its child points to', function () {
     expect(node.requests).to.deep.include({ method: 'eth_getBlockByHash', hashOrNumber: checked.hash })
   })
 
+  it('logs the full hashes it compares, and of each block it queues and saves', async () => {
+    const common = block(100, hashOf('c100'), hashOf('c99'))
+    const stale = block(101, hashOf('a101'), common.hash)
+    const newChain = [block(101, hashOf('b101'), common.hash), block(102, hashOf('b102'), hashOf('b101'))]
+    storeHolding([common, stale])
+    connect({ blocks: [common, stale, ...newChain], byNumber: number => newChain.find(b => b.number === number) })
+    const lines = []
+
+    await updateDbTipBlock(102, blocksBase, { initConfig, log: { ...log, info: line => lines.push(line) } }, confirmationsThreshold)
+
+    const lineWith = text => lines.find(line => line.includes(text)) || ''
+    expect(lineWith('is incongruent')).to.include(stale.hash).and.include(newChain[1].parentHash)
+    expect(lineWith('now belongs to an old chain')).to.include(stale.hash).and.include(newChain[0].hash)
+    expect(lineWith('Adding new chain blocks')).to.include(newChain[0].hash).and.include(newChain[1].hash)
+    for (const { number, hash } of newChain) {
+      expect(lineWith(`Block ${number} (${hash}) saved`), `height ${number}`).to.not.equal('')
+    }
+  })
+
   it('replays 2026-10-22: block 9347554 ends as 0xb2a69626…, not the old-chain 0xe6b0ad5b…', async () => {
     // real hashes from the incident logs; 9347553 keeps its real prefix only, 9347556 is made up
     const h9347553 = `0x9a5d2609${'0'.repeat(56)}`
