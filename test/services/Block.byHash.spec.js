@@ -5,7 +5,6 @@ import { nod3Connect } from '../../src/lib/nod3Connect'
 import * as blockchainStats from '../../src/lib/getBlockchainStats'
 import { blocksRepository, statsRepository, summaryRepository } from '../../src/repositories'
 
-const log = { info () {}, error () {}, warn () {}, debug () {}, trace () {} }
 const initConfig = { net: { id: '30' } }
 
 const pad = (hex, size) => `0x${hex.padStart(size, '0')}`
@@ -21,24 +20,7 @@ const rawBlock = {
   miner,
   transactions: [txHash],
   uncles: [],
-  gasLimit: '0x67c280',
-  gasUsed: '0x5208',
-  difficulty: '0x1',
-  totalDifficulty: '0x2',
-  cumulativeDifficulty: '0x1',
-  size: '0x3e8',
-  minimumGasPrice: '0x387ee40',
-  paidFees: '0x0',
-  extraData: '0x',
-  sha3Uncles: pad('0', 64),
-  logsBloom: pad('0', 512),
-  stateRoot: pad('5a', 64),
-  receiptsRoot: pad('5b', 64),
-  transactionsRoot: pad('5c', 64),
-  hashForMergedMining: pad('5d', 64),
-  bitcoinMergedMiningHeader: '0x',
-  bitcoinMergedMiningCoinbaseTransaction: '0x',
-  bitcoinMergedMiningMerkleProof: '0x'
+  gasUsed: '0x5208'
 }
 const rawTx = {
   hash: txHash,
@@ -100,6 +82,8 @@ function stubNode () {
 
 async function storeBlock ({ hash }) {
   const { nod3, requests } = stubNode()
+  const infoLines = []
+  const log = { info: m => infoLines.push(m), error () {}, warn () {}, debug () {}, trace () {} }
   const saved = []
   const stored = new Map()
   sinon.stub(blocksRepository, 'findOne').callsFake(async ({ number }) => stored.get(number) || null)
@@ -121,7 +105,7 @@ async function storeBlock ({ hash }) {
   sinon.restore()
   const otherRequests = requests.filter(r => !r.method.startsWith('eth_getBlockBy'))
   const blockMethods = requests.filter(r => r.method.startsWith('eth_getBlockBy')).map(r => r.method)
-  return { result, saved, statsArgs: stats.args, otherRequests, blockMethods }
+  return { result, saved, statsArgs: stats.args, otherRequests, blockMethods, infoLines }
 }
 
 describe('# a block stored by hash holds the same data as one stored by number', function () {
@@ -133,6 +117,8 @@ describe('# a block stored by hash holds the same data as one stored by number',
 
     expect(byNumber.result).to.equal(true)
     expect(byHash.result).to.equal(true)
+    expect(byNumber.infoLines.filter(line => line.includes(`${rawBlock.hash}) saved`))).to.have.lengthOf(1)
+    expect(byHash.infoLines.filter(line => line.includes(`${rawBlock.hash}) saved`))).to.have.lengthOf(1)
     expect(byNumber.saved).to.have.lengthOf(1)
     expect(byNumber.saved[0].transactions).to.have.lengthOf(1)
     expect(byNumber.saved[0].events).to.have.lengthOf(1)

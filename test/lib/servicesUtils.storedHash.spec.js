@@ -91,14 +91,15 @@ describe('# insertBlock checks the stored hash after saving', function () {
   })
 
   it('accepts a skip over a row that already carries the expected hash, without calling it saved', async () => {
-    const save = sinon.stub(Block.prototype, 'save').resolves(false)
+    const saveBlockData = sinon.stub(blocksRepository, 'saveBlockData').resolves()
     sinon.stub(blocksRepository, 'findOne').resolves({ number: 500, hash: fetchedHash })
     const { log, lines } = recordingLog()
 
-    const result = await insertBlock(500, blocksBase, { log })
+    const result = await insertBlock(500, { ...blocksBase, log }, { log })
 
     expect(result).to.equal(true)
-    expect(save.callCount).to.equal(1)
+    expect(saveBlockData.called).to.equal(false)
+    expect(requestedKeys).to.have.lengthOf(1)
     expect(lines.info.filter(line => line.includes('saved'))).to.deep.equal([])
     expect(lines.info.some(line => line.includes('already in db with the expected hash'))).to.equal(true)
   })
