@@ -10,7 +10,9 @@ import {
   blockTraceRepository,
   eventRepository,
   tokenRepository,
-  summaryRepository
+  summaryRepository,
+  nftRepository,
+  tokenStateRepository
 } from '../../src/repositories'
 
 const data = {
@@ -19,21 +21,33 @@ const data = {
   internalTransactions: [],
   events: [],
   tokenAddresses: [],
+  tokenStates: [],
   addresses: [{ address: '0xaddr' }],
   balances: [],
   latestBalances: { balances: [{ address: '0xaddr', balance: '0', blockNumber: 500 }] },
   status: null
 }
 
+const storedBlock = () => ({
+  findMany: sinon.stub().resolves([{ number: 500, hash: '0xstale' }]),
+  delete: (args) => ({ op: 'block.delete', ...args })
+})
+
 describe('# blocks.repository saveBlockData replace', function () {
   let captured
   let repo
+  let block
 
   beforeEach(() => {
     captured = null
-    repo = getBlocksRepository({ $transaction: (ops) => { captured = ops; return Promise.resolve() } })
+    block = storedBlock()
+    repo = getBlocksRepository({ $transaction: (ops) => { captured = ops; return Promise.resolve() }, block })
     sinon.stub(repo, 'insertOne').callsFake((b) => ({ op: 'block.insert', number: b.number }))
-    sinon.stub(repo, 'deleteOne').callsFake((q) => ({ op: 'block.delete', where: q }))
+    sinon.spy(repo, 'deleteOne')
+    sinon.stub(nftRepository, 'replaceStatements').resolves({ undo: [{ op: 'nft.undo' }], insert: [] })
+    sinon.stub(tokenStateRepository, 'undoStatements').resolves([{ op: 'token.undo' }])
+    sinon.stub(nftRepository, 'insertStatements').resolves([])
+    sinon.stub(tokenStateRepository, 'insertStatements').returns([])
     sinon.stub(addressRepository, 'insertOne').returns([])
     sinon.stub(balancesRepository, 'insertMany').returns([])
     sinon.stub(txRepository, 'insertOne').returns([])
@@ -50,29 +64,58 @@ describe('# blocks.repository saveBlockData replace', function () {
   it('commits the stale-block removal and the canonical insertion in one transaction, delete first', async () => {
     await repo.saveBlockData(data, { replace: true })
 
-    expect(repo.deleteOne.calledOnceWithExactly({ number: 500 })).to.equal(true)
-    expect(captured[0]).to.deep.equal({ op: 'block.delete', where: { number: 500 } })
-    const inserts = captured.filter(o => o && o.op === 'block.insert' && o.number === 500)
+    expect(repo.deleteOne.called).to.equal(false)
+    expect(nftRepository.replaceStatements.calledOnceWithExactly([{ number: 500, hash: '0xstale' }], data.block, data.events))
+      .to.equal(true)
+    expect(captured.slice(0, 3)).to.deep.equal([
+      { op: 'nft.undo' },
+      { op: 'token.undo' },
+      { op: 'block.delete', where: { number: 500, hash: '0xstale' } }
+    ])
+    const inserts = captured.filter(statement => statement && statement.op === 'block.insert' && statement.number === 500)
     expect(inserts).to.have.lengthOf(1)
   })
 
   it('propagates a transaction failure so the caller keeps the previous block', async () => {
-    const failing = getBlocksRepository({ $transaction: () => Promise.reject(new Error('tx failed')) })
+    const failing = getBlocksRepository({
+      $transaction: () => Promise.reject(new Error('tx failed')),
+      block: storedBlock()
+    })
     sinon.stub(failing, 'insertOne').returns({ op: 'block.insert' })
-    sinon.stub(failing, 'deleteOne').returns({ op: 'block.delete' })
 
     let message
-    try { await failing.saveBlockData(data, { replace: true }) } catch (err) { message = err.message }
+    try { await failing.saveBlockData(data, { replace: true }) } catch (error) { message = error.message }
 
     expect(message).to.equal('tx failed')
+  })
+
+  it('runs a refused replace batch once, at read committed, and leaves the retry to the caller', async () => {
+    const refused = Object.assign(new Error('refused'), { code: 'P2025' })
+    const $transaction = sinon.stub().rejects(refused)
+    const refusing = getBlocksRepository({ $transaction, block: storedBlock() })
+    sinon.stub(refusing, 'insertOne').returns({ op: 'block.insert' })
+
+    expect(await refusing.saveBlockData(data, { replace: true }).catch(thrown => thrown)).to.equal(refused)
+    expect($transaction.calledOnceWithExactly(sinon.match.array, { isolationLevel: 'ReadCommitted' })).to.equal(true)
   })
 
   it('does not delete when not replacing', async () => {
     await repo.saveBlockData(data)
 
-    expect(repo.deleteOne.called).to.equal(false)
-    const deletes = captured.filter(o => o && o.op === 'block.delete')
+    expect(block.findMany.called).to.equal(false)
+    const deletes = captured.filter(statement => statement && statement.op === 'block.delete')
     expect(deletes).to.have.lengthOf(0)
     expect(captured[0]).to.deep.equal({ op: 'block.insert', number: 500 })
+  })
+
+  it('saves like an insert when a replace finds no stored block: nothing is undone and the NFT inserts follow the block', async () => {
+    block.findMany.resolves([])
+    nftRepository.insertStatements.resolves([{ op: 'nft.insert' }])
+
+    await repo.saveBlockData(data, { replace: true })
+
+    expect(nftRepository.replaceStatements.called).to.equal(false)
+    expect(tokenStateRepository.undoStatements.called).to.equal(false)
+    expect(captured.slice(0, 2)).to.deep.equal([{ op: 'block.insert', number: 500 }, { op: 'nft.insert' }])
   })
 })

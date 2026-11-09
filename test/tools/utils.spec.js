@@ -1,5 +1,47 @@
 import { expect } from 'chai'
-import { parseArguments } from '../../src/tools/utils.js'
+import sinon from 'sinon'
+import { parseArguments, exitOnUncaughtException } from '../../src/tools/utils.js'
+
+describe('exitOnUncaughtException', () => {
+  afterEach(() => sinon.restore())
+
+  function handle (error) {
+    const on = sinon.stub(process, 'on')
+    const exit = sinon.stub(process, 'exit')
+    const log = sinon.stub(console, 'log')
+    const stderr = sinon.stub(console, 'error')
+    exitOnUncaughtException('[Tool t]: Error', () => 'Stopped: {"blocksRead":3}')
+    on.withArgs('uncaughtException').firstCall.args[1](error)
+    sinon.restore()
+    return { stdout: log.args.map(a => a.join(' ')), stderr: stderr.args.map(a => String(a[0])), exits: exit.args }
+  }
+
+  it('prints a code error with its stack, so the bug keeps its file and line, then the run report, and exits 1', () => {
+    const error = new TypeError("Cannot read properties of null (reading 'field')")
+
+    const { stdout, stderr, exits } = handle(error)
+
+    expect(stdout).to.deep.equal([
+      "[Tool t]: Error: Cannot read properties of null (reading 'field')",
+      'Stopped: {"blocksRead":3}'
+    ])
+    expect(stderr).to.deep.equal([error.stack])
+    expect(exits).to.deep.equal([[1]])
+  })
+
+  it('prints a refused connection without a stack, as its location is in Node, not in this code', () => {
+    const error = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1:1'), {
+      syscall: 'connect',
+      code: 'ECONNREFUSED'
+    })
+
+    const { stdout, stderr, exits } = handle(error)
+
+    expect(stdout).to.deep.equal(['[Tool t]: Error: connect ECONNREFUSED 127.0.0.1:1', 'Stopped: {"blocksRead":3}'])
+    expect(stderr).to.deep.equal([])
+    expect(exits).to.deep.equal([[1]])
+  })
+})
 
 describe('parseArguments', () => {
   // Mock process.argv for testing
