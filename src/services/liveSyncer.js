@@ -1,4 +1,4 @@
-import { insertBlock, getDbBlock, sameHash, insertBlocks } from '../lib/servicesUtils'
+import { insertBlock, getDbBlock, sameHash } from '../lib/servicesUtils'
 import nod3 from '../lib/nod3Connect'
 import Logger from '../lib/Logger'
 import { getInitConfig } from '../lib/Setup'
@@ -59,10 +59,10 @@ export async function updateDbTipBlock (number, blocksBase, { initConfig, log },
   // previous block is not in db OR previousBlock exists and blocks are congruent
   if (!previousBlockInDb || sameHash(previousBlockInDb.hash, nextBlock.parentHash)) {
     // normal insert
-    await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true })
+    await insertBlock(nextBlock.number, blocksBase, { initConfig, log, tipBlock: true, hash: nextBlock.hash })
   } else {
     // previousInDb exists and is not parent of latestBlock (reorganization)
-    log.info(`Latest db block (${previousBlockInDb.number}) hash is incongruent with next block (${nextBlock.number}) parentHash. Possible reorganization.`)
+    log.info(`Latest db block (${previousBlockInDb.number}) hash ${previousBlockInDb.hash} is incongruent with next block (${nextBlock.number}) parentHash ${nextBlock.parentHash}. Possible reorganization.`)
     await reorganize(blocksBase, nextBlock, { initConfig, log }, confirmationsThreshold)
   }
 }
@@ -71,16 +71,18 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
   log.info('Checking blocks congruence...')
 
   let chainsParentBlockFound = false
-  const missingBlocks = [toBlock.number] // include latest by default
+  const missingBlocks = [{ number: toBlock.number, hash: toBlock.hash }]
   const blocksToDelete = []
 
+  let childBlock = toBlock
   let current = toBlock.number - 1
   let gap = confirmationsThreshold - 1 // - 1 since we already know last db block is incongruent
 
   try {
     while (!chainsParentBlockFound && gap > 0) {
-      // approach: by comparing both previous blocks hashes until finding fork block OR reaching confirmations gap
-      const newChainPreviousBlock = await nod3.eth.getBlock(current)
+      // walk back by parentHash, not by number: during a reorg a number can return an old-chain block
+      const newChainPreviousBlock = await nod3.eth.getBlock(childBlock.parentHash)
+      if (!newChainPreviousBlock) throw new Error(`Node returned no block for hash ${childBlock.parentHash}, parent of block ${childBlock.number}`)
       const dbChainPreviousBlock = await getDbBlock(current)
 
       if (dbChainPreviousBlock) {
@@ -90,10 +92,12 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
 
       // db block is inexistent or incongruent
       blocksToDelete.push(newChainPreviousBlock.number)
-      missingBlocks.unshift(newChainPreviousBlock.number)
+      missingBlocks.unshift({ number: newChainPreviousBlock.number, hash: newChainPreviousBlock.hash })
 
-      log.info(`Block ${current} now belongs to an old chain. Queued for deletion.`)
+      const storedHash = dbChainPreviousBlock ? dbChainPreviousBlock.hash : 'none'
+      log.info(`Block ${current}: db has ${storedHash}, new chain has ${newChainPreviousBlock.hash}. Queued for the new chain.`)
 
+      childBlock = newChainPreviousBlock
       current--
       gap--
     }
@@ -102,7 +106,9 @@ async function reorganize (blocksBase, toBlock, { initConfig, log }, confirmatio
     log.info(`Deleting old chain blocks... (Total: ${blocksToDelete.length}. Blocks: ${blocksToDelete})`)
     await blocksRepository.deleteMany({ number: { in: blocksToDelete } })
     log.info(`Finished deleting old chain blocks. Adding new chain blocks... (Total: ${missingBlocks.length}. Blocks: ${JSON.stringify(missingBlocks)})`)
-    await insertBlocks(missingBlocks, blocksBase, { initConfig, log })
+    for (const { number, hash } of missingBlocks) {
+      await insertBlock(number, blocksBase, { initConfig, log, hash })
+    }
     log.info(`Finished adding new chain blocks.`)
     log.info(`Finished reorganization process!`)
   } catch (error) {
