@@ -4,6 +4,7 @@ import { Contract, getRskReleaseByBlockNumber, RSK_RELEASES } from '@rsksmart/rs
 import { serialize } from './utils'
 import { nativeContracts } from './NativeContracts'
 import nod3 from './nod3Connect'
+import { toIntegerString } from '../converters/stats.converters'
 const bridgeAddress = nativeContracts.bridge
 
 async function getLockingCap (blockNumber, network) {
@@ -18,13 +19,18 @@ async function getLockingCap (blockNumber, network) {
   return bridge.call('getLockingCap', [], { blockNumber })
 }
 
+export async function getNetHashrate (node = nod3) {
+  const rawHashrate = await node.rpc.sendMethod('eth_netHashrate', [])
+  return toIntegerString(rawHashrate)
+}
+
 export async function getBlockchainStats ({ bitcoinNetwork, blockHash, blockNumber }) {
   if (!blockHash) throw new Error(`Missing blockhash. blockHash: ${blockHash}`)
   if (!['mainnet', 'testnet'].includes(bitcoinNetwork)) throw new Error(`bitcoinNetwork: ${bitcoinNetwork} is not supported`)
 
   const circulating = await getCirculatingSupply({ bridge: bridgeAddress })
   const activeAccounts = await getActiveAccounts()
-  const hashrate = await nod3.eth.netHashrate()
+  const hashrate = await getNetHashrate()
   const lockingCap = await getLockingCap(blockNumber, bitcoinNetwork)
   const timestamp = Date.now()
 

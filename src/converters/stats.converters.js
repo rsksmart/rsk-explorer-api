@@ -1,3 +1,20 @@
+/* global BigInt */
+// Converts a hashrate (hex quantity from eth_netHashrate, decimal string,
+// bigint or integer Number) to an exact base-10 integer string. Never emits
+// exponent notation, so consumers can parse it with BigInt.
+function toIntegerString (value) {
+  if (value === undefined || value === null || value === '') return null
+  // eslint-disable-next-line valid-typeof
+  if (typeof value === 'bigint') return value.toString()
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error(`Invalid hashrate: ${value}`)
+    return BigInt(Math.trunc(value)).toString()
+  }
+  const str = String(value).trim()
+  if (/^0x[0-9a-f]+$/i.test(str) || /^\d+$/.test(str)) return BigInt(str).toString()
+  throw new Error(`Invalid hashrate: ${value}`)
+}
+
 function rawStatsToEntity ({
   circulating,
   activeAccounts,
@@ -11,7 +28,7 @@ function rawStatsToEntity ({
     blockNumber,
     blockHash,
     activeAccounts,
-    hashrate: String(hashrate),
+    hashrate: toIntegerString(hashrate),
     lockingCap: bridge.lockingCap,
     timestamp
   }
@@ -38,7 +55,7 @@ function statsEntityToRaw ({
 }) {
   const rawStats = {
     activeAccounts,
-    hashrate: parseFloat(hashrate),
+    hashrate,
     timestamp: Number(timestamp),
     blockHash,
     blockNumber,
@@ -58,4 +75,4 @@ function statsEntityToRaw ({
   return rawStats
 }
 
-export { rawStatsToEntity, statsEntityToRaw }
+export { rawStatsToEntity, statsEntityToRaw, toIntegerString }
